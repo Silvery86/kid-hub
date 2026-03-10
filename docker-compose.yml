@@ -1,0 +1,41 @@
+services:
+  # ── PostgreSQL database ───────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     kidhub
+      POSTGRES_PASSWORD: kidhub_dev
+      POSTGRES_DB:       kidhub
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U kidhub']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Next.js application (dev mode with hot-reload) ────────────────────────
+  app:
+    build:
+      context: .
+      target: builder   # Use the builder stage so we get the dev server
+    command: npm run dev
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: postgresql://kidhub:kidhub_dev@db:5432/kidhub
+      # TODO Sprint 3: add SESSION_SECRET here (use a long random string)
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules   # Preserve container node_modules
+      - /app/.next          # Preserve Next.js build cache
+
+volumes:
+  postgres_data:
