@@ -6,27 +6,26 @@
 
 import { useState } from 'react';
 import { PinKeypad } from '@/components/ui/PinKeypad';
-import { PIN_SHAKE_DURATION_MS } from '@/lib/constants';
 
 export default function ParentLayout({ children }: { children: React.ReactNode }) {
   const [isUnlocked, setIsUnlocked] = useState(false);
-  const [hasError, setHasError] = useState(false);
+  const [errorCount, setErrorCount] = useState(0);
 
   const handlePinComplete = (pin: string): void => {
     // TODO Sprint 3: replace with verifyPinAction Server Action + session cookie
     // Demo PIN hardcoded to 0000 for Sprint 1 scaffolding only — not for production.
     if (pin === '0000') {
       setIsUnlocked(true);
-      setHasError(false);
     } else {
-      setHasError(true);
-      setTimeout(() => setHasError(false), PIN_SHAKE_DURATION_MS + 100);
+      setErrorCount((c) => c + 1);
     }
   };
 
   return (
     <div className="relative min-h-screen bg-sky-50">
       {/* Children behind the overlay — will be visible once unlocked */}
+      {/* Note: children render in DOM while gate is visible (Sprint 1 scaffold).
+          Sprint 3: middleware.ts will block the route entirely without a valid session cookie. */}
       <div aria-hidden={!isUnlocked} className={isUnlocked ? '' : 'invisible'}>
         {children}
       </div>
@@ -42,7 +41,7 @@ export default function ParentLayout({ children }: { children: React.ReactNode }
               <p className="text-slate-400 mt-2 text-lg">Enter your PIN to continue</p>
             </div>
 
-            <PinKeypad onComplete={handlePinComplete} hasError={hasError} />
+            <PinKeypad onComplete={handlePinComplete} errorCount={errorCount} />
 
             {/* Sprint 1 dev helper — remove before production */}
             <p className="text-slate-600 text-sm">Sprint 1 demo PIN: 0000</p>

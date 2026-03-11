@@ -1,0 +1,160 @@
+// ============================================================
+// Kid Hub — Prisma Schema
+// Source of truth for all database models.
+// All types here must align with types/index.ts.
+//
+// Connection URLs are configured in prisma.config.ts (Prisma v7).
+//
+// After editing:
+//   npx prisma migrate dev --name <description>
+//   npx prisma generate
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ── User & Profile ────────────────────────────────────────────
+
+model User {
+  id         String   @id @default(cuid())
+  name       String
+  gradeLevel Int      @default(1)
+  avatarUrl  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  pin      ParentPin?
+  periods  ClassPeriod[]
+  grades   SubjectGrade[]
+  progress UserProgress?
+
+  @@map("users")
+}
+
+// ── Parent Auth ───────────────────────────────────────────────
+
+model ParentPin {
+  id          String    @id @default(cuid())
+  hash        String    // bcrypt hash — raw PIN never stored
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attempts    Int       @default(0)
+  lockedUntil DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("parent_pins")
+}
+
+// ── Schedule ──────────────────────────────────────────────────
+
+/// Day of week matches DayOfWeek type in types/index.ts
+enum DayOfWeek {
+  monday
+  tuesday
+  wednesday
+  thursday
+  friday
+}
+
+model ClassPeriod {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  day          DayOfWeek
+  periodNumber Int
+  subjectId    String    // References SUBJECTS constant in lib/data/subjects.ts
+  startTime    String    // "HH:MM" 24-hour format
+  endTime      String    // "HH:MM" 24-hour format
+  roomNumber   String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // One user cannot have two periods at the same slot on the same day
+  @@unique([userId, day, periodNumber])
+  @@index([userId, day])
+  @@map("class_periods")
+}
+
+// ── Grades ────────────────────────────────────────────────────
+
+/// BadgeTier matches BadgeTier type in types/index.ts
+enum BadgeTier {
+  excellent
+  good
+  needs_practice @map("needs-practice")
+}
+
+model SubjectGrade {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subjectId    String    // References SUBJECTS constant
+  score        Float     // 0–10 scale
+  badge        BadgeTier
+  semester     Int       // 1 or 2
+  academicYear String    // e.g. "2025-2026"
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // One grade per subject per semester per year
+  @@unique([userId, subjectId, semester, academicYear])
+  @@index([userId])
+  @@map("subject_grades")
+}
+
+// ── Gamification ──────────────────────────────────────────────
+
+model UserProgress {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalPoints    Int      @default(0)
+  currentStreak  Int      @default(0)
+  lastActiveDate String   // ISO date "YYYY-MM-DD"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  earnedBadges EarnedBadge[]
+  bestScores   GameBestScore[]
+
+  @@map("user_progress")
+}
+
+model EarnedBadge {
+  id             String       @id @default(cuid())
+  userProgressId String
+  userProgress   UserProgress @relation(fields: [userProgressId], references: [id], onDelete: Cascade)
+  badgeId        String       // Static badge ID from lib/data
+  earnedAt       DateTime     @default(now())
+
+  @@unique([userProgressId, badgeId])
+  @@map("earned_badges")
+}
+
+/// GameType matches GameType in types/index.ts
+enum GameType {
+  math
+  english
+}
+
+model GameBestScore {
+  id             String       @id @default(cuid())
+  userProgressId String
+  userProgress   UserProgress @relation(fields: [userProgressId], references: [id], onDelete: Cascade)
+  gameType       GameType
+  level          Int          // 1, 2, or 3 — maps to DifficultyLevel
+  score          Int
+  starsEarned    Int          // 1, 2, or 3
+  achievedAt     DateTime     @default(now())
+
+  // One best score per game + level
+  @@unique([userProgressId, gameType, level])
+  @@map("game_best_scores")
+}

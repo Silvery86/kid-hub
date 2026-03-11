@@ -12,8 +12,21 @@ export const formatDate = (date: Date): string =>
     month: '2-digit',
   });
 
-/** Format an ISO time string "HH:MM" for display. */
-export const formatTime = (time: string): string => time;
+/**
+ * Format an "HH:MM" 24-hour time string for display.
+ * Output example: "08:30" → "8:30 SA" (Vietnamese AM/PM) or "14:45" → "2:45 CH"
+ * Falls back to the raw string if parsing fails.
+ */
+export const formatTime = (time: string): string => {
+  const parts = time.split(':');
+  if (parts.length !== 2) return time;
+  const [hStr, mStr] = parts;
+  const hours = parseInt(hStr ?? '0', 10);
+  const minutes = parseInt(mStr ?? '0', 10);
+  if (isNaN(hours) || isNaN(minutes)) return time;
+  const d = new Date(2000, 0, 1, hours, minutes);
+  return d.toLocaleTimeString('vi-VN', { hour: 'numeric', minute: '2-digit', hour12: true });
+};
 
 /** Calculate a score percentage (0–100). */
 export const calculateScore = (correct: number, total: number): number =>

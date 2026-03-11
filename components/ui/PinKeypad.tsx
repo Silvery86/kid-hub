@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Delete } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { KidButton } from './KidButton';
@@ -9,7 +9,13 @@ import { PIN_LENGTH, PIN_SHAKE_DURATION_MS } from '@/lib/constants';
 export interface PinKeypadProps {
   pinLength?: number;
   onComplete: (pin: string) => void;
-  hasError?: boolean;
+  /**
+   * Increment this counter each time a wrong PIN is submitted.
+   * Using a number (not boolean) ensures the useEffect fires reliably
+   * even on consecutive errors where the value goes true→false→true
+   * in the same render cycle.
+   */
+  errorCount?: number;
   isDisabled?: boolean;
   label?: string;
 }
@@ -21,21 +27,24 @@ type KeypadKey = (typeof KEYPAD_KEYS)[number];
 export const PinKeypad = ({
   pinLength = PIN_LENGTH,
   onComplete,
-  hasError = false,
+  errorCount = 0,
   isDisabled = false,
   label,
 }: PinKeypadProps) => {
   const [value, setValue] = useState('');
   const [isShaking, setIsShaking] = useState(false);
+  // Track the previous errorCount so we only react to *new* errors
+  const prevErrorCount = useRef(0);
 
-  // Trigger shake animation and clear input when parent reports an error
+  // Trigger shake animation and clear input whenever errorCount increases
   useEffect(() => {
-    if (!hasError) return;
+    if (errorCount === 0 || errorCount === prevErrorCount.current) return;
+    prevErrorCount.current = errorCount;
     setValue('');
     setIsShaking(true);
     const t = setTimeout(() => setIsShaking(false), PIN_SHAKE_DURATION_MS);
     return () => clearTimeout(t);
-  }, [hasError]);
+  }, [errorCount]);
 
   const handleKey = (key: KeypadKey): void => {
     if (isDisabled || key === '') return;

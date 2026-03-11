@@ -6,10 +6,10 @@ import { Home, Calendar, Star, Gamepad2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
-  { href: '/dashboard', icon: Home,      label: 'Home' },
-  { href: '/schedule',  icon: Calendar,  label: 'Timetable' },
-  { href: '/grades',    icon: Star,      label: 'Grades' },
-  { href: '/games/math', icon: Gamepad2, label: 'Games' },
+  { href: '/dashboard', icon: Home, label: 'Home' },
+  { href: '/schedule', icon: Calendar, label: 'Timetable' },
+  { href: '/grades', icon: Star, label: 'Grades' },
+  { href: '/games', icon: Gamepad2, label: 'Games' },
 ] as const;
 
 export const AppSidebar = () => {
