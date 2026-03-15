@@ -1,5 +1,7 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import type { BadgeTier } from '@/types';
+import { GRADE_SCALE } from '@/lib/constants';
 
 /** Merge Tailwind classes safely, resolving conflicts. */
 export const cn = (...inputs: ClassValue[]): string => twMerge(clsx(inputs));
@@ -35,3 +37,10 @@ export const calculateScore = (correct: number, total: number): number =>
 /** Clamp a number between min and max. */
 export const clamp = (value: number, min: number, max: number): number =>
   Math.max(min, Math.min(max, value));
+
+/** Derive badge tier from a 0–10 score using GRADE_SCALE thresholds. */
+export const calculateBadgeTier = (score: number): BadgeTier => {
+  if (score >= GRADE_SCALE.EXCELLENT) return 'excellent';
+  if (score >= GRADE_SCALE.GOOD) return 'good';
+  return 'needs-practice';
+};

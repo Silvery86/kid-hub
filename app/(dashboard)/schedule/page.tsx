@@ -1,16 +1,22 @@
 'use client';
 
 import { TabletPageContainer } from '@/components/layout/TabletPageContainer';
-import { WEEKLY_SCHEDULE } from '@/lib/data/schedule';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useSchedule } from '@/hooks/useSchedule';
-import { DAYS_OF_WEEK, DAY_LABELS } from '@/lib/constants';
+import { WEEKLY_SCHEDULE } from '@/lib/data/schedule';
+import { STORAGE_KEYS, DAYS_OF_WEEK, DAY_LABELS } from '@/lib/constants';
 import { getSubjectById } from '@/lib/data/subjects';
 import { cn } from '@/lib/utils';
+import type { WeeklySchedule } from '@/types';
 
 const TOTAL_PERIODS = 5;
 
 export default function SchedulePage() {
-  const { allDays, todayDow, currentPeriod } = useSchedule(WEEKLY_SCHEDULE);
+  const [storedSchedule] = useLocalStorage<WeeklySchedule>(
+    STORAGE_KEYS.SCHEDULE,
+    WEEKLY_SCHEDULE,
+  );
+  const { allDays, todayDow, currentPeriod } = useSchedule(storedSchedule);
 
   return (
     <TabletPageContainer className="p-6 overflow-hidden">

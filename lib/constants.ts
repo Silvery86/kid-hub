@@ -44,3 +44,12 @@ export const INPUT_THROTTLE_MS = 600;
 
 /** Duration (ms) of the PIN shake error animation. */
 export const PIN_SHAKE_DURATION_MS = 500;
+
+// ── localStorage Keys ─────────────────────────────────────────
+
+export const STORAGE_KEYS = {
+  SCHEDULE: 'kid-hub:weekly-schedule',
+  GRADES: 'kid-hub:grades',
+  USER_PROGRESS: 'kid-hub:user-progress',
+  PIN_DATA: 'kid-hub:pin-data',
+} as const;
