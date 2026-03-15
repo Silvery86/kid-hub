@@ -11,6 +11,7 @@ import { CurrentClassHighlight } from '@/components/dashboard/CurrentClassHighli
 import { TodayTimetable } from '@/components/dashboard/TodayTimetable';
 import { StreakWidget } from '@/components/dashboard/StreakWidget';
 import { BadgeModal } from '@/components/dashboard/BadgeModal';
+import { GameEntryCard } from '@/components/games/GameEntryCard';
 import type { WeeklySchedule } from '@/types';
 
 export const DashboardView = () => {
@@ -19,7 +20,7 @@ export const DashboardView = () => {
     WEEKLY_SCHEDULE,
   );
   const { todaySchedule, currentPeriod, nextPeriod } = useSchedule(storedSchedule);
-  const { updateStreak } = useUserProgress();
+  const { updateStreak, progress } = useUserProgress();
   const [isBadgeModalOpen, setIsBadgeModalOpen] = useState(false);
 
   // Update streak once on mount
@@ -74,8 +75,34 @@ export const DashboardView = () => {
           </button>
         </div>
 
-        {/* ── Right column: today's full timetable ── */}
-        <div className="flex-1 overflow-y-auto">
+        {/* ── Right column: game cards + today's timetable ── */}
+        <div className="flex-1 flex flex-col gap-5 overflow-y-auto">
+          {/* Game entry cards */}
+          <section aria-label="Trò chơi">
+            <h2 className="text-xl font-extrabold text-slate-700 mb-3 px-1">Trò chơi 🎮</h2>
+            <div className="grid grid-cols-2 gap-3">
+              <GameEntryCard
+                gameType="math"
+                title="Number Ninja"
+                description="Toán cộng và trừ"
+                emoji="🔢"
+                href="/math"
+                colorClass="bg-blue-500"
+                bestScore={progress.bestScores.find((b) => b.gameType === 'math') ?? null}
+              />
+              <GameEntryCard
+                gameType="english"
+                title="Word Explorer"
+                description="Tiếng Anh vui"
+                emoji="🔤"
+                href="/english"
+                colorClass="bg-emerald-500"
+                bestScore={progress.bestScores.find((b) => b.gameType === 'english') ?? null}
+              />
+            </div>
+          </section>
+
+          {/* Today's timetable */}
           {todaySchedule ? (
             <TodayTimetable
               schedule={todaySchedule}
@@ -83,7 +110,7 @@ export const DashboardView = () => {
               nextPeriod={nextPeriod}
             />
           ) : (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center flex-1">
               <div className="text-center">
                 <div className="text-8xl mb-5" aria-hidden="true">🎉</div>
                 <h2 className="text-4xl font-extrabold text-slate-700">Hôm nay nghỉ học!</h2>
