@@ -16,7 +16,7 @@ export const StarRating = ({ value, max = 3, className }: StarRatingProps) => (
       <span
         key={i}
         className={cn(
-          'text-4xl transition-all duration-150',
+          'text-4xl transition-colors duration-150',
           i < value ? 'text-amber-400' : 'text-slate-300',
         )}
         aria-hidden="true"

@@ -28,7 +28,7 @@ export const GameHud = ({ correctCount, questionIndex, secondsLeft, onExit }: Ga
       <button
         onClick={onExit}
         aria-label="Thoát trò chơi"
-        className="flex items-center justify-center w-12 h-12 rounded-xl bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors text-xl font-bold shrink-0"
+        className="flex items-center justify-center w-14 h-14 rounded-xl bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors text-xl font-bold shrink-0"
       >
         ✕
       </button>
@@ -41,7 +41,7 @@ export const GameHud = ({ correctCount, questionIndex, secondsLeft, onExit }: Ga
         </div>
         <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
           <div
-            className="h-full bg-blue-400 rounded-full transition-all duration-300"
+            className="h-full bg-blue-400 rounded-full transition-[width] duration-300"
             style={{ width: `${progress * 100}%` }}
           />
         </div>
@@ -63,7 +63,7 @@ export const GameHud = ({ correctCount, questionIndex, secondsLeft, onExit }: Ga
             strokeLinecap="round"
             strokeDasharray={`${dash} ${circ}`}
             transform="rotate(-90 24 24)"
-            className="transition-all duration-1000 ease-linear"
+            className="transition-[stroke-dasharray] duration-1000 ease-linear"
           />
           <text
             x="24"

@@ -48,7 +48,7 @@ export const DashboardView = () => {
 
           {nextPeriod && nextSubject && (
             <div className="rounded-2xl bg-white p-4 shadow-sm">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+              <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
                 Tiếp theo
               </p>
               <p className="text-lg font-bold text-slate-700">{nextSubject.name}</p>
@@ -64,13 +64,13 @@ export const DashboardView = () => {
           {/* Badge button */}
           <button
             onClick={() => setIsBadgeModalOpen(true)}
-            className="w-full rounded-2xl bg-white p-4 shadow-sm flex items-center gap-3 hover:bg-amber-50 transition-colors active:scale-[0.98]"
+            className="w-full min-h-[3.5rem] rounded-2xl bg-white p-4 shadow-sm flex items-center gap-3 hover:bg-amber-50 transition-colors active:scale-[0.98]"
             aria-label="Xem huy hiệu"
           >
             <span className="text-3xl" aria-hidden="true">🏆</span>
             <div className="text-left">
               <p className="font-extrabold text-slate-700">Huy hiệu</p>
-              <p className="text-sm text-slate-400">Xem bộ sưu tập</p>
+              <p className="text-sm text-slate-500">Xem bộ sưu tập</p>
             </div>
           </button>
         </div>
@@ -114,7 +114,7 @@ export const DashboardView = () => {
               <div className="text-center">
                 <div className="text-8xl mb-5" aria-hidden="true">🎉</div>
                 <h2 className="text-4xl font-extrabold text-slate-700">Hôm nay nghỉ học!</h2>
-                <p className="text-slate-400 text-xl mt-2">Chúc Khôi ngày nghỉ vui vẻ.</p>
+                <p className="text-slate-500 text-xl mt-2">Chúc Khôi ngày nghỉ vui vẻ.</p>
               </div>
             </div>
           )}

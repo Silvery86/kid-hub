@@ -29,7 +29,7 @@ export const TodayTimetable = ({ schedule, currentPeriod, nextPeriod }: TodayTim
         );
       })}
       {schedule.periods.length === 0 && (
-        <p className="text-slate-400 text-center py-8 font-semibold">
+        <p className="text-slate-500 text-center py-8 font-semibold">
           Hôm nay không có lịch học.
         </p>
       )}

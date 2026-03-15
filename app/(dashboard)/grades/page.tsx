@@ -20,7 +20,7 @@ export default function GradesPage() {
   const { reportCard } = useGrades();
 
   return (
-    <TabletPageContainer className="p-6 overflow-y-auto">
+    <TabletPageContainer className="p-6 h-screen overflow-y-auto">
       {/* Header */}
       <div className="flex items-end justify-between mb-6">
         <div>

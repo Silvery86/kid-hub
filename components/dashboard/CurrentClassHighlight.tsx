@@ -15,9 +15,9 @@ export const CurrentClassHighlight = ({ period, subject }: CurrentClassHighlight
   if (!period || !subject) {
     return (
       <div className="rounded-3xl bg-slate-100 p-8 flex flex-col items-center justify-center gap-3 text-center min-h-44">
-        <Clock size={36} className="text-slate-300" aria-hidden="true" />
-        <p className="text-slate-400 text-lg font-semibold">Không có tiết học</p>
-        <p className="text-slate-400 text-sm">Ngoài giờ học</p>
+        <Clock size={36} className="text-slate-500" aria-hidden="true" />
+        <p className="text-slate-600 text-lg font-semibold">Không có tiết học</p>
+        <p className="text-slate-500 text-sm">Ngoài giờ học</p>
       </div>
     );
   }

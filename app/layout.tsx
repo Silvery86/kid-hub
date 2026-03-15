@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Nunito } from 'next/font/google';
+import { ServiceWorkerRegistrar } from '@/components/layout/ServiceWorkerRegistrar';
 import './globals.css';
 
 const nunito = Nunito({
@@ -18,6 +19,10 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'Kid Hub',
   },
+  // Android Chrome PWA splash screen colour
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
 };
 
 export const viewport: Viewport = {
@@ -25,6 +30,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   minimumScale: 1,
   maximumScale: 1, // Prevent accidental pinch-zoom during games
+  themeColor: '#3B82F6', // Matches manifest theme_color — blue-500
 };
 
 export default function RootLayout({
@@ -34,7 +40,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi">
-      <body className={`${nunito.variable} font-sans antialiased`}>{children}</body>
+      <body className={`${nunito.variable} font-sans antialiased`}>
+        <ServiceWorkerRegistrar />
+        {children}
+      </body>
     </html>
   );
 }

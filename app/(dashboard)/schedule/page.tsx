@@ -69,7 +69,7 @@ export default function SchedulePage() {
                     key={periodNumber}
                     className={cn(
                       'rounded-xl p-3 flex flex-col justify-between flex-1 min-h-16',
-                      'transition-all duration-200',
+                      'transition-[transform,box-shadow] duration-200',
                       subject.colorClass,
                       isActiveCell && 'ring-2 ring-white shadow-lg scale-[1.03]',
                     )}

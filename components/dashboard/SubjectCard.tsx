@@ -50,7 +50,7 @@ export const SubjectCard = ({
     <div
       role="listitem"
       className={cn(
-        'flex items-center gap-3 rounded-2xl px-4 transition-all duration-300',
+        'flex items-center gap-3 rounded-2xl px-4 transition-[transform,background-color,box-shadow] duration-300',
         isCompact ? 'py-2' : 'py-3',
         isActive ? 'bg-white ring-2 ring-blue-400 shadow-lg scale-[1.01]' : 'bg-white',
         isNext && !isActive && 'bg-blue-50',

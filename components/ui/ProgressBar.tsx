@@ -31,7 +31,7 @@ export const ProgressBar = ({
       className={cn('w-full h-4 bg-slate-200 rounded-full overflow-hidden', className)}
     >
       <div
-        className={cn('h-full rounded-full transition-all duration-500', getColorClass(pct))}
+        className={cn('h-full rounded-full transition-[width] duration-500', getColorClass(pct))}
         style={{ width: `${pct}%` }}
       />
     </div>
