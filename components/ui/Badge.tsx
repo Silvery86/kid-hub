@@ -1,10 +1,10 @@
-import { cn } from '@/lib/utils';
-import type { BadgeTier } from '@/types';
+import { cn } from '@/lib/utils'
+import type { BadgeTier } from '@/types'
 
 interface BadgeProps {
-  variant: BadgeTier;
-  label?: string;
-  className?: string;
+  variant: BadgeTier
+  label?: string
+  className?: string
 }
 
 const BADGE_CONFIG: Record<BadgeTier, { classes: string; defaultLabel: string; emoji: string }> = {
@@ -23,20 +23,20 @@ const BADGE_CONFIG: Record<BadgeTier, { classes: string; defaultLabel: string; e
     defaultLabel: 'Keep Trying!',
     emoji: '💪',
   },
-};
+}
 
 export const Badge = ({ variant, label, className }: BadgeProps) => {
-  const { classes, defaultLabel, emoji } = BADGE_CONFIG[variant];
+  const { classes, defaultLabel, emoji } = BADGE_CONFIG[variant]
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 text-sm font-bold',
+        'inline-flex items-center gap-1.5 rounded-full border-2 px-3 py-1.5 text-sm font-bold',
         classes,
-        className,
+        className
       )}
     >
       <span aria-hidden="true">{emoji}</span>
       {label ?? defaultLabel}
     </span>
-  );
-};
+  )
+}

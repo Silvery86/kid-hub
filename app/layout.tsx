@@ -1,14 +1,14 @@
-import type { Metadata, Viewport } from 'next';
-import { Nunito } from 'next/font/google';
-import { ServiceWorkerRegistrar } from '@/components/layout/ServiceWorkerRegistrar';
-import './globals.css';
+import type { Metadata, Viewport } from 'next'
+import { Nunito } from 'next/font/google'
+import { ServiceWorkerRegistrar } from '@/components/layout/ServiceWorkerRegistrar'
+import './globals.css'
 
 const nunito = Nunito({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700', '800', '900'],
   variable: '--font-display',
   display: 'swap',
-});
+})
 
 export const metadata: Metadata = {
   title: 'Kid Hub',
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   other: {
     'mobile-web-app-capable': 'yes',
   },
-};
+}
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -31,12 +31,12 @@ export const viewport: Viewport = {
   minimumScale: 1,
   maximumScale: 1, // Prevent accidental pinch-zoom during games
   themeColor: '#3B82F6', // Matches manifest theme_color — blue-500
-};
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
     <html lang="vi">
@@ -45,5 +45,5 @@ export default function RootLayout({
         {children}
       </body>
     </html>
-  );
+  )
 }

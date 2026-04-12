@@ -1,6 +1,6 @@
-'use client';
+'use client'
 
-import { useEffect } from 'react';
+import { useEffect } from 'react'
 
 /**
  * Registers the service worker on first user interaction.
@@ -8,12 +8,12 @@ import { useEffect } from 'react';
  */
 export const ServiceWorkerRegistrar = () => {
   useEffect(() => {
-    if (!('serviceWorker' in navigator)) return;
+    if (!('serviceWorker' in navigator)) return
 
     navigator.serviceWorker
       .register('/sw.js', { scope: '/' })
-      .catch((err) => console.warn('[SW] Registration failed:', err));
-  }, []);
+      .catch((err) => console.warn('[SW] Registration failed:', err))
+  }, [])
 
-  return null;
-};
+  return null
+}

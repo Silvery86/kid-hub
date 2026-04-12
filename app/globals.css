@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* ============================================
    KID HUB — FONT
@@ -14,20 +14,20 @@
 
 :root {
   /* Subject colour palette */
-  --color-math:         #3B82F6;  /* blue-500 */
-  --color-english:      #10B981;  /* emerald-500 */
-  --color-science:      #8B5CF6;  /* violet-500 */
-  --color-pe:           #F59E0B;  /* amber-500 */
-  --color-art:          #EC4899;  /* pink-500 */
-  --color-vietnamese:   #EF4444;  /* red-500 */
-  --color-music:        #F97316;  /* orange-500 */
+  --color-math: #3b82f6; /* blue-500 */
+  --color-english: #10b981; /* emerald-500 */
+  --color-science: #8b5cf6; /* violet-500 */
+  --color-pe: #f59e0b; /* amber-500 */
+  --color-art: #ec4899; /* pink-500 */
+  --color-vietnamese: #ef4444; /* red-500 */
+  --color-music: #f97316; /* orange-500 */
 
   /* Border radii */
-  --radius-card:   1.5rem;
+  --radius-card: 1.5rem;
 
   /* Tablet-optimised spacing */
-  --space-tap:    3rem;   /* 48px — minimum tap target */
-  --space-tap-lg: 4rem;   /* 64px — preferred game button size */
+  --space-tap: 3rem; /* 48px — minimum tap target */
+  --space-tap-lg: 4rem; /* 64px — preferred game button size */
 }
 
 /* ============================================
@@ -36,15 +36,15 @@
 
 html,
 body {
-  overscroll-behavior: none;    /* Kills pull-to-refresh AND rubber-band scroll */
-  overscroll-behavior-x: none;  /* Kills swipe-to-go-back */
-  background-color: #f0f9ff;    /* sky-50 */
-  color: #1e293b;               /* slate-800 */
+  overscroll-behavior: none; /* Kills pull-to-refresh AND rubber-band scroll */
+  overscroll-behavior-x: none; /* Kills swipe-to-go-back */
+  background-color: #f0f9ff; /* sky-50 */
+  color: #1e293b; /* slate-800 */
 }
 
 * {
   -webkit-tap-highlight-color: transparent; /* Remove grey flash on tap */
-  touch-action: manipulation;               /* Eliminate 300ms tap delay */
+  touch-action: manipulation; /* Eliminate 300ms tap delay */
 }
 
 /* ============================================
@@ -52,8 +52,8 @@ body {
    ============================================ */
 
 .safe-pad {
-  padding-left:   env(safe-area-inset-left);
-  padding-right:  env(safe-area-inset-right);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
   padding-bottom: env(safe-area-inset-bottom);
 }
 
@@ -75,51 +75,75 @@ body {
 
 @keyframes enter {
   from {
-    opacity:   var(--tw-enter-opacity, 1);
+    opacity: var(--tw-enter-opacity, 1);
     transform: translate(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0))
-               scale(var(--tw-enter-scale, 1));
+      scale(var(--tw-enter-scale, 1));
   }
 }
 
 @keyframes shake {
-  0%,  100% { transform: translateX(0); }
-  20%        { transform: translateX(-8px); }
-  40%        { transform: translateX(8px); }
-  60%        { transform: translateX(-6px); }
-  80%        { transform: translateX(6px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-8px);
+  }
+  40% {
+    transform: translateX(8px);
+  }
+  60% {
+    transform: translateX(-6px);
+  }
+  80% {
+    transform: translateX(6px);
+  }
 }
 
 /* Base animate-in class */
 .animate-in {
-  animation-name:      enter;
-  animation-duration:  150ms;
+  animation-name: enter;
+  animation-duration: 150ms;
   animation-fill-mode: both;
-  --tw-enter-opacity:     1;
-  --tw-enter-scale:       1;
+  --tw-enter-opacity: 1;
+  --tw-enter-scale: 1;
   --tw-enter-translate-x: 0;
   --tw-enter-translate-y: 0;
 }
 
 /* Modifier classes — applied alongside .animate-in */
-.fade-in     { --tw-enter-opacity: 0; }
-.zoom-in-95  { --tw-enter-scale:   0.95; }
+.fade-in {
+  --tw-enter-opacity: 0;
+}
+.zoom-in-95 {
+  --tw-enter-scale: 0.95;
+}
 
 /* Override animation duration */
-.anim-duration-150 { animation-duration: 150ms; }
-.anim-duration-200 { animation-duration: 200ms; }
-.anim-duration-300 { animation-duration: 300ms; }
+.anim-duration-150 {
+  animation-duration: 150ms;
+}
+.anim-duration-200 {
+  animation-duration: 200ms;
+}
+.anim-duration-300 {
+  animation-duration: 300ms;
+}
 
 /* Shake for PIN error feedback */
-.animate-shake { animation: shake 400ms ease-in-out; }
+.animate-shake {
+  animation: shake 400ms ease-in-out;
+}
 
 /* ============================================
    ACCESSIBILITY
    ============================================ */
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration:  0.01ms !important;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
 }
-

@@ -1,29 +1,29 @@
-import { StarRating } from '@/components/ui/StarRating';
-import { KidButton } from '@/components/ui/KidButton';
-import { GAME_QUESTIONS_PER_SESSION } from '@/lib/constants';
-import type { GameType } from '@/types';
+import { StarRating } from '@/components/ui/StarRating'
+import { KidButton } from '@/components/ui/KidButton'
+import { GAME_QUESTIONS_PER_SESSION } from '@/lib/constants'
+import type { GameType } from '@/types'
 
 interface GameResultScreenProps {
-  gameType: GameType;
-  correctCount: number;
-  starsEarned: 1 | 2 | 3;
-  pointsEarned: number;
-  bestStars: 1 | 2 | 3 | null;
-  onReplay: () => void;
-  onExit: () => void;
+  gameType: GameType
+  correctCount: number
+  starsEarned: 1 | 2 | 3
+  pointsEarned: number
+  bestStars: 1 | 2 | 3 | null
+  onReplay: () => void
+  onExit: () => void
 }
 
 const EMOJI_BY_STARS: Record<1 | 2 | 3, string> = {
   1: '😊',
   2: '🎉',
   3: '🏆',
-};
+}
 
 const MESSAGE_BY_STARS: Record<1 | 2 | 3, string> = {
   1: 'Cố lên! Lần sau sẽ tốt hơn.',
   2: 'Làm tốt lắm! Tiếp tục nhé!',
   3: 'Xuất sắc! Khôi thật giỏi!',
-};
+}
 
 export const GameResultScreen = ({
   correctCount,
@@ -33,10 +33,10 @@ export const GameResultScreen = ({
   onReplay,
   onExit,
 }: GameResultScreenProps) => {
-  const isNewBest = bestStars === null || starsEarned > bestStars;
+  const isNewBest = bestStars === null || starsEarned > bestStars
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-8 px-8 animate-in fade-in zoom-in-95 anim-duration-300">
+    <div className="animate-in fade-in zoom-in-95 anim-duration-300 flex min-h-screen flex-col items-center justify-center gap-8 px-8">
       {/* Trophy / emoji */}
       <div className="text-9xl select-none" aria-hidden="true">
         {EMOJI_BY_STARS[starsEarned]}
@@ -46,26 +46,26 @@ export const GameResultScreen = ({
       <StarRating value={starsEarned} className="scale-150" />
 
       {/* Message */}
-      <p className="text-3xl font-extrabold text-white text-center">
+      <p className="text-center text-3xl font-extrabold text-white">
         {MESSAGE_BY_STARS[starsEarned]}
       </p>
 
       {/* Score breakdown */}
       <div className="flex gap-6">
         <div className="rounded-2xl bg-slate-700 px-6 py-4 text-center">
-          <p className="text-slate-400 text-sm font-bold uppercase tracking-wider">Đúng</p>
+          <p className="text-sm font-bold tracking-wider text-slate-400 uppercase">Đúng</p>
           <p className="text-4xl font-extrabold text-white">
             {correctCount}
-            <span className="text-slate-400 text-2xl"> / {GAME_QUESTIONS_PER_SESSION}</span>
+            <span className="text-2xl text-slate-400"> / {GAME_QUESTIONS_PER_SESSION}</span>
           </p>
         </div>
         <div className="rounded-2xl bg-slate-700 px-6 py-4 text-center">
-          <p className="text-slate-400 text-sm font-bold uppercase tracking-wider">Điểm</p>
+          <p className="text-sm font-bold tracking-wider text-slate-400 uppercase">Điểm</p>
           <p className="text-4xl font-extrabold text-yellow-400">+{pointsEarned}</p>
         </div>
         {isNewBest && (
           <div className="rounded-2xl bg-yellow-500 px-6 py-4 text-center">
-            <p className="text-yellow-900 text-sm font-bold uppercase tracking-wider">Kỷ lục</p>
+            <p className="text-sm font-bold tracking-wider text-yellow-900 uppercase">Kỷ lục</p>
             <p className="text-4xl font-extrabold text-yellow-900">Mới! 🌟</p>
           </div>
         )}
@@ -73,7 +73,7 @@ export const GameResultScreen = ({
 
       {/* Actions */}
       <div className="flex gap-4">
-        <KidButton variant="ghost" onClick={onExit} className="text-slate-300 border-slate-600">
+        <KidButton variant="ghost" onClick={onExit} className="border-slate-600 text-slate-300">
           Về trang chủ
         </KidButton>
         <KidButton variant="primary" onClick={onReplay}>
@@ -81,5 +81,5 @@ export const GameResultScreen = ({
         </KidButton>
       </div>
     </div>
-  );
-};
+  )
+}

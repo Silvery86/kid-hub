@@ -1,5 +1,5 @@
-import { EnglishGame } from '@/components/games/EnglishGame';
+import { EnglishGame } from '@/components/games/EnglishGame'
 
 export default function EnglishGamePage() {
-  return <EnglishGame />;
+  return <EnglishGame />
 }

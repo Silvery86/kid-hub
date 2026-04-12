@@ -58,23 +58,24 @@ A PWA educational companion for Khôi — a Vietnamese 1st-grader. Runs full-scr
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 15 (App Router, TypeScript strict) |
-| Styling | Tailwind CSS v4 (custom CSS properties, no plugin) |
-| Icons | lucide-react |
-| Font | Nunito (via `next/font/google`) |
-| Database | PostgreSQL 16 (Supabase in production) |
-| ORM | Prisma 6 |
-| Container | Docker (multi-stage → standalone output) |
-| Hosting | Google Cloud Run |
-| PWA | `public/manifest.json` + `public/sw.js` (Service Worker) |
+| Layer     | Technology                                               |
+| --------- | -------------------------------------------------------- |
+| Framework | Next.js 15 (App Router, TypeScript strict)               |
+| Styling   | Tailwind CSS v4 (custom CSS properties, no plugin)       |
+| Icons     | lucide-react                                             |
+| Font      | Nunito (via `next/font/google`)                          |
+| Database  | PostgreSQL 16 (Supabase in production)                   |
+| ORM       | Prisma 6                                                 |
+| Container | Docker (multi-stage → standalone output)                 |
+| Hosting   | Google Cloud Run                                         |
+| PWA       | `public/manifest.json` + `public/sw.js` (Service Worker) |
 
 ---
 
 ## Quick Start — Local Dev
 
 ### Prerequisites
+
 - **Node.js** ≥ 20
 - **PostgreSQL 16** running locally, **or** use the Docker Compose stack below
 
@@ -104,21 +105,22 @@ Spins up **PostgreSQL 16** + the **Next.js dev server** with hot-reload in one c
 docker compose up --build
 ```
 
-| Service | URL / Port |
-|---|---|
+| Service       | URL / Port            |
+| ------------- | --------------------- |
 | Next.js (dev) | http://localhost:3000 |
-| PostgreSQL | localhost:5432 |
+| PostgreSQL    | localhost:5432        |
 
 Database credentials (dev only — change in production):
+
 - User: `kidhub` · Password: `kidhub_dev` · DB: `kidhub`
 
 ---
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|---|---|---|
-| `DATABASE_URL` | ✅ | PostgreSQL connection string. E.g. `postgresql://kidhub:kidhub_dev@localhost:5432/kidhub` |
+| Variable         | Required        | Description                                                                                            |
+| ---------------- | --------------- | ------------------------------------------------------------------------------------------------------ |
+| `DATABASE_URL`   | ✅              | PostgreSQL connection string. E.g. `postgresql://kidhub:kidhub_dev@localhost:5432/kidhub`              |
 | `SESSION_SECRET` | ✅ (production) | Long random string used to sign session cookies for Parent Mode. Generate with `openssl rand -hex 32`. |
 
 Create a `.env.local` file in the project root (never commit this file):
@@ -136,12 +138,12 @@ All shared TypeScript types live in [`types/index.ts`](types/index.ts). The Pris
 
 ### Core Entities
 
-| Entity | Storage | Description |
-|---|---|---|
+| Entity           | Storage                                    | Description                                              |
+| ---------------- | ------------------------------------------ | -------------------------------------------------------- |
 | `WeeklySchedule` | `localStorage` (`kid-hub:weekly-schedule`) | Khôi's weekly class timetable. Editable via Parent Mode. |
-| `SubjectGrade[]` | `localStorage` (`kid-hub:grades`) | Semester grades for 10 subjects (0–10 scale). |
-| `UserProgress` | `localStorage` (`kid-hub:user-progress`) | Points, streak, earned badges, and best game scores. |
-| `ParentPin` | `localStorage` (`kid-hub:pin-data`) | SHA-256 hashed 4-digit PIN for the Parent Mode gate. |
+| `SubjectGrade[]` | `localStorage` (`kid-hub:grades`)          | Semester grades for 10 subjects (0–10 scale).            |
+| `UserProgress`   | `localStorage` (`kid-hub:user-progress`)   | Points, streak, earned badges, and best game scores.     |
+| `ParentPin`      | `localStorage` (`kid-hub:pin-data`)        | SHA-256 hashed 4-digit PIN for the Parent Mode gate.     |
 
 > **Architecture note:** Persistence currently uses `localStorage`. The codebase is structured for future Supabase migration — Server Action stubs exist in `server/actions/` and follow the full actions → services → repositories layering.
 
@@ -149,14 +151,14 @@ All shared TypeScript types live in [`types/index.ts`](types/index.ts). The Pris
 
 Static seed / fallback data lives in `lib/data/`:
 
-| File | Contents |
-|---|---|
-| `subjects.ts` | 10 canonical subjects with Tailwind colour and Lucide icon |
-| `schedule.ts` | Khôi's weekly timetable (Mon–Fri, 5 periods/day) |
-| `grades.ts` | Sample grade data used as `localStorage` fallback |
-| `badges.ts` | Badge definitions catalogue |
-| `mathLevels.ts` | Seeded RNG question generator (3 difficulty levels, addition/subtraction) |
-| `englishLevels.ts` | 50-word bank; letter-match and picture-word generators |
+| File               | Contents                                                                  |
+| ------------------ | ------------------------------------------------------------------------- |
+| `subjects.ts`      | 10 canonical subjects with Tailwind colour and Lucide icon                |
+| `schedule.ts`      | Khôi's weekly timetable (Mon–Fri, 5 periods/day)                          |
+| `grades.ts`        | Sample grade data used as `localStorage` fallback                         |
+| `badges.ts`        | Badge definitions catalogue                                               |
+| `mathLevels.ts`    | Seeded RNG question generator (3 difficulty levels, addition/subtraction) |
+| `englishLevels.ts` | 50-word bank; letter-match and picture-word generators                    |
 
 ---
 
@@ -209,10 +211,10 @@ On first visit (no PIN stored), you will be asked to **create** a 4-digit PIN, t
 
 ### Security
 
-| Property | Detail |
-|---|---|
-| PIN storage | SHA-256 hash only (Web Crypto API — no raw PIN ever written) |
-| Lockout | 5 failed attempts → 60-second cooldown |
+| Property      | Detail                                                         |
+| ------------- | -------------------------------------------------------------- |
+| PIN storage   | SHA-256 hash only (Web Crypto API — no raw PIN ever written)   |
+| Lockout       | 5 failed attempts → 60-second cooldown                         |
 | Session scope | Client-side only; page refresh or tab close clears the session |
 
 ### What parents can do
@@ -252,4 +254,3 @@ gcloud run deploy kid-hub \
 ### 3. Secrets (recommended)
 
 Use [Cloud Run Secret Manager integration](https://cloud.google.com/run/docs/configuring/secrets) to mount `DATABASE_URL` and `SESSION_SECRET` as secrets rather than plain env vars.
-

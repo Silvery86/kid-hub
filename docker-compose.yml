@@ -4,9 +4,9 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER:     kidhub
+      POSTGRES_USER: kidhub
       POSTGRES_PASSWORD: kidhub_dev
-      POSTGRES_DB:       kidhub
+      POSTGRES_DB: kidhub
     ports:
       - '5432:5432'
     volumes:
@@ -21,7 +21,7 @@ services:
   app:
     build:
       context: .
-      target: builder   # Use the builder stage so we get the dev server
+      target: builder # Use the builder stage so we get the dev server
     command: npm run dev
     restart: unless-stopped
     ports:
@@ -34,8 +34,8 @@ services:
         condition: service_healthy
     volumes:
       - .:/app
-      - /app/node_modules   # Preserve container node_modules
-      - /app/.next          # Preserve Next.js build cache
+      - /app/node_modules # Preserve container node_modules
+      - /app/.next # Preserve Next.js build cache
 
 volumes:
   postgres_data:

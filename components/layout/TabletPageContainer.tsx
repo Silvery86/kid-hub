@@ -1,8 +1,8 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils'
 
 export interface TabletPageContainerProps {
-  children: React.ReactNode;
-  className?: string;
+  children: React.ReactNode
+  className?: string
 }
 
 /**
@@ -16,12 +16,12 @@ export const TabletPageContainer = ({ children, className }: TabletPageContainer
     className={cn(
       'min-h-screen w-full',
       'overscroll-none', // Kills pull-to-refresh
-      'select-none',     // No text selection on long-press → native app feel
+      'select-none', // No text selection on long-press → native app feel
       '[touch-action:manipulation]', // Removes 300ms tap delay
-      'bg-sky-50',       // Default page background
-      className,
+      'bg-sky-50', // Default page background
+      className
     )}
   >
     {children}
   </main>
-);
+)

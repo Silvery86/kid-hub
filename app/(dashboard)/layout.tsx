@@ -1,6 +1,6 @@
-import { AppSidebar } from '@/components/layout/AppSidebar';
-import { UserProgressProviderWrapper } from '@/components/layout/UserProgressProviderWrapper';
-import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+import { AppSidebar } from '@/components/layout/AppSidebar'
+import { UserProgressProviderWrapper } from '@/components/layout/UserProgressProviderWrapper'
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,5 +12,5 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </div>
     </UserProgressProviderWrapper>
-  );
+  )
 }

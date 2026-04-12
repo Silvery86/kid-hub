@@ -1,28 +1,28 @@
-'use client';
+'use client'
 
-import { useEffect, useRef, useState } from 'react';
-import { Delete } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { KidButton } from './KidButton';
-import { PIN_LENGTH, PIN_SHAKE_DURATION_MS } from '@/lib/constants';
+import { useEffect, useRef, useState } from 'react'
+import { Delete } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { KidButton } from './KidButton'
+import { PIN_LENGTH, PIN_SHAKE_DURATION_MS } from '@/lib/constants'
 
 export interface PinKeypadProps {
-  pinLength?: number;
-  onComplete: (pin: string) => void;
+  pinLength?: number
+  onComplete: (pin: string) => void
   /**
    * Increment this counter each time a wrong PIN is submitted.
    * Using a number (not boolean) ensures the useEffect fires reliably
    * even on consecutive errors where the value goes true→false→true
    * in the same render cycle.
    */
-  errorCount?: number;
-  isDisabled?: boolean;
-  label?: string;
+  errorCount?: number
+  isDisabled?: boolean
+  label?: string
 }
 
 // Grid order: 1-2-3 / 4-5-6 / 7-8-9 / [blank]-0-[delete]
-const KEYPAD_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'delete'] as const;
-type KeypadKey = (typeof KEYPAD_KEYS)[number];
+const KEYPAD_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'delete'] as const
+type KeypadKey = (typeof KEYPAD_KEYS)[number]
 
 export const PinKeypad = ({
   pinLength = PIN_LENGTH,
@@ -31,37 +31,37 @@ export const PinKeypad = ({
   isDisabled = false,
   label,
 }: PinKeypadProps) => {
-  const [value, setValue] = useState('');
-  const [isShaking, setIsShaking] = useState(false);
+  const [value, setValue] = useState('')
+  const [isShaking, setIsShaking] = useState(false)
   // Track the previous errorCount so we only react to *new* errors
-  const prevErrorCount = useRef(0);
+  const prevErrorCount = useRef(0)
 
   // Trigger shake animation and clear input whenever errorCount increases
   useEffect(() => {
-    if (errorCount === 0 || errorCount === prevErrorCount.current) return;
-    prevErrorCount.current = errorCount;
-    setValue('');
-    setIsShaking(true);
-    const t = setTimeout(() => setIsShaking(false), PIN_SHAKE_DURATION_MS);
-    return () => clearTimeout(t);
-  }, [errorCount]);
+    if (errorCount === 0 || errorCount === prevErrorCount.current) return
+    prevErrorCount.current = errorCount
+    setValue('')
+    setIsShaking(true)
+    const t = setTimeout(() => setIsShaking(false), PIN_SHAKE_DURATION_MS)
+    return () => clearTimeout(t)
+  }, [errorCount])
 
   const handleKey = (key: KeypadKey): void => {
-    if (isDisabled || key === '') return;
+    if (isDisabled || key === '') return
 
     if (key === 'delete') {
-      setValue((v) => v.slice(0, -1));
-      return;
+      setValue((v) => v.slice(0, -1))
+      return
     }
 
-    const next = value + key;
-    setValue(next);
+    const next = value + key
+    setValue(next)
 
     if (next.length === pinLength) {
-      onComplete(next);
-      setValue('');
+      onComplete(next)
+      setValue('')
     }
-  };
+  }
 
   return (
     <div className="flex flex-col items-center gap-6">
@@ -77,8 +77,8 @@ export const PinKeypad = ({
           <div
             key={i}
             className={cn(
-              'w-5 h-5 rounded-full border-4 transition-colors duration-150',
-              i < value.length ? 'bg-blue-500 border-blue-500' : 'bg-transparent border-slate-400',
+              'h-5 w-5 rounded-full border-4 transition-colors duration-150',
+              i < value.length ? 'border-blue-500 bg-blue-500' : 'border-slate-400 bg-transparent'
             )}
           />
         ))}
@@ -88,7 +88,7 @@ export const PinKeypad = ({
       <div className="grid grid-cols-3 gap-3" role="group" aria-label="PIN keypad">
         {KEYPAD_KEYS.map((key, idx) => {
           if (key === '') {
-            return <div key={idx} aria-hidden="true" />;
+            return <div key={idx} aria-hidden="true" />
           }
           return (
             <KidButton
@@ -101,9 +101,9 @@ export const PinKeypad = ({
             >
               {key === 'delete' ? <Delete size={24} /> : key}
             </KidButton>
-          );
+          )
         })}
       </div>
     </div>
-  );
-};
+  )
+}

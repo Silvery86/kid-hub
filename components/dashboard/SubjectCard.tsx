@@ -1,4 +1,4 @@
-'use client';
+'use client'
 
 import {
   Calculator,
@@ -11,10 +11,10 @@ import {
   Palette,
   Monitor,
   Star,
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { ClassPeriod, Subject } from '@/types';
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import type { ClassPeriod, Subject } from '@/types'
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Calculator,
@@ -27,14 +27,14 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Palette,
   Monitor,
   Star,
-};
+}
 
 interface SubjectCardProps {
-  period: ClassPeriod;
-  subject: Subject;
-  isActive?: boolean;
-  isNext?: boolean;
-  isCompact?: boolean;
+  period: ClassPeriod
+  subject: Subject
+  isActive?: boolean
+  isNext?: boolean
+  isCompact?: boolean
 }
 
 export const SubjectCard = ({
@@ -44,7 +44,7 @@ export const SubjectCard = ({
   isNext = false,
   isCompact = false,
 }: SubjectCardProps) => {
-  const Icon = ICON_MAP[subject.iconName] ?? Star;
+  const Icon = ICON_MAP[subject.iconName] ?? Star
 
   return (
     <div
@@ -52,16 +52,16 @@ export const SubjectCard = ({
       className={cn(
         'flex items-center gap-3 rounded-2xl px-4 transition-[transform,background-color,box-shadow] duration-300',
         isCompact ? 'py-2' : 'py-3',
-        isActive ? 'bg-white ring-2 ring-blue-400 shadow-lg scale-[1.01]' : 'bg-white',
-        isNext && !isActive && 'bg-blue-50',
+        isActive ? 'scale-[1.01] bg-white shadow-lg ring-2 ring-blue-400' : 'bg-white',
+        isNext && !isActive && 'bg-blue-50'
       )}
     >
       {/* Subject icon bubble */}
       <div
         className={cn(
-          'flex items-center justify-center rounded-xl shrink-0 text-white',
+          'flex shrink-0 items-center justify-center rounded-xl text-white',
           subject.colorClass,
-          isCompact ? 'w-9 h-9' : 'w-12 h-12',
+          isCompact ? 'h-9 w-9' : 'h-12 w-12'
         )}
         aria-hidden="true"
       >
@@ -69,8 +69,8 @@ export const SubjectCard = ({
       </div>
 
       {/* Period info */}
-      <div className="flex-1 min-w-0">
-        <p className={cn('font-bold text-slate-800 truncate', isCompact ? 'text-sm' : 'text-base')}>
+      <div className="min-w-0 flex-1">
+        <p className={cn('truncate font-bold text-slate-800', isCompact ? 'text-sm' : 'text-base')}>
           {subject.name}
         </p>
         <p className={cn('text-slate-500', isCompact ? 'text-xs' : 'text-sm')}>
@@ -80,15 +80,15 @@ export const SubjectCard = ({
 
       {/* Status pill */}
       {isActive && (
-        <span className="shrink-0 text-xs font-bold text-blue-600 bg-blue-100 rounded-lg px-2 py-1">
+        <span className="shrink-0 rounded-lg bg-blue-100 px-2 py-1 text-xs font-bold text-blue-600">
           Đang học
         </span>
       )}
       {!isActive && isNext && (
-        <span className="shrink-0 text-xs font-bold text-slate-500 bg-slate-100 rounded-lg px-2 py-1">
+        <span className="shrink-0 rounded-lg bg-slate-100 px-2 py-1 text-xs font-bold text-slate-500">
           Tiếp theo
         </span>
       )}
     </div>
-  );
-};
+  )
+}

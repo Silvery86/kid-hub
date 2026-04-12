@@ -1,4 +1,4 @@
-import type { DayOfWeek } from '@/types';
+import type { DayOfWeek } from '@/types'
 
 // ── Schedule ─────────────────────────────────────────────────
 
@@ -8,7 +8,7 @@ export const DAYS_OF_WEEK: readonly DayOfWeek[] = [
   'wednesday',
   'thursday',
   'friday',
-] as const;
+] as const
 
 export const DAY_LABELS: Record<DayOfWeek, string> = {
   monday: 'Thứ Hai',
@@ -16,34 +16,34 @@ export const DAY_LABELS: Record<DayOfWeek, string> = {
   wednesday: 'Thứ Tư',
   thursday: 'Thứ Năm',
   friday: 'Thứ Sáu',
-} as const;
+} as const
 
 // ── Grades ───────────────────────────────────────────────────
 
 export const GRADE_SCALE = {
   EXCELLENT: 9,
   GOOD: 7,
-} as const;
+} as const
 
 // ── Parent Mode / Auth ────────────────────────────────────────
 
-export const MAX_PIN_ATTEMPTS = 5;
-export const PIN_LOCKOUT_SECONDS = 60;
-export const PIN_LENGTH = 4;
+export const MAX_PIN_ATTEMPTS = 5
+export const PIN_LOCKOUT_SECONDS = 60
+export const PIN_LENGTH = 4
 
 // ── Games ────────────────────────────────────────────────────
 
-export const GAME_QUESTIONS_PER_SESSION = 10;
-export const GAME_SECONDS_PER_QUESTION = 10;
-export const MAX_STARS = 3;
+export const GAME_QUESTIONS_PER_SESSION = 10
+export const GAME_SECONDS_PER_QUESTION = 10
+export const MAX_STARS = 3
 
 // ── UI / Interaction ──────────────────────────────────────────
 
 /** Minimum duration (ms) to disable inputs during feedback animations. */
-export const INPUT_THROTTLE_MS = 600;
+export const INPUT_THROTTLE_MS = 600
 
 /** Duration (ms) of the PIN shake error animation. */
-export const PIN_SHAKE_DURATION_MS = 500;
+export const PIN_SHAKE_DURATION_MS = 500
 
 // ── localStorage Keys ─────────────────────────────────────────
 
@@ -52,4 +52,4 @@ export const STORAGE_KEYS = {
   GRADES: 'kid-hub:grades',
   USER_PROGRESS: 'kid-hub:user-progress',
   PIN_DATA: 'kid-hub:pin-data',
-} as const;
+} as const

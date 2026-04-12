@@ -7,9 +7,9 @@
 
 export const getReportCard = async (_userId: string): Promise<null> => {
   // TODO Sprint 3: db.subjectGrade.findMany({ where: { userId: _userId } })
-  return null;
-};
+  return null
+}
 
 export const upsertGrade = async (_data: unknown): Promise<void> => {
   // TODO Sprint 3: db.subjectGrade.upsert({ where: { ... }, create: _data, update: _data })
-};
+}

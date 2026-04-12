@@ -1,16 +1,16 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { X } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export interface FullScreenModalProps {
-  isOpen: boolean;
-  onClose?: () => void;
-  hasCloseButton?: boolean;
-  children: React.ReactNode;
-  className?: string;
+  isOpen: boolean
+  onClose?: () => void
+  hasCloseButton?: boolean
+  children: React.ReactNode
+  className?: string
 }
 
 export const FullScreenModal = ({
@@ -21,42 +21,42 @@ export const FullScreenModal = ({
   className,
 }: FullScreenModalProps) => {
   // Guard against SSR: portals require document.body
-  const [isMounted, setIsMounted] = useState(false);
+  const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    setIsMounted(true)
+  }, [])
 
   // Lock body scroll while modal is open
   useEffect(() => {
-    if (!isOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    if (!isOpen) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [isOpen]);
+      document.body.style.overflow = prev
+    }
+  }, [isOpen])
 
-  if (!isOpen || !isMounted) return null;
+  if (!isOpen || !isMounted) return null
 
   return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       className={cn(
-        'fixed inset-0 w-screen h-screen z-50',
+        'fixed inset-0 z-50 h-screen w-screen',
         'bg-black/60 backdrop-blur-sm',
         'flex items-center justify-center',
         // Entry animation — uses utilities defined in globals.css
-        'animate-in fade-in zoom-in-95 anim-duration-200',
+        'animate-in fade-in zoom-in-95 anim-duration-200'
       )}
     >
-      <div className={cn('relative w-full h-full', className)}>
+      <div className={cn('relative h-full w-full', className)}>
         {hasCloseButton && onClose && (
           <button
             onClick={onClose}
             aria-label="Close"
-            className="absolute top-4 right-4 z-10 min-h-14 min-w-14 flex items-center justify-center rounded-full bg-white/90 shadow-lg active:scale-95 transition-transform"
+            className="absolute top-4 right-4 z-10 flex min-h-14 min-w-14 items-center justify-center rounded-full bg-white/90 shadow-lg transition-transform active:scale-95"
           >
             <X size={28} className="text-slate-700" />
           </button>
@@ -64,6 +64,6 @@ export const FullScreenModal = ({
         {children}
       </div>
     </div>,
-    document.body,
-  );
-};
+    document.body
+  )
+}

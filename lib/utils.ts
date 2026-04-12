@@ -1,10 +1,10 @@
-import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-import type { BadgeTier } from '@/types';
-import { GRADE_SCALE } from '@/lib/constants';
+import { type ClassValue, clsx } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+import type { BadgeTier } from '@/types'
+import { GRADE_SCALE } from '@/lib/constants'
 
 /** Merge Tailwind classes safely, resolving conflicts. */
-export const cn = (...inputs: ClassValue[]): string => twMerge(clsx(inputs));
+export const cn = (...inputs: ClassValue[]): string => twMerge(clsx(inputs))
 
 /** Format a Date to Vietnamese locale (e.g. "Thứ Hai, 10/03"). */
 export const formatDate = (date: Date): string =>
@@ -12,7 +12,7 @@ export const formatDate = (date: Date): string =>
     weekday: 'long',
     day: '2-digit',
     month: '2-digit',
-  });
+  })
 
 /**
  * Format an "HH:MM" 24-hour time string for display.
@@ -20,27 +20,27 @@ export const formatDate = (date: Date): string =>
  * Falls back to the raw string if parsing fails.
  */
 export const formatTime = (time: string): string => {
-  const parts = time.split(':');
-  if (parts.length !== 2) return time;
-  const [hStr, mStr] = parts;
-  const hours = parseInt(hStr ?? '0', 10);
-  const minutes = parseInt(mStr ?? '0', 10);
-  if (isNaN(hours) || isNaN(minutes)) return time;
-  const d = new Date(2000, 0, 1, hours, minutes);
-  return d.toLocaleTimeString('vi-VN', { hour: 'numeric', minute: '2-digit', hour12: true });
-};
+  const parts = time.split(':')
+  if (parts.length !== 2) return time
+  const [hStr, mStr] = parts
+  const hours = parseInt(hStr ?? '0', 10)
+  const minutes = parseInt(mStr ?? '0', 10)
+  if (isNaN(hours) || isNaN(minutes)) return time
+  const d = new Date(2000, 0, 1, hours, minutes)
+  return d.toLocaleTimeString('vi-VN', { hour: 'numeric', minute: '2-digit', hour12: true })
+}
 
 /** Calculate a score percentage (0–100). */
 export const calculateScore = (correct: number, total: number): number =>
-  total === 0 ? 0 : Math.round((correct / total) * 100);
+  total === 0 ? 0 : Math.round((correct / total) * 100)
 
 /** Clamp a number between min and max. */
 export const clamp = (value: number, min: number, max: number): number =>
-  Math.max(min, Math.min(max, value));
+  Math.max(min, Math.min(max, value))
 
 /** Derive badge tier from a 0–10 score using GRADE_SCALE thresholds. */
 export const calculateBadgeTier = (score: number): BadgeTier => {
-  if (score >= GRADE_SCALE.EXCELLENT) return 'excellent';
-  if (score >= GRADE_SCALE.GOOD) return 'good';
-  return 'needs-practice';
-};
+  if (score >= GRADE_SCALE.EXCELLENT) return 'excellent'
+  if (score >= GRADE_SCALE.GOOD) return 'good'
+  return 'needs-practice'
+}
