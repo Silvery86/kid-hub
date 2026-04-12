@@ -1,3 +1,5 @@
+/** TodayTimetable — renders the ordered period list for a single school day. */
+
 import { DAY_LABELS } from '@/lib/constants'
 import { getSubjectById } from '@/lib/data/subjects'
 import { SubjectCard } from '@/components/dashboard/SubjectCard'

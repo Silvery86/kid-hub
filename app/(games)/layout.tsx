@@ -1,3 +1,5 @@
+/** Games layout — full-screen dark shell for the math and English mini-games. */
+
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 
 export default function GamesLayout({ children }: { children: React.ReactNode }) {

@@ -1,5 +1,7 @@
 'use client'
 
+/** Grades page — read-only report card grid driven by localStorage grades data. */
+
 import {
   Calculator,
   BookOpen,

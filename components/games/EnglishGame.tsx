@@ -1,5 +1,7 @@
 'use client'
 
+/** EnglishGame — full-screen Word Explorer mini-game with letter and word-matching questions. */
+
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useGameSession } from '@/hooks/useGameSession'

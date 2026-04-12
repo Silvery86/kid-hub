@@ -1,3 +1,5 @@
+/** Shared client-safe utility functions — class merging, formatting, and read-only UI derivations. */
+
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import type { BadgeTier } from '@/types'
@@ -38,9 +40,20 @@ export const calculateScore = (correct: number, total: number): number =>
 export const clamp = (value: number, min: number, max: number): number =>
   Math.max(min, Math.min(max, value))
 
-/** Derive badge tier from a 0–10 score using GRADE_SCALE thresholds. */
-export const calculateBadgeTier = (score: number): BadgeTier => {
+/** Derive badge tier from a 0–10 score using GRADE_SCALE thresholds. Read-only UI helper — writes must use server/services/grades.service.ts. */
+export const calculateBadge = (score: number): BadgeTier => {
   if (score >= GRADE_SCALE.EXCELLENT) return 'excellent'
   if (score >= GRADE_SCALE.GOOD) return 'good'
   return 'needs-practice'
+}
+
+/** Calculate a new streak value from the previous streak and dates. Returns incremented streak if days are consecutive, otherwise resets to 1. */
+export const calculateNewStreak = (
+  currentStreak: number,
+  lastActiveDate: string,
+  today: string
+): number => {
+  const diffMs = new Date(today).getTime() - new Date(lastActiveDate).getTime()
+  const diffDays = Math.round(diffMs / 86_400_000)
+  return diffDays === 1 ? currentStreak + 1 : 1
 }

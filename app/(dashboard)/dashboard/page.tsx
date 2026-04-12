@@ -1,3 +1,5 @@
+/** Dashboard page — main hub view with schedule, games, streaks, and badges. */
+
 import { TabletPageContainer } from '@/components/layout/TabletPageContainer'
 import { DashboardView } from '@/components/dashboard/DashboardView'
 

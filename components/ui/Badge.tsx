@@ -1,3 +1,5 @@
+/** Badge — pill-style badge indicating a grade tier (excellent, good, needs-practice). */
+
 import { cn } from '@/lib/utils'
 import type { BadgeTier } from '@/types'
 

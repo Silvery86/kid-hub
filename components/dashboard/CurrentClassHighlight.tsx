@@ -1,3 +1,5 @@
+/** CurrentClassHighlight — displays the currently active class period with subject colour and time. */
+
 import { Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ClassPeriod, Subject } from '@/types'

@@ -1,5 +1,7 @@
 'use client'
 
+/** GradesManager — parent panel for viewing and editing subject grades stored in localStorage. */
+
 import { useState } from 'react'
 import { Save, Check } from 'lucide-react'
 import type { SubjectGrade } from '@/types'
@@ -7,7 +9,7 @@ import { SUBJECTS } from '@/lib/data/subjects'
 import { SEED_GRADES } from '@/lib/data/grades'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { STORAGE_KEYS } from '@/lib/constants'
-import { calculateBadgeTier, cn } from '@/lib/utils'
+import { calculateBadge, cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/Badge'
 import { KidButton } from '@/components/ui/KidButton'
 
@@ -36,7 +38,7 @@ export const GradesManager = () => {
       return {
         subjectId: s.id,
         score,
-        badge: calculateBadgeTier(score),
+        badge: calculateBadge(score),
         semester,
         academicYear: '2025-2026',
       }
@@ -84,7 +86,7 @@ export const GradesManager = () => {
           const raw = editableScores[subject.id] ?? ''
           const parsed = parseFloat(raw)
           const score = isNaN(parsed) ? 0 : Math.min(10, Math.max(0, parsed))
-          const tier = calculateBadgeTier(score)
+          const tier = calculateBadge(score)
 
           return (
             <div key={subject.id} className="flex items-center gap-3 rounded-2xl bg-slate-50 p-3">

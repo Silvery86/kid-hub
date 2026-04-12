@@ -1,3 +1,5 @@
+/** Application-wide constants — schedule, grades, auth, game, and UI configuration values. */
+
 import type { DayOfWeek } from '@/types'
 
 // ── Schedule ─────────────────────────────────────────────────

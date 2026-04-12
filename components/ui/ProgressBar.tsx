@@ -1,3 +1,5 @@
+/** ProgressBar — accessible animated progress bar with colour derived from completion percentage. */
+
 import { cn } from '@/lib/utils'
 
 interface ProgressBarProps {

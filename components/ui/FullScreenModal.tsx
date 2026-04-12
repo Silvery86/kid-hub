@@ -1,5 +1,7 @@
 'use client'
 
+/** FullScreenModal — portal-rendered overlay with close button and focus trap. */
+
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'

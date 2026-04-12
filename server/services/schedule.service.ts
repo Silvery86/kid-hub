@@ -21,7 +21,6 @@ const jsDateToDayOfWeek = (date: Date): DayOfWeek | null => {
 
 /** Return today's DailySchedule from a WeeklySchedule, or null if weekend. */
 export const deriveToday = (schedule: WeeklySchedule): DailySchedule | null => {
-  // TODO Sprint 2: use real date logic
   const today = jsDateToDayOfWeek(new Date())
   if (!today) return null
   return schedule.days.find((d) => d.day === today) ?? null
@@ -29,7 +28,6 @@ export const deriveToday = (schedule: WeeklySchedule): DailySchedule | null => {
 
 /** Return the next upcoming ClassPeriod relative to current wall-clock time. */
 export const findNextClass = (daily: DailySchedule): ClassPeriod | null => {
-  // TODO Sprint 2: compare period startTime against current HH:MM
   const now = new Date()
   const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
   return daily.periods.find((p) => p.startTime > currentTime) ?? null

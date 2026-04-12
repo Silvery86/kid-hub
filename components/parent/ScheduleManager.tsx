@@ -1,5 +1,7 @@
 'use client'
 
+/** ScheduleManager — parent panel for adding, editing, and removing class periods via localStorage. */
+
 import { useState, useCallback } from 'react'
 import { Plus, Trash2, Save, Check } from 'lucide-react'
 import type { WeeklySchedule, DayOfWeek } from '@/types'

@@ -1,5 +1,7 @@
 'use client'
 
+/** BadgeModal — full-screen overlay listing all available badges and their earned status. */
+
 import { FullScreenModal } from '@/components/ui/FullScreenModal'
 import { BADGE_DEFINITIONS } from '@/lib/data/badges'
 import { useUserProgress } from '@/hooks/useUserProgress'

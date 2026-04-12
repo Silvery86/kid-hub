@@ -1,3 +1,5 @@
+/** StarRating — read-only visual star rating from 1 to max stars. */
+
 import { cn } from '@/lib/utils'
 
 interface StarRatingProps {

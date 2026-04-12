@@ -1,3 +1,5 @@
+/** GameEntryCard — navigation card linking to a mini-game with best-score display. */
+
 import Link from 'next/link'
 import { StarRating } from '@/components/ui/StarRating'
 import { cn } from '@/lib/utils'

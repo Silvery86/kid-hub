@@ -1,10 +1,12 @@
 'use client'
 
+/** Schedule hook — derives today's and next period from a WeeklySchedule with live clock polling. */
+
 import { useMemo, useState, useEffect } from 'react'
 import type { ClassPeriod, DailySchedule, DayOfWeek, WeeklySchedule } from '@/types'
 import { DAYS_OF_WEEK } from '@/lib/constants'
 
-// JS getDay() → 0=Sun 1=Mon 2=Tue 3=Wed 4=Thu 5=Fri 6=Sat
+/** Maps a JS Date.getDay() value (0=Sun … 6=Sat) to DayOfWeek. Returns null for weekends. */
 const getDayOfWeek = (jsDay: number): DayOfWeek | null => {
   const map: Partial<Record<number, DayOfWeek>> = {
     1: 'monday',

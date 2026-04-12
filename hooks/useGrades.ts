@@ -1,11 +1,13 @@
 'use client'
 
+/** Grades hook — reads and derives report card data from localStorage. */
+
 import { useMemo } from 'react'
 import type { SubjectGrade, ReportCard } from '@/types'
 import { SEED_GRADES } from '@/lib/data/grades'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { STORAGE_KEYS } from '@/lib/constants'
-import { calculateBadgeTier } from '@/lib/utils'
+import { calculateBadge } from '@/lib/utils'
 
 export interface UseGradesResult {
   reportCard: ReportCard
@@ -25,7 +27,7 @@ export const useGrades = (): UseGradesResult => {
   const reportCard = useMemo<ReportCard>(() => {
     const withBadges: SubjectGrade[] = grades.map((g) => ({
       ...g,
-      badge: calculateBadgeTier(g.score),
+      badge: calculateBadge(g.score),
     }))
     const total = withBadges.reduce((sum, g) => sum + g.score, 0)
     const averageScore =

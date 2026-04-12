@@ -1,5 +1,7 @@
 'use client'
 
+/** StreakWidget — displays the current streak count and total points earned. */
+
 import { useUserProgress } from '@/hooks/useUserProgress'
 
 export const StreakWidget = () => {

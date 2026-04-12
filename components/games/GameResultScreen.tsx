@@ -1,3 +1,5 @@
+/** GameResultScreen — post-game summary card with stars, score, and navigation actions. */
+
 import { StarRating } from '@/components/ui/StarRating'
 import { KidButton } from '@/components/ui/KidButton'
 import { GAME_QUESTIONS_PER_SESSION } from '@/lib/constants'

@@ -1,5 +1,7 @@
 'use client'
 
+/** AppSidebar — sticky bottom navigation bar with active-route highlighting. */
+
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Home, Calendar, Star, Gamepad2 } from 'lucide-react'

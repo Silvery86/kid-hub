@@ -13,11 +13,15 @@
   "dependencies": {
     "@prisma/client": "^7.5.0",
     "clsx": "^2.1.1",
+    "firebase": "^12.12.0",
+    "firebase-admin": "^13.8.0",
+    "jose": "^6.2.2",
     "lucide-react": "^0.577.0",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "tailwind-merge": "^3.5.0"
+    "tailwind-merge": "^3.5.0",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

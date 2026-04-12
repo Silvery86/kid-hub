@@ -1,5 +1,7 @@
+/** Seed grade data for Khôi's semester 1 (2025–2026) — used for localStorage initialisation. */
+
 import type { SubjectGrade } from '@/types'
-import { calculateBadgeTier } from '@/lib/utils'
+import { calculateBadge } from '@/lib/utils'
 
 /**
  * Khôi's semester 1 seed grades (2025-2026).
@@ -21,7 +23,7 @@ const RAW_SCORES: Array<{ subjectId: string; score: number }> = [
 export const SEED_GRADES: readonly SubjectGrade[] = RAW_SCORES.map((s) => ({
   subjectId: s.subjectId,
   score: s.score,
-  badge: calculateBadgeTier(s.score),
+  badge: calculateBadge(s.score),
   semester: 1,
   academicYear: '2025-2026',
 }))

@@ -1,5 +1,7 @@
 'use client'
 
+/** DashboardView — main kid-facing hub composing schedule, games, streaks, and badge widgets. */
+
 import { useState, useEffect } from 'react'
 import { useSchedule } from '@/hooks/useSchedule'
 import { useLocalStorage } from '@/hooks/useLocalStorage'

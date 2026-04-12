@@ -1,5 +1,7 @@
 'use client'
 
+/** SubjectCard — tappable card linking a scheduled period to its game or info page. */
+
 import {
   Calculator,
   BookOpen,

@@ -1,5 +1,7 @@
 'use client'
 
+/** User progress context — manages points, streaks, and badge state persisted to localStorage. */
+
 import {
   createContext,
   createElement,
@@ -12,6 +14,7 @@ import type { UserProgress } from '@/types'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { STORAGE_KEYS } from '@/lib/constants'
 import { BADGE_DEFINITIONS } from '@/lib/data/badges'
+import { calculateNewStreak } from '@/lib/utils'
 
 // Seed progress — first-login and streak-3 badges pre-awarded for demonstration
 const DEFAULT_PROGRESS: UserProgress = {
@@ -55,10 +58,8 @@ export const UserProgressProvider = ({ children }: { children: ReactNode }) => {
   const updateStreak = useCallback(() => {
     const today = new Date().toISOString().split('T')[0] ?? ''
     setProgress((prev) => {
-      if (prev.lastActiveDate === today) return prev // already updated today
-      const diffMs = new Date(today).getTime() - new Date(prev.lastActiveDate).getTime()
-      const diffDays = Math.round(diffMs / 86_400_000)
-      const newStreak = diffDays === 1 ? prev.currentStreak + 1 : 1
+      if (prev.lastActiveDate === today) return prev
+      const newStreak = calculateNewStreak(prev.currentStreak, prev.lastActiveDate, today)
       return { ...prev, currentStreak: newStreak, lastActiveDate: today }
     })
   }, [setProgress])

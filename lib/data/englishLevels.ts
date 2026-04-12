@@ -1,3 +1,5 @@
+/** English word bank and question generators for the Word Explorer mini-game. */
+
 import type { EnglishQuestion } from '@/types'
 
 /**

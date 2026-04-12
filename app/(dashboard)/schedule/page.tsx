@@ -1,5 +1,7 @@
 'use client'
 
+/** Schedule page — read-only 5-day weekly timetable with live-class highlighting. */
+
 import { TabletPageContainer } from '@/components/layout/TabletPageContainer'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { useSchedule } from '@/hooks/useSchedule'

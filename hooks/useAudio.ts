@@ -1,5 +1,7 @@
 'use client'
 
+/** Audio hook — preloads and plays short sound effects gated by user interaction. */
+
 import { useRef, useCallback } from 'react'
 
 type SoundKey = 'correct' | 'wrong' | 'complete' | 'tap'

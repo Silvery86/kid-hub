@@ -1,3 +1,5 @@
+/** Root layout — applies global font, PWA metadata, viewport, and service worker. */
+
 import type { Metadata, Viewport } from 'next'
 import { Nunito } from 'next/font/google'
 import { ServiceWorkerRegistrar } from '@/components/layout/ServiceWorkerRegistrar'

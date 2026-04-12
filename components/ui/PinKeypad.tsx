@@ -1,5 +1,7 @@
 'use client'
 
+/** PinKeypad — numeric PIN entry keypad with shake animation on error and auto-submit on completion. */
+
 import { useEffect, useRef, useState } from 'react'
 import { Delete } from 'lucide-react'
 import { cn } from '@/lib/utils'

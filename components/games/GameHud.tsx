@@ -1,3 +1,5 @@
+/** GameHud — in-game heads-up display showing progress, timer, and exit button. */
+
 import { cn } from '@/lib/utils'
 import { GAME_SECONDS_PER_QUESTION, GAME_QUESTIONS_PER_SESSION } from '@/lib/constants'
 

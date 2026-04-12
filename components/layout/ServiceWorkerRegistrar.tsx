@@ -1,5 +1,7 @@
 'use client'
 
+/** ServiceWorkerRegistrar — registers the PWA service worker on mount. Renders nothing. */
+
 import { useEffect } from 'react'
 
 /**

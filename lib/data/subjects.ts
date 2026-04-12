@@ -1,3 +1,5 @@
+/** Static subject definitions for the 1st-grade Vietnamese primary school curriculum. */
+
 import type { Subject } from '@/types'
 
 /**

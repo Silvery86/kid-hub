@@ -1,5 +1,7 @@
 'use client'
 
+/** MathGame — full-screen Number Ninja mini-game with timed arithmetic questions. */
+
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useGameSession, calculateStars, calculatePointsEarned } from '@/hooks/useGameSession'

@@ -1,5 +1,7 @@
 'use client'
 
+/** Game session state machine — manages question flow, timer, scoring, and session lifecycle. */
+
 import { useReducer, useCallback, useEffect, useRef } from 'react'
 import type { GameStatus, GameType, DifficultyLevel } from '@/types'
 import { GAME_QUESTIONS_PER_SESSION, GAME_SECONDS_PER_QUESTION, MAX_STARS } from '@/lib/constants'

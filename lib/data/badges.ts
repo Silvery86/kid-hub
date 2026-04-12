@@ -1,4 +1,5 @@
 /** Static badge metadata — earned state lives in UserProgress, not here. */
+
 export interface BadgeDefinition {
   id: string
   name: string

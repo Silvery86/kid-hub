@@ -1,5 +1,7 @@
 'use client'
 
+/** KidButton — large touch-friendly button with child-safe visual variants and loading state. */
+
 import { type ButtonHTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'
 

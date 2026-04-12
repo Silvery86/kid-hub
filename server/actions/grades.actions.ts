@@ -1,5 +1,7 @@
 'use server'
 
+/** Server Actions for subject grades — fetch report card and upsert individual grades. */
+
 import { revalidatePath } from 'next/cache'
 
 // TODO Sprint 3: uncomment when Prisma + auth are set up
@@ -7,11 +9,15 @@ import { revalidatePath } from 'next/cache'
 // import { calculateBadge } from '@/server/services/grades.service';
 // import * as gradesRepo from '@/server/repositories/grades.repository';
 
-export const getReportCardAction = async (_userId: string): Promise<null> => {
-  // TODO Sprint 3: return gradesRepo.getReportCard(_userId)
-  return null
+/** Retrieves the full report card for the specified user. */
+export const getReportCardAction = async (
+  _userId: string
+): Promise<{ success: boolean; data?: null; error?: string }> => {
+  // TODO Sprint 3: return { success: true, data: await gradesRepo.getReportCard(_userId) }
+  return { success: true, data: null }
 }
 
+/** Creates or updates a subject grade entry for a user. Revalidates grades and dashboard paths. */
 export const upsertGradeAction = async (
   _data: unknown
 ): Promise<{ success: boolean; error?: string }> => {

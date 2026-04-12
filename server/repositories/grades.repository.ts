@@ -5,11 +5,13 @@
 // import { db } from '@/lib/db';
 // import type { SubjectGrade, ReportCard } from '@/types';
 
+/** Fetches all subject grades for a user from the database. */
 export const getReportCard = async (_userId: string): Promise<null> => {
   // TODO Sprint 3: db.subjectGrade.findMany({ where: { userId: _userId } })
   return null
 }
 
+/** Creates or updates a single subject grade record. */
 export const upsertGrade = async (_data: unknown): Promise<void> => {
   // TODO Sprint 3: db.subjectGrade.upsert({ where: { ... }, create: _data, update: _data })
 }

@@ -1,5 +1,7 @@
 'use server'
 
+/** Server Actions for weekly schedule — query and CRUD operations on class periods. */
+
 import { revalidatePath } from 'next/cache'
 import type { DayOfWeek } from '@/types'
 
@@ -8,11 +10,15 @@ import type { DayOfWeek } from '@/types'
 // import { validatePeriodOverlap } from '@/server/services/schedule.service';
 // import * as scheduleRepo from '@/server/repositories/schedule.repository';
 
-export const getScheduleAction = async (_day?: DayOfWeek): Promise<null> => {
-  // TODO Sprint 2: return scheduleRepo.getWeeklySchedule() or getTodaySchedule(_day)
-  return null
+/** Retrieves the weekly schedule, optionally filtered to a specific day. */
+export const getScheduleAction = async (
+  _day?: DayOfWeek
+): Promise<{ success: boolean; data?: null; error?: string }> => {
+  // TODO Sprint 2: return { success: true, data: await scheduleRepo.getWeeklySchedule() or getTodaySchedule(_day) }
+  return { success: true, data: null }
 }
 
+/** Creates a new class period. Validates overlap and revalidates affected paths. */
 export const createPeriodAction = async (
   _data: unknown
 ): Promise<{ success: boolean; error?: string }> => {
@@ -25,6 +31,7 @@ export const createPeriodAction = async (
   return { success: true }
 }
 
+/** Updates an existing class period by ID. Revalidates affected paths. */
 export const updatePeriodAction = async (
   _data: unknown
 ): Promise<{ success: boolean; error?: string }> => {
@@ -36,6 +43,7 @@ export const updatePeriodAction = async (
   return { success: true }
 }
 
+/** Deletes a class period by ID. Revalidates affected paths. */
 export const deletePeriodAction = async (
   _id: string
 ): Promise<{ success: boolean; error?: string }> => {

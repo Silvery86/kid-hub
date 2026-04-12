@@ -1,3 +1,5 @@
+/** Deterministic question generators for the Math mini-game by difficulty level. */
+
 import type { MathQuestion, DifficultyLevel } from '@/types'
 
 /**

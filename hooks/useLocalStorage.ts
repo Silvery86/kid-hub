@@ -1,5 +1,7 @@
 'use client'
 
+/** localStorage hook — SSR-safe useState that syncs to localStorage on mount. */
+
 import { useState, useCallback, useEffect } from 'react'
 
 /**

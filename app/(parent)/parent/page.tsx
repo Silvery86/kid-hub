@@ -1,3 +1,5 @@
+/** Parent dashboard page — two-panel schedule and grades management interface. */
+
 import Link from 'next/link'
 import { TabletPageContainer } from '@/components/layout/TabletPageContainer'
 import { ScheduleManager } from '@/components/parent/ScheduleManager'

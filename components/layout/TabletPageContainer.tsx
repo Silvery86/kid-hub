@@ -1,3 +1,5 @@
+/** TabletPageContainer — master page wrapper enforcing layout boundaries and PWA native-feel behaviour. */
+
 import { cn } from '@/lib/utils'
 
 export interface TabletPageContainerProps {

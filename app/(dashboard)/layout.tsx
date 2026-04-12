@@ -1,3 +1,5 @@
+/** Dashboard route group layout — sidebar + UserProgress context + error boundary. */
+
 import { AppSidebar } from '@/components/layout/AppSidebar'
 import { UserProgressProviderWrapper } from '@/components/layout/UserProgressProviderWrapper'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'

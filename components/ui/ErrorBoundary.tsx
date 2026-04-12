@@ -1,5 +1,7 @@
 'use client'
 
+/** ErrorBoundary — React class boundary that catches render errors and shows a fallback UI. */
+
 import { Component, type ReactNode, type ErrorInfo } from 'react'
 
 interface ErrorBoundaryProps {
