@@ -2,6 +2,11 @@
 
 import type { DayOfWeek } from '@/types'
 
+// ── App User ──────────────────────────────────────────────────
+
+/** Fixed ID for the single app user (Khôi). Created via prisma/seed.ts. */
+export const DEFAULT_USER_ID = 'khoi-default-user'
+
 // ── Schedule ─────────────────────────────────────────────────
 
 export const DAYS_OF_WEEK: readonly DayOfWeek[] = [
