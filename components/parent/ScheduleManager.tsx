@@ -1,19 +1,25 @@
 'use client'
 
-/** ScheduleManager — parent panel for adding, editing, and removing class periods via localStorage. */
+/** ScheduleManager — parent panel for adding, editing, and removing class periods via server actions. */
 
-import { useState, useCallback } from 'react'
-import { Plus, Trash2, Save, Check } from 'lucide-react'
-import type { WeeklySchedule, DayOfWeek } from '@/types'
-import { DAYS_OF_WEEK, DAY_LABELS, STORAGE_KEYS } from '@/lib/constants'
+import { useState, useCallback, useEffect, useTransition, useRef } from 'react'
+import { Plus, Trash2, Save, Check, AlertCircle } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import type { DailySchedule, DayOfWeek } from '@/types'
+import { DAYS_OF_WEEK, DAY_LABELS } from '@/lib/constants'
 import { SUBJECTS } from '@/lib/data/subjects'
-import { WEEKLY_SCHEDULE } from '@/lib/data/schedule'
-import { useLocalStorage } from '@/hooks/useLocalStorage'
+import {
+  createPeriodAction,
+  updatePeriodAction,
+  deletePeriodAction,
+  getScheduleAction,
+} from '@/server/actions/schedule.actions'
 import { KidButton } from '@/components/ui/KidButton'
 import { cn } from '@/lib/utils'
 
 type EditablePeriod = {
   tempId: string
+  dbId?: string
   subjectId: string
   startTime: string
   endTime: string
@@ -21,11 +27,13 @@ type EditablePeriod = {
 
 type EditableSchedule = Record<DayOfWeek, EditablePeriod[]>
 
-const buildEditableSchedule = (schedule: WeeklySchedule): EditableSchedule =>
+/** Builds an editable in-memory schedule from DB DailySchedule data, preserving DB IDs. */
+const buildEditableSchedule = (schedule: DailySchedule[]): EditableSchedule =>
   DAYS_OF_WEEK.reduce<EditableSchedule>((acc, day) => {
-    const daySchedule = schedule.days.find((d) => d.day === day)
+    const daySchedule = schedule.find((d) => d.day === day)
     acc[day] = (daySchedule?.periods ?? []).map((p) => ({
-      tempId: `${day}-${p.periodNumber}`,
+      tempId: p.id ?? `${day}-${p.periodNumber}`,
+      dbId: p.id,
       subjectId: p.subjectId,
       startTime: p.startTime,
       endTime: p.endTime,
@@ -33,37 +41,35 @@ const buildEditableSchedule = (schedule: WeeklySchedule): EditableSchedule =>
     return acc
   }, {} as EditableSchedule)
 
-const buildWeeklySchedule = (editable: EditableSchedule): WeeklySchedule => ({
-  weekStartDate: WEEKLY_SCHEDULE.weekStartDate,
-  days: DAYS_OF_WEEK.map((day) => ({
-    day,
-    periods: [...(editable[day] ?? [])]
-      .sort((a, b) => a.startTime.localeCompare(b.startTime))
-      .map((p, i) => ({
-        periodNumber: i + 1,
-        subjectId: p.subjectId,
-        startTime: p.startTime,
-        endTime: p.endTime,
-      })),
-  })),
-})
+/** Extracts all DB IDs from a DailySchedule array. */
+const extractDbIds = (schedule: DailySchedule[]): Set<string> =>
+  new Set(schedule.flatMap((d) => d.periods.map((p) => p.id).filter(Boolean) as string[]))
 
-export const ScheduleManager = () => {
-  const [storedSchedule, setStoredSchedule] = useLocalStorage<WeeklySchedule>(
-    STORAGE_KEYS.SCHEDULE,
-    WEEKLY_SCHEDULE
-  )
+interface ScheduleManagerProps {
+  initialSchedule: DailySchedule[]
+}
+
+export const ScheduleManager = ({ initialSchedule }: ScheduleManagerProps) => {
+  const router = useRouter()
   const [editable, setEditable] = useState<EditableSchedule>(() =>
-    buildEditableSchedule(storedSchedule)
+    buildEditableSchedule(initialSchedule)
   )
   const [activeDay, setActiveDay] = useState<DayOfWeek>('monday')
   const [isSaved, setIsSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
+  const referenceDbIdsRef = useRef<Set<string>>(extractDbIds(initialSchedule))
+
+  useEffect(() => {
+    setEditable(buildEditableSchedule(initialSchedule))
+    referenceDbIdsRef.current = extractDbIds(initialSchedule)
+  }, [initialSchedule])
 
   const handleUpdatePeriod = useCallback(
     (
       day: DayOfWeek,
       tempId: string,
-      field: keyof Omit<EditablePeriod, 'tempId'>,
+      field: keyof Omit<EditablePeriod, 'tempId' | 'dbId'>,
       value: string
     ) => {
       setEditable((prev) => ({
@@ -92,9 +98,65 @@ export const ScheduleManager = () => {
   }, [])
 
   const handleSave = () => {
-    setStoredSchedule(buildWeeklySchedule(editable))
-    setIsSaved(true)
-    setTimeout(() => setIsSaved(false), 2500)
+    setError(null)
+    startTransition(async () => {
+      const currentDbIds = new Set(
+        DAYS_OF_WEEK.flatMap((day) =>
+          (editable[day] ?? []).map((p) => p.dbId).filter(Boolean) as string[]
+        )
+      )
+
+      const deletedIds = [...referenceDbIdsRef.current].filter((id) => !currentDbIds.has(id))
+      const deleteResults = await Promise.all(deletedIds.map((id) => deletePeriodAction(id)))
+      const deleteError = deleteResults.find((r) => !r.success)
+      if (deleteError) {
+        setError(deleteError.error ?? 'Không thể xóa tiết học')
+        return
+      }
+
+      for (const day of DAYS_OF_WEEK) {
+        const periods = [...(editable[day] ?? [])]
+          .sort((a, b) => a.startTime.localeCompare(b.startTime))
+          .map((p, i) => ({ ...p, periodNumber: i + 1 }))
+
+        for (const period of periods) {
+          if (period.dbId) {
+            const result = await updatePeriodAction({
+              id: period.dbId,
+              subjectId: period.subjectId,
+              startTime: period.startTime,
+              endTime: period.endTime,
+            })
+            if (!result.success) {
+              setError(result.error ?? 'Không thể cập nhật tiết học')
+              return
+            }
+          } else {
+            const result = await createPeriodAction({
+              day,
+              periodNumber: period.periodNumber,
+              subjectId: period.subjectId,
+              startTime: period.startTime,
+              endTime: period.endTime,
+            })
+            if (!result.success) {
+              setError(result.error ?? 'Không thể tạo tiết học')
+              return
+            }
+          }
+        }
+      }
+
+      const freshResult = await getScheduleAction()
+      if (freshResult.success && freshResult.data) {
+        setEditable(buildEditableSchedule(freshResult.data))
+        referenceDbIdsRef.current = extractDbIds(freshResult.data)
+      }
+
+      router.refresh()
+      setIsSaved(true)
+      setTimeout(() => setIsSaved(false), 2500)
+    })
   }
 
   const activePeriods = editable[activeDay] ?? []
@@ -106,12 +168,20 @@ export const ScheduleManager = () => {
         <KidButton
           variant={isSaved ? 'secondary' : 'primary'}
           onClick={handleSave}
+          isDisabled={isPending}
           className="min-h-10 gap-2 px-4 text-sm"
         >
           {isSaved ? <Check size={16} /> : <Save size={16} />}
-          {isSaved ? 'Đã lưu!' : 'Lưu'}
+          {isSaved ? 'Đã lưu!' : isPending ? 'Đang lưu...' : 'Lưu'}
         </KidButton>
       </div>
+
+      {error && (
+        <div className="flex items-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
+          <AlertCircle size={16} />
+          {error}
+        </div>
+      )}
 
       {/* Day tabs */}
       <div className="flex gap-1 rounded-2xl bg-slate-100 p-1">

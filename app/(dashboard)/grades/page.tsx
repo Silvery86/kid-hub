@@ -1,6 +1,4 @@
-'use client'
-
-/** Grades page — read-only report card grid driven by localStorage grades data. */
+/** Grades page — read-only report card grid fetched from the database. */
 
 import {
   Calculator,
@@ -18,7 +16,7 @@ import type { LucideIcon } from 'lucide-react'
 import { TabletPageContainer } from '@/components/layout/TabletPageContainer'
 import { Badge } from '@/components/ui/Badge'
 import { ProgressBar } from '@/components/ui/ProgressBar'
-import { useGrades } from '@/hooks/useGrades'
+import { getReportCardAction } from '@/server/actions/grades.actions'
 import { getSubjectById } from '@/lib/data/subjects'
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -34,8 +32,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Star,
 }
 
-export default function GradesPage() {
-  const { reportCard } = useGrades()
+export default async function GradesPage() {
+  const result = await getReportCardAction()
+  const reportCard = result.data ?? { userId: '', grades: [], averageScore: 0 }
 
   return (
     <TabletPageContainer className="h-screen overflow-y-auto p-6">

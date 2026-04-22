@@ -8,8 +8,17 @@ import { TabletPageContainer } from '@/components/layout/TabletPageContainer'
 import { ScheduleManager } from '@/components/parent/ScheduleManager'
 import { GradesManager } from '@/components/parent/GradesManager'
 import { SignOutButton } from '@/components/parent/SignOutButton'
+import { getScheduleAction } from '@/server/actions/schedule.actions'
+import { getReportCardAction } from '@/server/actions/grades.actions'
 
-export default function ParentDashboardPage() {
+export default async function ParentDashboardPage() {
+  const [scheduleResult, gradesResult] = await Promise.all([
+    getScheduleAction(),
+    getReportCardAction(),
+  ])
+
+  const schedule = scheduleResult.data ?? []
+  const grades = gradesResult.data?.grades ?? []
   return (
     <TabletPageContainer className="overflow-hidden bg-slate-50 p-6">
       {/* Header */}
@@ -32,10 +41,10 @@ export default function ParentDashboardPage() {
       {/* Two-panel layout (each manager in its own scrollable panel) */}
       <div className="grid h-[calc(100vh-9rem)] grid-cols-2 gap-6">
         <div className="flex flex-col overflow-hidden rounded-3xl bg-white p-5 shadow-sm">
-          <ScheduleManager />
+          <ScheduleManager initialSchedule={schedule} />
         </div>
         <div className="flex flex-col overflow-hidden rounded-3xl bg-white p-5 shadow-sm">
-          <GradesManager />
+          <GradesManager initialGrades={grades} />
         </div>
       </div>
     </TabletPageContainer>

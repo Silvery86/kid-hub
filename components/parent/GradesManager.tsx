@@ -1,51 +1,53 @@
 'use client'
 
-/** GradesManager — parent panel for viewing and editing subject grades stored in localStorage. */
+/** GradesManager — parent panel for viewing and editing subject grades via server actions. */
 
-import { useState } from 'react'
-import { Save, Check } from 'lucide-react'
+import { useState, useTransition } from 'react'
+import { Save, Check, AlertCircle } from 'lucide-react'
 import type { SubjectGrade } from '@/types'
 import { SUBJECTS } from '@/lib/data/subjects'
-import { SEED_GRADES } from '@/lib/data/grades'
-import { useLocalStorage } from '@/hooks/useLocalStorage'
-import { STORAGE_KEYS } from '@/lib/constants'
+import { upsertGradeAction } from '@/server/actions/grades.actions'
 import { calculateBadge, cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/Badge'
 import { KidButton } from '@/components/ui/KidButton'
 
-export const GradesManager = () => {
-  const [storedGrades, setStoredGrades] = useLocalStorage<SubjectGrade[]>(
-    STORAGE_KEYS.GRADES,
-    SEED_GRADES as SubjectGrade[]
-  )
+interface GradesManagerProps {
+  initialGrades: SubjectGrade[]
+}
 
-  // Use string inputs so partial values like "9." are allowed mid-edit
+export const GradesManager = ({ initialGrades }: GradesManagerProps) => {
   const [editableScores, setEditableScores] = useState<Record<string, string>>(() =>
-    Object.fromEntries(storedGrades.map((g) => [g.subjectId, String(g.score)]))
+    Object.fromEntries(initialGrades.map((g) => [g.subjectId, String(g.score)]))
   )
-  const [semester, setSemester] = useState<1 | 2>(storedGrades[0]?.semester ?? 1)
+  const [semester, setSemester] = useState<1 | 2>(initialGrades[0]?.semester ?? 1)
   const [isSaved, setIsSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
 
   const handleScoreChange = (subjectId: string, raw: string) => {
     setEditableScores((prev) => ({ ...prev, [subjectId]: raw }))
   }
 
   const handleSave = () => {
-    const updated: SubjectGrade[] = SUBJECTS.map((s) => {
-      const raw = editableScores[s.id] ?? ''
-      const parsed = parseFloat(raw)
-      const score = isNaN(parsed) ? 0 : Math.min(10, Math.max(0, parsed))
-      return {
-        subjectId: s.id,
-        score,
-        badge: calculateBadge(score),
-        semester,
-        academicYear: '2025-2026',
+    setError(null)
+    startTransition(async () => {
+      const updates = SUBJECTS.map((s) => {
+        const raw = editableScores[s.id] ?? ''
+        const parsed = parseFloat(raw)
+        const score = isNaN(parsed) ? 0 : Math.min(10, Math.max(0, parsed))
+        return { subjectId: s.id, score, semester, academicYear: '2025-2026' }
+      })
+
+      const results = await Promise.all(updates.map((u) => upsertGradeAction(u)))
+      const failed = results.find((r) => !r.success)
+      if (failed) {
+        setError(failed.error ?? 'Không thể lưu điểm')
+        return
       }
+
+      setIsSaved(true)
+      setTimeout(() => setIsSaved(false), 2500)
     })
-    setStoredGrades(updated)
-    setIsSaved(true)
-    setTimeout(() => setIsSaved(false), 2500)
   }
 
   return (
@@ -55,12 +57,20 @@ export const GradesManager = () => {
         <KidButton
           variant={isSaved ? 'secondary' : 'primary'}
           onClick={handleSave}
+          isDisabled={isPending}
           className="min-h-10 gap-2 px-4 text-sm"
         >
           {isSaved ? <Check size={16} /> : <Save size={16} />}
-          {isSaved ? 'Đã lưu!' : 'Lưu'}
+          {isSaved ? 'Đã lưu!' : isPending ? 'Đang lưu...' : 'Lưu'}
         </KidButton>
       </div>
+
+      {error && (
+        <div className="flex items-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
+          <AlertCircle size={16} />
+          {error}
+        </div>
+      )}
 
       {/* Semester selector */}
       <div className="flex w-fit gap-1 rounded-2xl bg-slate-100 p-1">

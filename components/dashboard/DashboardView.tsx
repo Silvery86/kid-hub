@@ -4,21 +4,22 @@
 
 import { useState, useEffect } from 'react'
 import { useSchedule } from '@/hooks/useSchedule'
-import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { useUserProgress } from '@/hooks/useUserProgress'
-import { WEEKLY_SCHEDULE } from '@/lib/data/schedule'
-import { STORAGE_KEYS } from '@/lib/constants'
 import { getSubjectById } from '@/lib/data/subjects'
 import { CurrentClassHighlight } from '@/components/dashboard/CurrentClassHighlight'
 import { TodayTimetable } from '@/components/dashboard/TodayTimetable'
 import { StreakWidget } from '@/components/dashboard/StreakWidget'
 import { BadgeModal } from '@/components/dashboard/BadgeModal'
 import { GameEntryCard } from '@/components/games/GameEntryCard'
-import type { WeeklySchedule } from '@/types'
+import type { DailySchedule, WeeklySchedule } from '@/types'
 
-export const DashboardView = () => {
-  const [storedSchedule] = useLocalStorage<WeeklySchedule>(STORAGE_KEYS.SCHEDULE, WEEKLY_SCHEDULE)
-  const { todaySchedule, currentPeriod, nextPeriod } = useSchedule(storedSchedule)
+interface DashboardViewProps {
+  initialSchedule: DailySchedule[]
+}
+
+export const DashboardView = ({ initialSchedule }: DashboardViewProps) => {
+  const weeklySchedule: WeeklySchedule = { weekStartDate: '', days: initialSchedule }
+  const { todaySchedule, currentPeriod, nextPeriod } = useSchedule(weeklySchedule)
   const { updateStreak, progress } = useUserProgress()
   const [isBadgeModalOpen, setIsBadgeModalOpen] = useState(false)
 

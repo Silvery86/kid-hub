@@ -18,6 +18,7 @@ export interface UserProfile {
 export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday'
 
 export interface ClassPeriod {
+  id?: string
   periodNumber: number
   subjectId: string
   startTime: string // "HH:MM" 24-hour format

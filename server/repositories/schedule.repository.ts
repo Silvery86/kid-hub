@@ -28,12 +28,14 @@ export interface UpdatePeriodInput {
  * Maps a DB ClassPeriod row to the shared ClassPeriod type.
  */
 const toClassPeriod = (row: {
+  id: string
   periodNumber: number
   subjectId: string
   startTime: string
   endTime: string
   roomNumber: string | null
 }): ClassPeriod => ({
+  id: row.id,
   periodNumber: row.periodNumber,
   subjectId: row.subjectId,
   startTime: row.startTime,

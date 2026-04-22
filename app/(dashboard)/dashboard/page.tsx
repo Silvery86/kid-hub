@@ -2,11 +2,15 @@
 
 import { TabletPageContainer } from '@/components/layout/TabletPageContainer'
 import { DashboardView } from '@/components/dashboard/DashboardView'
+import { getScheduleAction } from '@/server/actions/schedule.actions'
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const result = await getScheduleAction()
+  const schedule = result.data ?? []
+
   return (
     <TabletPageContainer>
-      <DashboardView />
+      <DashboardView initialSchedule={schedule} />
     </TabletPageContainer>
   )
 }
