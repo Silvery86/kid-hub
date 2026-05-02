@@ -42,5 +42,4 @@ next-env.d.ts
 
 #docs
 .github
-docs
 /lib/generated/prisma
