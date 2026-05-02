@@ -11,11 +11,14 @@ import { jwtVerify } from 'jose'
 
 const SESSION_COOKIE = 'parent_session'
 
-/** Returns the JWT secret encoded as Uint8Array. */
-const getSecret = (): Uint8Array =>
-  new TextEncoder().encode(
-    process.env.SESSION_SECRET ?? 'dev-secret-change-in-production-minimum-32-chars!!'
-  )
+/** Returns the JWT secret encoded as Uint8Array. Throws if SESSION_SECRET is absent or too short. */
+const getSecret = (): Uint8Array => {
+  const secret = process.env.SESSION_SECRET
+  if (!secret || secret.length < 32) {
+    throw new Error('SESSION_SECRET env var must be set and at least 32 characters long.')
+  }
+  return new TextEncoder().encode(secret)
+}
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const token = request.cookies.get(SESSION_COOKIE)?.value
