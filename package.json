@@ -10,11 +10,15 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prisma:seed": "dotenv -e .env.local -- tsx prisma/seed.ts",
-    "prisma:migrate": "dotenv -e .env.local -- prisma migrate dev"
+    "prisma:migrate": "dotenv -e .env.local -- prisma migrate dev",
+    "test": "dotenv -e .env.local -- playwright test",
+    "test:ui": "dotenv -e .env.local -- playwright test --ui"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.5.0",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.37.0",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "firebase": "^12.12.0",
@@ -30,6 +34,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^3.0.0",
     "@types/node": "^20",

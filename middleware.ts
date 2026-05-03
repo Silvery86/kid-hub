@@ -1,13 +1,14 @@
 /**
- * Next.js Edge Middleware — route protection for parent-mode paths.
- * Verifies the signed HttpOnly session cookie before granting access to /parent.
- * If the token is absent or invalid the user is redirected to /parent/pin,
- * the dedicated PIN entry page, so they can authenticate.
+ * Next.js Edge Middleware — two responsibilities:
+ * 1. Rate-limit PIN verification attempts (POST /parent/pin) via Upstash sliding window.
+ *    Degrades gracefully when UPSTASH_* env vars are absent (dev without credentials).
+ * 2. Verify the signed HttpOnly session cookie before granting access to /parent/*.
  */
 
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
+import { getPinRateLimiter } from '@/lib/rate-limit'
 
 const SESSION_COOKIE = 'parent_session'
 
@@ -21,6 +22,32 @@ const getSecret = (): Uint8Array => {
 }
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
+  const { pathname } = request.nextUrl
+
+  // ── Rate limiting: PIN verification Server Action POSTs ─────────────────
+  if (pathname === '/parent/pin' && request.method === 'POST') {
+    const limiter = getPinRateLimiter()
+    if (limiter) {
+      const ip =
+        request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? '127.0.0.1'
+      const { success, limit, remaining, reset } = await limiter.limit(ip)
+      if (!success) {
+        return new NextResponse('Too many PIN attempts. Please wait and try again.', {
+          status: 429,
+          headers: {
+            'Content-Type': 'text/plain',
+            'X-RateLimit-Limit': String(limit),
+            'X-RateLimit-Remaining': String(remaining),
+            'X-RateLimit-Reset': String(reset),
+            'Retry-After': String(Math.ceil((reset - Date.now()) / 1000)),
+          },
+        })
+      }
+    }
+    return NextResponse.next()
+  }
+
+  // ── Session verification: protected /parent/* routes ────────────────────
   const token = request.cookies.get(SESSION_COOKIE)?.value
 
   if (token) {
@@ -38,9 +65,10 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 }
 
 export const config = {
-  /**
-   * Protect /parent and all sub-paths EXCEPT /parent/pin (the public PIN entry page).
-   * Uses a negative lookahead to exclude /parent/pin from protection.
-   */
-  matcher: ['/parent/((?!pin).*)'],
+  matcher: [
+    // Protect all /parent/* sub-paths except /parent/pin (the public PIN page)
+    '/parent/((?!pin).*)',
+    // Also run middleware on /parent/pin to apply the PIN rate limiter
+    '/parent/pin',
+  ],
 }

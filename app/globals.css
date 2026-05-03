@@ -1,33 +1,56 @@
 @import 'tailwindcss';
 
 /* ============================================
-   KID HUB — FONT
+   KID HUB — DESIGN TOKENS
    ============================================ */
 
 @theme {
   --font-sans: var(--font-display);
-}
 
-/* ============================================
-   KID HUB — DESIGN TOKENS
-   ============================================ */
+  --color-math: #3b82f6;
+  --color-english: #10b981;
+  --color-science: #8b5cf6;
+  --color-pe: #f59e0b;
+  --color-art: #ec4899;
+  --color-vietnamese: #ef4444;
+  --color-music: #f97316;
 
-:root {
-  /* Subject colour palette */
-  --color-math: #3b82f6; /* blue-500 */
-  --color-english: #10b981; /* emerald-500 */
-  --color-science: #8b5cf6; /* violet-500 */
-  --color-pe: #f59e0b; /* amber-500 */
-  --color-art: #ec4899; /* pink-500 */
-  --color-vietnamese: #ef4444; /* red-500 */
-  --color-music: #f97316; /* orange-500 */
+  /* ── App shell backgrounds → bg-shell-dark, bg-shell-light, bg-shell-kid */
+  --color-shell-dark: #0f172a;
+  --color-shell-light: #f8fafc;
+  --color-shell-kid: #f0f9ff;
 
-  /* Border radii */
+  /* ── Text hierarchy → text-text-primary, text-text-secondary, etc. ───── */
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #64748b;
+  --color-text-muted: #94a3b8;
+  --color-text-subtle: #cbd5e1;
+
+  /* ── Button variants ─────────────────────────────────────────────────── */
+  --color-btn-primary: #3b82f6;
+  --color-btn-primary-hover: #2563eb;
+  --color-btn-primary-border: #1d4ed8;
+  --color-btn-secondary: #34d399;
+  --color-btn-secondary-hover: #10b981;
+  --color-btn-secondary-border: #059669;
+  --color-btn-ghost-border: #cbd5e1;
+
+  /* ── Progress bar ────────────────────────────────────────────────────── */
+  --color-progress-high: #fbbf24;
+  --color-progress-low: #fb923c;
+  --color-progress-track: #e2e8f0;
+
+  /* ── Star rating ─────────────────────────────────────────────────────── */
+  --color-star-filled: #fbbf24;
+  --color-star-empty: #cbd5e1;
+
+  /* ── Border radii → rounded-card, rounded-pill ───────────────────────── */
   --radius-card: 1.5rem;
+  --radius-pill: 9999px;
 
-  /* Tablet-optimised spacing */
-  --space-tap: 3rem; /* 48px — minimum tap target */
-  --space-tap-lg: 4rem; /* 64px — preferred game button size */
+  /* ── Tap targets → min-h-tap, w-tap-lg, etc. ────────────────────────── */
+  --spacing-tap: 3rem;
+  --spacing-tap-lg: 4rem;
 }
 
 /* ============================================
@@ -38,8 +61,8 @@ html,
 body {
   overscroll-behavior: none; /* Kills pull-to-refresh AND rubber-band scroll */
   overscroll-behavior-x: none; /* Kills swipe-to-go-back */
-  background-color: #f0f9ff; /* sky-50 */
-  color: #1e293b; /* slate-800 */
+  background-color: var(--color-shell-kid);
+  color: var(--color-text-primary);
 }
 
 * {

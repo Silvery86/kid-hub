@@ -26,9 +26,11 @@ services:
     restart: unless-stopped
     ports:
       - '3000:3000'
+    env_file:
+      - .env.local          # Loads UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN, etc.
     environment:
-      DATABASE_URL: postgresql://kidhub:kidhub_dev@db:5432/kidhub
-      # TODO Sprint 3: add SESSION_SECRET here (use a long random string)
+      DATABASE_URL: postgresql://kidhub:kidhub_dev@db:5432/kidhub   # overrides any .env.local value
+      SESSION_SECRET: 3TKwwNSFR+qifdmoSfR4QBP9tSD0Z/Y4HN9xusywASQ=
     depends_on:
       db:
         condition: service_healthy
