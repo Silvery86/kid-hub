@@ -24,6 +24,11 @@ const getSecret = (): Uint8Array => {
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl
 
+  // ── Allow non-POST access to /parent/pin (public login page) ───────────
+  if (pathname === '/parent/pin' && request.method !== 'POST') {
+    return NextResponse.next()
+  }
+
   // ── Rate limiting: PIN verification Server Action POSTs ─────────────────
   if (pathname === '/parent/pin' && request.method === 'POST') {
     const limiter = getPinRateLimiter()
@@ -66,9 +71,8 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
 export const config = {
   matcher: [
-    // Protect all /parent/* sub-paths except /parent/pin (the public PIN page)
-    '/parent/((?!pin).*)',
-    // Also run middleware on /parent/pin to apply the PIN rate limiter
-    '/parent/pin',
+    '/parent',                    // protect /parent itself
+    '/parent/((?!pin).*)',        // protect /parent/* except /parent/pin
+    '/parent/pin',                // run on /parent/pin to apply PIN rate limiter
   ],
 }

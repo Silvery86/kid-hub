@@ -4,7 +4,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Calendar, Star, Gamepad2 } from 'lucide-react'
+import { Home, Calendar, Star, Gamepad2, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
@@ -49,6 +49,22 @@ export const AppSidebar = () => {
           )
         })}
       </nav>
+
+      {/* Switch to parent dashboard */}
+      <div className="mt-auto">
+        <Link
+          href="/parent"
+          className={cn(
+            'flex flex-col items-center gap-1 rounded-2xl p-3 transition-colors',
+            'min-h-16 w-full justify-center text-xs font-medium',
+            'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
+          )}
+          aria-label="Switch to parent dashboard"
+        >
+          <ShieldCheck size={20} strokeWidth={2} />
+          <span>Parent</span>
+        </Link>
+      </div>
     </aside>
   )
 }
