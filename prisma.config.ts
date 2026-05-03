@@ -9,9 +9,6 @@ export default defineConfig({
     path: 'prisma/migrations',
   },
   datasource: {
-    // Supabase transaction pooler — used at runtime, survives serverless cold starts
     url: process.env['DATABASE_URL'],
-    // Supabase direct connection — used by `prisma migrate dev` only
-    directUrl: process.env['DIRECT_URL'],
   },
 })

@@ -66,7 +66,7 @@ export const createPeriodAction = async (
     await requireParentSession()
     const parsed = CreatePeriodSchema.safeParse(input)
     if (!parsed.success) {
-      return { success: false, error: parsed.error.errors[0].message }
+      return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
     }
     const data = parsed.data
     const existing = await scheduleRepo.getDaySchedule(DEFAULT_USER_ID, data.day as DayOfWeek)
@@ -98,7 +98,7 @@ export const updatePeriodAction = async (
     await requireParentSession()
     const parsed = UpdatePeriodSchema.safeParse(input)
     if (!parsed.success) {
-      return { success: false, error: parsed.error.errors[0].message }
+      return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
     }
     await scheduleRepo.updatePeriod(parsed.data)
     revalidatePath('/dashboard')

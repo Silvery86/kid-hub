@@ -49,6 +49,11 @@ creating a new file or performing a complete rewrite that was explicitly request
 Fix exactly what the assigned task specifies. Do not refactor adjacent code, add comments,
 or improve naming unless that is the task. Out-of-scope observations belong in a new issue.
 
+### 8. Never commit without explicit PM approval
+Do not run `git commit` (or `git push`) after any change — not even a one-liner fix.
+Stop after editing files, report what changed, and wait for the PM to say "commit" or
+"commit to git" before creating the commit. This rule overrides all other defaults.
+
 ---
 
 ## Architecture — Quick Reference

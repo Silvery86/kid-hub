@@ -129,7 +129,7 @@ export default function ParentPinPage() {
               <h1 className="text-3xl font-bold text-white">Tạo mã PIN</h1>
               <p className="mt-2 text-slate-400">Nhập mã PIN 4 chữ số mới</p>
             </div>
-            <PinKeypad onComplete={handleSetupEnter} errorCount={errorCount} disabled={isSubmitting} />
+            <PinKeypad onComplete={handleSetupEnter} errorCount={errorCount} isDisabled={isSubmitting} />
           </>
         )}
 
@@ -142,7 +142,7 @@ export default function ParentPinPage() {
               <h1 className="text-3xl font-bold text-white">Xác nhận PIN</h1>
               <p className="mt-2 text-slate-400">Nhập lại mã PIN vừa tạo</p>
             </div>
-            <PinKeypad onComplete={handleSetupConfirm} errorCount={errorCount} disabled={isSubmitting} />
+            <PinKeypad onComplete={handleSetupConfirm} errorCount={errorCount} isDisabled={isSubmitting} />
           </>
         )}
 
@@ -155,7 +155,7 @@ export default function ParentPinPage() {
               <h1 className="text-3xl font-bold text-white">Parent Mode</h1>
               <p className="mt-2 text-slate-400">Nhập mã PIN để tiếp tục</p>
             </div>
-            <PinKeypad onComplete={handleVerify} errorCount={errorCount} disabled={isSubmitting} />
+            <PinKeypad onComplete={handleVerify} errorCount={errorCount} isDisabled={isSubmitting} />
             <button
               onClick={handleResetPin}
               className="text-sm text-slate-600 transition-colors hover:text-slate-400"

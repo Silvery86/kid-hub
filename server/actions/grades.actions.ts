@@ -57,7 +57,7 @@ export const upsertGradeAction = async (
     await requireParentSession()
     const parsed = UpsertGradeSchema.safeParse(input)
     if (!parsed.success) {
-      return { success: false, error: parsed.error.errors[0].message }
+      return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
     }
     const data = parsed.data
     const badge = calculateBadge(data.score)

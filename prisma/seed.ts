@@ -36,7 +36,7 @@ async function main() {
       userId: user.id,
       totalPoints: 0,
       currentStreak: 0,
-      lastActiveDate: new Date().toISOString().split('T')[0],
+      lastActiveDate: new Date().toISOString().split('T')[0]!,
     },
     update: {},
   })

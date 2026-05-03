@@ -10,7 +10,7 @@ export interface GradeRecord {
   subjectId: string
   score: number
   badge: BadgeTier
-  semester: number
+  semester: 1 | 2
   academicYear: string
 }
 
@@ -21,7 +21,7 @@ export const getReportCard = async (userId: string): Promise<GradeRecord[]> => {
     subjectId: r.subjectId,
     score: r.score,
     badge: r.badge.replace('_', '-') as BadgeTier,
-    semester: r.semester,
+    semester: r.semester as 1 | 2,
     academicYear: r.academicYear,
   }))
 }

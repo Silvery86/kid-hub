@@ -90,7 +90,7 @@ export const PinKeypad = ({
       <div className="grid grid-cols-3 gap-3" role="group" aria-label="PIN keypad">
         {KEYPAD_KEYS.map((key, idx) => {
           if (key === '') {
-            return <div key={idx} aria-hidden="true" />
+            return <div key="blank" aria-hidden="true" />
           }
           return (
             <KidButton
