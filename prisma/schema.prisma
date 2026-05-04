@@ -30,10 +30,11 @@ model User {
   updatedAt  DateTime @updatedAt
 
   // Relations
-  pin      ParentPin?
-  periods  ClassPeriod[]
-  grades   SubjectGrade[]
-  progress UserProgress?
+  pin                 ParentPin?
+  periods             ClassPeriod[]
+  grades              SubjectGrade[]
+  progress            UserProgress?
+  homeworkCompletions HomeworkCompletion[]
 
   @@map("users")
 }
@@ -74,13 +75,35 @@ model ClassPeriod {
   startTime    String    // "HH:MM" 24-hour format
   endTime      String    // "HH:MM" 24-hour format
   roomNumber   String?
+  isHomework   Boolean   @default(false)
+  homeworkNote String?   @db.VarChar(200)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  homeworkCompletions HomeworkCompletion[]
 
   // One user cannot have two periods at the same slot on the same day
   @@unique([userId, day, periodNumber])
   @@index([userId, day])
   @@map("class_periods")
+}
+
+// ── Homework ──────────────────────────────────────────────────
+
+model HomeworkCompletion {
+  id        String      @id @default(cuid())
+  periodId  String
+  period    ClassPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String      // "YYYY-MM-DD" — one record per period per day; no record = not done
+  isDone    Boolean     @default(false)
+  doneAt    DateTime?
+  createdAt DateTime    @default(now())
+
+  @@unique([periodId, date])
+  @@index([userId, date])
+  @@map("homework_completions")
 }
 
 // ── Grades ────────────────────────────────────────────────────

@@ -31,6 +31,8 @@ const UpdatePeriodSchema = z.object({
   startTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   endTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   roomNumber: z.string().optional(),
+  isHomework: z.boolean().optional(),
+  homeworkNote: z.string().max(200).nullish(),
 })
 
 /** Ensures the request comes from an authenticated parent session. */

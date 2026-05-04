@@ -3,7 +3,7 @@
 /** ScheduleManager — parent panel for adding, editing, and removing class periods via server actions. */
 
 import { useState, useCallback, useEffect, useTransition, useRef } from 'react'
-import { Plus, Trash2, Save, Check, AlertCircle } from 'lucide-react'
+import { Plus, Trash2, Save, Check, AlertCircle, BookOpen } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import type { DailySchedule, DayOfWeek } from '@/types'
 import { DAYS_OF_WEEK, DAY_LABELS } from '@/lib/constants'
@@ -23,6 +23,8 @@ type EditablePeriod = {
   subjectId: string
   startTime: string
   endTime: string
+  isHomework: boolean
+  homeworkNote: string
 }
 
 type EditableSchedule = Record<DayOfWeek, EditablePeriod[]>
@@ -37,6 +39,8 @@ const buildEditableSchedule = (schedule: DailySchedule[]): EditableSchedule =>
       subjectId: p.subjectId,
       startTime: p.startTime,
       endTime: p.endTime,
+      isHomework: p.isHomework ?? false,
+      homeworkNote: p.homeworkNote ?? '',
     }))
     return acc
   }, {} as EditableSchedule)
@@ -85,8 +89,24 @@ export const ScheduleManager = ({ initialSchedule }: ScheduleManagerProps) => {
       ...prev,
       [day]: [
         ...(prev[day] ?? []),
-        { tempId: `new-${Date.now()}`, subjectId: 'math', startTime: '07:30', endTime: '08:10' },
+            {
+          tempId: `new-${Date.now()}`,
+          subjectId: 'math',
+          startTime: '07:30',
+          endTime: '08:10',
+          isHomework: false,
+          homeworkNote: '',
+        },
       ],
+    }))
+  }, [])
+
+  const handleToggleHomework = useCallback((day: DayOfWeek, tempId: string) => {
+    setEditable((prev) => ({
+      ...prev,
+      [day]: (prev[day] ?? []).map((p) =>
+        p.tempId === tempId ? { ...p, isHomework: !p.isHomework } : p
+      ),
     }))
   }, [])
 
@@ -126,6 +146,8 @@ export const ScheduleManager = ({ initialSchedule }: ScheduleManagerProps) => {
               subjectId: period.subjectId,
               startTime: period.startTime,
               endTime: period.endTime,
+              isHomework: period.isHomework,
+              homeworkNote: period.homeworkNote || null,
             })
             if (!result.success) {
               setError(result.error ?? 'Không thể cập nhật tiết học')
@@ -204,48 +226,78 @@ export const ScheduleManager = ({ initialSchedule }: ScheduleManagerProps) => {
       {/* Period list */}
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
         {activePeriods.map((period) => (
-          <div key={period.tempId} className="flex items-center gap-2 rounded-2xl bg-slate-50 p-3">
-            {/* Subject select */}
-            <select
-              value={period.subjectId}
-              onChange={(e) =>
-                handleUpdatePeriod(activeDay, period.tempId, 'subjectId', e.target.value)
-              }
-              className="flex-1 rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none"
-            >
-              {SUBJECTS.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-            {/* Start time */}
-            <input
-              type="time"
-              value={period.startTime}
-              onChange={(e) =>
-                handleUpdatePeriod(activeDay, period.tempId, 'startTime', e.target.value)
-              }
-              className="w-28 rounded-xl border-2 border-slate-200 bg-white px-2 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none"
-            />
-            <span className="text-sm font-bold text-slate-400">–</span>
-            {/* End time */}
-            <input
-              type="time"
-              value={period.endTime}
-              onChange={(e) =>
-                handleUpdatePeriod(activeDay, period.tempId, 'endTime', e.target.value)
-              }
-              className="w-28 rounded-xl border-2 border-slate-200 bg-white px-2 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none"
-            />
-            {/* Delete */}
-            <button
-              onClick={() => handleDeletePeriod(activeDay, period.tempId)}
-              aria-label="Xóa tiết học"
-              className="flex min-h-10 min-w-10 items-center justify-center rounded-xl p-2 text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
-            >
-              <Trash2 size={18} />
-            </button>
+          <div key={period.tempId} className="flex flex-col gap-2 rounded-2xl bg-slate-50 p-3">
+            <div className="flex items-center gap-2">
+              {/* Subject select */}
+              <select
+                value={period.subjectId}
+                onChange={(e) =>
+                  handleUpdatePeriod(activeDay, period.tempId, 'subjectId', e.target.value)
+                }
+                className="flex-1 rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none"
+              >
+                {SUBJECTS.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+              {/* Start time */}
+              <input
+                type="time"
+                value={period.startTime}
+                onChange={(e) =>
+                  handleUpdatePeriod(activeDay, period.tempId, 'startTime', e.target.value)
+                }
+                className="w-28 rounded-xl border-2 border-slate-200 bg-white px-2 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none"
+              />
+              <span className="text-sm font-bold text-slate-400">–</span>
+              {/* End time */}
+              <input
+                type="time"
+                value={period.endTime}
+                onChange={(e) =>
+                  handleUpdatePeriod(activeDay, period.tempId, 'endTime', e.target.value)
+                }
+                className="w-28 rounded-xl border-2 border-slate-200 bg-white px-2 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none"
+              />
+              {/* Homework toggle */}
+              <button
+                onClick={() => handleToggleHomework(activeDay, period.tempId)}
+                aria-label={period.isHomework ? 'Bỏ đánh dấu bài tập' : 'Đánh dấu là bài tập'}
+                aria-pressed={period.isHomework}
+                className={cn(
+                  'flex min-h-10 min-w-10 items-center justify-center rounded-xl p-2 transition-colors',
+                  period.isHomework
+                    ? 'bg-amber-100 text-amber-600 hover:bg-amber-200'
+                    : 'text-slate-400 hover:bg-slate-200 hover:text-slate-600'
+                )}
+              >
+                <BookOpen size={18} />
+              </button>
+              {/* Delete */}
+              <button
+                onClick={() => handleDeletePeriod(activeDay, period.tempId)}
+                aria-label="Xóa tiết học"
+                className="flex min-h-10 min-w-10 items-center justify-center rounded-xl p-2 text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
+
+            {/* Homework note — visible only when period is marked as homework */}
+            {period.isHomework && (
+              <input
+                type="text"
+                placeholder="Ghi chú bài tập (vd: Làm bài 1–5 trang 24)"
+                value={period.homeworkNote}
+                maxLength={200}
+                onChange={(e) =>
+                  handleUpdatePeriod(activeDay, period.tempId, 'homeworkNote', e.target.value)
+                }
+                className="rounded-xl border-2 border-amber-200 bg-amber-50 px-3 py-2 text-sm text-slate-700 placeholder-slate-400 focus:border-amber-400 focus:outline-none"
+              />
+            )}
           </div>
         ))}
 

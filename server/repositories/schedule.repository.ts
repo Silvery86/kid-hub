@@ -22,6 +22,8 @@ export interface UpdatePeriodInput {
   startTime?: string
   endTime?: string
   roomNumber?: string
+  isHomework?: boolean
+  homeworkNote?: string | null
 }
 
 /**
@@ -34,6 +36,8 @@ const toClassPeriod = (row: {
   startTime: string
   endTime: string
   roomNumber: string | null
+  isHomework: boolean
+  homeworkNote: string | null
 }): ClassPeriod => ({
   id: row.id,
   periodNumber: row.periodNumber,
@@ -41,6 +45,8 @@ const toClassPeriod = (row: {
   startTime: row.startTime,
   endTime: row.endTime,
   ...(row.roomNumber ? { roomNumber: row.roomNumber } : {}),
+  ...(row.isHomework ? { isHomework: true } : {}),
+  ...(row.homeworkNote ? { homeworkNote: row.homeworkNote } : {}),
 })
 
 /** Retrieves the full weekly schedule for a user grouped by day. */
@@ -98,6 +104,8 @@ export const updatePeriod = async (data: UpdatePeriodInput): Promise<void> => {
       ...(data.startTime ? { startTime: data.startTime } : {}),
       ...(data.endTime ? { endTime: data.endTime } : {}),
       ...(data.roomNumber !== undefined ? { roomNumber: data.roomNumber } : {}),
+      ...(data.isHomework !== undefined ? { isHomework: data.isHomework } : {}),
+      ...(data.homeworkNote !== undefined ? { homeworkNote: data.homeworkNote } : {}),
     },
   })
 }

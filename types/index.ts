@@ -24,6 +24,17 @@ export interface ClassPeriod {
   startTime: string // "HH:MM" 24-hour format
   endTime: string // "HH:MM" 24-hour format
   roomNumber?: string
+  isHomework?: boolean
+  homeworkNote?: string
+}
+
+export interface HomeworkItem {
+  periodId: string
+  subjectId: string
+  homeworkNote: string
+  startTime: string
+  isDone: boolean
+  doneAt?: string // ISO date string
 }
 
 export interface DailySchedule {

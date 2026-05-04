@@ -11,13 +11,15 @@ import { TodayTimetable } from '@/components/dashboard/TodayTimetable'
 import { StreakWidget } from '@/components/dashboard/StreakWidget'
 import { BadgeModal } from '@/components/dashboard/BadgeModal'
 import { GameEntryCard } from '@/components/games/GameEntryCard'
-import type { DailySchedule, WeeklySchedule } from '@/types'
+import { HomeworkChip } from '@/components/homework/HomeworkChip'
+import type { DailySchedule, WeeklySchedule, HomeworkItem } from '@/types'
 
 interface DashboardViewProps {
   initialSchedule: DailySchedule[]
+  initialHomework: HomeworkItem[]
 }
 
-export const DashboardView = ({ initialSchedule }: DashboardViewProps) => {
+export const DashboardView = ({ initialSchedule, initialHomework }: DashboardViewProps) => {
   const weeklySchedule: WeeklySchedule = { weekStartDate: '', days: initialSchedule }
   const { todaySchedule, currentPeriod, nextPeriod } = useSchedule(weeklySchedule)
   const { updateStreak, progress } = useUserProgress()
@@ -55,6 +57,9 @@ export const DashboardView = ({ initialSchedule }: DashboardViewProps) => {
               </p>
             </div>
           )}
+
+          {/* Homework entry point — only visible when pending items exist */}
+          <HomeworkChip items={initialHomework} />
 
           {/* Streak + points */}
           <StreakWidget />

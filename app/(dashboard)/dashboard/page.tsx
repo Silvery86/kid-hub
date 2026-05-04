@@ -3,14 +3,19 @@
 import { TabletPageContainer } from '@/components/layout/TabletPageContainer'
 import { DashboardView } from '@/components/dashboard/DashboardView'
 import { getScheduleAction } from '@/server/actions/schedule.actions'
+import { getTodayHomeworkAction } from '@/server/actions/homework.actions'
 
 export default async function DashboardPage() {
-  const result = await getScheduleAction()
-  const schedule = result.data ?? []
+  const [scheduleResult, homeworkResult] = await Promise.all([
+    getScheduleAction(),
+    getTodayHomeworkAction(),
+  ])
+  const schedule = scheduleResult.data ?? []
+  const homework = homeworkResult.data ?? []
 
   return (
     <TabletPageContainer>
-      <DashboardView initialSchedule={schedule} />
+      <DashboardView initialSchedule={schedule} initialHomework={homework} />
     </TabletPageContainer>
   )
 }
