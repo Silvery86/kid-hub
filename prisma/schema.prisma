@@ -35,6 +35,7 @@ model User {
   grades              SubjectGrade[]
   progress            UserProgress?
   homeworkCompletions HomeworkCompletion[]
+  mathProgress        MathProgress[]
 
   @@map("users")
 }
@@ -168,6 +169,13 @@ enum GameType {
   english
 }
 
+/// MathGameType distinguishes the three math mini-games within the math route.
+enum MathGameType {
+  counting
+  addition
+  shapes
+}
+
 model GameBestScore {
   id             String       @id @default(cuid())
   userProgressId String
@@ -176,9 +184,33 @@ model GameBestScore {
   level          Int          // 1, 2, or 3 — maps to DifficultyLevel
   score          Int
   starsEarned    Int          // 1, 2, or 3
+  subType        String?      // "counting" | "addition" | "shapes" — null for english
   achievedAt     DateTime     @default(now())
 
-  // One best score per game + level
-  @@unique([userProgressId, gameType, level])
+  // One best score per game + level + subType (subType differentiates math mini-games)
+  @@unique([userProgressId, gameType, level, subType])
   @@map("game_best_scores")
+}
+
+// ── Math Progress ─────────────────────────────────────────────
+
+/// Records a single completed math mini-game session.
+model MathProgress {
+  id               String       @id @default(cuid())
+  userId           String
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  minigame         MathGameType
+  level            Int          // 1, 2, or 3
+  correctCount     Int
+  incorrectCount   Int
+  timeSpentSecs    Int          // Total wall-clock seconds for the session
+  starsEarned      Int          // 1–3
+  score            Int          // correctCount × 10 × starsEarned
+  homeworkPeriodId String?      // FK to ClassPeriod — set when submitted as homework
+  homeworkDate     String?      // "YYYY-MM-DD" — mirrors HomeworkCompletion.date
+  completedAt      DateTime     @default(now())
+
+  @@index([userId, completedAt])
+  @@index([userId, homeworkPeriodId])
+  @@map("math_progress")
 }

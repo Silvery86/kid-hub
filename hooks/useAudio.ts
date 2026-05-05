@@ -45,7 +45,9 @@ export const useAudio = () => {
     if (!audio) return
     try {
       audio.currentTime = 0
-      void audio.play()
+      audio.play().catch(() => {
+        // Silently ignore — missing file, blocked autoplay, or unsupported format
+      })
     } catch {
       // Silently ignore blocked autoplay or missing file
     }

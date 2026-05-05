@@ -42,6 +42,8 @@ export const PIN_LENGTH = 4
 
 export const GAME_QUESTIONS_PER_SESSION = 10
 export const GAME_SECONDS_PER_QUESTION = 10
+export const COUNTING_SECONDS_PER_QUESTION = 15
+export const SHAPE_SECONDS_PER_QUESTION = 12
 export const MAX_STARS = 3
 
 // ── UI / Interaction ──────────────────────────────────────────

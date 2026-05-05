@@ -12,7 +12,7 @@ import { generateMathQuestions } from '@/lib/data/mathLevels'
 import { GameHud } from '@/components/games/GameHud'
 import { GameResultScreen } from '@/components/games/GameResultScreen'
 import { KidButton } from '@/components/ui/KidButton'
-import { STORAGE_KEYS, INPUT_THROTTLE_MS } from '@/lib/constants'
+import { STORAGE_KEYS, INPUT_THROTTLE_MS, GAME_SECONDS_PER_QUESTION } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import type { DifficultyLevel, GameBestScore, MathQuestion } from '@/types'
 
@@ -24,18 +24,23 @@ const LEVEL_LABELS: Record<DifficultyLevel, string> = {
 
 interface MathGameProps {
   initialLevel?: DifficultyLevel
+  onExit?: () => void
+  homeworkPeriodId?: string
+  onHomeworkSubmit?: () => void
 }
 
-export const MathGame = ({ initialLevel = 1 }: MathGameProps) => {
+export const MathGame = ({ initialLevel = 1, onExit, homeworkPeriodId, onHomeworkSubmit }: MathGameProps) => {
   const router = useRouter()
+  const handleExit = onExit ?? (() => router.push('/dashboard'))
   const { state, startGame, answerCorrect, answerWrong, resetGame, starsEarned, pointsEarned } =
     useGameSession()
   const { initialise, play } = useAudio()
   const { addPoints } = useUserProgress()
-  const [bestScores, setBestScores] = useLocalStorage<GameBestScore[]>(
+  const [progress, setProgress] = useLocalStorage<import('@/types').UserProgress | null>(
     STORAGE_KEYS.USER_PROGRESS,
-    []
+    null
   )
+  const bestScores: GameBestScore[] = Array.isArray(progress?.bestScores) ? progress.bestScores : []
 
   const [questions, setQuestions] = useState<MathQuestion[]>([])
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
@@ -53,7 +58,7 @@ export const MathGame = ({ initialLevel = 1 }: MathGameProps) => {
       setQuestions(qs)
       setSelectedAnswer(null)
       setFeedbackState('idle')
-      startGame('math', level)
+      startGame('math', level, GAME_SECONDS_PER_QUESTION)
     },
     [initialise, startGame]
   )
@@ -75,10 +80,14 @@ export const MathGame = ({ initialLevel = 1 }: MathGameProps) => {
         score: state.correctCount * 10,
         starsEarned,
         achievedAt: new Date().toISOString(),
+        subType: 'addition',
       }
-      setBestScores((prev) => {
-        const filtered = prev.filter((b) => !(b.gameType === 'math' && b.level === state.level))
-        return [...filtered, newBest]
+      setProgress((prev) => {
+        const prevScores: GameBestScore[] = Array.isArray(prev?.bestScores) ? prev.bestScores : []
+        const filtered = prevScores.filter(
+          (b) => !(b.gameType === 'math' && b.level === state.level && b.subType === 'addition')
+        )
+        return prev ? { ...prev, bestScores: [...filtered, newBest] } : null
       })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -97,15 +106,19 @@ export const MathGame = ({ initialLevel = 1 }: MathGameProps) => {
       setTimeout(() => {
         setSelectedAnswer(null)
         setFeedbackState('idle')
-        if (isCorrect) answerCorrect()
-        else answerWrong()
+        if (isCorrect) answerCorrect(GAME_SECONDS_PER_QUESTION)
+        else answerWrong(GAME_SECONDS_PER_QUESTION)
         isProcessing.current = false
       }, INPUT_THROTTLE_MS)
     },
     [state.status, currentQuestion, play, answerCorrect, answerWrong]
   )
 
-  const bestScore = bestScores.find((b) => b.gameType === 'math' && b.level === state.level) ?? null
+  const [homeworkSubmitted, setHomeworkSubmitted] = useState(false)
+  const bestScore =
+    bestScores.find(
+      (b) => b.gameType === 'math' && b.level === state.level && b.subType === 'addition'
+    ) ?? null
 
   // ── Result screen ──────────────────────────────────────────
   if (state.status === 'result') {
@@ -117,7 +130,9 @@ export const MathGame = ({ initialLevel = 1 }: MathGameProps) => {
         pointsEarned={pointsEarned}
         bestStars={bestScore?.starsEarned ?? null}
         onReplay={() => handleStart(state.level)}
-        onExit={() => router.push('/dashboard')}
+        onExit={handleExit}
+        onHomeworkSubmit={homeworkPeriodId ? () => { setHomeworkSubmitted(true); onHomeworkSubmit?.() } : undefined}
+        homeworkSubmitted={homeworkSubmitted}
       />
     )
   }
@@ -144,7 +159,7 @@ export const MathGame = ({ initialLevel = 1 }: MathGameProps) => {
         </div>
         <KidButton
           variant="ghost"
-          onClick={() => router.push('/dashboard')}
+          onClick={handleExit}
           className="text-slate-400"
         >
           Quay lại
@@ -162,7 +177,7 @@ export const MathGame = ({ initialLevel = 1 }: MathGameProps) => {
         correctCount={state.correctCount}
         questionIndex={state.currentQuestionIndex}
         secondsLeft={state.secondsLeft}
-        onExit={() => router.push('/dashboard')}
+        onExit={handleExit}
       />
 
       <div

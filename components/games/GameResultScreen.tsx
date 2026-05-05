@@ -13,6 +13,8 @@ interface GameResultScreenProps {
   bestStars: 1 | 2 | 3 | null
   onReplay: () => void
   onExit: () => void
+  onHomeworkSubmit?: () => void
+  homeworkSubmitted?: boolean
 }
 
 const EMOJI_BY_STARS: Record<1 | 2 | 3, string> = {
@@ -34,6 +36,8 @@ export const GameResultScreen = ({
   bestStars,
   onReplay,
   onExit,
+  onHomeworkSubmit,
+  homeworkSubmitted,
 }: GameResultScreenProps) => {
   const isNewBest = bestStars === null || starsEarned > bestStars
 
@@ -74,13 +78,23 @@ export const GameResultScreen = ({
       </div>
 
       {/* Actions */}
-      <div className="flex gap-4">
+      <div className="flex flex-wrap justify-center gap-4">
         <KidButton variant="ghost" onClick={onExit} className="border-slate-600 text-slate-300">
           Về trang chủ
         </KidButton>
         <KidButton variant="primary" onClick={onReplay}>
           Chơi lại 🔄
         </KidButton>
+        {onHomeworkSubmit && !homeworkSubmitted && (
+          <KidButton variant="secondary" onClick={onHomeworkSubmit}>
+            🏠 Nộp bài tập
+          </KidButton>
+        )}
+        {homeworkSubmitted && (
+          <div className="flex items-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3">
+            <span className="text-xl font-bold text-white">✅ Đã nộp bài!</span>
+          </div>
+        )}
       </div>
     </div>
   )

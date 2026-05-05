@@ -75,6 +75,7 @@ export interface ReportCard {
 // ── Games ────────────────────────────────────────────────────
 
 export type GameType = 'math' | 'english'
+export type MathGameType = 'counting' | 'addition' | 'shapes'
 export type GameStatus = 'idle' | 'playing' | 'paused' | 'result'
 export type DifficultyLevel = 1 | 2 | 3
 
@@ -85,6 +86,24 @@ export interface MathQuestion {
   operator: '+' | '-'
   correctAnswer: number
   options: [number, number] // Always exactly two choices
+}
+
+export interface CountingQuestion {
+  id: string
+  objectEmoji: string
+  count: number
+  choices: number[]       // [correct, distractor1, distractor2] shuffled
+  correctIndex: number
+}
+
+export type ShapeId = 'circle' | 'square' | 'triangle' | 'rectangle' | 'star' | 'heart'
+
+export interface ShapeQuestion {
+  id: string
+  mode: 'name-to-shape' | 'shape-to-name'
+  targetShape: ShapeId
+  choices: ShapeId[]      // [correct, distractor1, distractor2] shuffled
+  correctIndex: number
 }
 
 export interface EnglishQuestion {
@@ -113,6 +132,17 @@ export interface GameBestScore {
   score: number
   starsEarned: 1 | 2 | 3
   achievedAt: string // ISO date string
+  subType?: string   // "counting" | "addition" | "shapes" — undefined for english
+}
+
+export interface SaveMathProgressInput {
+  minigame: MathGameType
+  level: DifficultyLevel
+  correctCount: number
+  incorrectCount: number
+  timeSpentSecs: number
+  homeworkPeriodId?: string
+  homeworkDate?: string
 }
 
 // ── Gamification ─────────────────────────────────────────────

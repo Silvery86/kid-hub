@@ -23,10 +23,10 @@ export interface GameSessionState {
 // ── Actions ───────────────────────────────────────────────────
 
 type GameAction =
-  | { type: 'START'; gameType: GameType; level: DifficultyLevel }
-  | { type: 'ANSWER_CORRECT' }
-  | { type: 'ANSWER_WRONG' }
-  | { type: 'TICK' }
+  | { type: 'START'; gameType: GameType; level: DifficultyLevel; secondsPerQuestion: number }
+  | { type: 'ANSWER_CORRECT'; secondsPerQuestion: number }
+  | { type: 'ANSWER_WRONG'; secondsPerQuestion: number }
+  | { type: 'TICK'; secondsPerQuestion: number }
   | { type: 'FINISH' }
   | { type: 'RESET' }
 
@@ -51,6 +51,7 @@ const gameReducer = (state: GameSessionState, action: GameAction): GameSessionSt
         status: 'playing',
         gameType: action.gameType,
         level: action.level,
+        secondsLeft: action.secondsPerQuestion,
         startedAt: Date.now(),
       }
 
@@ -61,7 +62,7 @@ const gameReducer = (state: GameSessionState, action: GameAction): GameSessionSt
         ...state,
         correctCount: state.correctCount + 1,
         currentQuestionIndex: nextIndex,
-        secondsLeft: GAME_SECONDS_PER_QUESTION,
+        secondsLeft: action.secondsPerQuestion,
         status: isLast ? 'result' : 'playing',
       }
     }
@@ -72,7 +73,7 @@ const gameReducer = (state: GameSessionState, action: GameAction): GameSessionSt
       return {
         ...state,
         currentQuestionIndex: nextIndex,
-        secondsLeft: GAME_SECONDS_PER_QUESTION,
+        secondsLeft: action.secondsPerQuestion,
         status: isLast ? 'result' : 'playing',
       }
     }
@@ -85,7 +86,7 @@ const gameReducer = (state: GameSessionState, action: GameAction): GameSessionSt
         return {
           ...state,
           currentQuestionIndex: nextIndex,
-          secondsLeft: GAME_SECONDS_PER_QUESTION,
+          secondsLeft: action.secondsPerQuestion,
           status: isLast ? 'result' : 'playing',
         }
       }
@@ -120,9 +121,9 @@ export const calculatePointsEarned = (correctCount: number, stars: 1 | 2 | 3): n
 export interface UseGameSessionResult {
   state: GameSessionState
   isTransitioning: boolean
-  startGame: (gameType: GameType, level: DifficultyLevel) => void
-  answerCorrect: () => void
-  answerWrong: () => void
+  startGame: (gameType: GameType, level: DifficultyLevel, secondsPerQuestion?: number) => void
+  answerCorrect: (secondsPerQuestion?: number) => void
+  answerWrong: (secondsPerQuestion?: number) => void
   resetGame: () => void
   starsEarned: 1 | 2 | 3
   pointsEarned: number
@@ -134,6 +135,7 @@ export const useGameSession = (): UseGameSessionResult => {
   const isTransitioning = useRef(false)
   // Timer
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const secondsPerQuestionRef = useRef(GAME_SECONDS_PER_QUESTION)
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {
@@ -145,30 +147,37 @@ export const useGameSession = (): UseGameSessionResult => {
   useEffect(() => {
     if (state.status === 'playing') {
       clearTimer()
-      timerRef.current = setInterval(() => dispatch({ type: 'TICK' }), 1000)
+      timerRef.current = setInterval(
+        () => dispatch({ type: 'TICK', secondsPerQuestion: secondsPerQuestionRef.current }),
+        1000
+      )
     } else {
       clearTimer()
     }
     return clearTimer
   }, [state.status, state.currentQuestionIndex, clearTimer])
 
-  const startGame = useCallback((gameType: GameType, level: DifficultyLevel) => {
-    dispatch({ type: 'START', gameType, level })
-  }, [])
+  const startGame = useCallback(
+    (gameType: GameType, level: DifficultyLevel, secondsPerQuestion = GAME_SECONDS_PER_QUESTION) => {
+      secondsPerQuestionRef.current = secondsPerQuestion
+      dispatch({ type: 'START', gameType, level, secondsPerQuestion })
+    },
+    []
+  )
 
-  const answerCorrect = useCallback(() => {
+  const answerCorrect = useCallback((secondsPerQuestion = GAME_SECONDS_PER_QUESTION) => {
     if (isTransitioning.current) return
     isTransitioning.current = true
-    dispatch({ type: 'ANSWER_CORRECT' })
+    dispatch({ type: 'ANSWER_CORRECT', secondsPerQuestion })
     setTimeout(() => {
       isTransitioning.current = false
     }, 400)
   }, [])
 
-  const answerWrong = useCallback(() => {
+  const answerWrong = useCallback((secondsPerQuestion = GAME_SECONDS_PER_QUESTION) => {
     if (isTransitioning.current) return
     isTransitioning.current = true
-    dispatch({ type: 'ANSWER_WRONG' })
+    dispatch({ type: 'ANSWER_WRONG', secondsPerQuestion })
     setTimeout(() => {
       isTransitioning.current = false
     }, 400)
