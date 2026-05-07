@@ -1,7 +1,14 @@
-/** English game page — entry point for the Word Explorer mini-game. */
+/** English hub page — Server Component that fetches today's English homework and renders the game hub. */
 
-import { EnglishGame } from '@/components/games/EnglishGame'
+import { EnglishHub } from '@/components/games/EnglishHub'
+import { getTodayEnglishHomework } from '@/server/services/english.service'
+import { todayDateKey, todayDayOfWeek } from '@/server/services/homework.service'
+import { DEFAULT_USER_ID } from '@/lib/constants'
 
-export default function EnglishGamePage() {
-  return <EnglishGame />
+export default async function EnglishGamePage() {
+  const day = todayDayOfWeek()
+  const date = todayDateKey()
+  const englishHomework = await getTodayEnglishHomework(DEFAULT_USER_ID, day, date).catch(() => null)
+
+  return <EnglishHub englishHomework={englishHomework} />
 }

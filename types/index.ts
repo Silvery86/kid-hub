@@ -76,6 +76,7 @@ export interface ReportCard {
 
 export type GameType = 'math' | 'english'
 export type MathGameType = 'counting' | 'addition' | 'shapes'
+export type EnglishGameType = 'alphabet' | 'vocabulary' | 'phonics'
 export type GameStatus = 'idle' | 'playing' | 'paused' | 'result'
 export type DifficultyLevel = 1 | 2 | 3
 
@@ -115,6 +116,33 @@ export interface EnglishQuestion {
   options: string[]
 }
 
+export interface AlphabetQuestion {
+  id: string
+  type: 'upper-to-lower' | 'lower-to-upper'
+  prompt: string        // The displayed letter (uppercase or lowercase)
+  choices: string[]     // 4 letters (correct + 3 distractors), shuffled
+  correctAnswer: string
+}
+
+export interface WordSafariQuestion {
+  id: string
+  type: 'image-to-word' | 'word-to-image'
+  prompt: string         // Emoji (Mode A) or word text (Mode B)
+  choices: string[]      // 3–4 items (words for Mode A, emojis for Mode B), shuffled
+  correctAnswer: string
+  theme: 'animals' | 'fruits' | 'other'
+}
+
+export interface SoundHuntQuestion {
+  id: string
+  type: 'sound-hunt'
+  targetLetter: string   // e.g. 'C'
+  phonemeHint: string    // e.g. '/k/ — "c" trong từ "cat"'
+  choices: string[]      // 3–4 emoji strings, shuffled
+  correctAnswer: string  // The emoji whose word starts with targetLetter
+  correctWord: string    // The word (e.g. 'cat') — for test assertion
+}
+
 export interface GameSession {
   gameType: GameType
   level: DifficultyLevel
@@ -132,11 +160,21 @@ export interface GameBestScore {
   score: number
   starsEarned: 1 | 2 | 3
   achievedAt: string // ISO date string
-  subType?: string   // "counting" | "addition" | "shapes" — undefined for english
+  subType?: string   // "counting" | "addition" | "shapes" for math; "alphabet" | "vocabulary" | "phonics" for english
 }
 
 export interface SaveMathProgressInput {
   minigame: MathGameType
+  level: DifficultyLevel
+  correctCount: number
+  incorrectCount: number
+  timeSpentSecs: number
+  homeworkPeriodId?: string
+  homeworkDate?: string
+}
+
+export interface SaveEnglishProgressInput {
+  minigame: EnglishGameType
   level: DifficultyLevel
   correctCount: number
   incorrectCount: number

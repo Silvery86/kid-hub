@@ -15,6 +15,7 @@ interface GameResultScreenProps {
   onExit: () => void
   onHomeworkSubmit?: () => void
   homeworkSubmitted?: boolean
+  saveError?: string
 }
 
 const EMOJI_BY_STARS: Record<1 | 2 | 3, string> = {
@@ -38,6 +39,7 @@ export const GameResultScreen = ({
   onExit,
   onHomeworkSubmit,
   homeworkSubmitted,
+  saveError,
 }: GameResultScreenProps) => {
   const isNewBest = bestStars === null || starsEarned > bestStars
 
@@ -86,7 +88,7 @@ export const GameResultScreen = ({
           Chơi lại 🔄
         </KidButton>
         {onHomeworkSubmit && !homeworkSubmitted && (
-          <KidButton variant="secondary" onClick={onHomeworkSubmit}>
+          <KidButton variant="secondary" onClick={onHomeworkSubmit} data-testid="submit-homework-btn">
             🏠 Nộp bài tập
           </KidButton>
         )}
@@ -96,6 +98,11 @@ export const GameResultScreen = ({
           </div>
         )}
       </div>
+      {saveError && (
+        <p className="text-center text-base font-semibold text-red-400">
+          ⚠️ Không thể lưu điểm — {saveError}
+        </p>
+      )}
     </div>
   )
 }

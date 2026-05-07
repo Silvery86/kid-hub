@@ -36,6 +36,7 @@ model User {
   progress            UserProgress?
   homeworkCompletions HomeworkCompletion[]
   mathProgress        MathProgress[]
+  englishProgress     EnglishProgress[]
 
   @@map("users")
 }
@@ -176,6 +177,13 @@ enum MathGameType {
   shapes
 }
 
+/// EnglishGameType distinguishes the three English mini-games within the english route.
+enum EnglishGameType {
+  alphabet
+  vocabulary
+  phonics
+}
+
 model GameBestScore {
   id             String       @id @default(cuid())
   userProgressId String
@@ -184,7 +192,7 @@ model GameBestScore {
   level          Int          // 1, 2, or 3 — maps to DifficultyLevel
   score          Int
   starsEarned    Int          // 1, 2, or 3
-  subType        String?      // "counting" | "addition" | "shapes" — null for english
+  subType        String?      // "counting" | "addition" | "shapes" for math; "alphabet" | "vocabulary" | "phonics" for english
   achievedAt     DateTime     @default(now())
 
   // One best score per game + level + subType (subType differentiates math mini-games)
@@ -213,4 +221,27 @@ model MathProgress {
   @@index([userId, completedAt])
   @@index([userId, homeworkPeriodId])
   @@map("math_progress")
+}
+
+// ── English Progress ──────────────────────────────────────────
+
+/// Records a single completed English mini-game session.
+model EnglishProgress {
+  id               String          @id @default(cuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  minigame         EnglishGameType // alphabet | vocabulary | phonics
+  level            Int             // 1, 2, or 3
+  correctCount     Int
+  incorrectCount   Int
+  timeSpentSecs    Int             // Total wall-clock seconds for the session
+  starsEarned      Int             // 1–3, derived from correctCount / totalQuestions
+  score            Int             // correctCount × 10 × starsEarned
+  homeworkPeriodId String?         // FK to ClassPeriod — set when submitted as homework
+  homeworkDate     String?         // "YYYY-MM-DD" — required if homeworkPeriodId set
+  completedAt      DateTime        @default(now())
+
+  @@index([userId, completedAt])
+  @@index([userId, homeworkPeriodId])
+  @@map("english_progress")
 }
