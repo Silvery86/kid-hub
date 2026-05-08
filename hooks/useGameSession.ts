@@ -2,9 +2,9 @@
 
 /** Game session state machine — manages question flow, timer, scoring, and session lifecycle. */
 
-import { useReducer, useCallback, useEffect, useRef } from 'react'
+import { useReducer, useCallback, useEffect, useRef, useState } from 'react'
 import type { GameStatus, GameType, DifficultyLevel } from '@/types'
-import { GAME_QUESTIONS_PER_SESSION, GAME_SECONDS_PER_QUESTION, MAX_STARS } from '@/lib/constants'
+import { GAME_QUESTIONS_PER_SESSION, GAME_SECONDS_PER_QUESTION } from '@/lib/constants'
 import { clamp, calculateScore } from '@/lib/utils'
 
 // ── State ─────────────────────────────────────────────────────
@@ -132,7 +132,8 @@ export interface UseGameSessionResult {
 
 export const useGameSession = (): UseGameSessionResult => {
   const [state, dispatch] = useReducer(gameReducer, initialState)
-  const isTransitioning = useRef(false)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const isTransitioningRef = useRef(false)
   // Timer
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const secondsPerQuestionRef = useRef(GAME_SECONDS_PER_QUESTION)
@@ -166,20 +167,24 @@ export const useGameSession = (): UseGameSessionResult => {
   )
 
   const answerCorrect = useCallback((secondsPerQuestion = GAME_SECONDS_PER_QUESTION) => {
-    if (isTransitioning.current) return
-    isTransitioning.current = true
+    if (isTransitioningRef.current) return
+    isTransitioningRef.current = true
+    setIsTransitioning(true)
     dispatch({ type: 'ANSWER_CORRECT', secondsPerQuestion })
     setTimeout(() => {
-      isTransitioning.current = false
+      isTransitioningRef.current = false
+      setIsTransitioning(false)
     }, 400)
   }, [])
 
   const answerWrong = useCallback((secondsPerQuestion = GAME_SECONDS_PER_QUESTION) => {
-    if (isTransitioning.current) return
-    isTransitioning.current = true
+    if (isTransitioningRef.current) return
+    isTransitioningRef.current = true
+    setIsTransitioning(true)
     dispatch({ type: 'ANSWER_WRONG', secondsPerQuestion })
     setTimeout(() => {
-      isTransitioning.current = false
+      isTransitioningRef.current = false
+      setIsTransitioning(false)
     }, 400)
   }, [])
 
@@ -191,7 +196,7 @@ export const useGameSession = (): UseGameSessionResult => {
 
   return {
     state,
-    isTransitioning: isTransitioning.current,
+    isTransitioning,
     startGame,
     answerCorrect,
     answerWrong,

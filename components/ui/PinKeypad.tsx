@@ -42,10 +42,15 @@ export const PinKeypad = ({
   useEffect(() => {
     if (errorCount === 0 || errorCount === prevErrorCount.current) return
     prevErrorCount.current = errorCount
-    setValue('')
-    setIsShaking(true)
+    const resetTimer = setTimeout(() => {
+      setValue('')
+      setIsShaking(true)
+    }, 0)
     const t = setTimeout(() => setIsShaking(false), PIN_SHAKE_DURATION_MS)
-    return () => clearTimeout(t)
+    return () => {
+      clearTimeout(resetTimer)
+      clearTimeout(t)
+    }
   }, [errorCount])
 
   const handleKey = (key: KeypadKey): void => {
@@ -88,7 +93,7 @@ export const PinKeypad = ({
 
       {/* Numeric keypad */}
       <div className="grid grid-cols-3 gap-3" role="group" aria-label="PIN keypad">
-        {KEYPAD_KEYS.map((key, idx) => {
+        {KEYPAD_KEYS.map((key, _idx) => {
           if (key === '') {
             return <div key="blank" aria-hidden="true" />
           }

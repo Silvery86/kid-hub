@@ -45,12 +45,13 @@ const ObjectGrid = ({ emoji, count }: { emoji: string; count: number }) => (
 )
 
 export const CountingGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: CountingGameProps) => {
-  const { state, starsEarned, pointsEarned, isProcessing, start, answerCorrect, answerWrong, bestScore } =
+  const { state, starsEarned, pointsEarned, isProcessing: isProcessingRef, start, answerCorrect, answerWrong, bestScore } =
     useMathSession({ minigame: 'counting', secondsPerQuestion: COUNTING_SECONDS_PER_QUESTION, homeworkPeriodId })
 
   const [questions, setQuestions] = useState<CountingQuestion[]>([])
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [feedbackState, setFeedbackState] = useState<'idle' | 'correct' | 'wrong'>('idle')
+  const [isProcessing, setIsProcessing] = useState(false)
   const [homeworkSubmitted, setHomeworkSubmitted] = useState(false)
 
   const currentQuestion = questions[state.currentQuestionIndex] ?? null
@@ -68,8 +69,9 @@ export const CountingGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: Cou
 
   const handleAnswer = useCallback(
     (choiceIndex: number) => {
-      if (isProcessing.current || state.status !== 'playing' || !currentQuestion) return
-      isProcessing.current = true
+      if (isProcessingRef.current || state.status !== 'playing' || !currentQuestion) return
+      isProcessingRef.current = true
+      setIsProcessing(true)
 
       const isCorrect = choiceIndex === currentQuestion.correctIndex
       setSelectedIndex(choiceIndex)
@@ -80,10 +82,11 @@ export const CountingGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: Cou
         setFeedbackState('idle')
         if (isCorrect) answerCorrect()
         else answerWrong()
-        isProcessing.current = false
+        isProcessingRef.current = false
+        setIsProcessing(false)
       }, INPUT_THROTTLE_MS)
     },
-    [state.status, currentQuestion, answerCorrect, answerWrong, isProcessing]
+    [state.status, currentQuestion, answerCorrect, answerWrong, isProcessingRef]
   )
 
   const handleHomeworkSubmit = () => {
@@ -156,7 +159,7 @@ export const CountingGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: Cou
               <KidButton
                 key={idx}
                 onClick={() => handleAnswer(idx)}
-                isDisabled={isProcessing.current}
+                isDisabled={isProcessing}
                 data-testid={`answer-btn-${idx}`}
                 className={cn(
                   'min-h-32 min-w-32 text-6xl font-extrabold transition-colors duration-200',

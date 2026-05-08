@@ -102,12 +102,13 @@ const NameAnswerButton = ({
 )
 
 export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeGameProps) => {
-  const { state, starsEarned, pointsEarned, isProcessing, start, answerCorrect, answerWrong, bestScore } =
+  const { state, starsEarned, pointsEarned, isProcessing: isProcessingRef, start, answerCorrect, answerWrong, bestScore } =
     useMathSession({ minigame: 'shapes', secondsPerQuestion: SHAPE_SECONDS_PER_QUESTION, homeworkPeriodId })
 
   const [questions, setQuestions] = useState<ShapeQuestion[]>([])
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [feedbackState, setFeedbackState] = useState<'idle' | 'correct' | 'wrong'>('idle')
+  const [isProcessing, setIsProcessing] = useState(false)
   const [homeworkSubmitted, setHomeworkSubmitted] = useState(false)
 
   const currentQuestion = questions[state.currentQuestionIndex] ?? null
@@ -125,8 +126,9 @@ export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeG
 
   const handleAnswer = useCallback(
     (choiceIndex: number) => {
-      if (isProcessing.current || state.status !== 'playing' || !currentQuestion) return
-      isProcessing.current = true
+      if (isProcessingRef.current || state.status !== 'playing' || !currentQuestion) return
+      isProcessingRef.current = true
+      setIsProcessing(true)
 
       const isCorrect = choiceIndex === currentQuestion.correctIndex
       setSelectedIndex(choiceIndex)
@@ -137,10 +139,11 @@ export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeG
         setFeedbackState('idle')
         if (isCorrect) answerCorrect()
         else answerWrong()
-        isProcessing.current = false
+        isProcessingRef.current = false
+        setIsProcessing(false)
       }, INPUT_THROTTLE_MS)
     },
-    [state.status, currentQuestion, answerCorrect, answerWrong, isProcessing]
+    [state.status, currentQuestion, answerCorrect, answerWrong, isProcessingRef]
   )
 
   const handleHomeworkSubmit = () => {
@@ -224,7 +227,7 @@ export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeG
                 isSelected={isSelected}
                 isCorrect={isCorrect}
                 onTap={() => handleAnswer(idx)}
-                disabled={isProcessing.current}
+                disabled={isProcessing}
               />
             ) : (
               <NameAnswerButton
@@ -233,7 +236,7 @@ export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeG
                 isSelected={isSelected}
                 isCorrect={isCorrect}
                 onTap={() => handleAnswer(idx)}
-                disabled={isProcessing.current}
+                disabled={isProcessing}
               />
             )
           })}

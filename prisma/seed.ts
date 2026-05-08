@@ -81,7 +81,7 @@ const adapter = new PrismaPg({ connectionString: databaseUrl })
 const db = new PrismaClient({ adapter, log: ['error'] })
 
 async function main() {
-  console.log('🌱 Seeding database...')
+  console.warn('🌱 Seeding database...')
 
   const user = await db.user.upsert({
     where: { id: DEFAULT_USER_ID },
@@ -104,7 +104,7 @@ async function main() {
     update: {},
   })
 
-  console.log(`✅ Default user seeded: ${user.name} (id: ${user.id})`)
+  console.warn(`✅ Default user seeded: ${user.name} (id: ${user.id})`)
 
   // Validate schedule data before touching the DB
   assertNoOverlaps(WEEKLY_SCHEDULE)
@@ -135,7 +135,7 @@ async function main() {
     })
   }
 
-  console.log(`✅ Weekly schedule seeded: ${WEEKLY_SCHEDULE.length} periods across 5 days`)
+  console.warn(`✅ Weekly schedule seeded: ${WEEKLY_SCHEDULE.length} periods across 5 days`)
 }
 
 main()

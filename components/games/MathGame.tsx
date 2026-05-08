@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { useGameSession, calculateStars, calculatePointsEarned } from '@/hooks/useGameSession'
+import { useGameSession } from '@/hooks/useGameSession'
 import { useAudio } from '@/hooks/useAudio'
 import { useUserProgress } from '@/hooks/useUserProgress'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
@@ -32,7 +32,7 @@ interface MathGameProps {
 export const MathGame = ({ initialLevel = 1, onExit, homeworkPeriodId, onHomeworkSubmit }: MathGameProps) => {
   const router = useRouter()
   const handleExit = onExit ?? (() => router.push('/dashboard'))
-  const { state, startGame, answerCorrect, answerWrong, resetGame, starsEarned, pointsEarned } =
+  const { state, startGame, answerCorrect, answerWrong, starsEarned, pointsEarned } =
     useGameSession()
   const { initialise, play } = useAudio()
   const { addPoints } = useUserProgress()

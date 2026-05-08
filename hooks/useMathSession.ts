@@ -11,7 +11,7 @@ import { useAudio } from '@/hooks/useAudio'
 import { useUserProgress } from '@/hooks/useUserProgress'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { saveMathProgressAction } from '@/server/actions/math.actions'
-import { STORAGE_KEYS, GAME_QUESTIONS_PER_SESSION } from '@/lib/constants'
+import { STORAGE_KEYS } from '@/lib/constants'
 import { todayDateKey } from '@/lib/clientDateUtils'
 import type { DifficultyLevel, GameBestScore, MathGameType } from '@/types'
 

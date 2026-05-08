@@ -2,7 +2,7 @@
 
 /** FullScreenModal — portal-rendered overlay with close button and focus trap. */
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -22,12 +22,7 @@ export const FullScreenModal = ({
   children,
   className,
 }: FullScreenModalProps) => {
-  // Guard against SSR: portals require document.body
-  const [isMounted, setIsMounted] = useState(false)
-
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
+  const canUsePortal = typeof document !== 'undefined'
 
   // Lock body scroll while modal is open
   useEffect(() => {
@@ -39,7 +34,7 @@ export const FullScreenModal = ({
     }
   }, [isOpen])
 
-  if (!isOpen || !isMounted) return null
+  if (!isOpen || !canUsePortal) return null
 
   return createPortal(
     <div

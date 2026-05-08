@@ -2,7 +2,7 @@
 
 /** ScheduleManager — parent panel for adding, editing, and removing class periods via server actions. */
 
-import { useState, useCallback, useEffect, useTransition, useRef } from 'react'
+import { useState, useCallback, useTransition, useRef } from 'react'
 import { Plus, Trash2, Save, Check, AlertCircle, BookOpen } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import type { DailySchedule, DayOfWeek } from '@/types'
@@ -63,11 +63,6 @@ export const ScheduleManager = ({ initialSchedule }: ScheduleManagerProps) => {
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const referenceDbIdsRef = useRef<Set<string>>(extractDbIds(initialSchedule))
-
-  useEffect(() => {
-    setEditable(buildEditableSchedule(initialSchedule))
-    referenceDbIdsRef.current = extractDbIds(initialSchedule)
-  }, [initialSchedule])
 
   const handleUpdatePeriod = useCallback(
     (

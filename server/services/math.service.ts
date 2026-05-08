@@ -9,7 +9,7 @@ import * as mathRepo from '@/server/repositories/math.repository'
 import * as homeworkRepo from '@/server/repositories/homework.repository'
 import { calculateStars, calculatePointsEarned } from '@/hooks/useGameSession'
 import { GAME_QUESTIONS_PER_SESSION } from '@/lib/constants'
-import type { MathGameType, DifficultyLevel, SaveMathProgressInput } from '@/types'
+import type { SaveMathProgressInput } from '@/types'
 
 export interface MathSessionResult {
   starsEarned: 1 | 2 | 3
