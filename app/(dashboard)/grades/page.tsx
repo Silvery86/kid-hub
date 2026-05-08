@@ -1,5 +1,7 @@
 /** Grades page — read-only report card grid fetched from the database. */
 
+export const dynamic = 'force-dynamic'
+
 import {
   Calculator,
   BookOpen,

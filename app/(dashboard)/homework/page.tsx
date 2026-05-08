@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { getTodayHomeworkAction } from '@/server/actions/homework.actions'
 import { HomeworkMode } from '@/components/homework/HomeworkMode'
 

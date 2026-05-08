@@ -1,5 +1,7 @@
 /** Schedule page — read-only 5-day weekly timetable with live-class highlighting. */
 
+export const dynamic = 'force-dynamic'
+
 import { TabletPageContainer } from '@/components/layout/TabletPageContainer'
 import { getScheduleAction } from '@/server/actions/schedule.actions'
 import { ScheduleGrid } from '@/components/dashboard/ScheduleGrid'
