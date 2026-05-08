@@ -24,9 +24,11 @@ export const DashboardView = ({ initialSchedule, initialHomework }: DashboardVie
   const { todaySchedule, currentPeriod, nextPeriod } = useSchedule(weeklySchedule)
   const { updateStreak, progress } = useUserProgress()
   const [isBadgeModalOpen, setIsBadgeModalOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
-  // Update streak once on mount
+  // Update streak once on mount; also mark mounted to hydrate localStorage-dependent values
   useEffect(() => {
+    setMounted(true)
     updateStreak()
   }, [updateStreak])
 
@@ -93,7 +95,7 @@ export const DashboardView = ({ initialSchedule, initialHomework }: DashboardVie
                 emoji="🔢"
                 href="/math"
                 colorClass="bg-blue-500"
-                bestScore={progress.bestScores.find((b) => b.gameType === 'math') ?? null}
+                bestScore={mounted ? (progress.bestScores.find((b) => b.gameType === 'math') ?? null) : null}
               />
               <GameEntryCard
                 gameType="english"
@@ -102,7 +104,7 @@ export const DashboardView = ({ initialSchedule, initialHomework }: DashboardVie
                 emoji="🔤"
                 href="/english"
                 colorClass="bg-emerald-500"
-                bestScore={progress.bestScores.find((b) => b.gameType === 'english') ?? null}
+                bestScore={mounted ? (progress.bestScores.find((b) => b.gameType === 'english') ?? null) : null}
               />
             </div>
           </section>

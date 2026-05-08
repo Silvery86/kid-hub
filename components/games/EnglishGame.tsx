@@ -163,7 +163,7 @@ export const EnglishGame = ({ initialLevel = 1 }: EnglishGameProps) => {
   const isLetterMatch = currentQuestion.type === 'letter-match'
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-screen flex-col overflow-hidden">
       <GameHud
         correctCount={state.correctCount}
         questionIndex={state.currentQuestionIndex}
@@ -173,32 +173,32 @@ export const EnglishGame = ({ initialLevel = 1 }: EnglishGameProps) => {
 
       <div
         className={cn(
-          'flex flex-1 flex-col items-center justify-center gap-10 px-8 transition-colors duration-300',
+          'flex flex-1 flex-col items-center justify-center gap-2 px-3 py-4 sm:gap-6 sm:px-6 transition-colors duration-300',
           feedbackState === 'correct' && 'bg-emerald-900/40',
           feedbackState === 'wrong' && 'bg-red-900/40'
         )}
       >
         {/* Emoji / image */}
         {currentQuestion.imageUrl && (
-          <div className="text-[8rem] leading-none select-none" aria-hidden="true">
+          <div className="text-5xl leading-none select-none sm:text-7xl md:text-[8rem]" aria-hidden="true">
             {currentQuestion.imageUrl}
           </div>
         )}
 
         {/* Prompt */}
-        <div className="animate-in fade-in anim-duration-200 rounded-3xl bg-slate-700 px-10 py-6 shadow-2xl">
-          <p className="text-center text-6xl font-extrabold tracking-widest text-white select-none">
+        <div className="animate-in fade-in anim-duration-200 rounded-2xl bg-slate-700 px-3 py-3 shadow-2xl sm:rounded-3xl sm:px-8 sm:py-4 md:px-10 md:py-6">
+          <p className="text-center text-2xl font-extrabold tracking-widest text-white select-none sm:text-4xl md:text-6xl">
             {currentQuestion.prompt}
           </p>
           {isLetterMatch && (
-            <p className="mt-2 text-center text-lg font-semibold text-slate-400">
+            <p className="mt-1 text-center text-xs font-semibold text-slate-400 sm:mt-2 sm:text-sm md:text-lg">
               Chọn chữ cái còn thiếu
             </p>
           )}
         </div>
 
         {/* Answer buttons */}
-        <div className="flex max-w-2xl flex-wrap justify-center gap-4">
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4">
           {currentQuestion.options.map((option) => {
             const isSelected = selectedAnswer === option
             const isCorrectOption = option === currentQuestion.correctAnswer
@@ -209,7 +209,7 @@ export const EnglishGame = ({ initialLevel = 1 }: EnglishGameProps) => {
                 onClick={() => handleAnswer(option)}
                 isDisabled={isProcessing.current}
                 className={cn(
-                  'min-h-24 min-w-36 text-4xl font-extrabold transition-colors duration-200',
+                  'min-h-16 min-w-16 text-xl font-extrabold transition-colors duration-200 sm:min-h-20 sm:min-w-28 sm:text-2xl md:min-h-24 md:min-w-36 md:text-4xl',
                   isSelected && isCorrectOption && 'border-emerald-700 bg-emerald-500',
                   isSelected && !isCorrectOption && 'border-red-700 bg-red-500'
                 )}

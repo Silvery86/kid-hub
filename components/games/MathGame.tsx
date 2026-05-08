@@ -172,7 +172,7 @@ export const MathGame = ({ initialLevel = 1, onExit, homeworkPeriodId, onHomewor
   if (!currentQuestion) return null
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-screen flex-col overflow-hidden">
       <GameHud
         correctCount={state.correctCount}
         questionIndex={state.currentQuestionIndex}
@@ -182,20 +182,20 @@ export const MathGame = ({ initialLevel = 1, onExit, homeworkPeriodId, onHomewor
 
       <div
         className={cn(
-          'flex flex-1 flex-col items-center justify-center gap-10 px-8 transition-colors duration-300',
+          'flex flex-1 flex-col items-center justify-center gap-2 px-3 py-4 sm:gap-6 sm:px-6 transition-colors duration-300',
           feedbackState === 'correct' && 'bg-emerald-900/40',
           feedbackState === 'wrong' && 'bg-red-900/40'
         )}
       >
         {/* Question card */}
-        <div className="animate-in fade-in anim-duration-200 rounded-3xl bg-slate-700 px-16 py-10 text-center shadow-2xl">
-          <p className="text-8xl font-extrabold tracking-tight text-white select-none">
+        <div className="animate-in fade-in anim-duration-200 rounded-2xl bg-slate-700 px-4 py-6 text-center shadow-2xl sm:rounded-3xl sm:px-12 sm:py-8">
+          <p className="text-4xl font-extrabold tracking-tight text-white select-none sm:text-6xl md:text-8xl">
             {currentQuestion.operandA} {currentQuestion.operator} {currentQuestion.operandB} = ?
           </p>
         </div>
 
         {/* Answer buttons */}
-        <div className="flex gap-8">
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-4 md:gap-8">
           {currentQuestion.options.map((option) => {
             const isSelected = selectedAnswer === option
             const isCorrectOption = option === currentQuestion.correctAnswer
@@ -205,7 +205,7 @@ export const MathGame = ({ initialLevel = 1, onExit, homeworkPeriodId, onHomewor
                 onClick={() => handleAnswer(option)}
                 isDisabled={isProcessing.current}
                 className={cn(
-                  'min-h-32 min-w-48 text-6xl font-extrabold transition-colors duration-200',
+                  'min-h-20 min-w-20 text-3xl font-extrabold transition-colors duration-200 sm:min-h-28 sm:min-w-36 sm:text-4xl md:min-h-32 md:min-w-48 md:text-6xl',
                   isSelected && isCorrectOption && 'border-emerald-700 bg-emerald-500',
                   isSelected && !isCorrectOption && 'border-red-700 bg-red-500'
                 )}

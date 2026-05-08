@@ -133,7 +133,7 @@ export const CountingGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: Cou
   if (!currentQuestion) return null
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-screen flex-col overflow-hidden">
       <GameHud
         correctCount={state.correctCount}
         questionIndex={state.currentQuestionIndex}
@@ -142,16 +142,16 @@ export const CountingGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: Cou
       />
       <div
         className={cn(
-          'flex flex-1 flex-col items-center justify-center gap-10 px-8 transition-colors duration-300',
+          'flex flex-1 flex-col items-center justify-center gap-3 px-3 py-4 sm:gap-6 sm:px-6 transition-colors duration-300',
           feedbackState === 'correct' && 'bg-emerald-900/40',
           feedbackState === 'wrong' && 'bg-red-900/40'
         )}
       >
-        <p className="text-2xl font-bold text-white select-none">Có bao nhiêu cái?</p>
-        <div className="animate-in fade-in anim-duration-200 rounded-3xl bg-slate-700 p-8 shadow-2xl">
+        <p className="text-base font-bold text-white select-none sm:text-2xl">Có bao nhiêu cái?</p>
+        <div className="animate-in fade-in anim-duration-200 rounded-2xl bg-slate-700 p-4 shadow-2xl sm:rounded-3xl sm:p-6 md:p-8">
           <ObjectGrid emoji={currentQuestion.objectEmoji} count={currentQuestion.count} />
         </div>
-        <div className="flex gap-6">
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-4 md:gap-6">
           {currentQuestion.choices.map((choice, idx) => {
             const isSelected = selectedIndex === idx
             const isCorrect = idx === currentQuestion.correctIndex
@@ -162,7 +162,7 @@ export const CountingGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: Cou
                 isDisabled={isProcessing}
                 data-testid={`answer-btn-${idx}`}
                 className={cn(
-                  'min-h-32 min-w-32 text-6xl font-extrabold transition-colors duration-200',
+                  'min-h-20 min-w-20 text-3xl font-extrabold transition-colors duration-200 sm:min-h-28 sm:min-w-28 sm:text-4xl md:min-h-32 md:min-w-32 md:text-6xl',
                   isSelected && isCorrect && 'border-emerald-700 bg-emerald-500',
                   isSelected && !isCorrect && 'border-red-700 bg-red-500'
                 )}

@@ -46,14 +46,27 @@ export interface UseScheduleResult {
  * Updates every 30 seconds so the active-class indicator stays current.
  */
 export const useSchedule = (schedule: WeeklySchedule): UseScheduleResult => {
-  const [now, setNow] = useState(() => new Date())
+  const [now, setNow] = useState<Date | null>(null)
 
   useEffect(() => {
+    setNow(new Date())
     const intervalId = setInterval(() => setNow(new Date()), 30_000)
     return () => clearInterval(intervalId)
   }, [])
 
   return useMemo(() => {
+    if (!now) {
+      return {
+        todaySchedule: null,
+        currentPeriod: null,
+        nextPeriod: null,
+        todayDow: null,
+        allDays: DAYS_OF_WEEK.map(
+          (dow) => schedule.days.find((d) => d.day === dow) ?? { day: dow, periods: [] }
+        ),
+      }
+    }
+
     const todayDow = getDayOfWeek(now.getDay())
     const todaySchedule = todayDow ? (schedule.days.find((d) => d.day === todayDow) ?? null) : null
 
