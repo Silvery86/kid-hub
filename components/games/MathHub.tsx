@@ -41,7 +41,7 @@ const GameCard = ({ id, emoji, title, description, bestScore, onClick }: GameCar
     className={cn(
       'flex flex-col gap-3 rounded-3xl bg-math p-6 shadow-lg text-left',
       'transition-transform duration-100 active:scale-[0.97] touch-manipulation select-none',
-      'w-full'
+      'w-full min-h-tap-lg'
     )}
   >
     <div className="text-6xl" aria-hidden="true">{emoji}</div>

@@ -27,6 +27,7 @@ export const GameEntryCard = ({
     href={href}
     className={cn(
       'flex flex-col gap-3 rounded-3xl p-5 shadow-lg',
+      'min-h-tap-lg',
       'transition-transform duration-100 active:scale-[0.97]',
       'touch-manipulation select-none',
       colorClass

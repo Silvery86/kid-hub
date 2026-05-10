@@ -27,15 +27,15 @@ interface ShapeGameProps {
 
 /** Renders a large centred shape for display questions. */
 const ShapePrompt = ({ shape }: { shape: ShapeId }) => (
-  <div className="animate-in zoom-in-95 anim-duration-200 flex items-center justify-center rounded-2xl bg-slate-700 p-4 shadow-2xl sm:rounded-3xl sm:p-6 md:p-8 md:p-10">
-    <ShapeDisplay shape={shape} className="h-20 w-20 sm:h-28 sm:w-28 md:h-36 md:w-36" />
+  <div className="animate-in zoom-in-95 anim-duration-200 flex items-center justify-center rounded-2xl bg-slate-700 p-4 shadow-2xl portrait:rounded-3xl portrait:p-6 lg:p-10">
+    <ShapeDisplay shape={shape} className="h-20 w-20 portrait:h-28 portrait:w-28 lg:h-36 lg:w-36" />
   </div>
 )
 
 /** Renders the shape name as a large centred label for name-to-shape questions. */
 const NamePrompt = ({ shape }: { shape: ShapeId }) => (
-  <div className="animate-in zoom-in-95 anim-duration-200 rounded-2xl bg-slate-700 px-4 py-3 shadow-2xl sm:rounded-3xl sm:px-8 sm:py-6 md:px-14 md:py-10">
-    <p className="text-3xl font-extrabold text-white select-none sm:text-5xl md:text-7xl">{SHAPE_LABELS[shape]}</p>
+  <div className="animate-in zoom-in-95 anim-duration-200 rounded-2xl bg-slate-700 px-4 py-3 shadow-2xl portrait:rounded-3xl portrait:px-8 portrait:py-6 lg:px-14 lg:py-10">
+    <p className="text-3xl font-extrabold text-white select-none portrait:text-5xl lg:text-7xl">{SHAPE_LABELS[shape]}</p>
   </div>
 )
 
@@ -58,7 +58,7 @@ const ShapeAnswerButton = ({
     disabled={disabled}
     aria-label={SHAPE_LABELS[shape]}
     className={cn(
-      'flex min-h-16 min-w-16 items-center justify-center rounded-2xl border-4 p-2 sm:min-h-28 sm:min-w-28 sm:rounded-3xl sm:p-3 md:min-h-28 md:min-w-28 md:p-4',
+      'flex min-h-tap-lg min-w-tap-lg items-center justify-center rounded-2xl border-4 p-2 portrait:min-h-28 portrait:min-w-28 portrait:rounded-3xl portrait:p-3 lg:min-h-28 lg:min-w-28 lg:p-4',
       'transition-colors duration-200 touch-manipulation select-none',
       'border-slate-600 bg-slate-700 text-white',
       isSelected && isCorrect && 'border-emerald-400 bg-emerald-600',
@@ -66,7 +66,7 @@ const ShapeAnswerButton = ({
       !isSelected && !disabled && 'hover:border-slate-400 active:scale-95'
     )}
   >
-    <ShapeDisplay shape={shape} className="h-10 w-10 sm:h-14 sm:w-14 md:h-16 md:w-16" />
+    <ShapeDisplay shape={shape} className="h-10 w-10 portrait:h-14 portrait:w-14 lg:h-16 lg:w-16" />
   </button>
 )
 
@@ -89,8 +89,8 @@ const NameAnswerButton = ({
     disabled={disabled}
     aria-label={SHAPE_LABELS[shape]}
     className={cn(
-      'min-h-14 min-w-20 rounded-2xl border-4 px-3 py-2 sm:min-h-16 sm:min-w-32 sm:rounded-3xl sm:px-4 sm:py-2 md:min-h-[4.5rem] md:min-w-40 md:px-6 md:py-3',
-      'text-sm font-extrabold text-white transition-colors duration-200 touch-manipulation select-none sm:text-lg md:text-2xl',
+      'min-h-tap min-w-20 rounded-2xl border-4 px-3 py-2 portrait:min-h-16 portrait:min-w-32 portrait:rounded-3xl portrait:px-4 lg:min-h-[4.5rem] lg:min-w-40 lg:px-6 lg:py-3',
+      'text-sm font-extrabold text-white transition-colors duration-200 touch-manipulation select-none portrait:text-lg lg:text-2xl',
       'border-slate-600 bg-slate-700',
       isSelected && isCorrect && 'border-emerald-400 bg-emerald-600',
       isSelected && !isCorrect && 'border-red-400 bg-red-600',
@@ -192,7 +192,7 @@ export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeG
   const isNameToShape = currentQuestion.mode === 'name-to-shape'
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <GameHud
         correctCount={state.correctCount}
         questionIndex={state.currentQuestionIndex}
@@ -201,12 +201,12 @@ export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeG
       />
       <div
         className={cn(
-          'flex flex-1 flex-col items-center justify-center gap-3 px-3 py-4 sm:gap-6 sm:px-6 transition-colors duration-300',
+          'flex flex-1 flex-col items-center justify-center gap-3 px-3 py-2 portrait:gap-6 portrait:py-4 portrait:px-6 transition-colors duration-300',
           feedbackState === 'correct' && 'bg-emerald-900/40',
           feedbackState === 'wrong' && 'bg-red-900/40'
         )}
       >
-        <p className="text-base font-bold text-slate-300 select-none sm:text-2xl">
+        <p className="text-base font-bold text-slate-300 select-none portrait:text-2xl">
           {isNameToShape ? 'Hình nào là...?' : 'Hình này tên là gì?'}
         </p>
 
@@ -216,7 +216,7 @@ export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeG
           <ShapePrompt shape={currentQuestion.targetShape} />
         )}
 
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-4 md:gap-6">
+        <div className="flex flex-wrap justify-center gap-2 portrait:gap-4 lg:gap-6">
           {currentQuestion.choices.map((choice, idx) => {
             const isSelected = selectedIndex === idx
             const isCorrect = idx === currentQuestion.correctIndex

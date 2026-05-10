@@ -51,6 +51,24 @@
   /* ── Tap targets → min-h-tap, w-tap-lg, etc. ────────────────────────── */
   --spacing-tap: 3rem;
   --spacing-tap-lg: 4rem;
+  --spacing-tap-xl: 5rem;
+}
+
+/* ============================================
+   ORIENTATION VARIANTS (RESP-001)
+   Enables portrait: and landscape: Tailwind prefixes.
+   ============================================ */
+
+@custom-variant landscape {
+  @media (orientation: landscape) {
+    @slot;
+  }
+}
+
+@custom-variant portrait {
+  @media (orientation: portrait) {
+    @slot;
+  }
 }
 
 /* ============================================
@@ -78,6 +96,21 @@ body {
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Per-axis safe-area classes (RESP-003) */
+.safe-top    { padding-top:    env(safe-area-inset-top);    }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+.safe-left   { padding-left:   env(safe-area-inset-left);  }
+.safe-right  { padding-right:  env(safe-area-inset-right); }
+
+/* Orientation fallback show/hide classes (RESP-005)
+   Use until @custom-variant is confirmed working in all build targets. */
+@media (orientation: landscape) {
+  .portrait-only  { display: none; }
+}
+@media (orientation: portrait) {
+  .landscape-only { display: none; }
 }
 
 .no-select {

@@ -25,25 +25,25 @@ export const GameHud = ({ correctCount, questionIndex, secondsLeft, onExit }: Ga
   const dash = circ * timeProgress
 
   return (
-    <div className="flex items-center gap-2 bg-slate-800/90 px-2 py-2 backdrop-blur-sm sm:gap-4 sm:px-6 sm:py-3">
+    <div className="flex items-center gap-2 bg-slate-800/90 px-2 py-2 backdrop-blur-sm portrait:gap-4 portrait:px-6 portrait:py-3">
       {/* Exit */}
       <button
         onClick={onExit}
         aria-label="Thoát trò chơi"
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-700 text-lg font-bold text-slate-300 transition-colors hover:bg-slate-600 sm:h-14 sm:w-14 sm:rounded-xl sm:text-xl"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-700 text-lg font-bold text-slate-300 transition-colors hover:bg-slate-600 portrait:h-14 portrait:w-14 portrait:rounded-xl portrait:text-xl min-h-tap min-w-tap"
       >
         ✕
       </button>
 
       {/* Question progress bar */}
       <div className="flex-1">
-        <div className="mb-1 flex justify-between text-xs font-semibold text-slate-400 sm:text-sm">
+        <div className="mb-1 flex justify-between text-xs font-semibold text-slate-400 portrait:text-sm">
           <span>
             Câu {questionIndex + 1}/{GAME_QUESTIONS_PER_SESSION}
           </span>
           <span className="text-emerald-400">{correctCount}✓</span>
         </div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-slate-700 sm:h-2">
+        <div className="h-1.5 overflow-hidden rounded-full bg-slate-700 portrait:h-2">
           <div
             className="h-full rounded-full bg-blue-400 transition-[width] duration-300"
             style={{ width: `${progress * 100}%` }}
@@ -56,7 +56,7 @@ export const GameHud = ({ correctCount, questionIndex, secondsLeft, onExit }: Ga
         className={cn('shrink-0', isUrgent && 'animate-pulse')}
         aria-label={`${secondsLeft} giây còn lại`}
       >
-        <svg width="40" height="40" viewBox="0 0 48 48" aria-hidden="true" className="sm:h-12 sm:w-12">
+        <svg width="40" height="40" viewBox="0 0 48 48" aria-hidden="true" className="portrait:h-12 portrait:w-12">
           {/* Track */}
           <circle cx="24" cy="24" r={radius} fill="none" stroke="#334155" strokeWidth="4" />
           {/* Progress */}

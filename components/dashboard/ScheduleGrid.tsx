@@ -26,7 +26,7 @@ export const ScheduleGrid = ({ initialSchedule }: ScheduleGridProps) => {
   const { allDays, todayDow, currentPeriod } = useSchedule(weeklySchedule)
 
   return (
-    <div className="grid h-[calc(100vh-6.5rem)] grid-cols-5 gap-3">
+    <div className="grid h-[calc(100dvh-6.5rem)] grid-cols-5 gap-3 portrait:gap-1">
       {DAYS_OF_WEEK.map((dow, colIndex) => {
         const daySchedule = allDays[colIndex] ?? { day: dow, periods: [] }
         const isToday = dow === todayDow
@@ -35,18 +35,18 @@ export const ScheduleGrid = ({ initialSchedule }: ScheduleGridProps) => {
           <div
             key={dow}
             className={cn(
-              'flex flex-col gap-2 rounded-3xl p-3',
+              'flex flex-col gap-2 rounded-3xl p-3 portrait:gap-1 portrait:rounded-xl portrait:p-1.5',
               isToday ? 'bg-blue-50 ring-2 ring-blue-300' : 'bg-white/70'
             )}
           >
             {/* Day header */}
             <div
               className={cn(
-                'shrink-0 rounded-2xl px-3 py-2 text-center',
+                'shrink-0 rounded-2xl px-3 py-2 text-center portrait:rounded-lg portrait:px-1 portrait:py-1',
                 isToday ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-600'
               )}
             >
-              <p className="text-base font-extrabold">{DAY_LABELS[dow]}</p>
+              <p className="text-base font-extrabold portrait:text-[0.6rem] portrait:leading-tight">{DAY_LABELS[dow]}</p>
             </div>
 
             {/* Period cells */}
@@ -60,7 +60,7 @@ export const ScheduleGrid = ({ initialSchedule }: ScheduleGridProps) => {
                 return (
                   <div
                     key={periodNumber}
-                    className="flex min-h-16 flex-1 items-center justify-center rounded-xl bg-slate-50"
+                    className="flex min-h-16 flex-1 items-center justify-center rounded-xl bg-slate-50 portrait:min-h-10 portrait:rounded-lg"
                   >
                     <span className="text-sm font-bold text-slate-300">—</span>
                   </div>
@@ -71,7 +71,7 @@ export const ScheduleGrid = ({ initialSchedule }: ScheduleGridProps) => {
                 <div
                   key={periodNumber}
                   className={cn(
-                    'flex min-h-16 flex-1 flex-col justify-between rounded-xl p-3',
+                    'flex min-h-16 flex-1 flex-col justify-between rounded-xl p-3 portrait:min-h-10 portrait:rounded-lg portrait:p-1.5',
                     'transition-[transform,box-shadow] duration-200',
                     subject.colorClass,
                     isActiveCell && 'scale-[1.03] shadow-lg ring-2 ring-white'
@@ -85,10 +85,11 @@ export const ScheduleGrid = ({ initialSchedule }: ScheduleGridProps) => {
                       </span>
                     </span>
                   )}
-                  <p className="truncate text-sm leading-snug font-extrabold text-white">
+                  <p className="text-sm leading-snug font-extrabold text-white portrait:text-[0.6rem] portrait:leading-tight">
                     {subject.name}
                   </p>
-                  <p className="text-xs text-white/80">
+                  {/* Hide time in portrait — too narrow to show */}
+                  <p className="text-xs text-white/80 portrait:hidden">
                     {period.startTime} – {period.endTime}
                   </p>
                 </div>
