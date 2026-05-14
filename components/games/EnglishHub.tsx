@@ -39,15 +39,15 @@ const GameCard = ({ id, emoji, title, description, bestScore, onClick }: GameCar
     data-testid={`game-card-${id}`}
     aria-label={`Chơi ${title}`}
     className={cn(
-      'flex flex-col gap-3 rounded-3xl bg-english p-6 shadow-lg text-left',
+      'flex flex-col gap-1.5 portrait:gap-3 rounded-3xl bg-english p-3 portrait:p-6 shadow-lg text-left',
       'transition-transform duration-100 active:scale-[0.97] touch-manipulation select-none',
       'w-full min-h-tap-lg'
     )}
   >
-    <div className="text-6xl" aria-hidden="true">{emoji}</div>
+    <div className="text-3xl portrait:text-6xl" aria-hidden="true">{emoji}</div>
     <div>
-      <h3 className="text-2xl font-extrabold text-white">{title}</h3>
-      <p className="text-sm text-white/80">{description}</p>
+      <h3 className="text-base portrait:text-2xl font-extrabold text-white">{title}</h3>
+      <p className="text-xs portrait:text-sm text-white/80">{description}</p>
     </div>
     {bestScore ? (
       <div className="flex items-center gap-2">
@@ -131,18 +131,18 @@ export const EnglishHub = ({ englishHomework }: EnglishHubProps) => {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center gap-8 px-6 py-10 bg-shell-kid">
+    <div className="flex h-dvh overflow-y-auto flex-col items-center gap-3 portrait:gap-8 px-6 py-3 portrait:py-10 bg-shell-kid">
       <div className="flex w-full max-w-2xl items-center justify-between">
-        <KidButton variant="ghost" onClick={() => router.push('/dashboard')} className="text-text-secondary">
+        <KidButton variant="ghost" onClick={() => router.push('/dashboard')} className="text-text-secondary landscape:min-h-tap landscape:py-1">
           ← Về trang chủ
         </KidButton>
-        <h1 className="text-4xl font-extrabold text-text-primary">Tiếng Anh 🔤</h1>
-        <div className="w-24" aria-hidden="true" />
+        <h1 className="text-2xl portrait:text-4xl font-extrabold text-text-primary">Tiếng Anh 🔤</h1>
+        <div className="w-16 portrait:w-24" aria-hidden="true" />
       </div>
 
       {pendingHomework && <HomeworkBanner note={pendingHomework.homeworkNote} />}
 
-      <div className="grid w-full max-w-2xl grid-cols-1 gap-5 sm:grid-cols-3">
+      <div className="grid w-full max-w-2xl grid-cols-3 portrait:grid-cols-1 gap-3 portrait:gap-5">
         {(Object.keys(GAME_META) as EnglishGameType[]).map((game) => (
           <GameCard
             key={game}

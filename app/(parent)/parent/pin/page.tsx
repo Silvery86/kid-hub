@@ -111,14 +111,14 @@ export default function ParentPinPage() {
 
   if (pinState === 'loading') {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-slate-900">
+      <div className="fixed inset-0 flex min-h-dvh items-center justify-center bg-shell-dark safe-top">
         <div className="text-4xl">🔐</div>
       </div>
     )
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex h-screen w-screen items-center justify-center bg-slate-900">
+    <div className="fixed inset-0 z-50 flex min-h-dvh w-screen items-center justify-center bg-shell-dark safe-top safe-bottom">
       <div className="flex w-full max-w-sm flex-col items-center gap-8 px-6">
         {pinState === 'setup-enter' && (
           <>

@@ -10,7 +10,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* AppSidebar is position:fixed — add offset so content isn't obscured.
           Landscape: pl-16 (sidebar width) → lg:pl-56 (desktop sidebar)
           Portrait:  pb-16 (tab bar height) */}
-      <div className="min-h-screen bg-sky-50 pl-16 lg:pl-56 portrait:pl-0 portrait:pb-16">
+      <div className="min-h-dvh bg-shell-kid pl-16 portrait:pl-0 lg:pl-56 lg:portrait:pl-0 portrait:pb-16">
         <AppSidebar />
         <div className="overflow-hidden">
           <ErrorBoundary section="dashboard">{children}</ErrorBoundary>

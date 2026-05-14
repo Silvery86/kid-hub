@@ -129,7 +129,7 @@ export const EnglishGame = ({ initialLevel = 1 }: EnglishGameProps) => {
   // ── Level select ───────────────────────────────────────────
   if (state.status === 'idle') {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-8">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-8">
         <div className="text-8xl" aria-hidden="true">
           🔤
         </div>

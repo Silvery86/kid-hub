@@ -16,11 +16,11 @@ export interface TabletPageContainerProps {
 export const TabletPageContainer = ({ children, className }: TabletPageContainerProps) => (
   <main
     className={cn(
-      'min-h-screen w-full',
+      'min-h-dvh w-full',
       'overscroll-none', // Kills pull-to-refresh
       'select-none', // No text selection on long-press → native app feel
       '[touch-action:manipulation]', // Removes 300ms tap delay
-      'bg-sky-50', // Default page background
+      'bg-shell-kid', // Default kid page background (@theme)
       className
     )}
   >

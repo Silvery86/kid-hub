@@ -140,7 +140,7 @@ export const MathGame = ({ initialLevel = 1, onExit, homeworkPeriodId, onHomewor
   // ── Idle / level select ────────────────────────────────────
   if (state.status === 'idle') {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-8">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-8">
         <div className="text-8xl" aria-hidden="true">
           🔢
         </div>

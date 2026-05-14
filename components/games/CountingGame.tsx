@@ -27,14 +27,14 @@ interface CountingGameProps {
 /** Renders N emoji objects in a responsive wrap grid for the child to count. */
 const ObjectGrid = ({ emoji, count }: { emoji: string; count: number }) => (
   <div
-    className="flex max-w-xs flex-wrap justify-center gap-3"
+    className="flex max-w-xs flex-wrap justify-center gap-2 portrait:gap-3"
     aria-label={`${count} ${emoji}`}
     data-testid="object-grid"
   >
     {Array.from({ length: count }).map((_, i) => (
       <span
         key={i}
-        className="animate-in zoom-in-95 select-none text-5xl"
+        className="animate-in zoom-in-95 select-none text-3xl portrait:text-5xl"
         style={{ animationDelay: `${i * 80}ms` }}
         aria-hidden="true"
       >
@@ -112,7 +112,7 @@ export const CountingGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: Cou
 
   if (state.status === 'idle') {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-8" data-testid="game-card-counting">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-8" data-testid="game-card-counting">
         <div className="text-8xl" aria-hidden="true">🌟</div>
         <h1 className="text-5xl font-extrabold text-white">Đếm Sao</h1>
         <p className="text-xl text-slate-300">Đếm số đồ vật trên màn hình!</p>

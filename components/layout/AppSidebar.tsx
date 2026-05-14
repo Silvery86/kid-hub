@@ -46,8 +46,8 @@ function NavLink({
           'min-h-tap min-w-tap',                              // 48px tap target (P1/P2 rule)
           'lg:flex-row lg:justify-start lg:gap-3 lg:px-4',   // desktop: icon + label inline
           isActive
-            ? 'bg-blue-500 text-white shadow-md'
-            : 'text-slate-500 hover:bg-sky-100 hover:text-blue-500'
+            ? 'bg-btn-primary text-white shadow-md'
+            : 'text-text-secondary hover:bg-shell-kid hover:text-btn-primary'
         )}
       >
         <Icon size={22} strokeWidth={isActive ? 2.5 : 2} aria-hidden="true" />
@@ -65,7 +65,7 @@ function NavLink({
       className={cn(
         'flex flex-1 flex-col items-center justify-center gap-1 transition-colors',
         'min-h-tap-lg',                                       // 64px — portrait tab bar min
-        isActive ? 'text-blue-500' : 'text-slate-500'
+        isActive ? 'text-btn-primary' : 'text-text-secondary'
       )}
     >
       <Icon size={22} strokeWidth={isActive ? 2.5 : 2} aria-hidden="true" />
@@ -94,7 +94,7 @@ export const AppSidebar = () => {
         aria-label="Main navigation"
       >
         {/* Logo mark */}
-        <div className="mb-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-500 shadow-md lg:h-10 lg:w-10">
+        <div className="mb-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-btn-primary shadow-md lg:h-10 lg:w-10">
           <span className="text-2xl select-none" aria-hidden="true">🌟</span>
         </div>
 
@@ -119,7 +119,7 @@ export const AppSidebar = () => {
             className={cn(
               'flex flex-col items-center justify-center gap-1 rounded-2xl p-2 transition-colors',
               'min-h-tap min-w-tap',
-              'text-slate-400 hover:bg-slate-100 hover:text-slate-600',
+              'text-text-muted hover:bg-shell-light hover:text-text-secondary',
               'lg:flex-row lg:justify-start lg:gap-3 lg:px-4'
             )}
             aria-label="Switch to parent dashboard"

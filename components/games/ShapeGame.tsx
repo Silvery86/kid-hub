@@ -169,7 +169,7 @@ export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeG
 
   if (state.status === 'idle') {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-8" data-testid="game-card-shapes">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-8" data-testid="game-card-shapes">
         <div className="text-8xl" aria-hidden="true">🔷</div>
         <h1 className="text-5xl font-extrabold text-white">Khám Phá Hình</h1>
         <p className="text-xl text-slate-300">Nhận biết các hình học!</p>

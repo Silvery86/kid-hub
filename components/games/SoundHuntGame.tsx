@@ -97,7 +97,7 @@ export const SoundHuntGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: So
   // ── Level select ───────────────────────────────────────────
   if (state.status === 'idle') {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-8 px-6 bg-shell-kid">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-8 px-6 bg-shell-kid">
         <div className="text-8xl select-none" aria-hidden="true">🔊</div>
         <h1 className="text-4xl font-extrabold text-text-primary">Sound Hunt</h1>
         <p className="text-lg text-text-secondary">Tìm từ bắt đầu bằng âm chữ cái</p>
@@ -124,7 +124,7 @@ export const SoundHuntGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: So
   if (!currentQuestion) return null
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-dvh flex-col">
       <GameHud
         correctCount={state.correctCount}
         questionIndex={state.currentQuestionIndex}

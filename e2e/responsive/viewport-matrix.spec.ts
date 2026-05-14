@@ -1,10 +1,11 @@
 /**
  * Viewport matrix tests — RESP-007
  *
- * Verifies landscape-first responsive behaviour across three priority tiers:
+ * Verifies landscape-first responsive behaviour across priority tiers:
  *   P1 — iPhone 14 landscape  (844 × 390)
  *   P2 — iPhone 14 portrait   (390 × 844)
  *   P3 — iPad Air landscape   (1180 × 820)
+ *   P4 — iPad Air portrait    (820 × 1180)
  *
  * Rules under test (RESPONSIVE.md):
  *   - Navigation: sidebar visible in landscape, tab bar visible in portrait, never both
@@ -20,7 +21,11 @@ const VIEWPORTS = {
   'P1 — iPhone 14 landscape': { width: 844, height: 390 },
   'P2 — iPhone 14 portrait': { width: 390, height: 844 },
   'P3 — iPad Air landscape': { width: 1180, height: 820 },
+  'P4 — iPad Air portrait': { width: 820, height: 1180 },
 } as const
+
+/** Wide portrait tablet: `lg` width breakpoint + portrait — layout padding must not reserve sidebar. */
+const P5_LARGE_TABLET_PORTRAIT = { width: 1024, height: 1366 } as const
 
 const COOKIE_DOMAIN = 'localhost'
 
@@ -60,6 +65,18 @@ test.describe('Navigation — landscape shows sidebar, portrait shows tab bar', 
 
     const sidebar = page.getByRole('complementary', { name: 'Main navigation' })
     const tabBar  = page.getByRole('navigation',    { name: 'Main navigation' })
+
+    await expect(tabBar).toBeVisible()
+    await expect(sidebar).toBeHidden()
+  })
+
+  test('P4 iPad portrait: tab bar visible, sidebar hidden', async ({ page, context }) => {
+    await injectSession(context)
+    await page.setViewportSize(VIEWPORTS['P4 — iPad Air portrait'])
+    await page.goto('/dashboard')
+
+    const sidebar = page.getByRole('complementary', { name: 'Main navigation' })
+    const tabBar = page.getByRole('navigation', { name: 'Main navigation' })
 
     await expect(tabBar).toBeVisible()
     await expect(sidebar).toBeHidden()
@@ -168,4 +185,41 @@ test('Portrait tab bar has safe-bottom class', async ({ page, context }) => {
   const tabBar = page.getByRole('navigation', { name: 'Main navigation' })
   const classes = await tabBar.getAttribute('class') ?? ''
   expect(classes).toContain('safe-bottom')
+})
+
+test('P4 iPad portrait: tab bar has safe-bottom class', async ({ page, context }) => {
+  await injectSession(context)
+  await page.setViewportSize(VIEWPORTS['P4 — iPad Air portrait'])
+  await page.goto('/dashboard')
+
+  const tabBar = page.getByRole('navigation', { name: 'Main navigation' })
+  const classes = await tabBar.getAttribute('class') ?? ''
+  expect(classes).toContain('safe-bottom')
+})
+
+test('P5 large tablet portrait: no horizontal overflow on dashboard', async ({ page, context }) => {
+  await injectSession(context)
+  await page.setViewportSize(P5_LARGE_TABLET_PORTRAIT)
+  await page.goto('/dashboard')
+
+  const overflows = await page.evaluate(() => {
+    const root = document.documentElement
+    return root.scrollWidth > root.clientWidth + 1
+  })
+  expect(overflows, 'document should not scroll horizontally').toBe(false)
+})
+
+test('P5 large tablet portrait: tab bar visible (portrait wins over lg sidebar)', async ({
+  page,
+  context,
+}) => {
+  await injectSession(context)
+  await page.setViewportSize(P5_LARGE_TABLET_PORTRAIT)
+  await page.goto('/dashboard')
+
+  const sidebar = page.getByRole('complementary', { name: 'Main navigation' })
+  const tabBar = page.getByRole('navigation', { name: 'Main navigation' })
+
+  await expect(tabBar).toBeVisible()
+  await expect(sidebar).toBeHidden()
 })

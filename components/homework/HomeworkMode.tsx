@@ -38,11 +38,11 @@ export const HomeworkMode = ({ initialItems }: HomeworkModeProps) => {
 
   if (total === 0) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-shell-kid p-6 text-center">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-shell-kid p-6 text-center">
         <div className="text-8xl" aria-hidden="true">
           🎉
         </div>
-        <h1 className="text-3xl font-extrabold text-slate-800">Không có bài tập!</h1>
+        <h1 className="text-3xl font-extrabold text-text-primary">Không có bài tập!</h1>
         <p className="text-text-secondary">Hôm nay rảnh rỗi, chơi game nào.</p>
         <Link
           href="/dashboard"
@@ -55,7 +55,7 @@ export const HomeworkMode = ({ initialItems }: HomeworkModeProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-shell-kid p-6">
+    <div className="min-h-dvh bg-shell-kid p-6">
       {/* Header */}
       <div className="mb-6 flex items-center gap-4">
         <Link

@@ -41,7 +41,7 @@ export const FullScreenModal = ({
       role="dialog"
       aria-modal="true"
       className={cn(
-        'fixed inset-0 z-50 h-screen w-screen',
+        'fixed inset-0 z-50 min-h-dvh w-screen safe-top',
         'bg-black/60 backdrop-blur-sm',
         'flex items-center justify-center',
         // Entry animation — uses utilities defined in globals.css
@@ -55,7 +55,7 @@ export const FullScreenModal = ({
             aria-label="Close"
             className="absolute top-4 right-4 z-10 flex min-h-14 min-w-14 items-center justify-center rounded-full bg-white/90 shadow-lg transition-transform active:scale-95"
           >
-            <X size={28} className="text-slate-700" />
+            <X size={28} className="text-text-primary" />
           </button>
         )}
         {children}
