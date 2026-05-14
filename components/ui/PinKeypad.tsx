@@ -103,7 +103,7 @@ export const PinKeypad = ({
               variant={key === 'delete' ? 'ghost' : 'primary'}
               isDisabled={isDisabled || (key === 'delete' && value.length === 0)}
               onClick={() => handleKey(key)}
-              className="min-h-16 min-w-16 text-2xl font-bold"
+              className="text-2xl font-bold"
               aria-label={key === 'delete' ? 'Delete last digit' : key}
             >
               {key === 'delete' ? <Delete size={24} /> : key}

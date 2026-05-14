@@ -59,4 +59,31 @@ test.describe('Middleware — parent route protection', () => {
     await page.goto('/parent')
     await expect(page).toHaveURL('/parent/pin')
   })
+
+  // TC-MW-SESSION-04
+  // Kid routes clear parent_session so re-entry to parent mode always re-authenticates.
+  test('TC-MW-SESSION-04: dashboard visit clears session; next /parent requires PIN', async ({
+    page,
+    context,
+  }) => {
+    const token = await createSessionToken('khoi-default-user')
+    await context.addCookies([
+      {
+        name: SESSION_COOKIE,
+        value: token,
+        domain: COOKIE_DOMAIN,
+        path: '/',
+        httpOnly: true,
+        sameSite: 'Lax',
+      },
+    ])
+    await page.goto('/parent')
+    await expect(page).toHaveURL(/\/parent$/)
+
+    await page.goto('/dashboard')
+    await expect(page).toHaveURL(/\/dashboard/)
+
+    await page.goto('/parent')
+    await expect(page).toHaveURL('/parent/pin')
+  })
 })

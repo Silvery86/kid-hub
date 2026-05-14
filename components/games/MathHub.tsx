@@ -133,7 +133,7 @@ export const MathHub = ({ mathHomework }: MathHubProps) => {
   return (
     <div className="flex h-dvh overflow-y-auto flex-col items-center gap-3 portrait:gap-8 px-6 py-3 portrait:py-10 bg-shell-kid">
       <div className="flex w-full max-w-2xl items-center justify-between">
-        <KidButton variant="ghost" onClick={() => router.push('/dashboard')} className="text-text-secondary landscape:min-h-tap landscape:py-1">
+        <KidButton variant="ghost" onClick={() => router.push('/dashboard')} className="text-text-secondary landscape:py-1">
           ← Về trang chủ
         </KidButton>
         <h1 className="text-2xl portrait:text-4xl font-extrabold text-text-primary">Toán Học 🧮</h1>

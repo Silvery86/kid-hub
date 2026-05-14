@@ -64,10 +64,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         <h2 className="mb-2 text-2xl font-extrabold text-slate-700">Ối! Có lỗi rồi</h2>
         <p className="mb-6 text-lg text-slate-500">Khôi thử nhấn nút bên dưới nhé!</p>
         <button
+          type="button"
           onClick={this.handleReset}
+          style={{ minHeight: '3.5rem', minWidth: '10rem' }}
           className={[
-            'min-h-[3.5rem] min-w-[10rem] px-6 py-3',
-            'rounded-2xl bg-blue-500 text-white',
+            'rounded-2xl bg-blue-500 px-6 py-3 text-white',
             'border-4 border-blue-700 text-xl font-bold',
             'transition-transform duration-100 active:scale-95',
             'touch-manipulation select-none',

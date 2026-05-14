@@ -51,9 +51,11 @@ export const FullScreenModal = ({
       <div className={cn('relative h-full w-full', className)}>
         {hasCloseButton && onClose && (
           <button
+            type="button"
             onClick={onClose}
             aria-label="Close"
-            className="absolute top-4 right-4 z-10 flex min-h-14 min-w-14 items-center justify-center rounded-full bg-white/90 shadow-lg transition-transform active:scale-95"
+            style={{ minHeight: '3.5rem', minWidth: '3.5rem' }}
+            className="absolute top-4 right-4 z-10 flex items-center justify-center rounded-full bg-white/90 shadow-lg transition-transform active:scale-95"
           >
             <X size={28} className="text-text-primary" />
           </button>

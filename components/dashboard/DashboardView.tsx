@@ -12,7 +12,6 @@ import { StreakWidget } from '@/components/dashboard/StreakWidget'
 import { BadgeModal } from '@/components/dashboard/BadgeModal'
 import { GameEntryCard } from '@/components/games/GameEntryCard'
 import { HomeworkChip } from '@/components/homework/HomeworkChip'
-import { cn } from '@/lib/utils'
 import type { DailySchedule, WeeklySchedule, HomeworkItem } from '@/types'
 
 interface DashboardViewProps {
@@ -71,11 +70,10 @@ export const DashboardView = ({ initialSchedule, initialHomework }: DashboardVie
 
           {/* Badge button */}
           <button
+            type="button"
             onClick={() => setIsBadgeModalOpen(true)}
-            className={cn(
-              'flex w-full min-h-tap-lg items-center gap-3 rounded-2xl bg-white p-4 shadow-sm transition-colors',
-              'hover:bg-shell-light active:scale-[0.98]'
-            )}
+            style={{ minHeight: '4rem' }}
+            className="flex w-full items-center gap-3 rounded-2xl bg-white p-4 shadow-sm transition-colors hover:bg-shell-light active:scale-[0.98]"
             aria-label="Xem huy hiệu"
           >
             <span className="text-3xl" aria-hidden="true">
