@@ -4,9 +4,9 @@
 
 import { useMemo, useState, useEffect } from 'react'
 import type { ClassPeriod, DailySchedule, DayOfWeek, WeeklySchedule } from '@/types'
-import { DAYS_OF_WEEK } from '@/lib/constants'
+import { SCHOOL_DAYS } from '@/lib/constants'
 
-/** Maps a JS Date.getDay() value (0=Sun … 6=Sat) to DayOfWeek. Returns null for weekends. */
+/** Maps a JS Date.getDay() value (0=Sun … 6=Sat) to DayOfWeek. */
 const getDayOfWeek = (jsDay: number): DayOfWeek | null => {
   const map: Partial<Record<number, DayOfWeek>> = {
     1: 'monday',
@@ -14,6 +14,8 @@ const getDayOfWeek = (jsDay: number): DayOfWeek | null => {
     3: 'wednesday',
     4: 'thursday',
     5: 'friday',
+    6: 'saturday',
+    0: 'sunday',
   }
   return map[jsDay] ?? null
 }
@@ -38,20 +40,28 @@ export interface UseScheduleResult {
   currentPeriod: ClassPeriod | null
   nextPeriod: ClassPeriod | null
   todayDow: DayOfWeek | null
+  /** School days only (Mon–Fri), aligned to SCHOOL_DAYS constant order. */
   allDays: DailySchedule[]
 }
 
 /**
- * Derives real-time schedule state from a WeeklySchedule.
- * Updates every 30 seconds so the active-class indicator stays current.
+ * Derives real-time schedule state from a WeeklySchedule (school periods only).
+ * Polling pauses when the document tab is hidden to avoid waking a sleeping tablet.
  */
 export const useSchedule = (schedule: WeeklySchedule): UseScheduleResult => {
   const [now, setNow] = useState<Date | null>(null)
 
   useEffect(() => {
     setNow(new Date())
-    const intervalId = setInterval(() => setNow(new Date()), 30_000)
-    return () => clearInterval(intervalId)
+    const tick = () => {
+      if (document.visibilityState === 'visible') setNow(new Date())
+    }
+    const intervalId = setInterval(tick, 30_000)
+    document.addEventListener('visibilitychange', tick)
+    return () => {
+      clearInterval(intervalId)
+      document.removeEventListener('visibilitychange', tick)
+    }
   }, [])
 
   return useMemo(() => {
@@ -61,7 +71,7 @@ export const useSchedule = (schedule: WeeklySchedule): UseScheduleResult => {
         currentPeriod: null,
         nextPeriod: null,
         todayDow: null,
-        allDays: DAYS_OF_WEEK.map(
+        allDays: SCHOOL_DAYS.map(
           (dow) => schedule.days.find((d) => d.day === dow) ?? { day: dow, periods: [] }
         ),
       }
@@ -78,7 +88,7 @@ export const useSchedule = (schedule: WeeklySchedule): UseScheduleResult => {
       currentPeriod: getCurrentPeriod(periods, nowMinutes),
       nextPeriod: getNextPeriod(periods, nowMinutes),
       todayDow,
-      allDays: DAYS_OF_WEEK.map(
+      allDays: SCHOOL_DAYS.map(
         (dow) => schedule.days.find((d) => d.day === dow) ?? { day: dow, periods: [] }
       ),
     }

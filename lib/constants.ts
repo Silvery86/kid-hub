@@ -15,6 +15,16 @@ export const DAYS_OF_WEEK: readonly DayOfWeek[] = [
   'wednesday',
   'thursday',
   'friday',
+  'saturday',
+  'sunday',
+] as const
+
+export const SCHOOL_DAYS: readonly DayOfWeek[] = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
 ] as const
 
 export const DAY_LABELS: Record<DayOfWeek, string> = {
@@ -23,7 +33,12 @@ export const DAY_LABELS: Record<DayOfWeek, string> = {
   wednesday: 'Thứ Tư',
   thursday: 'Thứ Năm',
   friday: 'Thứ Sáu',
+  saturday: 'Thứ Bảy',
+  sunday: 'Chủ Nhật',
 } as const
+
+/** Maximum number of EXTRA_CLASS slots per day (enforced at action + UI layer). */
+export const MAX_EVENING_BLOCKS_PER_DAY = 3
 
 // ── Grades ───────────────────────────────────────────────────
 

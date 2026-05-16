@@ -68,20 +68,13 @@ export const saveEnglishSession = async (
  */
 export const getTodayEnglishHomework = async (
   userId: string,
-  day: import('@/types').DayOfWeek | null,
+  _day: import('@/types').DayOfWeek | null,
   date: string
 ): Promise<{ periodId: string; homeworkNote: string } | null> => {
-  if (!day) return null
-
   const db = await import('@/lib/db').then((m) => m.db)
-  const period = await db.classPeriod.findFirst({
-    where: { userId, day, subjectId: 'english', isHomework: true },
-    include: { homeworkCompletions: { where: { date } } },
+  const item = await db.dailyHomework.findFirst({
+    where: { userId, date, subjectId: 'english', isDone: false },
   })
-
-  if (!period) return null
-  const completion = period.homeworkCompletions[0]
-  if (completion?.isDone) return null
-
-  return { periodId: period.id, homeworkNote: period.homeworkNote ?? '' }
+  if (!item) return null
+  return { periodId: item.id, homeworkNote: item.label }
 }
