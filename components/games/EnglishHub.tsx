@@ -6,6 +6,7 @@ import { AlphabetGame } from '@/components/games/AlphabetGame'
 import { WordSafariGame } from '@/components/games/WordSafariGame'
 import { SoundHuntGame } from '@/components/games/SoundHuntGame'
 import { KidButton } from '@/components/ui/KidButton'
+import { AppSidebar } from '@/components/layout/AppSidebar'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { STORAGE_KEYS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
@@ -204,7 +205,8 @@ export const EnglishHub = ({ englishHomework }: EnglishHubProps) => {
   const games = Object.keys(GAME_META) as EnglishGameType[]
 
   return (
-    <div className="flex flex-col h-dvh bg-shell-kid overflow-hidden portrait:overflow-y-auto">
+    <div className="flex flex-col h-dvh bg-shell-kid overflow-hidden portrait:overflow-y-auto pl-16 lg:pl-56 portrait:pl-0 portrait:pb-16">
+      <AppSidebar />
 
       {/* ── Landscape: compact header ─────────────────────────────── */}
       <div className="flex portrait:hidden shrink-0 items-center justify-between px-4 pt-2 pb-1">

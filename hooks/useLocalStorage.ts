@@ -2,25 +2,27 @@
 
 /** localStorage hook — SSR-safe useState that syncs to localStorage on mount. */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 
 /**
  * useState-like hook that syncs state to localStorage.
- * SSR-safe: uses initialValue during server render; hydrates from storage on mount.
+ * SSR-safe: always starts with initialValue so server and client first-render match,
+ * then reads from localStorage in useEffect after mount.
  */
 export const useLocalStorage = <T>(
   key: string,
   initialValue: T
 ): [T, (value: T | ((prev: T) => T)) => void] => {
-  const [storedValue, setStoredValue] = useState<T>(() => {
-    if (typeof window === 'undefined') return initialValue
+  const [storedValue, setStoredValue] = useState<T>(initialValue)
+
+  useEffect(() => {
     try {
       const item = window.localStorage.getItem(key)
-      return item !== null ? (JSON.parse(item) as T) : initialValue
+      if (item !== null) setStoredValue(JSON.parse(item) as T)
     } catch {
-      return initialValue
+      // ignore read errors
     }
-  })
+  }, [key])
 
   const setValue = useCallback(
     (value: T | ((prev: T) => T)) => {
