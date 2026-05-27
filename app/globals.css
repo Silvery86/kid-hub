@@ -19,6 +19,11 @@
   --color-vietnamese: #ef4444;
   --color-music: #f97316;
 
+  /* ── Schedule route accent → bg-schedule, text-schedule-deep, bg-schedule-soft */
+  --color-schedule: #3b82f6;
+  --color-schedule-deep: #1d4ed8;
+  --color-schedule-soft: #eff6ff;
+
   /* ── App shell backgrounds → bg-shell-dark, bg-shell-light, bg-shell-kid */
   --color-shell-dark: #0f172a;
   --color-shell-light: #f8fafc;

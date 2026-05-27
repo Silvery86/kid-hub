@@ -90,6 +90,8 @@ export interface Subject {
   name: string
   colorClass: string // Tailwind bg class e.g. "bg-blue-400"
   iconName: string // lucide-react icon name
+  color: string // hex — PeriodCell tinting via color-mix
+  icon: string // emoji — schedule grid / list
 }
 
 // ── Grades ───────────────────────────────────────────────────

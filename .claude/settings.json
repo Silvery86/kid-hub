@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm prisma *)",
+      "Bash(DATABASE_URL=\"postgresql://kidhub:kidhub_dev@localhost:5432/kidhub\" pnpm tsx --env-file=.env.local -e \"console.log\\(process.env.DATABASE_URL\\)\")",
+      "Bash(rm -rf /home/giang8692/projects/kid-hub/node_modules/.pnpm/@prisma+client*/node_modules/.prisma/client/query-engine* 2>/dev/null; pnpm prisma generate 2>&1 | tail -3)",
+      "Bash(docker compose *)"
+    ],
+    "additionalDirectories": [
+      "/home/giang8692/projects/kid-hub/node_modules/.pnpm/@prisma+client*/node_modules/.prisma/client"
+    ]
+  }
+}

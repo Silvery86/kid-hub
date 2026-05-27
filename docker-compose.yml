@@ -27,10 +27,7 @@ services:
     ports:
       - '3000:3000'
     env_file:
-      - .env.local          # Loads UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN, etc.
-    environment:
-      DATABASE_URL: postgresql://kidhub:kidhub_dev@db:5432/kidhub   # overrides any .env.local value
-      # SESSION_SECRET is intentionally absent here — loaded from .env.local via env_file above
+      - .env.local          # Loads DATABASE_URL, UPSTASH_REDIS_REST_URL, SESSION_SECRET, etc.
     depends_on:
       db:
         condition: service_healthy
