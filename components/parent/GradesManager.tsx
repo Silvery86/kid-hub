@@ -2,7 +2,7 @@
 
 /** GradesManager — parent panel for viewing and editing subject grades via server actions. */
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { Save, Check, AlertCircle } from 'lucide-react'
 import type { SubjectGrade } from '@/types'
 import { SUBJECTS } from '@/lib/data/subjects'
@@ -11,11 +11,19 @@ import { calculateBadge, cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/Badge'
 import { KidButton } from '@/components/ui/KidButton'
 
+import type { ParentSaveState } from './ScheduleManager'
+
 interface GradesManagerProps {
   initialGrades: SubjectGrade[]
+  embedded?: boolean
+  onSaveStateChange?: (state: ParentSaveState) => void
 }
 
-export const GradesManager = ({ initialGrades }: GradesManagerProps) => {
+export const GradesManager = ({
+  initialGrades,
+  embedded = false,
+  onSaveStateChange,
+}: GradesManagerProps) => {
   const [editableScores, setEditableScores] = useState<Record<string, string>>(() =>
     Object.fromEntries(initialGrades.map((g) => [g.subjectId, String(g.score)]))
   )
@@ -50,20 +58,26 @@ export const GradesManager = ({ initialGrades }: GradesManagerProps) => {
     })
   }
 
+  useEffect(() => {
+    onSaveStateChange?.({ save: handleSave, isPending, isSaved })
+  }, [onSaveStateChange, isPending, isSaved])
+
   return (
     <div className="flex h-full flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-extrabold text-slate-700">🌟 Điểm số</h2>
-        <KidButton
-          variant={isSaved ? 'secondary' : 'primary'}
-          onClick={handleSave}
-          isDisabled={isPending}
-          className="min-h-10 gap-2 px-4 text-sm"
-        >
-          {isSaved ? <Check size={16} /> : <Save size={16} />}
-          {isSaved ? 'Đã lưu!' : isPending ? 'Đang lưu...' : 'Lưu'}
-        </KidButton>
-      </div>
+      {!embedded ? (
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-extrabold text-slate-700">🌟 Điểm số</h2>
+          <KidButton
+            variant={isSaved ? 'secondary' : 'primary'}
+            onClick={handleSave}
+            isDisabled={isPending}
+            className="min-h-10 gap-2 px-4 text-sm"
+          >
+            {isSaved ? <Check size={16} /> : <Save size={16} />}
+            {isSaved ? 'Đã lưu!' : isPending ? 'Đang lưu...' : 'Lưu'}
+          </KidButton>
+        </div>
+      ) : null}
 
       {error && (
         <div className="flex items-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">

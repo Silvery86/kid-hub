@@ -16,15 +16,20 @@ const NAV_ITEMS = [
   { href: '/dashboard', emoji: '🏠', label: 'Trang chủ', tabLabel: 'Trang chủ' },
   { href: '/schedule', emoji: '🗓️', label: 'Lịch học', tabLabel: 'Lịch' },
   { href: '/grades', emoji: '⭐', label: 'Điểm số', tabLabel: 'Điểm' },
-  { href: '/math', emoji: '🎮', label: 'Trò chơi', tabLabel: 'Trò chơi' },
+  { href: '/games', emoji: '🎮', label: 'Trò chơi', tabLabel: 'Trò chơi' },
   { href: '/homework', emoji: '📚', label: 'Bài tập', tabLabel: 'Bài tập' },
+  { href: '/unlock', emoji: '🏆', label: 'Huy hiệu', tabLabel: 'Huy hiệu' },
 ] as const
 
-const TAB_ITEMS = NAV_ITEMS.filter((item) => item.href !== '/homework')
+/** Portrait bottom bar: max 4 items (design/shared.jsx) — homework & badges excluded. */
+const TAB_ITEMS = NAV_ITEMS.filter(
+  (item) => item.href !== '/homework' && item.href !== '/unlock'
+)
 
 function isNavActive(pathname: string, href: string): boolean {
-  if (href === '/math') {
+  if (href === '/games') {
     return (
+      pathname === '/games' ||
       pathname === '/math' ||
       pathname === '/english' ||
       pathname.startsWith('/math/') ||
@@ -51,6 +56,7 @@ function NavLink({
     return (
       <Link
         href={href}
+        data-testid={href === '/games' ? 'nav-link-games' : undefined}
         aria-current={isActive ? 'page' : undefined}
         className={cn(
           'flex w-full touch-manipulation select-none transition-[transform,background-color,color] duration-150 active:scale-[0.97]',
@@ -74,6 +80,7 @@ function NavLink({
   return (
     <Link
       href={href}
+      data-testid={href === '/games' ? 'nav-link-games' : undefined}
       aria-current={isActive ? 'page' : undefined}
       className={cn(
         'flex flex-1 flex-col items-center justify-center gap-1 py-1 transition-colors min-h-tap-lg',

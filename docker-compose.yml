@@ -22,7 +22,7 @@ services:
     build:
       context: .
       target: builder # Use the builder stage so we get the dev server
-    command: npm run dev
+    command: sh -c "npx prisma generate && npm run dev"
     restart: unless-stopped
     ports:
       - '3000:3000'

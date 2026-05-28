@@ -35,7 +35,9 @@ export const DayRail = ({ periods, currentPeriodNumber, progress, onPick }: DayR
             key={period.periodNumber ?? period.startTime}
             type="button"
             onClick={() => onPick?.(period)}
-            className="min-w-[140px] shrink-0 rounded-2xl border-2 bg-white p-3 text-left transition-transform active:scale-[0.98]"
+            className={`min-w-[140px] shrink-0 rounded-2xl border-2 bg-white p-3 text-left transition-transform active:scale-[0.98] ${
+              isDone ? 'opacity-55' : ''
+            }`}
             style={{
               borderColor: isNow ? color : '#e2e8f0',
               boxShadow: isNow ? `0 8px 20px -12px ${color}` : undefined,

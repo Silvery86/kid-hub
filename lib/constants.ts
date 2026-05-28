@@ -93,4 +93,5 @@ export const STORAGE_KEYS = {
   GRADES: 'kid-hub:grades',
   USER_PROGRESS: 'kid-hub:user-progress',
   PIN_DATA: 'kid-hub:pin-data',
+  KID_ACCESS_TOGGLES: 'kid-hub:kid-access-toggles',
 } as const

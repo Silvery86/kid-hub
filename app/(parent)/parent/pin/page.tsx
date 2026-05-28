@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation'
+import { ParentPinScreen } from '@/components/parent/parent-pin/ParentPinScreen'
 
-export default function LegacyParentPinPage() {
-  redirect('/parent/login')
+export default function ParentPinPage() {
+  return <ParentPinScreen />
 }

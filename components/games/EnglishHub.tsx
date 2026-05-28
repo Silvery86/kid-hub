@@ -232,10 +232,10 @@ export const EnglishHub = ({ englishHomework }: EnglishHubProps) => {
         <header className="hidden shrink-0 items-center justify-between px-4 pt-3 portrait:flex">
           <button
             type="button"
-            onClick={() => router.push('/dashboard')}
+            onClick={() => router.push('/games')}
             className="rounded-pill border-2 border-slate-200 bg-white px-3 py-2 text-xs font-extrabold text-text-secondary"
           >
-            ← Trang chủ
+            ← Trò chơi
           </button>
           <h1 className="text-2xl font-black text-text-primary">Tiếng Anh 🔤</h1>
           <div className="w-20" aria-hidden="true" />
@@ -264,10 +264,10 @@ export const EnglishHub = ({ englishHomework }: EnglishHubProps) => {
           </div>
           <button
             type="button"
-            onClick={() => router.push('/dashboard')}
+            onClick={() => router.push('/games')}
             className="shrink-0 rounded-pill border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-extrabold text-text-primary transition-colors hover:bg-slate-50"
           >
-            ← Trang chủ
+            ← Trò chơi
           </button>
         </header>
 

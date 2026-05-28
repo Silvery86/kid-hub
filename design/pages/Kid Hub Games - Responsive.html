@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kid Hub — Games Hub · Responsive</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    html, body { margin: 0; padding: 0; font-family: 'Nunito', system-ui, sans-serif; background: #f4f1ec; }
+    body { color: #1e293b; }
+    .kh-bezel { border-radius: 38px; background: #1d1f24; padding: 8px;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12); }
+    .kh-bezel-screen { border-radius: 30px; overflow: hidden; width: 100%; height: 100%;
+      position: relative; background: var(--color-shell-kid); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="android-frame.jsx"></script>
+  <script type="text/babel" src="ios-frame.jsx"></script>
+  <script type="text/babel" src="browser-window.jsx"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" src="shared.jsx"></script>
+  <script type="text/babel" src="dashboard-v2-responsive.jsx"></script>
+  <script type="text/babel" src="games.jsx"></script>
+
+  <script type="text/babel" data-presets="env,react">
+    const { useState, useEffect } = React;
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "accent": "#3b82f6",
+      "showFrame": true,
+      "density": "cozy"
+    }/*EDITMODE-END*/;
+
+    const ACCENTS = {
+      '#3b82f6': { hover: '#2563eb', soft: '#dbeafe', deep: '#1d4ed8' },
+      '#10b981': { hover: '#059669', soft: '#d1fae5', deep: '#047857' },
+      '#f43f5e': { hover: '#e11d48', soft: '#ffe4e6', deep: '#be123c' },
+      '#8b5cf6': { hover: '#7c3aed', soft: '#ede9fe', deep: '#6d28d9' },
+    };
+
+    function Toast({ msg }) {
+      if (!msg) return null;
+      return <div className="kh-toast" key={msg.k}>{msg.text}</div>;
+    }
+
+    function Variant({ render }) {
+      const [toast, setToast] = useState(null);
+      useEffect(() => {
+        if (!toast) return;
+        const t = setTimeout(() => setToast(null), 1600);
+        return () => clearTimeout(t);
+      }, [toast]);
+      const onAction = (text) => setToast({ k: Date.now(), text });
+      return (
+        <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+          {render(onAction)}
+          <Toast msg={toast} />
+        </div>
+      );
+    }
+
+    function MobileLandscapeBezel({ width, height, children }) {
+      return (
+        <div className="kh-bezel" style={{ width, height, position: 'relative' }}>
+          <div className="kh-bezel-screen" style={{ width: width - 16, height: height - 16 }}>
+            {children}
+          </div>
+          <div style={{
+            position: 'absolute', right: 4, top: '50%',
+            width: 4, height: 90, borderRadius: 4,
+            background: 'rgba(255,255,255,0.65)', transform: 'translateY(-50%)',
+          }} />
+        </div>
+      );
+    }
+
+    function Framed({ kind, width, height, children, tab = 'Kid Hub · Trò chơi' }) {
+      const useFrame = window.__useFrame;
+      if (!useFrame) {
+        return (
+          <div style={{ width, height, borderRadius: 22, overflow: 'hidden',
+            boxShadow: '0 20px 50px -20px rgba(15,23,42,0.25)' }}>{children}</div>
+        );
+      }
+      if (kind === 'phone-p') return <IOSDevice width={width} height={height}>{children}</IOSDevice>;
+      if (kind === 'phone-l') return <MobileLandscapeBezel width={width} height={height}>{children}</MobileLandscapeBezel>;
+      if (kind === 'tablet')  return <AndroidDevice width={width} height={height}>{children}</AndroidDevice>;
+      if (kind === 'desktop') return (
+        <ChromeWindow width={width} height={height}
+          tabs={[{ title: tab }]} activeIndex={0} url="kidhub.app/games">
+          {children}
+        </ChromeWindow>
+      );
+      return children;
+    }
+
+    function App() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      window.__useFrame = t.showFrame;
+
+      useEffect(() => {
+        const a = ACCENTS[t.accent] || ACCENTS['#3b82f6'];
+        const r = document.documentElement.style;
+        r.setProperty('--kh-accent', t.accent);
+        r.setProperty('--kh-accent-hover', a.hover);
+        r.setProperty('--kh-accent-soft', a.soft);
+        r.setProperty('--kh-accent-deep', a.deep);
+        r.setProperty('--kh-density', t.density === 'roomy' ? '1.15' : '1');
+      }, [t.accent, t.density]);
+
+      const insets = t.showFrame ? { top: 52, bottom: 28 } : {};
+
+      return (
+        <React.Fragment>
+          <DesignCanvas minScale={0.05} maxScale={2}>
+            <DCSection id="games" title="Games Hub · /games"
+              subtitle="Hub showing Math + English game suites, plus Coming Soon placeholders. 5 viewports.">
+              <DCArtboard id="phone-p" label="Phone P · 390×844" width={390} height={844}>
+                <Framed kind="phone-p" width={390} height={844}>
+                  <Variant render={(a) => <GamesPhoneP tweaks={t} onAction={a} insets={insets} />} />
+                </Framed>
+              </DCArtboard>
+              <DCArtboard id="phone-l" label="Phone L · 844×390" width={844} height={390}>
+                <Framed kind="phone-l" width={844} height={390}>
+                  <Variant render={(a) => <GamesPhoneL tweaks={t} onAction={a} />} />
+                </Framed>
+              </DCArtboard>
+              <DCArtboard id="tablet-p" label="Tablet P · 820×1180" width={820} height={1180}>
+                <Framed kind="tablet" width={820} height={1180}>
+                  <Variant render={(a) => <GamesTabletP tweaks={t} onAction={a} />} />
+                </Framed>
+              </DCArtboard>
+              <DCArtboard id="tablet-l" label="Tablet L · 1280×800" width={1280} height={800}>
+                <Framed kind="tablet" width={1280} height={800}>
+                  <Variant render={(a) => <GamesTabletL tweaks={t} onAction={a} />} />
+                </Framed>
+              </DCArtboard>
+              <DCArtboard id="desktop" label="Desktop · 1440×900" width={1440} height={900}>
+                <Framed kind="desktop" width={1440} height={900}>
+                  <Variant render={(a) => <GamesDesktop tweaks={t} onAction={a} />} />
+                </Framed>
+              </DCArtboard>
+            </DCSection>
+          </DesignCanvas>
+
+          <TweaksPanel title="Tweaks">
+            <TweakSection label="Look">
+              <TweakColor label="Accent" value={t.accent}
+                onChange={(v) => setTweak('accent', v)}
+                options={['#3b82f6', '#10b981', '#f43f5e', '#8b5cf6']} />
+              <TweakRadio label="Density" value={t.density}
+                onChange={(v) => setTweak('density', v)}
+                options={[{ value: 'cozy', label: 'Cozy' }, { value: 'roomy', label: 'Roomy' }]} />
+              <TweakToggle label="Show device frame" value={t.showFrame}
+                onChange={(v) => setTweak('showFrame', v)} />
+            </TweakSection>
+            <TweakSection label="Tips">
+              <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.45 }}>
+                Click any game section card to open it. Each card shows 3 mini-games + star progress.
+                Coming Soon cards are non-interactive placeholders.
+              </div>
+            </TweakSection>
+          </TweaksPanel>
+        </React.Fragment>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

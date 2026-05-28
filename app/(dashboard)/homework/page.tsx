@@ -1,11 +1,10 @@
 export const dynamic = 'force-dynamic'
 
 import { getTodayHomeworkAction } from '@/server/actions/homework.actions'
-import { HomeworkMode } from '@/components/homework/HomeworkMode'
+import { HomeworkListView } from '@/components/homework/HomeworkListView'
 
 export default async function HomeworkPage() {
   const result = await getTodayHomeworkAction()
   const items = result.data ?? []
-
-  return <HomeworkMode initialItems={items} />
+  return <HomeworkListView initialItems={items} />
 }

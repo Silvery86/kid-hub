@@ -8,14 +8,17 @@
 import { z } from 'zod'
 import { cookies } from 'next/headers'
 import {
+  calcLockoutExpiry,
   compareKidPattern,
   comparePassword,
+  comparePin,
   compareStoredTokenHash,
   createKidSessionToken,
   createParentAccessToken,
   createParentRefreshToken,
   hashKidPattern,
   hashPassword,
+  hashPin,
   hashTokenForStorage,
   isLockedOut,
   getLockoutSecondsRemaining,
@@ -33,7 +36,9 @@ import {
   KID_PATTERN_LOCKOUT_SECONDS,
   KID_SESSION_TTL_SECONDS,
   MAX_KID_PATTERN_ATTEMPTS,
+  MAX_PIN_ATTEMPTS,
   MAX_PARENT_LOGIN_ATTEMPTS,
+  PIN_LENGTH,
   PARENT_ACCESS_TTL_SECONDS,
   PARENT_LOGIN_LOCKOUT_SECONDS,
   PARENT_REFRESH_TTL_SECONDS,
@@ -360,12 +365,107 @@ export const signOutKidAction = async (): Promise<{ success: boolean; error?: st
   }
 }
 
-/** @deprecated Parent PIN auth is replaced by account/password login. */
-export const setPinAction = async (): Promise<{ success: boolean; error?: string }> => {
-  return { success: false, error: 'Parent PIN flow has been replaced by account login' }
+const ParentPinSchema = z
+  .string()
+  .regex(/^\d{4}$/, `PIN must be exactly ${PIN_LENGTH} digits`)
+
+/** Whether the household has a parent PIN configured. */
+export const checkParentPinAction = async (): Promise<{ hasPin: boolean }> => {
+  try {
+    const pin = await userRepo.getPin(DEFAULT_USER_ID)
+    return { hasPin: Boolean(pin?.hash) }
+  } catch {
+    return { hasPin: false }
+  }
 }
 
-/** @deprecated Parent PIN auth is replaced by account/password login. */
-export const verifyPinAction = async (): Promise<{ success: boolean; error?: string }> => {
-  return { success: false, error: 'Parent PIN flow has been replaced by account login' }
+/** Clears short-lived parent access cookie so PIN verification is required. */
+export const clearParentAccessAction = async (): Promise<{ success: boolean }> => {
+  try {
+    const cookieStore = await cookies()
+    cookieStore.delete(PARENT_ACCESS_COOKIE)
+    return { success: true }
+  } catch {
+    return { success: false }
+  }
+}
+
+/** Saves a new parent PIN (requires active parent session). */
+export const setPinAction = async (
+  pin: string
+): Promise<{ success: boolean; error?: string }> => {
+  const parsed = ParentPinSchema.safeParse(pin)
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message ?? 'Invalid PIN' }
+  }
+
+  const session = await ensureParentSession()
+  if (!session.ok) {
+    return { success: false, error: 'Unauthorized' }
+  }
+
+  try {
+    const hash = await hashPin(parsed.data)
+    await userRepo.savePin(DEFAULT_USER_ID, hash)
+    return { success: true }
+  } catch {
+    return { success: false, error: 'Failed to save PIN' }
+  }
+}
+
+/**
+ * Verifies parent PIN and issues parent session cookies on success.
+ * Used on `/parent/pin` after account login when access cookie was cleared.
+ */
+export const verifyPinAction = async (
+  pin: string
+): Promise<{
+  success: boolean
+  error?: string
+  isLocked?: boolean
+  lockoutSeconds?: number
+  isWrong?: boolean
+}> => {
+  const parsed = ParentPinSchema.safeParse(pin)
+  if (!parsed.success) {
+    return { success: false, error: 'Invalid PIN' }
+  }
+
+  try {
+    const pinRecord = await userRepo.getPin(DEFAULT_USER_ID)
+    if (!pinRecord?.hash) {
+      return { success: false, error: 'PIN is not configured yet' }
+    }
+
+    if (isLockedOut(pinRecord.attempts, pinRecord.lockedUntil)) {
+      return {
+        success: false,
+        isLocked: true,
+        lockoutSeconds: getLockoutSecondsRemaining(pinRecord.lockedUntil),
+      }
+    }
+
+    const valid = await comparePin(parsed.data, pinRecord.hash)
+    if (!valid) {
+      const newAttempts = pinRecord.attempts + 1
+      const shouldLock = newAttempts >= MAX_PIN_ATTEMPTS
+      const lockUntil = shouldLock ? calcLockoutExpiry() : undefined
+      await userRepo.recordFailedPinAttempt(DEFAULT_USER_ID, lockUntil)
+
+      if (shouldLock) {
+        return {
+          success: false,
+          isLocked: true,
+          lockoutSeconds: getLockoutSecondsRemaining(lockUntil ?? null),
+        }
+      }
+      return { success: false, error: 'Incorrect PIN', isWrong: true }
+    }
+
+    await userRepo.resetPinAttempts(DEFAULT_USER_ID)
+    await issueParentSessionCookies(DEFAULT_USER_ID)
+    return { success: true }
+  } catch {
+    return { success: false, error: 'PIN verification failed' }
+  }
 }

@@ -5,6 +5,7 @@
 import { useMemo, useState, useEffect } from 'react'
 import type { ClassPeriod, DailySchedule, DayOfWeek, WeeklySchedule } from '@/types'
 import { SCHOOL_DAYS } from '@/lib/constants'
+import { getMinutesLeftInPeriod, getPeriodProgress } from '@/lib/schedule-display'
 
 /** Maps a JS Date.getDay() value (0=Sun … 6=Sat) to DayOfWeek. */
 const getDayOfWeek = (jsDay: number): DayOfWeek | null => {
@@ -42,6 +43,9 @@ export interface UseScheduleResult {
   todayDow: DayOfWeek | null
   /** School days only (Mon–Fri), aligned to SCHOOL_DAYS constant order. */
   allDays: DailySchedule[]
+  now: Date | null
+  periodProgress: number | null
+  minutesLeftInCurrentPeriod: number | null
 }
 
 /**
@@ -74,6 +78,9 @@ export const useSchedule = (schedule: WeeklySchedule): UseScheduleResult => {
         allDays: SCHOOL_DAYS.map(
           (dow) => schedule.days.find((d) => d.day === dow) ?? { day: dow, periods: [] }
         ),
+        now: null,
+        periodProgress: null,
+        minutesLeftInCurrentPeriod: null,
       }
     }
 
@@ -83,14 +90,19 @@ export const useSchedule = (schedule: WeeklySchedule): UseScheduleResult => {
     const nowMinutes = now.getHours() * 60 + now.getMinutes()
     const periods = todaySchedule?.periods ?? []
 
+    const currentPeriod = getCurrentPeriod(periods, nowMinutes)
+
     return {
       todaySchedule,
-      currentPeriod: getCurrentPeriod(periods, nowMinutes),
+      currentPeriod,
       nextPeriod: getNextPeriod(periods, nowMinutes),
       todayDow,
       allDays: SCHOOL_DAYS.map(
         (dow) => schedule.days.find((d) => d.day === dow) ?? { day: dow, periods: [] }
       ),
+      now,
+      periodProgress: currentPeriod ? getPeriodProgress(currentPeriod, now) : null,
+      minutesLeftInCurrentPeriod: currentPeriod ? getMinutesLeftInPeriod(currentPeriod, now) : null,
     }
   }, [now, schedule])
 }

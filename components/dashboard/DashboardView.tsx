@@ -6,7 +6,8 @@ import { useMemo, useState, useEffect } from 'react'
 import { useSchedule } from '@/hooks/useSchedule'
 import { useUserProgress } from '@/hooks/useUserProgress'
 import { getSubjectById } from '@/lib/data/subjects'
-import { TodayTimetable } from '@/components/dashboard/TodayTimetable'
+import { formatDayTimeRange, schoolPeriodsOnly } from '@/lib/schedule-display'
+import { DayRail } from '@/components/dashboard/DayRail'
 import { BadgeModal } from '@/components/dashboard/BadgeModal'
 import { GameEntryCard } from '@/components/games/GameEntryCard'
 import type { DailySchedule, WeeklySchedule, HomeworkItem } from '@/types'
@@ -18,7 +19,13 @@ interface DashboardViewProps {
 
 export const DashboardView = ({ initialSchedule, initialHomework }: DashboardViewProps) => {
   const weeklySchedule: WeeklySchedule = { weekStartDate: '', days: initialSchedule }
-  const { todaySchedule, currentPeriod, nextPeriod } = useSchedule(weeklySchedule)
+  const {
+    todaySchedule,
+    currentPeriod,
+    nextPeriod,
+    periodProgress,
+    minutesLeftInCurrentPeriod,
+  } = useSchedule(weeklySchedule)
   const { updateStreak, progress } = useUserProgress()
   const [isBadgeModalOpen, setIsBadgeModalOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -33,6 +40,7 @@ export const DashboardView = ({ initialSchedule, initialHomework }: DashboardVie
 
   const nextSubject = nextPeriod ? getSubjectById(nextPeriod.subjectId) : null
   const periods = todaySchedule?.periods ?? []
+  const schoolPeriods = schoolPeriodsOnly(periods)
   const nowPeriodNumber = currentPeriod?.periodNumber ?? null
   const pendingHomeworkCount = useMemo(
     () => initialHomework.filter((item) => !item.isDone).length,
@@ -91,12 +99,19 @@ export const DashboardView = ({ initialSchedule, initialHomework }: DashboardVie
                   {currentSubject.name}
                 </h2>
                 <p className="mt-2 text-base font-bold text-white/90">
-                  {currentPeriod.startTime} - {currentPeriod.endTime}
-                  <span className="ml-2 text-white/85">· còn 25 phút</span>
+                  {currentPeriod.startTime} – {currentPeriod.endTime}
+                  {minutesLeftInCurrentPeriod != null ? (
+                    <span className="ml-2 text-white/85">· còn {minutesLeftInCurrentPeriod} phút</span>
+                  ) : null}
                 </p>
-                <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/30">
-                  <div className="h-full w-[42%] rounded-full bg-white" />
-                </div>
+                {periodProgress != null ? (
+                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/30">
+                    <div
+                      className="h-full rounded-full bg-white transition-all"
+                      style={{ width: `${Math.round(periodProgress * 100)}%` }}
+                    />
+                  </div>
+                ) : null}
                 {nextPeriod && nextSubject ? (
                   <div className="mt-4 inline-flex items-center gap-2 rounded-xl bg-white/20 px-3 py-2">
                     <p className="text-xs font-black tracking-[0.12em] uppercase text-white/80">Tiếp theo</p>
@@ -134,44 +149,25 @@ export const DashboardView = ({ initialSchedule, initialHomework }: DashboardVie
             )}
           </section>
 
-          {/* Day rail */}
-          <section className="rounded-card bg-white p-3 shadow-sm lg:col-span-2">
-            <div className="mb-3 flex items-baseline justify-between">
+          {/* Day rail — matches design DayRail (subject icon, progress, done check) */}
+          <section className="rounded-card bg-white p-3 shadow-sm lg:col-span-2" data-testid="dashboard-day-rail">
+            <div className="mb-3 flex items-baseline justify-between px-0.5">
               <h3 className="text-lg font-black text-text-primary">Hôm nay</h3>
               <span className="text-xs font-bold text-text-muted">
-                {periods.length} tiết · {periods[0]?.startTime ?? '--:--'} - {periods.at(-1)?.endTime ?? '--:--'}
+                {schoolPeriods.length > 0
+                  ? `${schoolPeriods.length} tiết · ${formatDayTimeRange(periods)}`
+                  : 'Không có tiết học'}
               </span>
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {periods.map((period) => {
-                const subject = getSubjectById(period.subjectId)
-                const isNow = nowPeriodNumber === period.periodNumber
-                const isDone =
-                  nowPeriodNumber !== null && period.periodNumber !== undefined && period.periodNumber < nowPeriodNumber
-                return (
-                  <button
-                    key={`${period.periodNumber}-${period.startTime}`}
-                    type="button"
-                    className={`min-w-28 rounded-2xl border-2 p-2 text-left transition ${
-                      isNow
-                        ? 'border-btn-primary bg-blue-50 shadow-sm'
-                        : isDone
-                          ? 'border-transparent bg-slate-50 opacity-65'
-                          : 'border-transparent bg-white'
-                    }`}
-                  >
-                    <p className="text-[10px] font-black tracking-[0.12em] text-text-muted uppercase">
-                      Tiết {period.periodNumber}
-                    </p>
-                    <p className="mt-1 truncate text-sm font-extrabold text-text-primary">
-                      {subject?.name ?? period.subjectId}
-                    </p>
-                    <p className="text-[11px] font-bold text-text-secondary">{period.startTime}</p>
-                    {isDone ? <span className="text-xs font-black text-emerald-500">✓</span> : null}
-                  </button>
-                )
-              })}
-            </div>
+            {schoolPeriods.length > 0 ? (
+              <DayRail
+                periods={periods}
+                currentPeriodNumber={nowPeriodNumber}
+                progress={periodProgress}
+              />
+            ) : (
+              <p className="py-4 text-center text-sm font-bold text-text-muted">Hôm nay không có lịch học.</p>
+            )}
           </section>
 
           {/* Left-bottom column */}
@@ -201,52 +197,46 @@ export const DashboardView = ({ initialSchedule, initialHomework }: DashboardVie
             </div>
           </section>
 
-          {/* Right-bottom column */}
-          <section className="flex min-h-0 flex-col gap-3">
-            <div className="rounded-card bg-white p-3 shadow-sm">
+          {/* Right-bottom column — homework only (no duplicate schedule list) */}
+          <section className="flex min-h-0 flex-col">
+            <div className="rounded-card bg-white p-3 shadow-sm lg:flex lg:h-full lg:flex-col">
               <div className="mb-2 flex items-center justify-between">
                 <h3 className="text-lg font-black text-text-primary">Bài tập</h3>
                 <span className="rounded-pill bg-amber-100 px-2.5 py-1 text-xs font-extrabold text-amber-700">
                   {pendingHomeworkCount} chưa làm
                 </span>
               </div>
-              <div className="flex flex-col gap-2">
-                {initialHomework.map((hw) => {
-                  const subject = getSubjectById(hw.subjectId)
-                  return (
-                    <div
-                      key={hw.periodId}
-                      className={`flex items-center gap-2 rounded-xl px-2.5 py-2 ${hw.isDone ? 'bg-slate-100' : 'bg-amber-50'}`}
-                    >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-lg">
-                        {subject?.id === 'math' ? '🔢' : subject?.id === 'english' ? '🔤' : '📘'}
+              <div className="flex flex-col gap-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+                {initialHomework.length === 0 ? (
+                  <p className="py-6 text-center text-sm font-bold text-text-muted">Hôm nay không có bài tập.</p>
+                ) : (
+                  initialHomework.map((hw) => {
+                    const subject = getSubjectById(hw.subjectId)
+                    return (
+                      <div
+                        key={hw.periodId}
+                        className={`flex items-center gap-2 rounded-xl px-2.5 py-2 ${hw.isDone ? 'bg-slate-100' : 'bg-amber-50'}`}
+                      >
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-lg">
+                          {subject?.id === 'math' ? '🔢' : subject?.id === 'english' ? '🔤' : '📘'}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p
+                            className={`truncate text-sm font-extrabold ${hw.isDone ? 'line-through text-text-muted' : 'text-text-primary'}`}
+                          >
+                            {hw.homeworkNote}
+                          </p>
+                          <p className="text-[11px] font-bold text-text-muted">{subject?.name ?? hw.subjectId}</p>
+                        </div>
+                        <div
+                          className={`h-5 w-5 shrink-0 rounded-full border-2 ${hw.isDone ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300 bg-white'}`}
+                          aria-hidden="true"
+                        />
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className={`truncate text-sm font-extrabold ${hw.isDone ? 'line-through text-text-muted' : 'text-text-primary'}`}>
-                          {hw.homeworkNote}
-                        </p>
-                        <p className="text-[11px] font-bold text-text-muted">{subject?.name ?? hw.subjectId}</p>
-                      </div>
-                      <div className={`h-5 w-5 rounded-full border-2 ${hw.isDone ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300 bg-white'}`} />
-                    </div>
-                  )
-                })}
+                    )
+                  })
+                )}
               </div>
-            </div>
-
-            <div className="min-h-0 flex-1 overflow-y-auto rounded-card bg-white p-3 shadow-sm">
-              <h3 className="mb-2 text-lg font-black text-text-primary">Lịch hôm nay</h3>
-              {todaySchedule ? (
-                <TodayTimetable
-                  schedule={todaySchedule}
-                  currentPeriod={currentPeriod}
-                  nextPeriod={nextPeriod}
-                />
-              ) : (
-                <div className="flex h-full min-h-28 items-center justify-center text-center">
-                  <h3 className="text-base font-black text-text-secondary">Hôm nay không có lịch học</h3>
-                </div>
-              )}
             </div>
           </section>
         </div>

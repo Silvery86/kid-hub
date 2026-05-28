@@ -815,7 +815,542 @@ function PinDesktop({ tweaks, onAction }) {
   );
 }
 
+// ════════════════════════════════════════════════════════════════════
+// /parent/login — First-time PIN setup & onboarding
+// Steps: welcome → create → confirm → success
+// ════════════════════════════════════════════════════════════════════
+
+const LOGIN_STEPS = [
+  { id: 'email',   n: 1, label: 'Đăng nhập' },
+  { id: 'welcome', n: 2, label: 'Giới thiệu' },
+  { id: 'create',  n: 3, label: 'Tạo PIN' },
+  { id: 'confirm', n: 4, label: 'Xác nhận' },
+  { id: 'success', n: 5, label: 'Hoàn tất' },
+];
+
+function StepIndicator({ step, compact = false }) {
+  const cur = LOGIN_STEPS.findIndex((s) => s.id === step);
+  const sz = compact ? { dot: 24, fs: 10, gap: 6, lineH: 2 } : { dot: 32, fs: 12, gap: 10, lineH: 3 };
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: sz.gap }}>
+      {LOGIN_STEPS.map((s, i) => {
+        const done = i < cur;
+        const active = i === cur;
+        return (
+          <React.Fragment key={s.id}>
+            {i > 0 && (
+              <div style={{
+                flex: 1, height: sz.lineH, borderRadius: 999,
+                background: done ? '#3b82f6' : 'rgba(255,255,255,0.15)',
+                minWidth: compact ? 16 : 24,
+              }} />
+            )}
+            <div style={{
+              width: sz.dot, height: sz.dot,
+              borderRadius: '50%',
+              background: active ? '#3b82f6' : done ? '#1d4ed8' : 'rgba(255,255,255,0.12)',
+              border: active ? '3px solid #93c5fd' : 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+              transition: 'background 0.3s',
+            }}>
+              {done ? (
+                <span style={{ fontSize: sz.fs, color: '#fff', fontWeight: 900 }}>✓</span>
+              ) : (
+                <span style={{ fontSize: sz.fs, color: active ? '#fff' : 'rgba(255,255,255,0.4)', fontWeight: 900 }}>
+                  {s.n}
+                </span>
+              )}
+            </div>
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+// Feature bullets shown on the welcome screen
+const PARENT_FEATURES = [
+  { icon: '📅', title: 'Quản lý lịch học', desc: 'Thêm, sửa, xóa thời khóa biểu của Khôi' },
+  { icon: '🌟', title: 'Cập nhật điểm số', desc: 'Nhập điểm từng môn, xem xếp loại tự động' },
+  { icon: '🔒', title: 'Bảo mật bằng PIN', desc: '4 chữ số · mã hóa SHA-256 · không ai xem được' },
+];
+
+// Email + Password login form (step 1)
+function LoginEmail({ size = 'md', onNext }) {
+  const sz = {
+    sm: { logo: 52, logoBr: 14, h1: 20, sub: 12, inputH: 44, inputFs: 14, gap: 14, btnFs: 14, btnPad: '12px 24px' },
+    md: { logo: 72, logoBr: 18, h1: 28, sub: 15, inputH: 54, inputFs: 15, gap: 18, btnFs: 16, btnPad: '14px 32px' },
+    lg: { logo: 88, logoBr: 22, h1: 34, sub: 17, inputH: 60, inputFs: 16, gap: 22, btnFs: 18, btnPad: '16px 40px' },
+  }[size] || { logo: 72, logoBr: 18, h1: 28, sub: 15, inputH: 54, inputFs: 15, gap: 18, btnFs: 16, btnPad: '14px 32px' };
+
+  const inputStyle = {
+    width: '100%', boxSizing: 'border-box',
+    height: sz.inputH,
+    background: 'rgba(255,255,255,0.06)',
+    border: '2px solid rgba(255,255,255,0.12)',
+    borderRadius: 14, padding: '0 16px',
+    color: '#fff', fontFamily: 'inherit',
+    fontSize: sz.inputFs, fontWeight: 700,
+    outline: 'none',
+  };
+
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      gap: sz.gap, color: '#fff', width: '100%', maxWidth: 440,
+    }}>
+      {/* Logo */}
+      <div style={{
+        width: sz.logo, height: sz.logo, borderRadius: sz.logoBr,
+        background: '#3b82f6', display: 'grid', placeItems: 'center',
+        fontSize: sz.logo * 0.48,
+        boxShadow: '0 16px 32px -12px rgba(59,130,246,0.55)',
+      }}>🌟</div>
+
+      {/* Heading */}
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: sz.h1, fontWeight: 900, letterSpacing: -0.02 }}>Kid Hub</div>
+        <div style={{ fontSize: sz.sub, color: '#94a3b8', fontWeight: 700, marginTop: 4 }}>
+          Đăng nhập vào tài khoản phụ huynh
+        </div>
+      </div>
+
+      {/* Form */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: sz.gap - 6, width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <label style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', letterSpacing: 0.08, textTransform: 'uppercase' }}>
+            Email
+          </label>
+          <input
+            type="email"
+            readOnly
+            defaultValue="bome@email.com"
+            style={inputStyle}
+            placeholder="email@example.com"
+          />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <label style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', letterSpacing: 0.08, textTransform: 'uppercase' }}>
+            Mật khẩu
+          </label>
+          <div style={{ position: 'relative' }}>
+            <input
+              type="password"
+              readOnly
+              defaultValue="password123"
+              style={{ ...inputStyle, paddingRight: 44 }}
+              placeholder="Nhập mật khẩu"
+            />
+            <span style={{
+              position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+              fontSize: 18, cursor: 'pointer', color: '#64748b',
+            }}>👁️</span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#60a5fa', cursor: 'pointer' }}>
+            Quên mật khẩu?
+          </span>
+        </div>
+      </div>
+
+      {/* Login button */}
+      <button
+        onClick={onNext}
+        className="kh-press"
+        style={{
+          width: '100%', background: '#3b82f6', color: '#fff',
+          border: '4px solid #1d4ed8', borderRadius: 999,
+          padding: sz.btnPad, fontSize: sz.btnFs, fontWeight: 900,
+          fontFamily: 'inherit', cursor: 'pointer',
+          boxShadow: '0 12px 24px -10px rgba(59,130,246,0.6)',
+        }}>Đăng nhập</button>
+
+      <div style={{ fontSize: 12, color: '#475569', fontWeight: 700 }}>
+        Lần đầu đăng nhập? Hãy tạo mã PIN sau khi xác thực.
+      </div>
+    </div>
+  );
+}
+
+function LoginWelcome({ size = 'md', onNext, compact }) {
+  const sz = {
+    sm: { logo: 60, logoBr: 16, h1: 24, sub: 13, featIcon: 28, featTitle: 13, featDesc: 11, gap: 14, btnPad: '12px 24px', btnFs: 14 },
+    md: { logo: 80, logoBr: 20, h1: 32, sub: 16, featIcon: 36, featTitle: 16, featDesc: 12, gap: 18, btnPad: '14px 32px', btnFs: 16 },
+    lg: { logo: 96, logoBr: 24, h1: 40, sub: 18, featIcon: 44, featTitle: 18, featDesc: 13, gap: 22, btnPad: '16px 40px', btnFs: 18 },
+  }[size] || { logo: 80, logoBr: 20, h1: 32, sub: 16, featIcon: 36, featTitle: 16, featDesc: 12, gap: 18, btnPad: '14px 32px', btnFs: 16 };
+
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      gap: sz.gap, textAlign: 'center', color: '#fff',
+      width: '100%', maxWidth: 520,
+    }}>
+      {/* Logo */}
+      <div style={{
+        width: sz.logo, height: sz.logo, borderRadius: sz.logoBr,
+        background: '#3b82f6',
+        display: 'grid', placeItems: 'center',
+        fontSize: sz.logo * 0.48,
+        boxShadow: '0 16px 32px -12px rgba(59, 130, 246, 0.6)',
+      }}>🌟</div>
+
+      {/* Headline */}
+      <div>
+        <div style={{ fontSize: sz.h1, fontWeight: 900, letterSpacing: -0.02, lineHeight: 1.1 }}>
+          Xin chào Bố / Mẹ! 👋
+        </div>
+        <div style={{
+          fontSize: sz.sub, color: '#94a3b8', fontWeight: 700, marginTop: 6,
+        }}>
+          Hãy tạo mã PIN để bảo vệ chế độ quản lý của bạn.
+        </div>
+      </div>
+
+      {/* Feature list */}
+      <div style={{
+        width: '100%', display: 'flex', flexDirection: 'column', gap: compact ? 6 : 8,
+      }}>
+        {PARENT_FEATURES.map((f) => (
+          <div key={f.icon} style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            background: 'rgba(255,255,255,0.06)', borderRadius: 16,
+            padding: compact ? '10px 14px' : '12px 16px',
+            textAlign: 'left',
+          }}>
+            <div style={{
+              width: sz.featIcon + 8, height: sz.featIcon + 8,
+              borderRadius: 12, background: 'rgba(255,255,255,0.1)',
+              display: 'grid', placeItems: 'center',
+              fontSize: sz.featIcon * 0.7, flexShrink: 0,
+            }}>{f.icon}</div>
+            <div>
+              <div style={{ fontSize: sz.featTitle, fontWeight: 900 }}>{f.title}</div>
+              <div style={{ fontSize: sz.featDesc, color: '#94a3b8', fontWeight: 700, marginTop: 2 }}>
+                {f.desc}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA */}
+      <button
+        onClick={onNext}
+        className="kh-press"
+        style={{
+          background: '#3b82f6', color: '#fff',
+          border: '4px solid #1d4ed8',
+          borderRadius: 999, padding: sz.btnPad,
+          fontSize: sz.btnFs, fontWeight: 900,
+          fontFamily: 'inherit', cursor: 'pointer',
+          boxShadow: '0 12px 24px -10px rgba(59, 130, 246, 0.6)',
+          marginTop: 4,
+        }}>Bắt đầu tạo PIN →</button>
+    </div>
+  );
+}
+
+function LoginCreatePin({ size = 'md', isConfirm = false, onNext, onBack }) {
+  const keypadSize = { sm: 'sm', md: 'md', lg: 'lg' }[size] || 'md';
+  const filled = isConfirm ? 4 : 2;
+  const sz = {
+    sm: { h1: 20, sub: 12 },
+    md: { h1: 28, sub: 15 },
+    lg: { h1: 34, sub: 17 },
+  }[size] || { h1: 28, sub: 15 };
+
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      gap: 20, color: '#fff',
+    }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: sz.h1, fontWeight: 900, letterSpacing: -0.01 }}>
+          {isConfirm ? 'Xác nhận mã PIN' : 'Tạo mã PIN mới'}
+        </div>
+        <div style={{ fontSize: sz.sub, color: '#94a3b8', fontWeight: 700, marginTop: 6 }}>
+          {isConfirm ? 'Nhập lại mã PIN vừa tạo để xác nhận' : 'Chọn 4 chữ số cho mã PIN của bạn'}
+        </div>
+      </div>
+      <PinKeypad
+        size={keypadSize}
+        filled={filled}
+        onKey={(k) => onNext && onNext(k)} />
+      {onBack && (
+        <button onClick={onBack} style={{
+          background: 'transparent', border: 0, color: '#64748b',
+          fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+        }}>← Quay lại</button>
+      )}
+    </div>
+  );
+}
+
+function LoginSuccess({ size = 'md', onEnter }) {
+  const sz = {
+    sm: { trophy: 60, h1: 22, sub: 13, gap: 14, btnFs: 14, btnPad: '12px 24px' },
+    md: { trophy: 90, h1: 30, sub: 16, gap: 18, btnFs: 16, btnPad: '14px 32px' },
+    lg: { trophy: 110, h1: 38, sub: 18, gap: 22, btnFs: 18, btnPad: '16px 40px' },
+  }[size] || { trophy: 90, h1: 30, sub: 16, gap: 18, btnFs: 16, btnPad: '14px 32px' };
+
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      gap: sz.gap, textAlign: 'center', color: '#fff',
+      maxWidth: 440,
+    }}>
+      <div style={{ fontSize: sz.trophy, lineHeight: 1 }} aria-hidden="true">✅</div>
+      <div>
+        <div style={{ fontSize: sz.h1, fontWeight: 900, letterSpacing: -0.02 }}>
+          Đã tạo PIN thành công!
+        </div>
+        <div style={{ fontSize: sz.sub, color: '#94a3b8', fontWeight: 700, marginTop: 6 }}>
+          Mã PIN của bạn đã được lưu an toàn. Bạn có thể quản lý lịch học và điểm số của Khôi ngay bây giờ.
+        </div>
+      </div>
+      {/* Quick summary chips */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+        {['📅 Lịch học', '🌟 Điểm số', '🔒 PIN bảo mật'].map((label) => (
+          <div key={label} style={{
+            background: 'rgba(255,255,255,0.08)',
+            borderRadius: 999, padding: '6px 14px',
+            fontSize: 13, fontWeight: 800, color: '#cbd5e1',
+          }}>{label}</div>
+        ))}
+      </div>
+      <button
+        onClick={onEnter}
+        className="kh-press"
+        style={{
+          background: '#3b82f6', color: '#fff',
+          border: '4px solid #1d4ed8',
+          borderRadius: 999, padding: sz.btnPad,
+          fontSize: sz.btnFs, fontWeight: 900,
+          fontFamily: 'inherit', cursor: 'pointer',
+          boxShadow: '0 12px 24px -10px rgba(59, 130, 246, 0.6)',
+          marginTop: 4,
+        }}>Vào Parent Mode 🚀</button>
+    </div>
+  );
+}
+
+// Full login screen — wraps step indicator + step content
+function LoginScreen({ step, size = 'md', onAction }) {
+  const isCompact = size === 'sm';
+  const contentByStep = {
+    email:   <LoginEmail size={size} onNext={() => onAction('Đăng nhập thành công')} />,
+    welcome: <LoginWelcome size={size} compact={isCompact}
+      onNext={() => onAction('Bắt đầu tạo PIN')} />,
+    create:  <LoginCreatePin size={size} isConfirm={false}
+      onNext={(k) => onAction(`Nhấn ${k}`)}
+      onBack={() => onAction('Quay lại welcome')} />,
+    confirm: <LoginCreatePin size={size} isConfirm
+      onNext={(k) => onAction(`Xác nhận ${k}`)}
+      onBack={() => onAction('Quay lại tạo PIN')} />,
+    success: <LoginSuccess size={size}
+      onEnter={() => onAction('Vào Parent Mode!')} />,
+  };
+  const padV = { sm: 14, md: 28, lg: 36 }[size] || 28;
+
+  return (
+    <div style={{
+      width: '100%', height: '100%',
+      background: '#0f172a',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      padding: `${padV}px 20px`,
+      gap: 24, fontFamily: 'Nunito, system-ui, sans-serif',
+      overflow: 'hidden',
+    }}>
+      <StepIndicator step={step} compact={isCompact} />
+      {contentByStep[step] || contentByStep.welcome}
+    </div>
+  );
+}
+
+// Landscape split: step indicator + hero text left, keypad/content right
+function LoginScreenSplit({ step, onAction }) {
+  const leftContent = {
+    email: (
+      <div style={{ color: '#fff', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{
+          width: 48, height: 48, borderRadius: 12, background: '#3b82f6',
+          display: 'grid', placeItems: 'center', fontSize: 24,
+          boxShadow: '0 8px 18px -8px rgba(59,130,246,0.6)',
+        }}>🌟</div>
+        <div style={{ fontSize: 18, fontWeight: 900 }}>Kid Hub</div>
+        <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700 }}>
+          Đăng nhập tài khoản phụ huynh
+        </div>
+      </div>
+    ),
+    welcome: (
+      <div style={{ color: '#fff', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{
+          width: 52, height: 52, borderRadius: 14, background: '#3b82f6',
+          display: 'grid', placeItems: 'center', fontSize: 26,
+          boxShadow: '0 8px 18px -8px rgba(59,130,246,0.6)',
+        }}>🌟</div>
+        <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.01 }}>
+          Xin chào Bố / Mẹ! 👋
+        </div>
+        <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, lineHeight: 1.4 }}>
+          Tạo mã PIN để bảo vệ chế độ quản lý của bạn.
+        </div>
+        {PARENT_FEATURES.map((f) => (
+          <div key={f.icon} style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            fontSize: 11, fontWeight: 700, color: '#cbd5e1',
+          }}>
+            <span style={{ fontSize: 16 }}>{f.icon}</span>
+            <span>{f.title}</span>
+          </div>
+        ))}
+      </div>
+    ),
+    create: (
+      <div style={{ color: '#fff', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ fontSize: 18, fontWeight: 900 }}>Tạo mã PIN mới</div>
+        <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700 }}>
+          Chọn 4 chữ số cho mã PIN
+        </div>
+        <PinDots length={4} filled={2} size="sm" />
+      </div>
+    ),
+    confirm: (
+      <div style={{ color: '#fff', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ fontSize: 18, fontWeight: 900 }}>Xác nhận mã PIN</div>
+        <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700 }}>
+          Nhập lại mã PIN vừa tạo
+        </div>
+        <PinDots length={4} filled={4} size="sm" />
+      </div>
+    ),
+    success: (
+      <div style={{ color: '#fff', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ fontSize: 52, lineHeight: 1 }}>✅</div>
+        <div style={{ fontSize: 18, fontWeight: 900 }}>Đã tạo PIN thành công!</div>
+        <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, lineHeight: 1.4 }}>
+          Mã PIN đã được lưu an toàn.
+        </div>
+      </div>
+    ),
+  };
+
+  const rightContent = {
+    email: (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 300 }}>
+        <input type="email" readOnly defaultValue="bome@email.com"
+          style={{
+            height: 44, background: 'rgba(255,255,255,0.07)',
+            border: '2px solid rgba(255,255,255,0.12)', borderRadius: 12,
+            padding: '0 14px', color: '#fff', fontFamily: 'inherit',
+            fontSize: 13, fontWeight: 700, outline: 'none', width: '100%',
+            boxSizing: 'border-box',
+          }} />
+        <input type="password" readOnly defaultValue="pass"
+          style={{
+            height: 44, background: 'rgba(255,255,255,0.07)',
+            border: '2px solid rgba(255,255,255,0.12)', borderRadius: 12,
+            padding: '0 14px', color: '#fff', fontFamily: 'inherit',
+            fontSize: 13, fontWeight: 700, outline: 'none', width: '100%',
+            boxSizing: 'border-box',
+          }} />
+        <button onClick={() => onAction('Đăng nhập')} className="kh-press" style={{
+          background: '#3b82f6', color: '#fff',
+          border: '3px solid #1d4ed8', borderRadius: 999,
+          padding: '10px 0', fontSize: 14, fontWeight: 900,
+          fontFamily: 'inherit', cursor: 'pointer', width: '100%',
+          boxShadow: '0 8px 18px -8px rgba(59,130,246,0.6)',
+        }}>Đăng nhập</button>
+      </div>
+    ),
+    welcome: (
+      <button onClick={() => onAction('Bắt đầu tạo PIN')} className="kh-press" style={{
+        background: '#3b82f6', color: '#fff',
+        border: '3px solid #1d4ed8', borderRadius: 999,
+        padding: '12px 26px', fontSize: 14, fontWeight: 900,
+        fontFamily: 'inherit', cursor: 'pointer',
+        boxShadow: '0 10px 22px -8px rgba(59,130,246,0.6)',
+      }}>Bắt đầu →</button>
+    ),
+    create:  <PinKeypad size="sm" filled={2} onKey={(k) => onAction(`Nhấn ${k}`)} />,
+    confirm: <PinKeypad size="sm" filled={4} onKey={(k) => onAction(`Xác nhận ${k}`)} />,
+    success: (
+      <button onClick={() => onAction('Vào Parent Mode!')} className="kh-press" style={{
+        background: '#3b82f6', color: '#fff',
+        border: '3px solid #1d4ed8', borderRadius: 999,
+        padding: '12px 26px', fontSize: 14, fontWeight: 900,
+        fontFamily: 'inherit', cursor: 'pointer',
+        boxShadow: '0 10px 22px -8px rgba(59,130,246,0.6)',
+      }}>Vào Parent Mode 🚀</button>
+    ),
+  };
+
+  return (
+    <div style={{
+      width: '100%', height: '100%',
+      background: '#0f172a',
+      display: 'grid', gridTemplateColumns: '1fr 1fr',
+      gap: 18, padding: 18, alignItems: 'center',
+      fontFamily: 'Nunito, system-ui, sans-serif',
+    }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <StepIndicator step={step} compact />
+        {leftContent[step] || leftContent.welcome}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        {rightContent[step] || rightContent.welcome}
+      </div>
+    </div>
+  );
+}
+
+// ── 5 viewport variants ───────────────────────────────────────────────
+function LoginPhoneP({ tweaks, onAction, insets = {} }) {
+  return (
+    <div style={{
+      width: '100%', height: '100%', background: '#0f172a',
+      paddingTop: insets.top ?? 0, paddingBottom: insets.bottom ?? 0,
+      boxSizing: 'border-box',
+    }}>
+      <LoginScreen step={tweaks.loginStep} size="sm" onAction={onAction} />
+    </div>
+  );
+}
+
+function LoginPhoneL({ tweaks, onAction }) {
+  return <LoginScreenSplit step={tweaks.loginStep} onAction={onAction} />;
+}
+
+function LoginTabletP({ tweaks, onAction }) {
+  return (
+    <div style={{ width: '100%', height: '100%' }}>
+      <LoginScreen step={tweaks.loginStep} size="md" onAction={onAction} />
+    </div>
+  );
+}
+
+function LoginTabletL({ tweaks, onAction }) {
+  return (
+    <div style={{ width: '100%', height: '100%' }}>
+      <LoginScreen step={tweaks.loginStep} size="lg" onAction={onAction} />
+    </div>
+  );
+}
+
+function LoginDesktop({ tweaks, onAction }) {
+  return (
+    <div style={{ width: '100%', height: '100%' }}>
+      <LoginScreen step={tweaks.loginStep} size="lg" onAction={onAction} />
+    </div>
+  );
+}
+
 Object.assign(window, {
   PinPhoneP, PinPhoneL, PinTabletP, PinTabletL, PinDesktop,
   ParentPhoneP, ParentPhoneL, ParentTabletP, ParentTabletL, ParentDesktop,
+  LoginPhoneP, LoginPhoneL, LoginTabletP, LoginTabletL, LoginDesktop,
 });

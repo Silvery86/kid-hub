@@ -6,7 +6,7 @@
  * Quick-Add Homework.
  */
 
-import { useState, useCallback, useTransition, useRef } from 'react'
+import { useState, useCallback, useTransition, useRef, useEffect } from 'react'
 import { Plus, Trash2, Save, Check, AlertCircle, X, Moon, BookOpen } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import type { DailySchedule, DayOfWeek } from '@/types'
@@ -68,11 +68,23 @@ const todayStr = (): string => new Date().toISOString().split('T')[0]!
 
 // ── Component ─────────────────────────────────────────────────
 
-interface ScheduleManagerProps {
-  initialSchedule: DailySchedule[]
+export interface ParentSaveState {
+  save: () => void
+  isPending: boolean
+  isSaved: boolean
 }
 
-export const ScheduleManager = ({ initialSchedule }: ScheduleManagerProps) => {
+interface ScheduleManagerProps {
+  initialSchedule: DailySchedule[]
+  embedded?: boolean
+  onSaveStateChange?: (state: ParentSaveState) => void
+}
+
+export const ScheduleManager = ({
+  initialSchedule,
+  embedded = false,
+  onSaveStateChange,
+}: ScheduleManagerProps) => {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<ActiveTab>('school')
   const [activeDay, setActiveDay] = useState<DayOfWeek>('monday')
@@ -189,6 +201,10 @@ export const ScheduleManager = ({ initialSchedule }: ScheduleManagerProps) => {
     })
   }
 
+  useEffect(() => {
+    onSaveStateChange?.({ save: handleSave, isPending, isSaved })
+  }, [onSaveStateChange, isPending, isSaved])
+
   // ── Evening extra class handler ─────────────────────────────
 
   const handleAddEvening = () => {
@@ -253,18 +269,20 @@ export const ScheduleManager = ({ initialSchedule }: ScheduleManagerProps) => {
       {/* ── School periods tab ── */}
       {activeTab === 'school' && (
         <div className="flex flex-1 flex-col gap-4 overflow-hidden">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-bold text-slate-500">Thời khoá biểu chính</p>
-            <KidButton
-              variant={isSaved ? 'secondary' : 'primary'}
-              onClick={handleSave}
-              isDisabled={isPending}
-              className="min-h-10 gap-2 px-4 text-sm"
-            >
-              {isSaved ? <Check size={16} /> : <Save size={16} />}
-              {isSaved ? 'Đã lưu!' : isPending ? 'Đang lưu...' : 'Lưu'}
-            </KidButton>
-          </div>
+          {!embedded ? (
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-bold text-slate-500">Thời khoá biểu chính</p>
+              <KidButton
+                variant={isSaved ? 'secondary' : 'primary'}
+                onClick={handleSave}
+                isDisabled={isPending}
+                className="min-h-10 gap-2 px-4 text-sm"
+              >
+                {isSaved ? <Check size={16} /> : <Save size={16} />}
+                {isSaved ? 'Đã lưu!' : isPending ? 'Đang lưu...' : 'Lưu'}
+              </KidButton>
+            </div>
+          ) : null}
 
           {error && (
             <div className="flex items-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">

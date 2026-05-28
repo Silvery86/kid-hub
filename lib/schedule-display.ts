@@ -67,6 +67,25 @@ export const formatDayTimeRange = (periods: ClassPeriod[]): string => {
   return `${first?.startTime ?? ''} → ${last?.endTime ?? ''}`
 }
 
+/** 0–1 progress through an in-progress period, or null if now is outside that slot. */
+export const getPeriodProgress = (period: ClassPeriod, now: Date): number | null => {
+  const nowMin = now.getHours() * 60 + now.getMinutes()
+  const start = parseTimeToMinutes(period.startTime)
+  const end = parseTimeToMinutes(period.endTime)
+  if (nowMin < start || nowMin >= end) return null
+  const duration = end - start
+  return duration > 0 ? (nowMin - start) / duration : null
+}
+
+/** Whole minutes remaining until period end; null if not currently in that period. */
+export const getMinutesLeftInPeriod = (period: ClassPeriod, now: Date): number | null => {
+  const nowMin = now.getHours() * 60 + now.getMinutes()
+  const start = parseTimeToMinutes(period.startTime)
+  const end = parseTimeToMinutes(period.endTime)
+  if (nowMin < start || nowMin >= end) return null
+  return end - nowMin
+}
+
 const MONTH_NAMES = [
   'Tháng 1',
   'Tháng 2',

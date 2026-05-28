@@ -7,6 +7,7 @@
  */
 
 import 'dotenv/config'
+import bcrypt from 'bcryptjs'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client'
 
@@ -194,6 +195,23 @@ async function main() {
   })
 
   console.warn(`✅ Default user seeded: ${user.name} (id: ${user.id})`)
+
+  // Seed parent account credentials (safe to re-run: only sets if not already configured)
+  const PARENT_EMAIL = 'giang8692@gmail.com'
+  const PARENT_PASSWORD = 'Giang@123'
+  const [authRow] = await db.$queryRaw<
+    Array<{ parentEmail: string | null; parentPasswordHash: string | null }>
+  >`SELECT "parentEmail", "parentPasswordHash" FROM users WHERE id = ${DEFAULT_USER_ID}`
+  if (!authRow?.parentEmail || !authRow?.parentPasswordHash) {
+    const passwordHash = await bcrypt.hash(PARENT_PASSWORD, 12)
+    await db.$executeRaw`
+      UPDATE users SET "parentEmail" = ${PARENT_EMAIL}, "parentPasswordHash" = ${passwordHash}
+      WHERE id = ${DEFAULT_USER_ID}
+    `
+    console.warn(`✅ Parent account seeded: ${PARENT_EMAIL}`)
+  } else {
+    console.warn(`ℹ️  Parent account already configured: ${authRow.parentEmail} (skipped)`)
+  }
 
   // Validate schedule data before touching the DB
   assertNoOverlaps(WEEKLY_SCHEDULE)

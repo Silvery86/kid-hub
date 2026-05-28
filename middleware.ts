@@ -1,6 +1,6 @@
 /**
  * Next.js Edge Middleware — responsibilities:
- * 1. Protect child routes with `kid_session`, redirecting to `/unlock` when absent/invalid.
+ * 1. Protect child routes with `kid_session`, redirecting to `/kid-unlock` when absent/invalid.
  * 2. Protect parent routes with `parent_access`, and auto-renew via `parent_refresh`.
  * 3. Rate-limit parent login attempts (POST /parent/login) via Upstash sliding window.
  */
@@ -23,13 +23,19 @@ const isKidAppSurfacePath = (pathname: string): boolean => {
   if (pathname === '/schedule' || pathname.startsWith('/schedule/')) return true
   if (pathname === '/grades' || pathname.startsWith('/grades/')) return true
   if (pathname === '/homework' || pathname.startsWith('/homework/')) return true
+  if (pathname === '/games' || pathname.startsWith('/games/')) return true
   if (pathname === '/math' || pathname.startsWith('/math/')) return true
   if (pathname === '/english' || pathname.startsWith('/english/')) return true
+  if (pathname === '/unlock' || pathname.startsWith('/unlock/')) return true
   return false
 }
 
+const isParentPublicPath = (pathname: string): boolean =>
+  pathname === '/parent/login' || pathname === '/parent/pin'
+
 const isParentProtectedPath = (pathname: string): boolean =>
-  pathname === '/parent' || (pathname.startsWith('/parent/') && pathname !== '/parent/login')
+  pathname === '/parent' ||
+  (pathname.startsWith('/parent/') && !isParentPublicPath(pathname))
 
 /** Returns the JWT secret encoded as Uint8Array. Throws if SESSION_SECRET is absent or too short. */
 const getSecret = (): Uint8Array => {
@@ -68,7 +74,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   if (isKidAppSurfacePath(pathname)) {
     const kidToken = request.cookies.get(KID_SESSION_COOKIE)?.value
     if (!kidToken) {
-      return NextResponse.redirect(new URL('/unlock', request.url))
+      return NextResponse.redirect(new URL('/kid-unlock', request.url))
     }
 
     const kidSession = await verifyToken(kidToken, 'kid-session')
@@ -76,18 +82,18 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
       return NextResponse.next()
     }
 
-    const response = NextResponse.redirect(new URL('/unlock', request.url))
+    const response = NextResponse.redirect(new URL('/kid-unlock', request.url))
     response.cookies.delete(KID_SESSION_COOKIE)
     return response
   }
 
-  // ── Public parent login route ────────────────────────────────────────────
-  if (pathname === '/parent/login' && request.method !== 'POST') {
+  // ── Public parent auth routes (login + PIN gate) ─────────────────────────
+  if (isParentPublicPath(pathname) && request.method !== 'POST') {
     return NextResponse.next()
   }
 
-  // ── Rate limiting: parent login Server Action POSTs ──────────────────────
-  if (pathname === '/parent/login' && request.method === 'POST') {
+  // ── Rate limiting: parent login / PIN Server Action POSTs ────────────────
+  if (isParentPublicPath(pathname) && request.method === 'POST') {
     const limiter = getPinRateLimiter()
     if (limiter) {
       const ip =
@@ -148,11 +154,13 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 export const config = {
   matcher: [
     '/',
+    '/kid-unlock',
     '/unlock',
     '/dashboard/:path*',
     '/schedule/:path*',
     '/grades/:path*',
     '/homework/:path*',
+    '/games/:path*',
     '/math/:path*',
     '/english/:path*',
     '/parent/:path*',

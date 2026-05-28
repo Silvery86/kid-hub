@@ -81,16 +81,16 @@ test.describe('Middleware — parent route protection', () => {
     await expect(page).toHaveURL(/\/parent$/)
 
     await page.goto('/dashboard')
-    await expect(page).toHaveURL('/unlock')
+    await expect(page).toHaveURL('/kid-unlock')
 
     await page.goto('/parent')
     await expect(page).toHaveURL(/\/parent$/)
   })
 
   // TC-MW-KID-05
-  // Child route access requires kid_session and redirects to /unlock without it.
-  test('TC-MW-KID-05: absent kid_session redirects /dashboard to /unlock', async ({ page }) => {
+  // Child route access requires kid_session and redirects to /kid-unlock without it.
+  test('TC-MW-KID-05: absent kid_session redirects /dashboard to /kid-unlock', async ({ page }) => {
     await page.goto('/dashboard')
-    await expect(page).toHaveURL('/unlock')
+    await expect(page).toHaveURL('/kid-unlock')
   })
 })

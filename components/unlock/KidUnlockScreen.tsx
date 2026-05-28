@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { checkKidSessionAction, verifyKidPatternAction } from '@/server/actions/auth.actions'
+import { cn } from '@/lib/utils'
 
 const TILES = [
   { id: '1', emoji: '☀️', label: 'Sun' },
@@ -13,13 +15,14 @@ const TILES = [
   { id: '6', emoji: '🎈', label: 'Balloon' },
 ] as const
 
-export default function UnlockPage() {
+export function KidUnlockScreen() {
   const router = useRouter()
   const [entered, setEntered] = useState('')
   const [error, setError] = useState('')
   const [isLocked, setIsLocked] = useState(false)
   const [lockoutSeconds, setLockoutSeconds] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [needsSetup, setNeedsSetup] = useState(false)
 
   useEffect(() => {
     checkKidSessionAction().then(({ hasSession, hasKidPatternSet }) => {
@@ -28,14 +31,15 @@ export default function UnlockPage() {
         return
       }
       if (!hasKidPatternSet) {
-        setError('Parent chưa thiết lập mã mở khóa cho bé. Vui lòng vào Parent Mode.')
+        setNeedsSetup(true)
+        setError('Bố mẹ chưa thiết lập mã mở khóa. Vui lòng vào Parent Mode.')
       }
     })
   }, [router])
 
   useEffect(() => {
     if (!isLocked || lockoutSeconds <= 0) return
-    const timer = setTimeout(() => {
+    const timer = setInterval(() => {
       setLockoutSeconds((s) => {
         if (s <= 1) {
           setIsLocked(false)
@@ -44,8 +48,7 @@ export default function UnlockPage() {
         return s - 1
       })
     }, 1000)
-
-    return () => clearTimeout(timer)
+    return () => clearInterval(timer)
   }, [isLocked, lockoutSeconds])
 
   const hint = useMemo(() => {
@@ -76,7 +79,7 @@ export default function UnlockPage() {
   }
 
   const handleTap = (id: string) => {
-    if (isLocked || isSubmitting) return
+    if (isLocked || isSubmitting || needsSetup) return
     const next = `${entered}${id}`
     setEntered(next)
     setError('')
@@ -87,24 +90,31 @@ export default function UnlockPage() {
   }
 
   return (
-    <div className="fixed inset-0 flex min-h-dvh items-center justify-center bg-[radial-gradient(circle_at_top,#e0f2fe_0%,#bfdbfe_30%,#1e293b_100%)] p-4">
-      <div className="w-full max-w-xl rounded-3xl bg-white/95 p-6 shadow-2xl">
-        <div className="mb-4 text-center">
-          <div className="mb-2 text-6xl" aria-hidden="true">
+    <div className="fixed inset-0 flex min-h-dvh flex-col items-center justify-center bg-[radial-gradient(circle_at_top,#e0f2fe_0%,#bfdbfe_35%,#0f172a_100%)] px-4 py-8">
+      <div className="w-full max-w-md">
+        <div className="mb-6 text-center">
+          <div className="mb-3 text-7xl leading-none" aria-hidden="true">
             🔓
           </div>
-          <h1 className="text-3xl font-extrabold text-slate-800">Mở khóa cho bé</h1>
-          <p className="mt-1 text-sm text-slate-500">Chạm 2 hình theo đúng thứ tự đã cài đặt</p>
-          <p className="mt-2 text-sm font-bold text-sky-700">{hint}</p>
+          <h1 className="text-3xl font-black text-white">Mở khóa cho bé</h1>
+          <p className="mt-2 text-sm font-bold text-slate-300">
+            Chạm 2 hình theo đúng thứ tự đã cài đặt
+          </p>
+          <p className="mt-3 text-sm font-extrabold text-sky-300">{hint}</p>
         </div>
 
         <div className="grid grid-cols-3 gap-3">
           {TILES.map((tile) => (
             <button
               key={tile.id}
+              type="button"
               onClick={() => handleTap(tile.id)}
-              disabled={isLocked || isSubmitting}
-              className="flex min-h-24 items-center justify-center rounded-2xl border border-sky-100 bg-sky-50 text-4xl transition hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isLocked || isSubmitting || needsSetup}
+              className={cn(
+                'flex min-h-24 items-center justify-center rounded-2xl border-2 text-4xl transition active:scale-[0.97]',
+                'border-white/20 bg-white/10 text-white backdrop-blur-sm',
+                'hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-50'
+              )}
               aria-label={tile.label}
             >
               {tile.emoji}
@@ -113,17 +123,19 @@ export default function UnlockPage() {
         </div>
 
         {error ? (
-          <p className="mt-4 text-center text-sm font-semibold text-rose-600">{error}</p>
+          <p className="mt-4 text-center text-sm font-bold text-rose-300">{error}</p>
         ) : (
-          <p className="mt-4 text-center text-xs text-slate-500">Nhấn nút Bố mẹ để vào khu quản lý</p>
+          <p className="mt-4 text-center text-xs font-bold text-slate-500">
+            Nhấn nút Bố mẹ để vào khu quản lý
+          </p>
         )}
 
-        <button
-          className="mt-4 w-full rounded-2xl bg-slate-800 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-slate-700"
-          onClick={() => router.push('/parent')}
+        <Link
+          href="/parent/login"
+          className="mt-5 flex w-full items-center justify-center rounded-2xl bg-white/10 px-4 py-3.5 text-sm font-extrabold text-white ring-2 ring-white/20 transition hover:bg-white/15"
         >
           👨‍👩‍👦 Bố mẹ
-        </button>
+        </Link>
       </div>
     </div>
   )
