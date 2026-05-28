@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kid Hub Auth Review and Kid Access Proposal</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5efe4;
+        --panel: #fffaf2;
+        --panel-strong: #fff3dc;
+        --text: #1f2937;
+        --muted: #5b6472;
+        --line: #d8c9aa;
+        --danger: #9f1239;
+        --warn: #92400e;
+        --ok: #14532d;
+        --accent: #0f766e;
+        --accent-soft: #ccfbf1;
+        --shadow: 0 20px 40px rgba(73, 58, 25, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        background:
+          radial-gradient(circle at top right, rgba(15, 118, 110, 0.14), transparent 28%),
+          radial-gradient(circle at left center, rgba(217, 119, 6, 0.12), transparent 24%),
+          var(--bg);
+        color: var(--text);
+      }
+
+      main {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 40px 24px 72px;
+      }
+
+      .hero,
+      section {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        box-shadow: var(--shadow);
+      }
+
+      .hero {
+        padding: 32px;
+        margin-bottom: 24px;
+      }
+
+      .eyebrow {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.15;
+        margin: 0;
+      }
+
+      h1 {
+        margin-top: 16px;
+        font-size: clamp(32px, 5vw, 52px);
+      }
+
+      h2 {
+        font-size: 28px;
+        margin-bottom: 16px;
+      }
+
+      h3 {
+        font-size: 20px;
+        margin-bottom: 10px;
+      }
+
+      p,
+      li {
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.65;
+      }
+
+      .hero-grid,
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .hero-grid {
+        grid-template-columns: 1.6fr 1fr;
+        margin-top: 20px;
+      }
+
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .card {
+        background: var(--panel-strong);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 18px;
+      }
+
+      .severity {
+        display: inline-block;
+        margin-bottom: 10px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .critical {
+        background: #ffe4e6;
+        color: var(--danger);
+      }
+
+      .medium {
+        background: #fef3c7;
+        color: var(--warn);
+      }
+
+      .good {
+        background: #dcfce7;
+        color: var(--ok);
+      }
+
+      section {
+        padding: 28px;
+        margin-top: 24px;
+      }
+
+      ul,
+      ol {
+        margin: 0;
+        padding-left: 22px;
+      }
+
+      code,
+      pre {
+        font-family: "Consolas", "Courier New", monospace;
+      }
+
+      pre {
+        margin: 0;
+        padding: 18px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: #1f2937;
+        color: #f9fafb;
+        overflow-x: auto;
+        line-height: 1.5;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 14px 12px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        color: var(--text);
+      }
+
+      .flow-step {
+        padding: 16px 18px;
+        border-left: 4px solid var(--accent);
+        border-radius: 0 18px 18px 0;
+        background: rgba(15, 118, 110, 0.06);
+      }
+
+      .small {
+        font-size: 14px;
+      }
+
+      @media (max-width: 800px) {
+        .hero-grid,
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        main {
+          padding: 24px 16px 48px;
+        }
+
+        .hero,
+        section {
+          padding: 22px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <article class="hero">
+        <span class="eyebrow">Security Review</span>
+        <h1>Kid access needs its own auth boundary.</h1>
+        <p>
+          Current behavior leaves the child experience effectively public: the app root redirects
+          straight to <code>/dashboard</code>, and middleware only guards <code>/parent</code>
+          routes. The right fix is not to reuse parent auth for everything, but to add a separate,
+          lightweight kid session that is easy for a child to unlock while keeping strangers out.
+        </p>
+
+        <div class="hero-grid">
+          <div class="card">
+            <h3>Recommendation</h3>
+            <p>
+              Keep parent authentication as account and password at first use, then issue an access
+              token plus long-lived refresh token so the parent usually stays signed in for about
+              one month. Separately, add a dedicated <code>kid_session</code> and route kids through
+              a simple <code>/unlock</code> screen.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Why this fits the product</h3>
+            <p>
+              Parent setup and administration get stronger identity checks, while day-to-day child
+              access stays fast. The two role boundaries stay separate: parent tokens for
+              <code>/parent</code>, kid unlock for child routes.
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <section>
+        <h2>Confirmed review findings</h2>
+        <div class="grid">
+          <div class="card">
+            <span class="severity critical">Critical</span>
+            <h3>Dashboard access is public</h3>
+            <p>
+              <code>app/page.tsx</code> redirects every visitor to <code>/dashboard</code>, and
+              <code>app/(dashboard)/dashboard/page.tsx</code> renders data without any auth check.
+              This means anyone who opens the app on the device lands in the kid area immediately.
+            </p>
+          </div>
+          <div class="card">
+            <span class="severity critical">Critical</span>
+            <h3>Middleware only protects parent routes</h3>
+            <p>
+              <code>middleware.ts</code> verifies only the <code>parent_session</code> cookie and
+              only runs on <code>/parent</code> and <code>/parent/pin</code>. No matcher covers
+              <code>/dashboard</code>, <code>/games</code>, or the root redirect.
+            </p>
+          </div>
+          <div class="card">
+            <span class="severity medium">Medium</span>
+            <h3>Parent auth is strong but scoped narrowly</h3>
+            <p>
+              The existing parent flow is sound for its current job: hashed PIN, signed HttpOnly
+              cookie, and middleware verification. The gap is not missing auth infrastructure; it
+              is missing child-facing route protection.
+            </p>
+          </div>
+          <div class="card">
+            <span class="severity good">Useful reuse</span>
+            <h3>There is already a clean auth pattern to copy</h3>
+            <p>
+              <code>server/actions/auth.actions.ts</code> and
+              <code>server/services/auth.service.ts</code> already separate service logic, cookie
+              handling, and server action orchestration. A kid auth flow should follow the same
+              layering with its own cookie and validation rules.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Design goals</h2>
+        <ol>
+          <li>Parent must complete account and password sign-in before first-time app use.</li>
+          <li>Parent should not need to log in often: session renewal target is roughly 30 days.</li>
+          <li>Kid can reach the dashboard in 2 taps or less after opening the app.</li>
+          <li>Random people cannot immediately access the kid dashboard from a fresh session.</li>
+          <li>Parent mode stays strictly stronger than kid mode with full account auth.</li>
+          <li>Implementation stays simple enough to ship without introducing fragile UX.</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Proposed auth model</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Area</th>
+              <th>Proposal</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Parent first login</td>
+              <td>Require account and password on first run at <code>/parent/login</code>.</td>
+              <td>Establishes clear owner identity before configuring kid access.</td>
+            </tr>
+            <tr>
+              <td>Parent session model</td>
+              <td>Use short-lived access token plus refresh token rotation.</td>
+              <td>Improves security while avoiding frequent re-login for the parent.</td>
+            </tr>
+            <tr>
+              <td>Refresh lifetime</td>
+              <td>Set refresh token max age around 30 days with revocation support.</td>
+              <td>Matches your requirement: parent usually logs in once per month.</td>
+            </tr>
+            <tr>
+              <td>Kid credential</td>
+              <td>Parent configures a 2-step visual secret such as icon A then icon D.</td>
+              <td>Easy for a child, harder for outsiders than open access, simpler than typing.</td>
+            </tr>
+            <tr>
+              <td>Kid session</td>
+              <td>Create a separate signed HttpOnly <code>kid_session</code> cookie.</td>
+              <td>Prevents accidental reuse of parent privileges on kid routes.</td>
+            </tr>
+            <tr>
+              <td>Protected routes</td>
+              <td>Require kid session for <code>/</code>, <code>/dashboard</code>, and <code>/games/*</code>.</td>
+              <td>Closes the current public entry path.</td>
+            </tr>
+            <tr>
+              <td>Unlock route</td>
+              <td>Add public <code>/unlock</code> page with large tiles and no keyboard dependency.</td>
+              <td>Matches the tablet-first, child-friendly product direction.</td>
+            </tr>
+            <tr>
+              <td>Session lifetime</td>
+              <td>Kid session can stay daily (8 to 12 hours), parent session renews up to 30 days.</td>
+              <td>Balances child convenience, parent convenience, and stronger parent control.</td>
+            </tr>
+            <tr>
+              <td>Parent separation</td>
+              <td>Keep parent access token and refresh token fully separate from <code>kid_session</code>.</td>
+              <td>A kid unlock must never grant parent capabilities.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Parent onboarding and month-long sign-in</h2>
+        <div class="grid">
+          <div class="flow-step">
+            <h3>1. First launch by parent</h3>
+            <p>
+              Parent opens <code>/parent/login</code> and signs in with account and password.
+              If no account exists yet, parent creates it once.
+            </p>
+          </div>
+          <div class="flow-step">
+            <h3>2. Token issuance</h3>
+            <p>
+              Server returns a short-lived parent access token plus a refresh token stored in a
+              secure HttpOnly cookie.
+            </p>
+          </div>
+          <div class="flow-step">
+            <h3>3. Background renewal</h3>
+            <p>
+              Before access token expiry, refresh endpoint rotates tokens. Parent remains signed in
+              for up to about 30 days unless explicit sign-out or token revocation happens.
+            </p>
+          </div>
+          <div class="flow-step">
+            <h3>4. Child default experience</h3>
+            <p>
+              Child entry still lands on <code>/unlock</code> first. Parent login state does not
+              bypass the kid unlock barrier for regular child use.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Recommended user flow</h2>
+        <div class="grid">
+          <div class="flow-step">
+            <h3>1. App opens</h3>
+            <p>
+              Request hits middleware. If <code>kid_session</code> is valid, continue to
+              <code>/dashboard</code>. If not, redirect to <code>/unlock</code> by default.
+            </p>
+          </div>
+          <div class="flow-step">
+            <h3>2. Kid unlocks</h3>
+            <p>
+              The child taps two large icons in the configured order. Example: sun then bus.
+              Keep the icon set small, visual, and distinct.
+            </p>
+          </div>
+          <div class="flow-step">
+            <h3>3. Server verifies pattern</h3>
+            <p>
+              A server action validates the pattern, enforces attempt limits, sets
+              <code>kid_session</code>, then redirects to <code>/dashboard</code>.
+            </p>
+          </div>
+          <div class="flow-step">
+            <h3>4. Parent mode remains independent</h3>
+            <p>
+              Entering <code>/parent</code> requires valid parent account auth (access token or
+              refresh flow). A kid session must never satisfy parent middleware.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Why visual pattern is the best first version</h2>
+        <ul>
+          <li>A second PIN creates confusion because the app already has a parent PIN.</li>
+          <li>Biometrics are device-dependent and add setup complexity the app does not need.</li>
+          <li>A tap pattern is simple to implement with the existing keypad-style UI approach.</li>
+          <li>It is not high-security identity proof, but it is a meaningful improvement over zero gate.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Implementation sketch</h2>
+        <pre>lib/constants.ts
+- add KID_SESSION_COOKIE, KID_PATTERN_LENGTH, KID_MAX_ATTEMPTS
+- add PARENT_ACCESS_COOKIE, PARENT_REFRESH_COOKIE, PARENT_REFRESH_MAX_AGE_SECONDS
+
+server/services/auth.service.ts
+- add createKidSessionToken()
+- add verifyKidSessionToken()
+- add hashKidPattern()/compareKidPattern() or reuse bcrypt helpers safely
+- add createParentAccessToken()/verifyParentAccessToken()
+- add createRefreshToken()/verifyRefreshToken()
+- add refresh rotation helpers (token family id, revoke on reuse)
+
+server/repositories/user.repository.ts
+- persist kid pattern hash, attempts, lockedUntil
+- persist parent account credentials and refresh token metadata
+
+server/actions/auth.actions.ts
+- add checkKidSessionAction()
+- add setKidPatternAction()
+- add verifyKidPatternAction()
+- add signOutKidAction()
+- add parentLoginAction(email, password)
+- add refreshParentSessionAction()
+- add signOutParentAction() to revoke refresh tokens too
+
+middleware.ts
+- protect /, /dashboard, and /games/* with kid_session
+- protect /parent/* with parent access token check + refresh fallback
+- allow /unlock as public
+- allow /parent/login as public
+
+app/unlock/page.tsx
+- build child-friendly unlock screen
+
+app/(parent)/parent/login/page.tsx
+- build first-time and returning parent account/password login UI
+
+app/page.tsx
+- redirect based on session presence instead of unconditional /dashboard
+
+e2e/auth/
+- add kid middleware coverage and unlock flow tests</pre>
+      </section>
+
+      <section>
+        <h2>Suggested middleware behavior</h2>
+        <pre>if pathname starts with /parent and pathname is not /parent/login:
+  require valid parent access token
+  if expired and refresh token valid, rotate and continue
+  else redirect to /parent/login
+
+if pathname is /parent/login:
+  allow public access
+
+if pathname is /unlock:
+  allow public access
+
+if pathname is / or /dashboard or /games/*:
+  require valid kid_session
+  otherwise redirect to /unlock</pre>
+      </section>
+
+      <section>
+        <h2>Security notes</h2>
+        <ul>
+          <li>Use Argon2id or bcrypt for parent password hashing, never store raw passwords.</li>
+          <li>Store refresh token hashes server-side and rotate on every refresh.</li>
+          <li>On refresh token reuse detection, revoke that token family and force re-login.</li>
+          <li>Use a distinct JWT payload type for kid sessions instead of sharing parent token helpers blindly.</li>
+          <li>Keep both cookies HttpOnly, same-site lax, and path scoped to <code>/</code>.</li>
+          <li>Rate-limit kid unlock attempts, even if the visual pattern is intentionally simple.</li>
+          <li>Do not allow kid session state to call parent-only server actions.</li>
+          <li>Rate-limit parent login and refresh endpoints to reduce credential abuse.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Delivery order</h2>
+        <ol>
+          <li>Add parent account/password login with refresh-token rotation support.</li>
+          <li>Protect parent routes with access plus refresh behavior and 30-day renewal policy.</li>
+          <li>Add kid session primitives, unlock page, and middleware gates for child routes.</li>
+          <li>Add parent-only setup UI for kid unlock pattern.</li>
+          <li>Add end-to-end tests for parent login renewal and kid session gating.</li>
+        </ol>
+        <p class="small">
+          This sequence ensures the owner identity is established first, then keeps daily kid access
+          fast through the unlock screen while parent sign-in remains mostly once per month.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
