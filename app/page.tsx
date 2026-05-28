@@ -1,7 +1,7 @@
-/** Root page — redirects to the dashboard. */
+/** Root page — middleware decides unlock vs dashboard, fallback goes to unlock. */
 
 import { redirect } from 'next/navigation'
 
 export default function RootPage() {
-  redirect('/dashboard')
+  redirect('/unlock')
 }

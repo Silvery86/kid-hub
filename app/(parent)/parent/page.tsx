@@ -31,6 +31,12 @@ export default async function ParentDashboardPage() {
         </div>
         <div className="flex items-center gap-3">
           <Link
+            href="/parent/kid-access"
+            className="flex items-center gap-2 rounded-2xl bg-emerald-50 px-5 py-3 font-bold text-emerald-700 shadow-sm transition-colors hover:bg-emerald-100"
+          >
+            🔓 Cài mở khóa bé
+          </Link>
+          <Link
             href="/dashboard"
             className="flex items-center gap-2 rounded-2xl bg-white px-5 py-3 font-bold text-slate-600 shadow-sm transition-colors hover:bg-slate-100"
           >

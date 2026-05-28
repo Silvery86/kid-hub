@@ -1,16 +1,25 @@
 /**
  * Server-only module — do NOT import from client components or hooks.
- * Auth business logic: PIN hashing/comparison with bcrypt, JWT session creation
- * and verification using jose, and lockout state calculation.
+ * Auth business logic: password/pattern hashing with bcrypt, JWT access/refresh
+ * and kid session tokens using jose, plus lockout state calculation.
  */
 
 import bcrypt from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
-import type { ParentSession } from '@/types'
-import { MAX_PIN_ATTEMPTS, PIN_LOCKOUT_SECONDS, PIN_LENGTH } from '@/lib/constants'
+import type { KidSession, ParentRefreshSession, ParentSession } from '@/types'
+import {
+  KID_PATTERN_LENGTH,
+  KID_SESSION_COOKIE,
+  KID_SESSION_TTL_SECONDS,
+  MAX_PIN_ATTEMPTS,
+  PARENT_ACCESS_COOKIE,
+  PARENT_ACCESS_TTL_SECONDS,
+  PARENT_REFRESH_COOKIE,
+  PARENT_REFRESH_TTL_SECONDS,
+  PIN_LENGTH,
+  PIN_LOCKOUT_SECONDS,
+} from '@/lib/constants'
 
-const SESSION_COOKIE = 'parent_session'
-const SESSION_DURATION_SECONDS = 8 * 60 * 60 // 8 hours
 const BCRYPT_ROUNDS = 12
 
 /** Returns the encoded JWT secret from the environment. */
@@ -29,6 +38,26 @@ export const validatePinFormat = (pin: string): boolean =>
 /** Hash a raw PIN using bcrypt. */
 export const hashPin = async (pin: string): Promise<string> =>
   bcrypt.hash(pin, BCRYPT_ROUNDS)
+
+/** Hash a parent account password using bcrypt. */
+export const hashPassword = async (password: string): Promise<string> =>
+  bcrypt.hash(password, BCRYPT_ROUNDS)
+
+/** Compare a parent account password against a stored hash. */
+export const comparePassword = async (password: string, hash: string): Promise<boolean> =>
+  bcrypt.compare(password, hash)
+
+/** Validate that kid pattern is exactly two symbols (1-6). */
+export const validateKidPatternFormat = (pattern: string): boolean =>
+  /^[1-6]+$/.test(pattern) && pattern.length === KID_PATTERN_LENGTH
+
+/** Hash a kid unlock pattern using bcrypt. */
+export const hashKidPattern = async (pattern: string): Promise<string> =>
+  bcrypt.hash(pattern, BCRYPT_ROUNDS)
+
+/** Compare kid unlock pattern against stored hash. */
+export const compareKidPattern = async (pattern: string, hash: string): Promise<boolean> =>
+  bcrypt.compare(pattern, hash)
 
 /** Compare a raw PIN against a stored bcrypt hash. */
 export const comparePin = async (pin: string, hash: string): Promise<boolean> =>
@@ -52,21 +81,38 @@ export const getLockoutSecondsRemaining = (lockedUntil: Date | null): number => 
 export const calcLockoutExpiry = (): Date =>
   new Date(Date.now() + PIN_LOCKOUT_SECONDS * 1000)
 
-/** Create a signed JWT session token for the given user. */
-export const createSessionToken = async (userId: string): Promise<string> =>
-  new SignJWT({ userId })
+/** Create a short-lived signed JWT parent access token. */
+export const createParentAccessToken = async (userId: string): Promise<string> =>
+  new SignJWT({ userId, typ: 'parent-access' })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime(`${SESSION_DURATION_SECONDS}s`)
+    .setExpirationTime(`${PARENT_ACCESS_TTL_SECONDS}s`)
+    .sign(getJwtSecret())
+
+/** Create a long-lived signed JWT parent refresh token. */
+export const createParentRefreshToken = async (userId: string): Promise<string> =>
+  new SignJWT({ userId, typ: 'parent-refresh' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(`${PARENT_REFRESH_TTL_SECONDS}s`)
+    .sign(getJwtSecret())
+
+/** Create a signed JWT for kid app unlock session. */
+export const createKidSessionToken = async (userId: string): Promise<string> =>
+  new SignJWT({ userId, typ: 'kid-session' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(`${KID_SESSION_TTL_SECONDS}s`)
     .sign(getJwtSecret())
 
 /**
- * Verify a session token and return the decoded payload.
+ * Verify a parent access token and return the decoded payload.
  * Returns null if the token is missing, invalid, or expired.
  */
-export const verifySessionToken = async (token: string): Promise<ParentSession | null> => {
+export const verifyParentAccessToken = async (token: string): Promise<ParentSession | null> => {
   try {
     const { payload } = await jwtVerify(token, getJwtSecret())
+    if (payload.typ !== 'parent-access') return null
     if (typeof payload.userId !== 'string' || typeof payload.exp !== 'number') return null
     return { userId: payload.userId, expiresAt: payload.exp * 1000 }
   } catch {
@@ -74,5 +120,52 @@ export const verifySessionToken = async (token: string): Promise<ParentSession |
   }
 }
 
-/** The name of the HttpOnly session cookie. */
-export { SESSION_COOKIE }
+/** Verify a parent refresh token and return decoded payload. */
+export const verifyParentRefreshToken = async (
+  token: string
+): Promise<ParentRefreshSession | null> => {
+  try {
+    const { payload } = await jwtVerify(token, getJwtSecret())
+    if (payload.typ !== 'parent-refresh') return null
+    if (typeof payload.userId !== 'string' || typeof payload.exp !== 'number') return null
+    return { userId: payload.userId, expiresAt: payload.exp * 1000 }
+  } catch {
+    return null
+  }
+}
+
+/** Verify a kid session token and return decoded payload. */
+export const verifyKidSessionToken = async (token: string): Promise<KidSession | null> => {
+  try {
+    const { payload } = await jwtVerify(token, getJwtSecret())
+    if (payload.typ !== 'kid-session') return null
+    if (typeof payload.userId !== 'string' || typeof payload.exp !== 'number') return null
+    return { userId: payload.userId, expiresAt: payload.exp * 1000 }
+  } catch {
+    return null
+  }
+}
+
+/** Deterministic one-way hash helper used for storing refresh tokens server-side. */
+export const hashTokenForStorage = async (token: string): Promise<string> =>
+  bcrypt.hash(token, BCRYPT_ROUNDS)
+
+/** Compares a raw refresh token against the stored hash. */
+export const compareStoredTokenHash = async (
+  token: string,
+  hash: string
+): Promise<boolean> => bcrypt.compare(token, hash)
+
+/** Backward-compatible alias used by existing server actions. */
+export const createSessionToken = createParentAccessToken
+
+/** Backward-compatible alias used by existing server actions. */
+export const verifySessionToken = verifyParentAccessToken
+
+/** Cookie names exported for middleware and server actions. */
+export {
+  PARENT_ACCESS_COOKIE as SESSION_COOKIE,
+  PARENT_ACCESS_COOKIE,
+  PARENT_REFRESH_COOKIE,
+  KID_SESSION_COOKIE,
+}

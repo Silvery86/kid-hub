@@ -52,6 +52,21 @@ export const GRADE_SCALE = {
 export const MAX_PIN_ATTEMPTS = 5
 export const PIN_LOCKOUT_SECONDS = 60
 export const PIN_LENGTH = 4
+export const MAX_PARENT_LOGIN_ATTEMPTS = 5
+export const PARENT_LOGIN_LOCKOUT_SECONDS = 60
+
+export const PARENT_ACCESS_COOKIE = 'parent_access'
+export const PARENT_REFRESH_COOKIE = 'parent_refresh'
+export const KID_SESSION_COOKIE = 'kid_session'
+
+export const PARENT_ACCESS_TTL_SECONDS = 15 * 60
+export const PARENT_REFRESH_TTL_SECONDS = 30 * 24 * 60 * 60
+export const KID_SESSION_TTL_SECONDS = 12 * 60 * 60
+
+export const KID_PATTERN_LENGTH = 2
+export const KID_PATTERN_SYMBOLS = ['1', '2', '3', '4', '5', '6'] as const
+export const MAX_KID_PATTERN_ATTEMPTS = 5
+export const KID_PATTERN_LOCKOUT_SECONDS = 30
 
 // ── Games ────────────────────────────────────────────────────
 

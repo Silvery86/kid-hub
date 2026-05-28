@@ -254,3 +254,13 @@ export interface ParentSession {
   userId: string
   expiresAt: number // Unix timestamp ms
 }
+
+export interface ParentRefreshSession {
+  userId: string
+  expiresAt: number // Unix timestamp ms
+}
+
+export interface KidSession {
+  userId: string
+  expiresAt: number // Unix timestamp ms
+}

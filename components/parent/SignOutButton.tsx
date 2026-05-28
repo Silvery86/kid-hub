@@ -2,7 +2,7 @@
 
 /**
  * Sign-out button for the parent dashboard.
- * Calls the signOutParentAction and redirects to the PIN entry page.
+ * Calls the signOutParentAction and redirects to parent account login.
  */
 
 import { useRouter } from 'next/navigation'
@@ -13,7 +13,7 @@ export function SignOutButton() {
 
   const handleSignOut = async () => {
     await signOutParentAction()
-    router.push('/parent/pin')
+    router.push('/parent/login')
   }
 
   return (

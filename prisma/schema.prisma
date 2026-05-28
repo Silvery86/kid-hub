@@ -22,12 +22,21 @@ datasource db {
 // ── User & Profile ────────────────────────────────────────────
 
 model User {
-  id         String   @id @default(cuid())
-  name       String
-  gradeLevel Int      @default(1)
-  avatarUrl  String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id                     String    @id @default(cuid())
+  name                   String
+  gradeLevel             Int       @default(1)
+  avatarUrl              String?
+  parentEmail            String?   @unique
+  parentPasswordHash     String?
+  parentLoginAttempts    Int       @default(0)
+  parentLoginLockedUntil DateTime?
+  refreshTokenHash       String?
+  refreshTokenExpiresAt  DateTime?
+  kidPatternHash         String?
+  kidPatternAttempts     Int       @default(0)
+  kidPatternLockedUntil  DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
   // Relations
   pin                   ParentPin?

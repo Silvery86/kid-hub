@@ -1,6 +1,6 @@
 import { SignJWT } from 'jose'
 
-export const SESSION_COOKIE = 'parent_session'
+export const SESSION_COOKIE = 'parent_access'
 
 /**
  * Creates a valid HS256 JWT signed with the SESSION_SECRET from the environment.
@@ -15,9 +15,9 @@ export async function createSessionToken(userId = 'khoi-default-user'): Promise<
     )
   }
   const key = new TextEncoder().encode(secret)
-  return new SignJWT({ userId })
+  return new SignJWT({ userId, typ: 'parent-access' })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('8h')
+    .setExpirationTime('15m')
     .sign(key)
 }

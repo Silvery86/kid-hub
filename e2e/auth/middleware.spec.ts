@@ -32,8 +32,8 @@ test.describe('Middleware — parent route protection', () => {
 
   // TC-MW-SECRET-02
   // Cookie present but signature is wrong (tampered payload) → middleware rejects it,
-  // redirects to /parent/pin, and deletes the cookie from the response.
-  test('TC-MW-SECRET-02: tampered cookie redirects to /parent/pin and deletes cookie', async ({
+  // redirects to /parent/login, and deletes the cookie from the response.
+  test('TC-MW-SECRET-02: tampered cookie redirects to /parent/login and deletes cookie', async ({
     page,
     context,
   }) => {
@@ -48,21 +48,21 @@ test.describe('Middleware — parent route protection', () => {
       },
     ])
     await page.goto('/parent')
-    await expect(page).toHaveURL('/parent/pin')
+    await expect(page).toHaveURL('/parent/login')
     const cookies = await context.cookies()
     expect(cookies.find(c => c.name === SESSION_COOKIE)).toBeUndefined()
   })
 
   // TC-MW-SECRET-03
-  // No cookie present at all → middleware redirects immediately to /parent/pin.
-  test('TC-MW-SECRET-03: absent cookie redirects to /parent/pin', async ({ page }) => {
+  // No cookie present at all → middleware redirects immediately to /parent/login.
+  test('TC-MW-SECRET-03: absent cookie redirects to /parent/login', async ({ page }) => {
     await page.goto('/parent')
-    await expect(page).toHaveURL('/parent/pin')
+    await expect(page).toHaveURL('/parent/login')
   })
 
   // TC-MW-SESSION-04
-  // Kid routes clear parent_session so re-entry to parent mode always re-authenticates.
-  test('TC-MW-SESSION-04: dashboard visit clears session; next /parent requires PIN', async ({
+  // Parent access cookie remains valid when visiting kid routes.
+  test('TC-MW-SESSION-04: dashboard visit keeps parent session valid', async ({
     page,
     context,
   }) => {
@@ -81,9 +81,16 @@ test.describe('Middleware — parent route protection', () => {
     await expect(page).toHaveURL(/\/parent$/)
 
     await page.goto('/dashboard')
-    await expect(page).toHaveURL(/\/dashboard/)
+    await expect(page).toHaveURL('/unlock')
 
     await page.goto('/parent')
-    await expect(page).toHaveURL('/parent/pin')
+    await expect(page).toHaveURL(/\/parent$/)
+  })
+
+  // TC-MW-KID-05
+  // Child route access requires kid_session and redirects to /unlock without it.
+  test('TC-MW-KID-05: absent kid_session redirects /dashboard to /unlock', async ({ page }) => {
+    await page.goto('/dashboard')
+    await expect(page).toHaveURL('/unlock')
   })
 })

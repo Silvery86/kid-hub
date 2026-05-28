@@ -6,6 +6,19 @@
 import { db } from '@/lib/db'
 import type { Prisma } from '@prisma/client'
 
+export interface ParentAuthRecord {
+  id: string
+  parentEmail: string | null
+  parentPasswordHash: string | null
+  parentLoginAttempts: number
+  parentLoginLockedUntil: Date | null
+  refreshTokenHash: string | null
+  refreshTokenExpiresAt: Date | null
+  kidPatternHash: string | null
+  kidPatternAttempts: number
+  kidPatternLockedUntil: Date | null
+}
+
 /** Retrieves the stored parent PIN record for a user. */
 export const getPin = async (
   userId: string
@@ -44,6 +57,149 @@ export const resetPinAttempts = async (userId: string): Promise<void> => {
   await db.parentPin.update({
     where: { userId },
     data: { attempts: 0, lockedUntil: null },
+  })
+}
+
+/** Finds the single household user by parent email. */
+export const getByParentEmail = async (email: string) => {
+  return db.user.findUnique({
+    where: { parentEmail: email },
+    select: {
+      id: true,
+      parentEmail: true,
+      parentPasswordHash: true,
+      parentLoginAttempts: true,
+      parentLoginLockedUntil: true,
+      refreshTokenHash: true,
+      refreshTokenExpiresAt: true,
+      kidPatternHash: true,
+      kidPatternAttempts: true,
+      kidPatternLockedUntil: true,
+    },
+  })
+}
+
+/** Gets parent auth + kid unlock fields for the configured household user. */
+export const getParentAuthRecord = async (userId: string): Promise<ParentAuthRecord | null> => {
+  return db.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      parentEmail: true,
+      parentPasswordHash: true,
+      parentLoginAttempts: true,
+      parentLoginLockedUntil: true,
+      refreshTokenHash: true,
+      refreshTokenExpiresAt: true,
+      kidPatternHash: true,
+      kidPatternAttempts: true,
+      kidPatternLockedUntil: true,
+    },
+  })
+}
+
+/** Creates or updates parent credentials for the household user. */
+export const upsertParentCredentials = async (
+  userId: string,
+  email: string,
+  passwordHash: string
+): Promise<void> => {
+  await db.user.update({
+    where: { id: userId },
+    data: {
+      parentEmail: email,
+      parentPasswordHash: passwordHash,
+      parentLoginAttempts: 0,
+      parentLoginLockedUntil: null,
+    },
+  })
+}
+
+/** Stores the latest refresh token hash and expiration timestamp. */
+export const saveRefreshToken = async (
+  userId: string,
+  tokenHash: string,
+  expiresAt: Date
+): Promise<void> => {
+  await db.user.update({
+    where: { id: userId },
+    data: {
+      refreshTokenHash: tokenHash,
+      refreshTokenExpiresAt: expiresAt,
+    },
+  })
+}
+
+/** Clears persisted refresh token state on parent sign out. */
+export const clearRefreshToken = async (userId: string): Promise<void> => {
+  await db.user.update({
+    where: { id: userId },
+    data: {
+      refreshTokenHash: null,
+      refreshTokenExpiresAt: null,
+    },
+  })
+}
+
+/** Increments failed parent login attempts and optionally sets lockout expiry. */
+export const recordFailedParentLogin = async (
+  userId: string,
+  lockedUntil?: Date
+): Promise<void> => {
+  await db.user.update({
+    where: { id: userId },
+    data: {
+      parentLoginAttempts: { increment: 1 },
+      ...(lockedUntil ? { parentLoginLockedUntil: lockedUntil } : {}),
+    },
+  })
+}
+
+/** Resets parent login attempt counters after successful login. */
+export const resetParentLoginAttempts = async (userId: string): Promise<void> => {
+  await db.user.update({
+    where: { id: userId },
+    data: {
+      parentLoginAttempts: 0,
+      parentLoginLockedUntil: null,
+    },
+  })
+}
+
+/** Saves kid unlock pattern hash and resets kid lockout counters. */
+export const saveKidPattern = async (userId: string, hash: string): Promise<void> => {
+  await db.user.update({
+    where: { id: userId },
+    data: {
+      kidPatternHash: hash,
+      kidPatternAttempts: 0,
+      kidPatternLockedUntil: null,
+    },
+  })
+}
+
+/** Increments failed kid unlock attempts and optionally sets lockout expiry. */
+export const recordFailedKidPatternAttempt = async (
+  userId: string,
+  lockedUntil?: Date
+): Promise<void> => {
+  await db.user.update({
+    where: { id: userId },
+    data: {
+      kidPatternAttempts: { increment: 1 },
+      ...(lockedUntil ? { kidPatternLockedUntil: lockedUntil } : {}),
+    },
+  })
+}
+
+/** Resets kid unlock lockout counters after successful verification. */
+export const resetKidPatternAttempts = async (userId: string): Promise<void> => {
+  await db.user.update({
+    where: { id: userId },
+    data: {
+      kidPatternAttempts: 0,
+      kidPatternLockedUntil: null,
+    },
   })
 }
 

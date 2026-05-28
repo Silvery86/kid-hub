@@ -1,22 +1,24 @@
 /**
  * Next.js Edge Middleware — responsibilities:
- * 1. Kid / hub routes: clear `parent_session` on real navigation (not Link prefetch) so every
- *    return to `/parent` from the kid app requires PIN again.
- * 2. Rate-limit PIN verification attempts (POST /parent/pin) via Upstash sliding window.
- *    Degrades gracefully when UPSTASH_* env vars are absent (dev without credentials).
- * 3. Verify the signed HttpOnly session cookie before granting access to /parent/*.
+ * 1. Protect child routes with `kid_session`, redirecting to `/unlock` when absent/invalid.
+ * 2. Protect parent routes with `parent_access`, and auto-renew via `parent_refresh`.
+ * 3. Rate-limit parent login attempts (POST /parent/login) via Upstash sliding window.
  */
 
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { jwtVerify } from 'jose'
+import { SignJWT, jwtVerify } from 'jose'
 import { getPinRateLimiter } from '@/lib/rate-limit'
+import {
+  KID_SESSION_COOKIE,
+  PARENT_ACCESS_COOKIE,
+  PARENT_ACCESS_TTL_SECONDS,
+  PARENT_REFRESH_COOKIE,
+} from '@/lib/constants'
 
-const SESSION_COOKIE = 'parent_session'
-
-/** Paths where the parent PIN session must not survive (re-entering /parent requires PIN). */
 const isKidAppSurfacePath = (pathname: string): boolean => {
   if (pathname === '/') return true
+  if (pathname === '/dashboard') return true
   if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) return true
   if (pathname === '/schedule' || pathname.startsWith('/schedule/')) return true
   if (pathname === '/grades' || pathname.startsWith('/grades/')) return true
@@ -26,17 +28,8 @@ const isKidAppSurfacePath = (pathname: string): boolean => {
   return false
 }
 
-/**
- * Next.js may prefetch `<Link href>` targets in the background. Do not strip the parent session
- * on prefetch — the user has not left parent mode yet.
- */
-const isNextPrefetch = (request: NextRequest): boolean => {
-  const h = request.headers
-  if (h.get('next-router-prefetch') === '1') return true
-  if (h.get('Next-Router-Prefetch') === '1') return true
-  const purpose = h.get('Purpose') ?? h.get('Sec-Purpose')
-  return purpose?.toLowerCase() === 'prefetch'
-}
+const isParentProtectedPath = (pathname: string): boolean =>
+  pathname === '/parent' || (pathname.startsWith('/parent/') && pathname !== '/parent/login')
 
 /** Returns the JWT secret encoded as Uint8Array. Throws if SESSION_SECRET is absent or too short. */
 const getSecret = (): Uint8Array => {
@@ -47,33 +40,61 @@ const getSecret = (): Uint8Array => {
   return new TextEncoder().encode(secret)
 }
 
+const verifyToken = async (
+  token: string,
+  type: 'parent-access' | 'parent-refresh' | 'kid-session'
+): Promise<{ userId: string } | null> => {
+  try {
+    const { payload } = await jwtVerify(token, getSecret())
+    if (payload.typ !== type) return null
+    if (typeof payload.userId !== 'string') return null
+    return { userId: payload.userId }
+  } catch {
+    return null
+  }
+}
+
+const createParentAccessToken = async (userId: string): Promise<string> =>
+  new SignJWT({ userId, typ: 'parent-access' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(`${PARENT_ACCESS_TTL_SECONDS}s`)
+    .sign(getSecret())
+
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl
 
-  // ── Kid app: invalidate parent session (PIN gate on next /parent visit) ─
+  // ── Child app protection: require kid unlock session ────────────────────
   if (isKidAppSurfacePath(pathname)) {
-    if (!isNextPrefetch(request)) {
-      const res = NextResponse.next()
-      res.cookies.delete(SESSION_COOKIE)
-      return res
+    const kidToken = request.cookies.get(KID_SESSION_COOKIE)?.value
+    if (!kidToken) {
+      return NextResponse.redirect(new URL('/unlock', request.url))
     }
+
+    const kidSession = await verifyToken(kidToken, 'kid-session')
+    if (kidSession) {
+      return NextResponse.next()
+    }
+
+    const response = NextResponse.redirect(new URL('/unlock', request.url))
+    response.cookies.delete(KID_SESSION_COOKIE)
+    return response
+  }
+
+  // ── Public parent login route ────────────────────────────────────────────
+  if (pathname === '/parent/login' && request.method !== 'POST') {
     return NextResponse.next()
   }
 
-  // ── Allow non-POST access to /parent/pin (public login page) ───────────
-  if (pathname === '/parent/pin' && request.method !== 'POST') {
-    return NextResponse.next()
-  }
-
-  // ── Rate limiting: PIN verification Server Action POSTs ─────────────────
-  if (pathname === '/parent/pin' && request.method === 'POST') {
+  // ── Rate limiting: parent login Server Action POSTs ──────────────────────
+  if (pathname === '/parent/login' && request.method === 'POST') {
     const limiter = getPinRateLimiter()
     if (limiter) {
       const ip =
         request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? '127.0.0.1'
       const { success, limit, remaining, reset } = await limiter.limit(ip)
       if (!success) {
-        return new NextResponse('Too many PIN attempts. Please wait and try again.', {
+        return new NextResponse('Too many login attempts. Please wait and try again.', {
           status: 429,
           headers: {
             'Content-Type': 'text/plain',
@@ -88,34 +109,52 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     return NextResponse.next()
   }
 
-  // ── Session verification: protected /parent/* routes ────────────────────
-  const token = request.cookies.get(SESSION_COOKIE)?.value
+  // ── Parent app protection: access token with refresh fallback ────────────
+  if (!isParentProtectedPath(pathname)) {
+    return NextResponse.next()
+  }
 
-  if (token) {
-    try {
-      await jwtVerify(token, getSecret())
+  const accessToken = request.cookies.get(PARENT_ACCESS_COOKIE)?.value
+  if (accessToken) {
+    const accessSession = await verifyToken(accessToken, 'parent-access')
+    if (accessSession) {
       return NextResponse.next()
-    } catch {
-      const response = NextResponse.redirect(new URL('/parent/pin', request.url))
-      response.cookies.delete(SESSION_COOKIE)
+    }
+  }
+
+  const refreshToken = request.cookies.get(PARENT_REFRESH_COOKIE)?.value
+  if (refreshToken) {
+    const refreshSession = await verifyToken(refreshToken, 'parent-refresh')
+    if (refreshSession) {
+      const newAccessToken = await createParentAccessToken(refreshSession.userId)
+      const response = NextResponse.next()
+      response.cookies.set(PARENT_ACCESS_COOKIE, newAccessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: PARENT_ACCESS_TTL_SECONDS,
+        path: '/',
+      })
       return response
     }
   }
 
-  return NextResponse.redirect(new URL('/parent/pin', request.url))
+  const response = NextResponse.redirect(new URL('/parent/login', request.url))
+  response.cookies.delete(PARENT_ACCESS_COOKIE)
+  response.cookies.delete(PARENT_REFRESH_COOKIE)
+  return response
 }
 
 export const config = {
   matcher: [
     '/',
+    '/unlock',
     '/dashboard/:path*',
     '/schedule/:path*',
     '/grades/:path*',
     '/homework/:path*',
     '/math/:path*',
     '/english/:path*',
-    '/parent',
-    '/parent/((?!pin).*)',
-    '/parent/pin',
+    '/parent/:path*',
   ],
 }

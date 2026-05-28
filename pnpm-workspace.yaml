@@ -1,6 +1,7 @@
 allowBuilds:
   '@firebase/util': false
   '@prisma/engines': false
+  esbuild: set this to true or false
   prisma: false
   protobufjs: false
   sharp: false
