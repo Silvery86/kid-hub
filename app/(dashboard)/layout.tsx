@@ -7,9 +7,11 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <UserProgressProviderWrapper>
-      <div className="flex min-h-screen bg-sky-50">
+      {/* AppSidebar is position:fixed — offset matches sidebar width (design: 96px / 240px).
+          Landscape: pl-24 → lg:pl-60 · Portrait: pb-16 tab bar */}
+      <div className="min-h-dvh bg-shell-kid pl-24 portrait:pl-0 lg:pl-60 lg:portrait:pl-0 portrait:pb-16">
         <AppSidebar />
-        <div className="flex-1 overflow-hidden">
+        <div className="overflow-hidden">
           <ErrorBoundary section="dashboard">{children}</ErrorBoundary>
         </div>
       </div>

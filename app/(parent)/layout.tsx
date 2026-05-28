@@ -5,5 +5,5 @@
  */
 
 export default function ParentLayout({ children }: { children: React.ReactNode }) {
-  return <div className="relative min-h-screen bg-slate-50">{children}</div>
+  return <div className="relative min-h-dvh bg-slate-50">{children}</div>
 }

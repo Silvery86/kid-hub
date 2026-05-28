@@ -129,7 +129,7 @@ export const EnglishGame = ({ initialLevel = 1 }: EnglishGameProps) => {
   // ── Level select ───────────────────────────────────────────
   if (state.status === 'idle') {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-8">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-8">
         <div className="text-8xl" aria-hidden="true">
           🔤
         </div>
@@ -163,7 +163,7 @@ export const EnglishGame = ({ initialLevel = 1 }: EnglishGameProps) => {
   const isLetterMatch = currentQuestion.type === 'letter-match'
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <GameHud
         correctCount={state.correctCount}
         questionIndex={state.currentQuestionIndex}
@@ -173,32 +173,32 @@ export const EnglishGame = ({ initialLevel = 1 }: EnglishGameProps) => {
 
       <div
         className={cn(
-          'flex flex-1 flex-col items-center justify-center gap-10 px-8 transition-colors duration-300',
+          'flex flex-1 flex-col items-center justify-center gap-2 px-3 py-2 portrait:gap-4 portrait:py-4 portrait:px-6 transition-colors duration-300',
           feedbackState === 'correct' && 'bg-emerald-900/40',
           feedbackState === 'wrong' && 'bg-red-900/40'
         )}
       >
         {/* Emoji / image */}
         {currentQuestion.imageUrl && (
-          <div className="text-[8rem] leading-none select-none" aria-hidden="true">
+          <div className="text-4xl leading-none select-none portrait:text-6xl lg:text-[8rem]" aria-hidden="true">
             {currentQuestion.imageUrl}
           </div>
         )}
 
         {/* Prompt */}
-        <div className="animate-in fade-in anim-duration-200 rounded-3xl bg-slate-700 px-10 py-6 shadow-2xl">
-          <p className="text-center text-6xl font-extrabold tracking-widest text-white select-none">
+        <div className="animate-in fade-in anim-duration-200 rounded-2xl bg-slate-700 px-3 py-2 shadow-2xl portrait:rounded-3xl portrait:px-8 portrait:py-4 lg:px-10 lg:py-6">
+          <p className="text-center text-xl font-extrabold tracking-widest text-white select-none portrait:text-3xl lg:text-6xl">
             {currentQuestion.prompt}
           </p>
           {isLetterMatch && (
-            <p className="mt-2 text-center text-lg font-semibold text-slate-400">
+            <p className="mt-1 text-center text-xs font-semibold text-slate-400 portrait:mt-2 portrait:text-sm lg:text-lg">
               Chọn chữ cái còn thiếu
             </p>
           )}
         </div>
 
         {/* Answer buttons */}
-        <div className="flex max-w-2xl flex-wrap justify-center gap-4">
+        <div className="flex flex-wrap justify-center gap-2 portrait:gap-3 lg:gap-4">
           {currentQuestion.options.map((option) => {
             const isSelected = selectedAnswer === option
             const isCorrectOption = option === currentQuestion.correctAnswer
@@ -209,7 +209,7 @@ export const EnglishGame = ({ initialLevel = 1 }: EnglishGameProps) => {
                 onClick={() => handleAnswer(option)}
                 isDisabled={isProcessing.current}
                 className={cn(
-                  'min-h-24 min-w-36 text-4xl font-extrabold transition-colors duration-200',
+                  'min-h-tap-lg min-w-tap-lg text-lg font-extrabold transition-colors duration-200 portrait:min-h-20 portrait:min-w-28 portrait:text-2xl lg:min-h-24 lg:min-w-36 lg:text-4xl',
                   isSelected && isCorrectOption && 'border-emerald-700 bg-emerald-500',
                   isSelected && !isCorrectOption && 'border-red-700 bg-red-500'
                 )}

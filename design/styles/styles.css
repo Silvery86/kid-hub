@@ -1,0 +1,310 @@
+/* ============================================
+   KID HUB — Prototype tokens (mirror of @theme {})
+   ============================================ */
+:root {
+  --font-display: 'Nunito', system-ui, -apple-system, sans-serif;
+
+  --color-math: #3b82f6;
+  --color-english: #10b981;
+  --color-science: #8b5cf6;
+  --color-pe: #f59e0b;
+  --color-art: #ec4899;
+  --color-vietnamese: #ef4444;
+  --color-music: #f97316;
+  --color-ethics: #a78bfa;
+  --color-it: #06b6d4;
+  --color-activities: #84cc16;
+
+  --color-shell-dark: #0f172a;
+  --color-shell-light: #f8fafc;
+  --color-shell-kid: #f0f9ff;
+
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #64748b;
+  --color-text-muted: #94a3b8;
+  --color-text-subtle: #cbd5e1;
+
+  --color-btn-primary: #3b82f6;
+  --color-btn-primary-hover: #2563eb;
+  --color-btn-primary-border: #1d4ed8;
+  --color-btn-secondary: #34d399;
+  --color-btn-secondary-hover: #10b981;
+  --color-btn-secondary-border: #059669;
+
+  --color-progress-high: #fbbf24;
+  --color-progress-low: #fb923c;
+  --color-progress-track: #e2e8f0;
+  --color-star-filled: #fbbf24;
+  --color-star-empty: #cbd5e1;
+
+  --radius-card: 1.5rem;
+  --radius-pill: 9999px;
+
+  /* Tweakable accent (overridden by tweaks panel) */
+  --kh-accent: var(--color-btn-primary);
+  --kh-accent-hover: var(--color-btn-primary-hover);
+  --kh-accent-soft: #dbeafe;
+  --kh-accent-deep: #1d4ed8;
+
+  /* Density scale (cozy=1, roomy=1.18) */
+  --kh-density: 1;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+/* ============================================
+   Reusable component-ish classes
+   ============================================ */
+
+.kh-app {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  background: var(--color-shell-kid);
+  color: var(--color-text-primary);
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  overflow: hidden;
+}
+
+/* Sidebar (vertical nav on landscape tablet) */
+.kh-sidebar {
+  width: 96px;
+  flex-shrink: 0;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 0 16px;
+  gap: 8px;
+  box-shadow: 4px 0 20px rgba(15, 23, 42, 0.04);
+  z-index: 5;
+}
+
+.kh-logo {
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  background: var(--kh-accent);
+  color: #fff;
+  display: grid; place-items: center;
+  font-size: 28px;
+  margin-bottom: 16px;
+  box-shadow: 0 6px 14px -4px color-mix(in oklab, var(--kh-accent) 60%, transparent);
+}
+
+.kh-nav {
+  display: flex; flex-direction: column;
+  gap: 4px; width: 100%; padding: 0 8px;
+}
+
+.kh-nav-btn {
+  width: 100%; min-height: 64px;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 4px;
+  border-radius: 16px; border: 0;
+  background: transparent; color: var(--color-text-secondary);
+  font-family: inherit; font-weight: 700; font-size: 11px;
+  cursor: pointer; padding: 6px 4px;
+  transition: background-color 0.15s, color 0.15s, transform 0.1s;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+.kh-nav-btn:hover { background: #f0f9ff; color: var(--kh-accent); }
+.kh-nav-btn:active { transform: scale(0.97); }
+.kh-nav-btn.is-active {
+  background: var(--kh-accent);
+  color: #fff;
+  box-shadow: 0 4px 10px -3px color-mix(in oklab, var(--kh-accent) 55%, transparent);
+}
+
+.kh-nav-spacer { flex: 1; }
+
+/* Reusable cards */
+.kh-card {
+  background: #fff;
+  border-radius: calc(var(--radius-card) * var(--kh-density));
+  padding: calc(20px * var(--kh-density));
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 16px -8px rgba(15, 23, 42, 0.08);
+}
+.kh-card.kh-card-soft {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+.kh-card.kh-card-flat {
+  box-shadow: none;
+  background: #ffffffb3;
+  backdrop-filter: blur(8px);
+}
+
+/* Subject color helpers */
+.kh-subj-math       { background: var(--color-math); color: #fff; }
+.kh-subj-vietnamese { background: var(--color-vietnamese); color: #fff; }
+.kh-subj-english    { background: var(--color-english); color: #fff; }
+.kh-subj-science    { background: var(--color-science); color: #fff; }
+.kh-subj-ethics     { background: var(--color-ethics); color: #fff; }
+.kh-subj-pe         { background: var(--color-pe); color: #fff; }
+.kh-subj-music      { background: var(--color-music); color: #fff; }
+.kh-subj-art        { background: var(--color-art); color: #fff; }
+.kh-subj-it         { background: var(--color-it); color: #fff; }
+.kh-subj-activities { background: var(--color-activities); color: #fff; }
+
+.kh-subj-math-soft       { background: #dbeafe; color: #1d4ed8; }
+.kh-subj-vietnamese-soft { background: #fee2e2; color: #b91c1c; }
+.kh-subj-english-soft    { background: #d1fae5; color: #047857; }
+.kh-subj-science-soft    { background: #ede9fe; color: #6d28d9; }
+.kh-subj-ethics-soft     { background: #ede9fe; color: #6d28d9; }
+.kh-subj-pe-soft         { background: #ffedd5; color: #c2410c; }
+.kh-subj-music-soft      { background: #ffedd5; color: #c2410c; }
+.kh-subj-art-soft        { background: #fce7f3; color: #be185d; }
+.kh-subj-it-soft         { background: #cffafe; color: #0e7490; }
+.kh-subj-activities-soft { background: #ecfccb; color: #4d7c0f; }
+
+/* Subject pulse ring on the "now" card */
+@keyframes kh-pulse-ring {
+  0% { transform: scale(0.85); opacity: 0.65; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.kh-pulse {
+  position: relative; display: inline-block;
+  width: 14px; height: 14px; border-radius: 999px;
+  background: #fff;
+}
+.kh-pulse::before {
+  content: ''; position: absolute; inset: 0;
+  border-radius: 999px; background: #fff;
+  animation: kh-pulse-ring 1.6s cubic-bezier(.4,0,.6,1) infinite;
+}
+
+/* Generic press feedback */
+.kh-press { transition: transform 0.1s ease; cursor: pointer; }
+.kh-press:active { transform: scale(0.97); }
+
+/* Type */
+.kh-h1 { font-size: 32px; font-weight: 900; letter-spacing: -0.02em; color: var(--color-text-primary); margin: 0; }
+.kh-h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; color: var(--color-text-primary); margin: 0; }
+.kh-eyebrow {
+  font-size: 11px; font-weight: 800;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+/* Progress bar */
+.kh-track { height: 10px; border-radius: 999px; background: var(--color-progress-track); overflow: hidden; }
+.kh-track > div { height: 100%; border-radius: 999px; transition: width 0.4s ease; }
+
+/* Game CTA card */
+.kh-game-card {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 18px; border-radius: 22px;
+  color: #fff; min-height: 130px;
+  position: relative; overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+}
+.kh-game-card::after {
+  content: ''; position: absolute; right: -30px; top: -30px;
+  width: 140px; height: 140px; border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+}
+.kh-game-card:hover { transform: translateY(-2px); }
+.kh-game-card:active { transform: scale(0.98); }
+
+/* Hide scrollbars in scroll regions but keep scrolling */
+.kh-scroll { overflow-y: auto; }
+.kh-scroll::-webkit-scrollbar { width: 0; height: 0; }
+
+/* Day-rail (direction 2) */
+.kh-rail-period {
+  flex: 1; min-width: 0;
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 2px solid transparent;
+  display: flex; flex-direction: column; gap: 4px;
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.15s, background 0.15s;
+}
+.kh-rail-period.is-done { opacity: 0.55; }
+.kh-rail-period.is-now {
+  border-color: var(--kh-accent);
+  background: #fff;
+  box-shadow: 0 8px 24px -10px color-mix(in oklab, var(--kh-accent) 60%, transparent);
+  transform: translateY(-2px);
+}
+
+/* Direction 3 — day path */
+.kh-path-svg { position: absolute; inset: 0; pointer-events: none; }
+.kh-path-node {
+  position: absolute;
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  color: #fff;
+  box-shadow: 0 6px 18px -8px rgba(15, 23, 42, 0.4), inset 0 -3px 0 rgba(0,0,0,0.08);
+  transform: translate(-50%, -50%);
+  font-weight: 900; font-size: 24px;
+}
+.kh-path-node.is-done {
+  background: #fff;
+  color: var(--color-text-muted);
+  box-shadow: 0 4px 10px -6px rgba(0,0,0,0.2);
+}
+.kh-path-node.is-now {
+  width: 96px; height: 96px;
+  border: 4px solid #fff;
+  box-shadow: 0 10px 28px -10px color-mix(in oklab, var(--kh-accent) 60%, transparent),
+              0 0 0 6px color-mix(in oklab, var(--kh-accent) 30%, transparent);
+  animation: kh-bob 2.2s ease-in-out infinite;
+}
+@keyframes kh-bob {
+  0%, 100% { transform: translate(-50%, -50%); }
+  50% { transform: translate(-50%, calc(-50% - 4px)); }
+}
+
+/* Tweaks-floating accent badge */
+.kh-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: 800; letter-spacing: 0.04em;
+  background: #fff;
+}
+
+/* Hover glow on KidButtons */
+.kh-cta {
+  appearance: none; border: 0;
+  font-family: inherit; font-weight: 800;
+  background: var(--kh-accent); color: #fff;
+  padding: 14px 22px; border-radius: 999px;
+  font-size: 15px; cursor: pointer;
+  box-shadow: 0 6px 16px -6px color-mix(in oklab, var(--kh-accent) 70%, transparent);
+  transition: transform 0.1s ease, background 0.15s ease;
+}
+.kh-cta:hover { background: var(--kh-accent-hover); }
+.kh-cta:active { transform: scale(0.97); }
+
+.kh-ghost {
+  appearance: none; font-family: inherit; font-weight: 800;
+  background: #fff; color: var(--color-text-primary);
+  border: 2px solid #e2e8f0;
+  padding: 10px 16px; border-radius: 999px;
+  font-size: 14px; cursor: pointer;
+  transition: transform 0.1s, background 0.15s;
+}
+.kh-ghost:hover { background: #f8fafc; }
+.kh-ghost:active { transform: scale(0.97); }
+
+/* Toast for click feedback */
+.kh-toast {
+  position: absolute; left: 50%; bottom: 20px;
+  transform: translateX(-50%);
+  background: var(--color-shell-dark);
+  color: #fff; padding: 10px 18px; border-radius: 999px;
+  font-weight: 700; font-size: 14px;
+  box-shadow: 0 8px 24px -8px rgba(0,0,0,0.4);
+  animation: kh-toast-in 0.18s ease-out;
+  z-index: 50;
+}
+@keyframes kh-toast-in {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}

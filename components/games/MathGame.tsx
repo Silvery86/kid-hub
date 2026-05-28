@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { useGameSession, calculateStars, calculatePointsEarned } from '@/hooks/useGameSession'
+import { useGameSession } from '@/hooks/useGameSession'
 import { useAudio } from '@/hooks/useAudio'
 import { useUserProgress } from '@/hooks/useUserProgress'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
@@ -32,7 +32,7 @@ interface MathGameProps {
 export const MathGame = ({ initialLevel = 1, onExit, homeworkPeriodId, onHomeworkSubmit }: MathGameProps) => {
   const router = useRouter()
   const handleExit = onExit ?? (() => router.push('/dashboard'))
-  const { state, startGame, answerCorrect, answerWrong, resetGame, starsEarned, pointsEarned } =
+  const { state, startGame, answerCorrect, answerWrong, starsEarned, pointsEarned } =
     useGameSession()
   const { initialise, play } = useAudio()
   const { addPoints } = useUserProgress()
@@ -140,7 +140,7 @@ export const MathGame = ({ initialLevel = 1, onExit, homeworkPeriodId, onHomewor
   // ── Idle / level select ────────────────────────────────────
   if (state.status === 'idle') {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-8">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-8">
         <div className="text-8xl" aria-hidden="true">
           🔢
         </div>
@@ -172,7 +172,7 @@ export const MathGame = ({ initialLevel = 1, onExit, homeworkPeriodId, onHomewor
   if (!currentQuestion) return null
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <GameHud
         correctCount={state.correctCount}
         questionIndex={state.currentQuestionIndex}
@@ -182,20 +182,20 @@ export const MathGame = ({ initialLevel = 1, onExit, homeworkPeriodId, onHomewor
 
       <div
         className={cn(
-          'flex flex-1 flex-col items-center justify-center gap-10 px-8 transition-colors duration-300',
+          'flex flex-1 flex-col items-center justify-center gap-2 px-3 py-2 portrait:gap-6 portrait:py-4 portrait:px-6 transition-colors duration-300',
           feedbackState === 'correct' && 'bg-emerald-900/40',
           feedbackState === 'wrong' && 'bg-red-900/40'
         )}
       >
         {/* Question card */}
-        <div className="animate-in fade-in anim-duration-200 rounded-3xl bg-slate-700 px-16 py-10 text-center shadow-2xl">
-          <p className="text-8xl font-extrabold tracking-tight text-white select-none">
+        <div className="animate-in fade-in anim-duration-200 rounded-2xl bg-slate-700 px-4 py-4 text-center shadow-2xl portrait:rounded-3xl portrait:px-12 portrait:py-8 lg:px-16 lg:py-10">
+          <p className="text-3xl font-extrabold tracking-tight text-white select-none portrait:text-5xl lg:text-8xl">
             {currentQuestion.operandA} {currentQuestion.operator} {currentQuestion.operandB} = ?
           </p>
         </div>
 
         {/* Answer buttons */}
-        <div className="flex gap-8">
+        <div className="flex flex-wrap justify-center gap-2 portrait:gap-4 lg:gap-8">
           {currentQuestion.options.map((option) => {
             const isSelected = selectedAnswer === option
             const isCorrectOption = option === currentQuestion.correctAnswer
@@ -205,7 +205,7 @@ export const MathGame = ({ initialLevel = 1, onExit, homeworkPeriodId, onHomewor
                 onClick={() => handleAnswer(option)}
                 isDisabled={isProcessing.current}
                 className={cn(
-                  'min-h-32 min-w-48 text-6xl font-extrabold transition-colors duration-200',
+                  'min-h-tap-lg min-w-tap-lg text-2xl font-extrabold transition-colors duration-200 portrait:min-h-28 portrait:min-w-36 portrait:text-4xl lg:min-h-32 lg:min-w-48 lg:text-6xl',
                   isSelected && isCorrectOption && 'border-emerald-700 bg-emerald-500',
                   isSelected && !isCorrectOption && 'border-red-700 bg-red-500'
                 )}

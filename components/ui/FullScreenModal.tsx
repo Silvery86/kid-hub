@@ -2,7 +2,7 @@
 
 /** FullScreenModal — portal-rendered overlay with close button and focus trap. */
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -22,12 +22,7 @@ export const FullScreenModal = ({
   children,
   className,
 }: FullScreenModalProps) => {
-  // Guard against SSR: portals require document.body
-  const [isMounted, setIsMounted] = useState(false)
-
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
+  const canUsePortal = typeof document !== 'undefined'
 
   // Lock body scroll while modal is open
   useEffect(() => {
@@ -39,14 +34,14 @@ export const FullScreenModal = ({
     }
   }, [isOpen])
 
-  if (!isOpen || !isMounted) return null
+  if (!isOpen || !canUsePortal) return null
 
   return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       className={cn(
-        'fixed inset-0 z-50 h-screen w-screen',
+        'fixed inset-0 z-50 min-h-dvh w-screen safe-top',
         'bg-black/60 backdrop-blur-sm',
         'flex items-center justify-center',
         // Entry animation — uses utilities defined in globals.css
@@ -56,11 +51,13 @@ export const FullScreenModal = ({
       <div className={cn('relative h-full w-full', className)}>
         {hasCloseButton && onClose && (
           <button
+            type="button"
             onClick={onClose}
             aria-label="Close"
-            className="absolute top-4 right-4 z-10 flex min-h-14 min-w-14 items-center justify-center rounded-full bg-white/90 shadow-lg transition-transform active:scale-95"
+            style={{ minHeight: '3.5rem', minWidth: '3.5rem' }}
+            className="absolute top-4 right-4 z-10 flex items-center justify-center rounded-full bg-white/90 shadow-lg transition-transform active:scale-95"
           >
-            <X size={28} className="text-slate-700" />
+            <X size={28} className="text-text-primary" />
           </button>
         )}
         {children}

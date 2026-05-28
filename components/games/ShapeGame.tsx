@@ -27,15 +27,15 @@ interface ShapeGameProps {
 
 /** Renders a large centred shape for display questions. */
 const ShapePrompt = ({ shape }: { shape: ShapeId }) => (
-  <div className="animate-in zoom-in-95 anim-duration-200 flex items-center justify-center rounded-3xl bg-slate-700 p-10 shadow-2xl">
-    <ShapeDisplay shape={shape} className="h-36 w-36" />
+  <div className="animate-in zoom-in-95 anim-duration-200 flex items-center justify-center rounded-2xl bg-slate-700 p-4 shadow-2xl portrait:rounded-3xl portrait:p-6 lg:p-10">
+    <ShapeDisplay shape={shape} className="h-20 w-20 portrait:h-28 portrait:w-28 lg:h-36 lg:w-36" />
   </div>
 )
 
 /** Renders the shape name as a large centred label for name-to-shape questions. */
 const NamePrompt = ({ shape }: { shape: ShapeId }) => (
-  <div className="animate-in zoom-in-95 anim-duration-200 rounded-3xl bg-slate-700 px-14 py-10 shadow-2xl">
-    <p className="text-7xl font-extrabold text-white select-none">{SHAPE_LABELS[shape]}</p>
+  <div className="animate-in zoom-in-95 anim-duration-200 rounded-2xl bg-slate-700 px-4 py-3 shadow-2xl portrait:rounded-3xl portrait:px-8 portrait:py-6 lg:px-14 lg:py-10">
+    <p className="text-3xl font-extrabold text-white select-none portrait:text-5xl lg:text-7xl">{SHAPE_LABELS[shape]}</p>
   </div>
 )
 
@@ -58,7 +58,7 @@ const ShapeAnswerButton = ({
     disabled={disabled}
     aria-label={SHAPE_LABELS[shape]}
     className={cn(
-      'flex min-h-[7rem] min-w-[7rem] items-center justify-center rounded-3xl border-4 p-4',
+      'flex min-h-tap-lg min-w-tap-lg items-center justify-center rounded-2xl border-4 p-2 portrait:min-h-28 portrait:min-w-28 portrait:rounded-3xl portrait:p-3 lg:min-h-28 lg:min-w-28 lg:p-4',
       'transition-colors duration-200 touch-manipulation select-none',
       'border-slate-600 bg-slate-700 text-white',
       isSelected && isCorrect && 'border-emerald-400 bg-emerald-600',
@@ -66,7 +66,7 @@ const ShapeAnswerButton = ({
       !isSelected && !disabled && 'hover:border-slate-400 active:scale-95'
     )}
   >
-    <ShapeDisplay shape={shape} className="h-16 w-16" />
+    <ShapeDisplay shape={shape} className="h-10 w-10 portrait:h-14 portrait:w-14 lg:h-16 lg:w-16" />
   </button>
 )
 
@@ -89,8 +89,8 @@ const NameAnswerButton = ({
     disabled={disabled}
     aria-label={SHAPE_LABELS[shape]}
     className={cn(
-      'min-h-[4.5rem] min-w-[10rem] rounded-3xl border-4 px-6 py-3',
-      'text-2xl font-extrabold text-white transition-colors duration-200 touch-manipulation select-none',
+      'min-h-tap min-w-20 rounded-2xl border-4 px-3 py-2 portrait:min-h-16 portrait:min-w-32 portrait:rounded-3xl portrait:px-4 lg:min-h-[4.5rem] lg:min-w-40 lg:px-6 lg:py-3',
+      'text-sm font-extrabold text-white transition-colors duration-200 touch-manipulation select-none portrait:text-lg lg:text-2xl',
       'border-slate-600 bg-slate-700',
       isSelected && isCorrect && 'border-emerald-400 bg-emerald-600',
       isSelected && !isCorrect && 'border-red-400 bg-red-600',
@@ -102,12 +102,13 @@ const NameAnswerButton = ({
 )
 
 export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeGameProps) => {
-  const { state, starsEarned, pointsEarned, isProcessing, start, answerCorrect, answerWrong, bestScore } =
+  const { state, starsEarned, pointsEarned, isProcessing: isProcessingRef, start, answerCorrect, answerWrong, bestScore } =
     useMathSession({ minigame: 'shapes', secondsPerQuestion: SHAPE_SECONDS_PER_QUESTION, homeworkPeriodId })
 
   const [questions, setQuestions] = useState<ShapeQuestion[]>([])
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [feedbackState, setFeedbackState] = useState<'idle' | 'correct' | 'wrong'>('idle')
+  const [isProcessing, setIsProcessing] = useState(false)
   const [homeworkSubmitted, setHomeworkSubmitted] = useState(false)
 
   const currentQuestion = questions[state.currentQuestionIndex] ?? null
@@ -125,8 +126,9 @@ export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeG
 
   const handleAnswer = useCallback(
     (choiceIndex: number) => {
-      if (isProcessing.current || state.status !== 'playing' || !currentQuestion) return
-      isProcessing.current = true
+      if (isProcessingRef.current || state.status !== 'playing' || !currentQuestion) return
+      isProcessingRef.current = true
+      setIsProcessing(true)
 
       const isCorrect = choiceIndex === currentQuestion.correctIndex
       setSelectedIndex(choiceIndex)
@@ -137,10 +139,11 @@ export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeG
         setFeedbackState('idle')
         if (isCorrect) answerCorrect()
         else answerWrong()
-        isProcessing.current = false
+        isProcessingRef.current = false
+        setIsProcessing(false)
       }, INPUT_THROTTLE_MS)
     },
-    [state.status, currentQuestion, answerCorrect, answerWrong, isProcessing]
+    [state.status, currentQuestion, answerCorrect, answerWrong, isProcessingRef]
   )
 
   const handleHomeworkSubmit = () => {
@@ -166,7 +169,7 @@ export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeG
 
   if (state.status === 'idle') {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-8" data-testid="game-card-shapes">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-8" data-testid="game-card-shapes">
         <div className="text-8xl" aria-hidden="true">🔷</div>
         <h1 className="text-5xl font-extrabold text-white">Khám Phá Hình</h1>
         <p className="text-xl text-slate-300">Nhận biết các hình học!</p>
@@ -189,7 +192,7 @@ export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeG
   const isNameToShape = currentQuestion.mode === 'name-to-shape'
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <GameHud
         correctCount={state.correctCount}
         questionIndex={state.currentQuestionIndex}
@@ -198,12 +201,12 @@ export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeG
       />
       <div
         className={cn(
-          'flex flex-1 flex-col items-center justify-center gap-10 px-8 transition-colors duration-300',
+          'flex flex-1 flex-col items-center justify-center gap-3 px-3 py-2 portrait:gap-6 portrait:py-4 portrait:px-6 transition-colors duration-300',
           feedbackState === 'correct' && 'bg-emerald-900/40',
           feedbackState === 'wrong' && 'bg-red-900/40'
         )}
       >
-        <p className="text-2xl font-bold text-slate-300 select-none">
+        <p className="text-base font-bold text-slate-300 select-none portrait:text-2xl">
           {isNameToShape ? 'Hình nào là...?' : 'Hình này tên là gì?'}
         </p>
 
@@ -213,7 +216,7 @@ export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeG
           <ShapePrompt shape={currentQuestion.targetShape} />
         )}
 
-        <div className="flex flex-wrap justify-center gap-6">
+        <div className="flex flex-wrap justify-center gap-2 portrait:gap-4 lg:gap-6">
           {currentQuestion.choices.map((choice, idx) => {
             const isSelected = selectedIndex === idx
             const isCorrect = idx === currentQuestion.correctIndex
@@ -224,7 +227,7 @@ export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeG
                 isSelected={isSelected}
                 isCorrect={isCorrect}
                 onTap={() => handleAnswer(idx)}
-                disabled={isProcessing.current}
+                disabled={isProcessing}
               />
             ) : (
               <NameAnswerButton
@@ -233,7 +236,7 @@ export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeG
                 isSelected={isSelected}
                 isCorrect={isCorrect}
                 onTap={() => handleAnswer(idx)}
-                disabled={isProcessing.current}
+                disabled={isProcessing}
               />
             )
           })}

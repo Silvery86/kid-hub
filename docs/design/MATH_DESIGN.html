@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kid Hub — Math Route Design Spec</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; font-size: 14px; line-height: 1.6;
+      background: #f8fafc; color: #1e293b; }
+    a { color: #2563eb; }
+
+    .page { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+    h1 { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+    h2 { font-size: 20px; font-weight: 700; margin: 40px 0 12px; padding-bottom: 6px;
+      border-bottom: 2px solid #e2e8f0; }
+    h3 { font-size: 15px; font-weight: 700; margin: 24px 0 8px; color: #0f172a; }
+    p  { margin-bottom: 10px; color: #334155; }
+    .subtitle { color: #64748b; font-size: 13px; margin-bottom: 32px; }
+
+    table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 13px; }
+    th { background: #f1f5f9; font-weight: 700; text-align: left; padding: 8px 12px;
+      border: 1px solid #e2e8f0; }
+    td { padding: 8px 12px; border: 1px solid #e2e8f0; vertical-align: top; }
+    tr:nth-child(even) td { background: #f8fafc; }
+
+    code { font-family: 'Menlo', 'Consolas', monospace; font-size: 12px;
+      background: #f1f5f9; padding: 2px 5px; border-radius: 4px; }
+    pre  { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px;
+      overflow-x: auto; font-size: 12px; line-height: 1.7; margin: 10px 0 20px; }
+    pre code { background: none; padding: 0; color: inherit; }
+
+    .rule   { border-left: 4px solid #3b82f6; background: #eff6ff;
+      padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 10px 0 16px; font-size: 13px; }
+    .warn   { border-left: 4px solid #f59e0b; background: #fffbeb;
+      padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 10px 0 16px; font-size: 13px; }
+    .delta  { border-left: 4px solid #3b82f6; background: #eff6ff;
+      padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 10px 0 16px; font-size: 13px; }
+    .diff   { border-left: 4px solid #a855f7; background: #faf5ff;
+      padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 10px 0 16px; font-size: 13px; }
+
+    .vp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px; margin: 16px 0 24px; }
+    .vp-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+      padding: 16px; }
+    .vp-card .label { font-size: 11px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .06em; color: #64748b; margin-bottom: 8px; }
+    .vp-card .size  { font-size: 18px; font-weight: 800; color: #0f172a; }
+    .vp-card .desc  { font-size: 12px; color: #475569; margin-top: 4px; }
+
+    .swatch-row { display: flex; flex-wrap: wrap; gap: 12px; margin: 10px 0 20px; }
+    .swatch { display: flex; align-items: center; gap: 8px; }
+    .swatch-dot { width: 28px; height: 28px; border-radius: 6px;
+      border: 1px solid rgba(0,0,0,.1); flex-shrink: 0; }
+    .swatch-label { font-size: 12px; font-weight: 600; color: #334155; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; }
+    .badge-new    { background: #dbeafe; color: #1e40af; }
+    .badge-change { background: #fef9c3; color: #854d0e; }
+    .badge-keep   { background: #f1f5f9; color: #475569; }
+
+    h2 a, h3 a { color: inherit; text-decoration: none; }
+    h2 a:hover, h3 a:hover { text-decoration: underline; }
+
+    .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 12px 0 20px; }
+    .compare-box { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; }
+    .compare-box h4 { font-size: 12px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .06em; color: #64748b; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ═══════════════════════════════════════════════════════════ HEADER -->
+  <h1>Math Route — Design Specification</h1>
+  <p class="subtitle">
+    Source design: <code>design/pages/Kid Hub Math - Responsive.html</code> ·
+    Components: <code>design/components/math.jsx</code> ·
+    Current implementation: <code>components/games/MathHub.tsx</code> ·
+    Responsive rules: <code>docs/FE/RESPONSIVE_SUMMARY.md</code> ·
+    Related: <a href="LANGUAGE_DESIGN.html">LANGUAGE_DESIGN.html</a>
+  </p>
+
+  <div class="rule">
+    <strong>Responsive convention (RESPONSIVE_SUMMARY §1):</strong>
+    Base styles target <strong>P1 landscape</strong>.
+    Portrait overrides use <code>portrait:</code>. Desktop/sidebar density uses <code>lg:</code>.
+    Kid targets ≥ <code>min-h-tap</code> (48 px); primary actions ≥ <code>min-h-tap-lg</code>.
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════ 1. SCOPE + KEY DIFFERENCE FROM ENGLISH -->
+  <h2 id="scope"><a href="#scope">1. Scope &amp; Key Difference vs English Hub</a></h2>
+
+  <p>
+    This document covers the <strong>/math hub</strong> only — the three game-type cards
+    (Đếm Sao, Number Ninja, Khám Phá Hình) and the homework banner.
+    The individual mini-game screens (CountingGame, MathGame, ShapeGame) are not in scope.
+  </p>
+
+  <div class="diff">
+    <strong>Critical design difference from English:</strong>
+    The Math design uses <strong>two different card styles</strong> that are <em>not symmetric</em>:
+    <ul style="margin-top:8px; padding-left:20px;">
+      <li><strong>Landscape cards</strong> (<code>MathGameCardBig</code>): gradient blue, watermark emoji, game number pill, star row, white "Chơi →" CTA — identical pattern to English big cards but blue-branded.</li>
+      <li><strong>Portrait cards</strong> (<code>MathGameCard orient="horizontal"</code>): <strong>flat solid blue</strong> (<code>#3b82f6</code>), no watermark, no CTA button, no icon box — just bare emoji + title + desc + stars. Simpler than the English portrait card.</li>
+    </ul>
+  </div>
+
+  <div class="compare">
+    <div class="compare-box">
+      <h4>English portrait card</h4>
+      Gradient · watermark emoji · icon box · "Chơi →" pill CTA · full row layout
+    </div>
+    <div class="compare-box">
+      <h4>Math portrait card</h4>
+      Flat solid <code>#3b82f6</code> · circular bg decoration only · bare emoji · title/desc/stars · <em>no CTA button</em>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════ 2. VIEWPORTS -->
+  <h2 id="viewports"><a href="#viewports">2. Viewport Layout Summary</a></h2>
+
+  <div class="vp-grid">
+    <div class="vp-card">
+      <div class="label">Phone Portrait · P2</div>
+      <div class="size">390 × 844</div>
+      <div class="desc">
+        Vertical stack of <strong>horizontal flat cards</strong> (<code>MathGameCard size="md" orient="horizontal"</code>).
+        Bottom nav. Back button top-left. Title centred.
+      </div>
+    </div>
+    <div class="vp-card">
+      <div class="label">Phone Landscape · P1</div>
+      <div class="size">844 × 390</div>
+      <div class="desc">
+        Narrow icon-only sidebar. Main: <strong>3-column compact big cards</strong>
+        (<code>MathGameCardBig compact</code>). Homework amber pill in header.
+      </div>
+    </div>
+    <div class="vp-card">
+      <div class="label">Tablet Portrait · P2</div>
+      <div class="size">820 × 1180</div>
+      <div class="desc">
+        Sidebar. Stacked <strong>large horizontal flat cards</strong>
+        (<code>MathGameCard size="lg" orient="horizontal"</code>).
+      </div>
+    </div>
+    <div class="vp-card">
+      <div class="label">Tablet Landscape · P1</div>
+      <div class="size">1280 × 800</div>
+      <div class="desc">
+        Sidebar. <strong>3-col grid of full big cards</strong> (<code>MathGameCardBig</code>),
+        max-width 1000 px centred.
+      </div>
+    </div>
+    <div class="vp-card">
+      <div class="label">Desktop</div>
+      <div class="size">1440 × 900</div>
+      <div class="desc">
+        Wide sidebar. <strong>3-col grid of full big cards</strong>, max-width 1100 px.
+        Subtitle shows total star record "Tổng kỷ lục X/9 ⭐".
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════ 3. CARD TYPES -->
+  <h2 id="cards"><a href="#cards">3. Card Components</a></h2>
+
+  <h3 id="card-big"><a href="#card-big">3.1 MathGameCardBig — Landscape / Tablet L / Desktop</a></h3>
+  <p>
+    Mirrors <code>EnglishGameCardBig</code> in every structural way except colours.
+    Uses blue gradient and <code>text-math-deep</code> for the CTA text.
+  </p>
+
+  <table>
+    <thead><tr><th>Element</th><th>Design value</th><th>Tailwind / token equivalent</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Background</td>
+        <td><code>linear-gradient(160deg, #60a5fa 0%, #3b82f6 55%, #2563eb 100%)</code></td>
+        <td>Inline <code>style={{ background: GRADIENT_BIG }}</code></td>
+        <td><span class="badge badge-new">new</span></td>
+      </tr>
+      <tr>
+        <td>Box shadow</td>
+        <td><code>0 18px 36px -16px rgba(37,99,235,.45)</code></td>
+        <td>Inline <code>style={{ boxShadow: SHADOW_BIG }}</code></td>
+        <td><span class="badge badge-new">new</span></td>
+      </tr>
+      <tr>
+        <td>Aspect ratio</td>
+        <td><code>4/3</code> (normal), <code>3/2</code> (compact)</td>
+        <td><code>aspect-[4/3]</code> / <code>aspect-[3/2]</code></td>
+        <td><span class="badge badge-new">new</span></td>
+      </tr>
+      <tr>
+        <td>Watermark emoji</td>
+        <td>Game emoji, rotated per index, <code>opacity .18</code>, absolute top-right</td>
+        <td><code>absolute -top-2 -right-2 opacity-[.18] pointer-events-none leading-none</code> + inline rotate</td>
+        <td><span class="badge badge-new">new</span></td>
+      </tr>
+      <tr>
+        <td>Game number pill</td>
+        <td><code>bg rgba(255,255,255,.22)</code>, font-size 11px (9px compact), font-weight 800</td>
+        <td><code>rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-extrabold</code></td>
+        <td><span class="badge badge-new">new</span></td>
+      </tr>
+      <tr>
+        <td>Title</td>
+        <td>22px / 13px compact, font-weight 900</td>
+        <td><code>text-xl font-black</code> / <code>text-sm font-black</code></td>
+        <td><span class="badge badge-change">change</span></td>
+      </tr>
+      <tr>
+        <td>Description</td>
+        <td>12px, opacity .85, hidden in compact</td>
+        <td><code>text-xs font-bold text-white/85</code>, omitted in compact</td>
+        <td><span class="badge badge-change">change</span></td>
+      </tr>
+      <tr>
+        <td>Star row</td>
+        <td>3 stars, filled <code>#fbbf24</code> / hollow <code>rgba(255,255,255,.3)</code></td>
+        <td>Inline <code>★</code> spans (same <code>Stars</code> helper as English)</td>
+        <td><span class="badge badge-change">change</span></td>
+      </tr>
+      <tr>
+        <td>CTA button</td>
+        <td><code>bg:#fff color:#1d4ed8</code>, font-weight 900, pill shape</td>
+        <td><code>rounded-full bg-white text-math-deep font-black text-xs px-3.5 py-1.5</code></td>
+        <td><span class="badge badge-new">new</span></td>
+      </tr>
+      <tr>
+        <td>Touch target</td>
+        <td>Full card tappable, aspect ratio ensures height</td>
+        <td><code>min-h-tap-lg</code> on full-size, omit on compact (aspect ensures sufficient height)</td>
+        <td><span class="badge badge-keep">keep</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <pre><code>// Gradient constants (math blue)
+const GRADIENT_BIG = 'linear-gradient(160deg, #60a5fa 0%, #3b82f6 55%, #2563eb 100%)'
+const SHADOW_BIG   = '0 18px 36px -16px rgba(37,99,235,.45)'
+
+function MathGameCardBig({ id, emoji, title, description, bestStars, idx, onClick, compact = false }) {
+  const rot = [-8, 5, -6][idx % 3]
+  return (
+    &lt;button
+      onClick={() =&gt; onClick(id)}
+      data-testid={`game-card-${id}`}
+      aria-label={`Chơi ${title}`}
+      className={cn(
+        'relative overflow-hidden flex flex-col text-white text-left w-full',
+        'transition-transform duration-100 active:scale-[0.97] touch-manipulation select-none',
+        compact ? 'rounded-2xl p-3 gap-1 aspect-[3/2]'
+                : 'rounded-3xl p-5 gap-2 aspect-[4/3] min-h-tap-lg',
+      )}
+      style={{ background: GRADIENT_BIG, boxShadow: SHADOW_BIG }}
+    &gt;
+      {/* Watermark */}
+      &lt;div className={cn('absolute -top-2 -right-2 opacity-[.18] pointer-events-none leading-none',
+        compact ? 'text-[90px]' : 'text-[170px]')}
+        style={{ transform: `rotate(${rot}deg)` }} aria-hidden="true"&gt;{emoji}&lt;/div&gt;
+
+      {/* Game pill + icon */}
+      &lt;div className="relative z-10 flex items-start justify-between gap-2"&gt;
+        &lt;span className={cn('rounded-full bg-white/20 font-extrabold',
+          compact ? 'px-2 py-0.5 text-[9px]' : 'px-2.5 py-1 text-[11px]')}&gt;
+          Trò chơi {idx + 1}
+        &lt;/span&gt;
+        &lt;span aria-hidden="true" className={compact ? 'text-2xl' : 'text-4xl'}&gt;{emoji}&lt;/span&gt;
+      &lt;/div&gt;
+
+      {/* Title + desc */}
+      &lt;div className="relative z-10 mt-auto"&gt;
+        &lt;div className={cn('font-black leading-tight', compact ? 'text-sm' : 'text-xl')}&gt;{title}&lt;/div&gt;
+        {!compact &amp;&amp; &lt;div className="text-xs font-bold text-white/85 mt-0.5"&gt;{description}&lt;/div&gt;}
+      &lt;/div&gt;
+
+      {/* Stars + CTA */}
+      &lt;div className="relative z-10 flex items-center justify-between gap-2"&gt;
+        &lt;Stars count={bestStars} size={compact ? 'text-sm' : 'text-xl'} /&gt;
+        &lt;span className={cn('rounded-full bg-white text-math-deep font-black whitespace-nowrap',
+          compact ? 'text-[10px] px-2.5 py-1' : 'text-xs px-3.5 py-1.5')}&gt;
+          Chơi →
+        &lt;/span&gt;
+      &lt;/div&gt;
+    &lt;/button&gt;
+  )
+}</code></pre>
+
+  <h3 id="card-flat"><a href="#card-flat">3.2 MathGameCardFlat — Portrait Stack (phone-P / tablet-P)</a></h3>
+  <p>
+    Unlike the English portrait card, the Math portrait card is deliberately <strong>simpler</strong>:
+    flat solid blue, no watermark, no CTA button, no icon box.
+    It has a subtle circular decoration at top-right (white circle, 90px, <code>opacity .12</code>).
+  </p>
+
+  <table>
+    <thead><tr><th>Element</th><th>Design value</th><th>Tailwind / token equivalent</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Background</td>
+        <td>Flat <code>#3b82f6</code> (no gradient)</td>
+        <td><code>bg-math</code></td>
+        <td><span class="badge badge-change">change layout only</span></td>
+      </tr>
+      <tr>
+        <td>Box shadow</td>
+        <td><code>0 16px 32px -16px #3b82f6</code></td>
+        <td>Inline <code>style={{ boxShadow: '0 16px 32px -16px rgba(59,130,246,.5)' }}</code></td>
+        <td><span class="badge badge-new">add</span></td>
+      </tr>
+      <tr>
+        <td>Layout</td>
+        <td><code>flex-direction: row, alignItems: center</code></td>
+        <td><code>flex items-center gap-2.5</code></td>
+        <td><span class="badge badge-new">new</span></td>
+      </tr>
+      <tr>
+        <td>Emoji</td>
+        <td>48px (md) / 64px (lg), bare — no icon box wrapper</td>
+        <td><code>text-5xl sm:text-6xl leading-none shrink-0</code></td>
+        <td><span class="badge badge-change">change</span></td>
+      </tr>
+      <tr>
+        <td>Title</td>
+        <td>22px (md) / 26px (lg), font-weight 900</td>
+        <td><code>text-xl sm:text-2xl font-black leading-tight</code></td>
+        <td><span class="badge badge-change">change</span></td>
+      </tr>
+      <tr>
+        <td>Description</td>
+        <td>13px / 14px, opacity .85</td>
+        <td><code>text-xs sm:text-sm font-bold text-white/85 mt-1</code></td>
+        <td><span class="badge badge-change">change</span></td>
+      </tr>
+      <tr>
+        <td>Stars</td>
+        <td>22px (md) / 26px (lg) + "Kỷ lục" label</td>
+        <td><code>&lt;Stars count={bestStars} size="text-xl sm:text-2xl" /&gt;</code> + <code>&lt;span className="text-xs font-bold text-white/70"&gt;Kỷ lục&lt;/span&gt;</code></td>
+        <td><span class="badge badge-change">change</span></td>
+      </tr>
+      <tr>
+        <td>Circle decoration</td>
+        <td><code>position:absolute, right:-16, top:-16, width/height:90, borderRadius:999, bg rgba(255,255,255,.12)</code></td>
+        <td><code>absolute -right-4 -top-4 size-[90px] rounded-full bg-white/[.12] pointer-events-none</code></td>
+        <td><span class="badge badge-new">new</span></td>
+      </tr>
+      <tr>
+        <td>CTA button</td>
+        <td>None — Math portrait card has no "Chơi →" CTA</td>
+        <td>Omit entirely</td>
+        <td><span class="badge badge-keep">none needed</span></td>
+      </tr>
+      <tr>
+        <td>Min height</td>
+        <td><code>minHeight: 80</code> (horizontal)</td>
+        <td><code>min-h-[80px]</code> — satisfies <code>min-h-tap-lg</code> (48px)</td>
+        <td><span class="badge badge-keep">keep</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <pre><code>const SHADOW_ROW = '0 16px 32px -16px rgba(59,130,246,.5)'
+
+function MathGameCardFlat({ id, emoji, title, description, bestStars, onClick }) {
+  return (
+    &lt;button
+      onClick={() =&gt; onClick(id)}
+      data-testid={`game-card-${id}`}
+      aria-label={`Chơi ${title}`}
+      className={cn(
+        'relative overflow-hidden flex items-center gap-2.5 w-full text-white text-left',
+        'rounded-3xl p-3.5 sm:p-4 min-h-[80px]',
+        'bg-math',  // flat solid blue token
+        'transition-transform duration-100 active:scale-[0.97] touch-manipulation select-none min-h-tap-lg',
+      )}
+      style={{ boxShadow: SHADOW_ROW }}
+    &gt;
+      {/* Circular bg decoration */}
+      &lt;div className="absolute -right-4 -top-4 size-[90px] rounded-full bg-white/[.12] pointer-events-none" /&gt;
+
+      {/* Bare emoji */}
+      &lt;div className="text-5xl sm:text-6xl leading-none shrink-0 relative z-10" aria-hidden="true"&gt;
+        {emoji}
+      &lt;/div&gt;
+
+      {/* Text block */}
+      &lt;div className="flex-1 min-w-0 relative z-10"&gt;
+        &lt;div className="text-xl sm:text-2xl font-black leading-tight"&gt;{title}&lt;/div&gt;
+        &lt;div className="text-xs sm:text-sm font-bold text-white/85 mt-1"&gt;{description}&lt;/div&gt;
+        &lt;div className="flex items-center gap-2 mt-1.5"&gt;
+          &lt;Stars count={bestStars} size="text-xl sm:text-2xl" /&gt;
+          &lt;span className="text-xs font-bold text-white/70"&gt;Kỷ lục&lt;/span&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/button&gt;
+  )
+}</code></pre>
+
+
+  <!-- ═══════════════════════════════════════════════ 4. HUB LAYOUT -->
+  <h2 id="hub-layout"><a href="#hub-layout">4. MathHub Layout per Viewport</a></h2>
+
+  <h3>4.1 Phone Portrait (390×844)</h3>
+  <table>
+    <thead><tr><th>Zone</th><th>Design</th><th>Tailwind approach</th></tr></thead>
+    <tbody>
+      <tr><td>Content shell</td><td>flex-col, scrollable, gap 12, padding 12 14</td><td><code>hidden portrait:flex flex-col overflow-y-auto gap-3 px-3.5 py-3</code></td></tr>
+      <tr><td>Header</td><td>Back button left, "Toán 🧮" centred, spacer right</td><td><code>flex items-center justify-between</code></td></tr>
+      <tr><td>Game cards</td><td>3× <code>MathGameCardFlat</code> stacked</td><td><code>flex flex-col gap-3</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.2 Phone Landscape (844×390) — base (P1)</h3>
+  <table>
+    <thead><tr><th>Zone</th><th>Design</th><th>Tailwind approach</th></tr></thead>
+    <tbody>
+      <tr><td>Content shell</td><td>flex-col, overflow hidden, padding 10, gap 8</td><td><code>flex portrait:hidden flex-col overflow-hidden gap-2 px-4 pt-2 pb-2</code></td></tr>
+      <tr><td>Header</td><td>Title + subtitle left, amber pill right (if homework)</td><td><code>flex items-center justify-between shrink-0</code></td></tr>
+      <tr><td>Game cards</td><td>3-col compact big cards</td><td><code>grid grid-cols-3 gap-2 flex-1 min-h-0 items-center</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.3 Tablet Portrait (820×1180)</h3>
+  <table>
+    <thead><tr><th>Zone</th><th>Design</th><th>Tailwind approach</th></tr></thead>
+    <tbody>
+      <tr><td>Content shell</td><td>padding 24, gap 18, overflow hidden</td><td>Same portrait section, gap/padding increased at <code>sm:</code></td></tr>
+      <tr><td>Game cards</td><td>3× <code>MathGameCardFlat</code> (size="lg") stacked</td><td>Same portrait card stack; <code>sm:</code> breakpoint handles larger sizing within <code>MathGameCardFlat</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.4 Tablet Landscape (1280×800) + Desktop (1440×900)</h3>
+  <table>
+    <thead><tr><th>Zone</th><th>Design</th><th>Tailwind approach</th></tr></thead>
+    <tbody>
+      <tr><td>Game cards</td><td>3-col grid of <code>MathGameCardBig</code> (full size), max-width 1000/1100 px</td><td><code>grid grid-cols-3 gap-4 sm:gap-5 flex-1 min-h-0 items-center max-w-[1000px] mx-auto w-full</code></td></tr>
+    </tbody>
+  </table>
+
+
+  <!-- ═══════════════════════════════════════════════ 5. RESPONSIVE STRATEGY -->
+  <h2 id="responsive"><a href="#responsive">5. Responsive Tailwind Strategy</a></h2>
+
+  <div class="rule">
+    <strong>Same orientation-toggle approach as English (RESPONSIVE_SUMMARY §5.1):</strong>
+    landscape elements use <code>flex portrait:hidden</code> / <code>grid portrait:hidden</code>;
+    portrait elements use <code>hidden portrait:flex</code>.
+    The custom <code>portrait:</code> and <code>landscape:</code> Tailwind variants are already
+    registered in <code>app/globals.css</code>.
+  </div>
+
+  <h3>5.1 Outer shell</h3>
+  <pre><code>// Identical pattern to EnglishHub — landscape fits, portrait scrolls
+&lt;div className="flex flex-col h-dvh bg-shell-kid overflow-hidden portrait:overflow-y-auto"&gt;</code></pre>
+
+  <h3>5.2 Card sections</h3>
+  <pre><code>// Landscape: 3-col grid of compact big cards
+&lt;div className="grid portrait:hidden grid-cols-3 gap-2 flex-1 min-h-0 items-center px-4 pb-2"&gt;
+  {games.map((game, i) =&gt; (
+    &lt;MathGameCardBig key={game} id={game} idx={i} {...GAME_META[game]}
+      bestStars={getBestStars(game)} onClick={setActiveGame} compact /&gt;
+  ))}
+&lt;/div&gt;
+
+// Portrait: stacked flat cards
+&lt;div className="hidden portrait:flex flex-col gap-3 px-4 py-3 pb-6"&gt;
+  {games.map(game =&gt; (
+    &lt;MathGameCardFlat key={game} id={game} {...GAME_META[game]}
+      bestStars={getBestStars(game)} onClick={setActiveGame} /&gt;
+  ))}
+&lt;/div&gt;</code></pre>
+
+
+  <!-- ═══════════════════════════════════════════════ 6. HOMEWORK BANNER -->
+  <h2 id="homework"><a href="#homework">6. Homework Banner</a></h2>
+
+  <p>Identical treatment to the English hub — compact pill in landscape, full amber banner in portrait.</p>
+
+  <table>
+    <thead><tr><th>Variant</th><th>When shown</th><th>Classes</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Compact pill</td>
+        <td>Landscape only (in header right slot)</td>
+        <td><code>inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1.5 text-xs font-extrabold text-amber-900</code></td>
+      </tr>
+      <tr>
+        <td>Full banner</td>
+        <td>Portrait only (below header)</td>
+        <td><code>hidden portrait:flex items-center gap-3 mx-4 mt-2 rounded-2xl bg-amber-400 px-4 py-3.5</code> + inline coloured shadow</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table>
+    <thead><tr><th>Property</th><th>Current</th><th>Change</th></tr></thead>
+    <tbody>
+      <tr><td>Background</td><td><code>bg-yellow-400</code></td><td><span class="badge badge-change">change</span> → <code>bg-amber-400</code></td></tr>
+      <tr><td>Shadow</td><td><code>shadow-md</code></td><td><span class="badge badge-new">add</span> coloured: <code>'0 6px 16px -8px rgba(251,191,36,.7)'</code></td></tr>
+      <tr><td>Landscape compact pill</td><td>Not present</td><td><span class="badge badge-new">add</span></td></tr>
+      <tr><td>data-testid</td><td><code>homework-banner</code> on single element</td><td>Keep on full portrait banner only</td></tr>
+    </tbody>
+  </table>
+
+
+  <!-- ═══════════════════════════════════════════════ 7. TOKENS -->
+  <h2 id="tokens"><a href="#tokens">7. Design Tokens</a></h2>
+
+  <div class="rule">
+    All tokens in <code>app/globals.css</code> inside <code>@theme {}</code>. No <code>:root</code>.
+    No raw Tailwind palette on semantic surfaces (CLAUDE.md).
+  </div>
+
+  <div class="swatch-row">
+    <div class="swatch">
+      <div class="swatch-dot" style="background:#3b82f6"></div>
+      <div class="swatch-label"><code>--color-math</code> (#3b82f6)<br/>Already exists ✓</div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-dot" style="background:#1d4ed8"></div>
+      <div class="swatch-label"><code>--color-math-deep</code> (#1d4ed8)<br/>Needed for CTA text</div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-dot" style="background:#60a5fa"></div>
+      <div class="swatch-label"><code>--color-math-light</code> (#60a5fa)<br/>Gradient start</div>
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th>Token</th><th>Value</th><th>Used for</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td><code>--color-math</code></td><td>#3b82f6</td><td>Portrait flat card bg, gradient mid</td><td>Already exists — verify</td></tr>
+      <tr><td><code>--color-math-deep</code></td><td>#1d4ed8</td><td>CTA "Chơi →" text colour</td><td>Add to <code>@theme</code></td></tr>
+      <tr><td><code>--color-math-light</code></td><td>#60a5fa</td><td>Gradient start colour</td><td>Add to <code>@theme</code> (or inline gradient only)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="warn">
+    The design's CTA uses <code>color: '#1d4ed8'</code> (blue-700), not <code>#2563eb</code> (blue-600).
+    Verify against the design file and set the token accordingly before implementing.
+    The gradient end is <code>#2563eb</code> — a separate shade from the CTA colour.
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════ 8. DELTA FROM CURRENT CODE -->
+  <h2 id="delta"><a href="#delta">8. Delta from Current MathHub.tsx</a></h2>
+
+  <table>
+    <thead>
+      <tr><th>#</th><th>What changes</th><th>Where</th><th>Priority</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>D-01</td>
+        <td>Add <code>MathGameCardBig</code> (gradient, watermark, pill, CTA) — same structure as <code>EnglishGameCardBig</code> but with blue constants</td>
+        <td><code>MathHub.tsx</code></td>
+        <td>Required</td>
+      </tr>
+      <tr>
+        <td>D-02</td>
+        <td>Add <code>MathGameCardFlat</code> (flat <code>bg-math</code>, horizontal, circular bg decoration, no CTA)</td>
+        <td><code>MathHub.tsx</code></td>
+        <td>Required</td>
+      </tr>
+      <tr>
+        <td>D-03</td>
+        <td>Replace <code>GameCard</code> usage with orientation-split: <code>portrait:hidden</code> grid of <code>MathGameCardBig compact</code> + <code>hidden portrait:flex</code> stack of <code>MathGameCardFlat</code></td>
+        <td><code>MathHub</code> render return</td>
+        <td>Required</td>
+      </tr>
+      <tr>
+        <td>D-04</td>
+        <td>Change outer shell to <code>flex flex-col h-dvh overflow-hidden portrait:overflow-y-auto</code></td>
+        <td><code>MathHub</code> outer div</td>
+        <td>Required</td>
+      </tr>
+      <tr>
+        <td>D-05</td>
+        <td>Homework banner: compact amber pill in landscape, full banner in portrait, coloured shadow</td>
+        <td><code>HomeworkBanner</code> / inline in <code>MathHub</code></td>
+        <td>Required</td>
+      </tr>
+      <tr>
+        <td>D-06</td>
+        <td>Replace <code>getBestScore</code> returning <code>GameBestScore | null</code> with <code>getBestStars</code> returning <code>number</code> (matches new card API)</td>
+        <td><code>MathHub</code></td>
+        <td>Required</td>
+      </tr>
+      <tr>
+        <td>D-07</td>
+        <td>Remove <code>StarRating</code> import (replaced by inline <code>Stars</code> helper)</td>
+        <td><code>MathHub.tsx</code> imports</td>
+        <td>Required</td>
+      </tr>
+      <tr>
+        <td>D-08</td>
+        <td>Add <code>--color-math-deep: #1d4ed8</code> and <code>--color-math-light: #60a5fa</code> to <code>app/globals.css @theme {}</code></td>
+        <td><code>app/globals.css</code></td>
+        <td>Required</td>
+      </tr>
+      <tr>
+        <td>D-09</td>
+        <td>Desktop subtitle: show total stars "Tổng kỷ lục X/9 ⭐"</td>
+        <td><code>MathHub</code> landscape header</td>
+        <td>Nice-to-have</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="delta">
+    <strong>Files touched (≥ 2 — Draft per CLAUDE.md §5):</strong>
+    <code>components/games/MathHub.tsx</code> and <code>app/globals.css</code>.<br/>
+    Draft: "Replace flat <code>bg-math</code> GameCard with <code>MathGameCardBig</code> (gradient + watermark + CTA) for landscape and <code>MathGameCardFlat</code> (flat blue + circle decoration) for portrait; add <code>math-deep</code> and <code>math-light</code> tokens."
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════ 9. SHARED PATTERN: STARS HELPER -->
+  <h2 id="shared"><a href="#shared">9. Shared Code with English Hub</a></h2>
+
+  <p>
+    The <code>Stars</code> helper (inline ★ spans) is identical between Math and English hubs.
+    To avoid duplication, it can be extracted to a shared location:
+  </p>
+
+  <table>
+    <thead><tr><th>Option</th><th>Tradeoff</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Keep inline in each hub file</td>
+        <td>Simple; no cross-file dependency. Acceptable since it's &lt; 10 lines.</td>
+      </tr>
+      <tr>
+        <td>Extract to <code>components/ui/GameStars.tsx</code></td>
+        <td>DRY for future hubs; slightly more ceremony.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    Recommendation: keep inline for now (matches the <em>no premature abstraction</em> rule in CLAUDE.md §7).
+    Extract only if a third hub (or a game screen) needs the same component.
+  </p>
+
+
+  <!-- ═══════════════════════════════════════════════ 10. FILES NOT CHANGING -->
+  <h2 id="no-change"><a href="#no-change">10. Files Not Changing</a></h2>
+  <ul style="padding-left:20px; color:#334155; margin-bottom:16px;">
+    <li><code>app/(games)/math/page.tsx</code> — Server Component, no layout changes.</li>
+    <li><code>components/games/CountingGame.tsx</code>, <code>MathGame.tsx</code>, <code>ShapeGame.tsx</code> — mini-game screens not in scope.</li>
+    <li><code>components/layout/AppSidebar.tsx</code> — navigation chrome unchanged.</li>
+    <li><code>components/ui/StarRating.tsx</code> — no longer imported by MathHub after D-07, but the component itself stays for other consumers.</li>
+  </ul>
+
+
+  <!-- ═══════════════════════════════════════════════ 11. VERIFICATION CHECKLIST -->
+  <h2 id="verify"><a href="#verify">11. Verification Checklist</a></h2>
+
+  <table>
+    <thead><tr><th>Viewport</th><th>Cards shown</th><th>Homework</th><th>Key check</th></tr></thead>
+    <tbody>
+      <tr><td>390×844 portrait</td><td>3 flat blue horizontal cards stacked</td><td>Full amber banner</td><td>No horizontal scroll; each card ≥ 48 px</td></tr>
+      <tr><td>844×390 landscape</td><td>3-col compact big cards (gradient)</td><td>Amber pill in header</td><td>Content fits without scroll; cards fill grid</td></tr>
+      <tr><td>820×1180 portrait</td><td>3 large flat blue cards stacked</td><td>Full amber banner</td><td>Cards scale up via <code>sm:</code></td></tr>
+      <tr><td>1280×800 landscape</td><td>3-col full big cards (gradient)</td><td>Full banner below header</td><td>max-w-[1000px] centred</td></tr>
+      <tr><td>1440×900 desktop</td><td>3-col full big cards</td><td>Full banner below header</td><td>max-w-[1100px] centred</td></tr>
+    </tbody>
+  </table>
+
+  <ul style="padding-left:20px; color:#334155; margin-bottom:16px;">
+    <li>No horizontal scroll on any viewport (G-02 from RESPONSIVE_SUMMARY).</li>
+    <li>All cards ≥ 48 px height (<code>min-h-tap-lg</code>).</li>
+    <li>Stars reflect actual <code>bestScores</code> from localStorage.</li>
+    <li><code>data-testid="game-card-{id}"</code> preserved on both card variants.</li>
+    <li><code>data-testid="homework-banner"</code> on full portrait banner only (not pill).</li>
+    <li>No raw palette colours: no <code>bg-blue-500</code>, <code>bg-yellow-400</code>, <code>text-slate-*</code>.</li>
+    <li><code>StarRating</code> component no longer imported in MathHub — verify no console errors.</li>
+  </ul>
+
+</div>
+</body>
+</html>

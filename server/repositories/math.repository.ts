@@ -5,6 +5,7 @@
 
 import { db } from '@/lib/db'
 import type { MathGameType, DifficultyLevel } from '@/types'
+export { addUserPoints } from '@/server/repositories/progress.repository'
 
 /** Persists a completed math mini-game session to the database. */
 export const saveMathProgress = async (data: {
@@ -96,12 +97,3 @@ export const upsertMathBestScore = async (
   })
 }
 
-/** Adds points to the user's total progress and updates lastActiveDate for streak tracking. */
-export const addUserPoints = async (userId: string, points: number): Promise<void> => {
-  const today = new Date().toISOString().split('T')[0]!
-  await db.userProgress.upsert({
-    where: { userId },
-    create: { userId, totalPoints: points, currentStreak: 1, lastActiveDate: today },
-    update: { totalPoints: { increment: points }, lastActiveDate: today },
-  })
-}

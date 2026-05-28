@@ -1,5 +1,7 @@
 /** Grades page — read-only report card grid fetched from the database. */
 
+export const dynamic = 'force-dynamic'
+
 import {
   Calculator,
   BookOpen,
@@ -37,7 +39,7 @@ export default async function GradesPage() {
   const reportCard = result.data ?? { userId: '', grades: [], averageScore: 0 }
 
   return (
-    <TabletPageContainer className="h-screen overflow-y-auto p-6">
+    <TabletPageContainer className="h-dvh overflow-y-auto p-6">
       {/* Header */}
       <div className="mb-6 flex items-end justify-between">
         <div>
@@ -52,8 +54,8 @@ export default async function GradesPage() {
         </div>
       </div>
 
-      {/* Subject cards grid */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Subject cards grid — 1-col portrait phone, 2-col landscape/tablet */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {reportCard.grades.map((grade) => {
           const subject = getSubjectById(grade.subjectId)
           if (!subject) return null

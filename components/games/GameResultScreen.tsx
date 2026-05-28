@@ -44,7 +44,7 @@ export const GameResultScreen = ({
   const isNewBest = bestStars === null || starsEarned > bestStars
 
   return (
-    <div className="animate-in fade-in zoom-in-95 anim-duration-300 flex min-h-screen flex-col items-center justify-center gap-8 px-8">
+    <div className="animate-in fade-in zoom-in-95 anim-duration-300 flex min-h-dvh flex-col items-center justify-center gap-8 px-8">
       {/* Trophy / emoji */}
       <div className="text-9xl select-none" aria-hidden="true">
         {EMOJI_BY_STARS[starsEarned]}

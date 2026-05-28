@@ -3,6 +3,8 @@
  * Protected by middleware; only accessible with a valid parent session cookie.
  */
 
+export const dynamic = 'force-dynamic'
+
 import Link from 'next/link'
 import { TabletPageContainer } from '@/components/layout/TabletPageContainer'
 import { ScheduleManager } from '@/components/parent/ScheduleManager'

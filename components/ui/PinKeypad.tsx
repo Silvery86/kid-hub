@@ -42,10 +42,15 @@ export const PinKeypad = ({
   useEffect(() => {
     if (errorCount === 0 || errorCount === prevErrorCount.current) return
     prevErrorCount.current = errorCount
-    setValue('')
-    setIsShaking(true)
+    const resetTimer = setTimeout(() => {
+      setValue('')
+      setIsShaking(true)
+    }, 0)
     const t = setTimeout(() => setIsShaking(false), PIN_SHAKE_DURATION_MS)
-    return () => clearTimeout(t)
+    return () => {
+      clearTimeout(resetTimer)
+      clearTimeout(t)
+    }
   }, [errorCount])
 
   const handleKey = (key: KeypadKey): void => {
@@ -88,7 +93,7 @@ export const PinKeypad = ({
 
       {/* Numeric keypad */}
       <div className="grid grid-cols-3 gap-3" role="group" aria-label="PIN keypad">
-        {KEYPAD_KEYS.map((key, idx) => {
+        {KEYPAD_KEYS.map((key, _idx) => {
           if (key === '') {
             return <div key="blank" aria-hidden="true" />
           }
@@ -98,7 +103,7 @@ export const PinKeypad = ({
               variant={key === 'delete' ? 'ghost' : 'primary'}
               isDisabled={isDisabled || (key === 'delete' && value.length === 0)}
               onClick={() => handleKey(key)}
-              className="min-h-16 min-w-16 text-2xl font-bold"
+              className="text-2xl font-bold"
               aria-label={key === 'delete' ? 'Delete last digit' : key}
             >
               {key === 'delete' ? <Delete size={24} /> : key}

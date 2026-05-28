@@ -30,13 +30,15 @@ model User {
   updatedAt  DateTime @updatedAt
 
   // Relations
-  pin                 ParentPin?
-  periods             ClassPeriod[]
-  grades              SubjectGrade[]
-  progress            UserProgress?
-  homeworkCompletions HomeworkCompletion[]
-  mathProgress        MathProgress[]
-  englishProgress     EnglishProgress[]
+  pin                   ParentPin?
+  periods               ClassPeriod[]
+  grades                SubjectGrade[]
+  progress              UserProgress?
+  homeworkCompletions   HomeworkCompletion[]
+  mathProgress          MathProgress[]
+  englishProgress       EnglishProgress[]
+  dailyHomework         DailyHomework[]
+  extraClassOverrides   ExtraClassOverride[]
 
   @@map("users")
 }
@@ -65,6 +67,14 @@ enum DayOfWeek {
   wednesday
   thursday
   friday
+  saturday
+  sunday
+}
+
+/// EventType distinguishes recurring school classes from recurring extra classes.
+enum EventType {
+  SCHOOL_PERIOD
+  EXTRA_CLASS
 }
 
 model ClassPeriod {
@@ -72,21 +82,24 @@ model ClassPeriod {
   userId       String
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   day          DayOfWeek
-  periodNumber Int
+  periodNumber Int?      // 1–10 for SCHOOL_PERIOD; null for EXTRA_CLASS
+  eventType    EventType @default(SCHOOL_PERIOD)
   subjectId    String    // References SUBJECTS constant in lib/data/subjects.ts
   startTime    String    // "HH:MM" 24-hour format
   endTime      String    // "HH:MM" 24-hour format
   roomNumber   String?
-  isHomework   Boolean   @default(false)
-  homeworkNote String?   @db.VarChar(200)
+  iconKey      String?   @db.VarChar(30)  // e.g. "english", "music", "backpack"
+  sortOrder    Int       @default(0)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
   homeworkCompletions HomeworkCompletion[]
+  overrides           ExtraClassOverride[]
 
-  // One user cannot have two periods at the same slot on the same day
+  // Unique slot per school period; NULL periodNumber rows are excluded by Postgres
   @@unique([userId, day, periodNumber])
   @@index([userId, day])
+  @@index([userId, eventType])
   @@map("class_periods")
 }
 
@@ -106,6 +119,40 @@ model HomeworkCompletion {
   @@unique([periodId, date])
   @@index([userId, date])
   @@map("homework_completions")
+}
+
+/// One-off homework assignment for a specific date. Not recurring.
+model DailyHomework {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String    @db.VarChar(10) // "YYYY-MM-DD"
+  subjectId String    @db.VarChar(30)
+  label     String    @db.VarChar(150)
+  iconKey   String?   @db.VarChar(30)
+  isDone    Boolean   @default(false)
+  doneAt    DateTime?
+  points    Int       @default(10)
+  createdAt DateTime  @default(now())
+
+  @@index([userId, date])
+  @@map("daily_homework")
+}
+
+/// Per-date cancellation of a recurring EXTRA_CLASS slot.
+model ExtraClassOverride {
+  id        String      @id @default(cuid())
+  periodId  String
+  period    ClassPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String      @db.VarChar(10) // "YYYY-MM-DD" of the cancellation
+  reason    String?     @db.VarChar(100)
+  createdAt DateTime    @default(now())
+
+  @@unique([periodId, date])
+  @@index([userId, date])
+  @@map("extra_class_overrides")
 }
 
 // ── Grades ────────────────────────────────────────────────────

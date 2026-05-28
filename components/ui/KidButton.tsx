@@ -24,18 +24,21 @@ export const KidButton = ({
   isDisabled = false,
   children,
   className,
+  style,
+  type = 'button',
   ...props
 }: KidButtonProps) => {
   const shouldDisable = isDisabled || isLoading
 
   return (
     <button
+      type={type}
       {...props}
       disabled={shouldDisable}
       aria-disabled={shouldDisable}
+      style={{ minHeight: '4rem', minWidth: '4rem', ...style }}
       className={cn(
-        // Base sizing — minimum 64×64px touch target
-        'min-h-16 min-w-16 px-6 py-3',
+        'px-6 py-3',
         'flex items-center justify-center gap-2',
         // Visual style
         'rounded-2xl border-4 text-xl font-bold',

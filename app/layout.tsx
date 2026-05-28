@@ -32,6 +32,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   minimumScale: 1,
   maximumScale: 1, // Prevent accidental pinch-zoom during games
+  viewportFit: 'cover', // Required for env(safe-area-inset-*) on notched devices
   themeColor: '#3B82F6', // Matches manifest theme_color — blue-500
 }
 

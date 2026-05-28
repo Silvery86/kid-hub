@@ -1,5 +1,7 @@
 /** Dashboard page — main hub view with schedule, games, streaks, and badges. */
 
+export const dynamic = 'force-dynamic'
+
 import { TabletPageContainer } from '@/components/layout/TabletPageContainer'
 import { DashboardView } from '@/components/dashboard/DashboardView'
 import { getScheduleAction } from '@/server/actions/schedule.actions'

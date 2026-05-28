@@ -5,6 +5,7 @@
 
 import { db } from '@/lib/db'
 import type { EnglishGameType, DifficultyLevel } from '@/types'
+export { addUserPoints } from '@/server/repositories/progress.repository'
 
 /** Persists a completed English mini-game session to the database. */
 export const saveEnglishProgress = async (data: {
@@ -101,12 +102,3 @@ export const upsertEnglishBestScore = async (
   })
 }
 
-/** Adds points to the user's total progress and updates lastActiveDate. */
-export const addUserPoints = async (userId: string, points: number): Promise<void> => {
-  const today = new Date().toISOString().split('T')[0]!
-  await db.userProgress.upsert({
-    where: { userId },
-    create: { userId, totalPoints: points, currentStreak: 1, lastActiveDate: today },
-    update: { totalPoints: { increment: points }, lastActiveDate: today },
-  })
-}

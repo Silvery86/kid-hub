@@ -27,14 +27,14 @@ interface CountingGameProps {
 /** Renders N emoji objects in a responsive wrap grid for the child to count. */
 const ObjectGrid = ({ emoji, count }: { emoji: string; count: number }) => (
   <div
-    className="flex max-w-xs flex-wrap justify-center gap-3"
+    className="flex max-w-xs flex-wrap justify-center gap-2 portrait:gap-3"
     aria-label={`${count} ${emoji}`}
     data-testid="object-grid"
   >
     {Array.from({ length: count }).map((_, i) => (
       <span
         key={i}
-        className="animate-in zoom-in-95 select-none text-5xl"
+        className="animate-in zoom-in-95 select-none text-3xl portrait:text-5xl"
         style={{ animationDelay: `${i * 80}ms` }}
         aria-hidden="true"
       >
@@ -45,12 +45,13 @@ const ObjectGrid = ({ emoji, count }: { emoji: string; count: number }) => (
 )
 
 export const CountingGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: CountingGameProps) => {
-  const { state, starsEarned, pointsEarned, isProcessing, start, answerCorrect, answerWrong, bestScore } =
+  const { state, starsEarned, pointsEarned, isProcessing: isProcessingRef, start, answerCorrect, answerWrong, bestScore } =
     useMathSession({ minigame: 'counting', secondsPerQuestion: COUNTING_SECONDS_PER_QUESTION, homeworkPeriodId })
 
   const [questions, setQuestions] = useState<CountingQuestion[]>([])
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [feedbackState, setFeedbackState] = useState<'idle' | 'correct' | 'wrong'>('idle')
+  const [isProcessing, setIsProcessing] = useState(false)
   const [homeworkSubmitted, setHomeworkSubmitted] = useState(false)
 
   const currentQuestion = questions[state.currentQuestionIndex] ?? null
@@ -68,8 +69,9 @@ export const CountingGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: Cou
 
   const handleAnswer = useCallback(
     (choiceIndex: number) => {
-      if (isProcessing.current || state.status !== 'playing' || !currentQuestion) return
-      isProcessing.current = true
+      if (isProcessingRef.current || state.status !== 'playing' || !currentQuestion) return
+      isProcessingRef.current = true
+      setIsProcessing(true)
 
       const isCorrect = choiceIndex === currentQuestion.correctIndex
       setSelectedIndex(choiceIndex)
@@ -80,10 +82,11 @@ export const CountingGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: Cou
         setFeedbackState('idle')
         if (isCorrect) answerCorrect()
         else answerWrong()
-        isProcessing.current = false
+        isProcessingRef.current = false
+        setIsProcessing(false)
       }, INPUT_THROTTLE_MS)
     },
-    [state.status, currentQuestion, answerCorrect, answerWrong, isProcessing]
+    [state.status, currentQuestion, answerCorrect, answerWrong, isProcessingRef]
   )
 
   const handleHomeworkSubmit = () => {
@@ -109,7 +112,7 @@ export const CountingGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: Cou
 
   if (state.status === 'idle') {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-8" data-testid="game-card-counting">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-8" data-testid="game-card-counting">
         <div className="text-8xl" aria-hidden="true">🌟</div>
         <h1 className="text-5xl font-extrabold text-white">Đếm Sao</h1>
         <p className="text-xl text-slate-300">Đếm số đồ vật trên màn hình!</p>
@@ -130,7 +133,7 @@ export const CountingGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: Cou
   if (!currentQuestion) return null
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <GameHud
         correctCount={state.correctCount}
         questionIndex={state.currentQuestionIndex}
@@ -139,16 +142,16 @@ export const CountingGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: Cou
       />
       <div
         className={cn(
-          'flex flex-1 flex-col items-center justify-center gap-10 px-8 transition-colors duration-300',
+          'flex flex-1 flex-col items-center justify-center gap-3 px-3 py-2 portrait:gap-6 portrait:py-4 portrait:px-6 transition-colors duration-300',
           feedbackState === 'correct' && 'bg-emerald-900/40',
           feedbackState === 'wrong' && 'bg-red-900/40'
         )}
       >
-        <p className="text-2xl font-bold text-white select-none">Có bao nhiêu cái?</p>
-        <div className="animate-in fade-in anim-duration-200 rounded-3xl bg-slate-700 p-8 shadow-2xl">
+        <p className="text-base font-bold text-white select-none portrait:text-2xl">Có bao nhiêu cái?</p>
+        <div className="animate-in fade-in anim-duration-200 rounded-2xl bg-slate-700 p-4 shadow-2xl portrait:rounded-3xl portrait:p-6 lg:p-8">
           <ObjectGrid emoji={currentQuestion.objectEmoji} count={currentQuestion.count} />
         </div>
-        <div className="flex gap-6">
+        <div className="flex flex-wrap justify-center gap-2 portrait:gap-4 lg:gap-6">
           {currentQuestion.choices.map((choice, idx) => {
             const isSelected = selectedIndex === idx
             const isCorrect = idx === currentQuestion.correctIndex
@@ -156,10 +159,10 @@ export const CountingGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: Cou
               <KidButton
                 key={idx}
                 onClick={() => handleAnswer(idx)}
-                isDisabled={isProcessing.current}
+                isDisabled={isProcessing}
                 data-testid={`answer-btn-${idx}`}
                 className={cn(
-                  'min-h-32 min-w-32 text-6xl font-extrabold transition-colors duration-200',
+                  'min-h-tap-lg min-w-tap-lg text-2xl font-extrabold transition-colors duration-200 portrait:min-h-28 portrait:min-w-28 portrait:text-4xl lg:min-h-32 lg:min-w-32 lg:text-6xl',
                   isSelected && isCorrect && 'border-emerald-700 bg-emerald-500',
                   isSelected && !isCorrect && 'border-red-700 bg-red-500'
                 )}

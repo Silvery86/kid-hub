@@ -1,17 +1,19 @@
-/** Schedule page — read-only 5-day weekly timetable with live-class highlighting. */
+/** Schedule page — school timetable with orientation-aware layout. */
 
-import { TabletPageContainer } from '@/components/layout/TabletPageContainer'
+export const dynamic = 'force-dynamic'
+
+import { Suspense } from 'react'
+import { ScheduleView } from '@/components/dashboard/ScheduleView'
 import { getScheduleAction } from '@/server/actions/schedule.actions'
-import { ScheduleGrid } from '@/components/dashboard/ScheduleGrid'
+import ScheduleLoading from './loading'
 
 export default async function SchedulePage() {
-  const result = await getScheduleAction()
-  const schedule = result.data ?? []
+  const scheduleResult = await getScheduleAction()
+  const schedule = scheduleResult.data ?? []
 
   return (
-    <TabletPageContainer className="overflow-hidden p-6">
-      <h1 className="mb-5 text-3xl font-extrabold text-slate-800">Thời khóa biểu</h1>
-      <ScheduleGrid initialSchedule={schedule} />
-    </TabletPageContainer>
+    <Suspense fallback={<ScheduleLoading />}>
+      <ScheduleView initialSchedule={schedule} />
+    </Suspense>
   )
 }

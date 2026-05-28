@@ -9,8 +9,8 @@
  * Example: /efficiency server/repositories
  */
 
-const { execSync } = require('child_process')
-const path = require('path')
+import { execSync } from 'node:child_process'
+import path from 'node:path'
 
 const THRESHOLD = 50
 
@@ -56,8 +56,8 @@ function run(args) {
     console.warn('[efficiency] State what you are looking for before reading.')
     console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   } else {
-    console.log(`[efficiency] OK — "${targetDir}" has ${fileCount} entries (under ${THRESHOLD}).`)
-    console.log('[efficiency] Safe to read without a filter.')
+    console.warn(`[efficiency] OK — "${targetDir}" has ${fileCount} entries (under ${THRESHOLD}).`)
+    console.warn('[efficiency] Safe to read without a filter.')
   }
 }
 

@@ -9,7 +9,7 @@ import * as mathRepo from '@/server/repositories/math.repository'
 import * as homeworkRepo from '@/server/repositories/homework.repository'
 import { calculateStars, calculatePointsEarned } from '@/hooks/useGameSession'
 import { GAME_QUESTIONS_PER_SESSION } from '@/lib/constants'
-import type { MathGameType, DifficultyLevel, SaveMathProgressInput } from '@/types'
+import type { SaveMathProgressInput } from '@/types'
 
 export interface MathSessionResult {
   starsEarned: 1 | 2 | 3
@@ -68,20 +68,13 @@ export const saveMathSession = async (
  */
 export const getTodayMathHomework = async (
   userId: string,
-  day: import('@/types').DayOfWeek | null,
+  _day: import('@/types').DayOfWeek | null,
   date: string
 ): Promise<{ periodId: string; homeworkNote: string } | null> => {
-  if (!day) return null
-
   const db = await import('@/lib/db').then((m) => m.db)
-  const period = await db.classPeriod.findFirst({
-    where: { userId, day, subjectId: 'math', isHomework: true },
-    include: { homeworkCompletions: { where: { date } } },
+  const item = await db.dailyHomework.findFirst({
+    where: { userId, date, subjectId: 'math', isDone: false },
   })
-
-  if (!period) return null
-  const completion = period.homeworkCompletions[0]
-  if (completion?.isDone) return null
-
-  return { periodId: period.id, homeworkNote: period.homeworkNote ?? '' }
+  if (!item) return null
+  return { periodId: item.id, homeworkNote: item.label }
 }
