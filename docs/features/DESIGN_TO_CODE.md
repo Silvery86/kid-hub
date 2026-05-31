@@ -22,6 +22,7 @@ on `window`. The `styles/styles.css` mirrors `app/globals.css @theme {}` tokens.
 | `design/components/games.jsx` | `/games` — game selection hub | Phone-P, Phone-L, Tablet-P, Tablet-L, Desktop |
 | `design/components/extras.jsx` | `/unlock`, `/grades`, `/homework`, `/parent/kid-access` | Phone-P, Phone-L, Tablet-P, Tablet-L, Desktop |
 | `design/components/parent.jsx` | `/parent/pin`, `/parent` dashboard, `/parent/login` | Phone-P, Phone-L, Tablet-P, Tablet-L, Desktop |
+| `design/components/parent-v2.jsx` | `/parent` dashboard (v2 revision) | Phone-P, Phone-L, Tablet-P, Tablet-L, Desktop |
 | `design/styles/styles.css` | Token reference (mirrors `app/globals.css`) | — |
 
 **HTML preview files** in `design/pages/` are viewer-only artefacts rendered

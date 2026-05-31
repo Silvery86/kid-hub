@@ -13,7 +13,10 @@
     "prisma:seed": "tsx --env-file=.env.local prisma/seed.ts",
     "prisma:migrate": "tsx --env-file=.env.local node_modules/.bin/prisma migrate dev",
     "test": "tsx --env-file=.env.local node_modules/.bin/playwright test",
-    "test:ui": "tsx --env-file=.env.local node_modules/.bin/playwright test --ui"
+    "test:ui": "tsx --env-file=.env.local node_modules/.bin/playwright test --ui",
+    "design:manifest": "tsx scripts/design/build-manifest.ts",
+    "design:check": "tsx scripts/design/build-manifest.ts && tsx scripts/design/check-coverage.ts && tsx scripts/design/check-viewports.ts && tsx scripts/design/check-tokens.ts",
+    "design:report": "tsx scripts/design/build-manifest.ts && tsx scripts/design/report.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.7.0",

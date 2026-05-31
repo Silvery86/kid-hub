@@ -43,3 +43,7 @@ next-env.d.ts
 #docs
 .github
 /lib/generated/prisma
+
+# design automation — generated outputs
+/design/manifest.json
+/design/drift-report.html
