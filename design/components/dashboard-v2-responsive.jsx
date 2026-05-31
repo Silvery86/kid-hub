@@ -20,37 +20,110 @@ function useNowState(time) {
 }
 
 // Compact bottom nav for phone
-function BottomNav({ onAction }) {
-  const items = [
+function BottomNav({ onAction, active = 'home', items }) {
+  const allItems = items || [
     { id: 'home',     label: 'Trang chủ', icon: '🏠' },
     { id: 'schedule', label: 'Lịch',      icon: '🗓️' },
     { id: 'grades',   label: 'Điểm',      icon: '⭐' },
     { id: 'games',    label: 'Trò chơi',  icon: '🎮' },
+    { id: 'homework', label: 'Bài tập',   icon: '📚' },
+    { id: 'unlock',   label: 'Huy hiệu',  icon: '🏆' },
   ];
+  const [moreOpen, setMoreOpen] = React.useState(false);
+
+  // When more than 4 items, show first 3 inline + a "More" slot.
+  const overflow = allItems.length > 4;
+  const visible = overflow ? allItems.slice(0, 3) : allItems;
+  const hidden = overflow ? allItems.slice(3) : [];
+  const activeInHidden = hidden.some((h) => h.id === active);
+
+  const tab = (it, isActive) => (
+    <button
+      key={it.id}
+      onClick={() => onAction(`Mở ${it.label}…`)}
+      style={{
+        flex: 1, border: 0, background: 'transparent',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 2, padding: '6px 4px', cursor: 'pointer', fontFamily: 'inherit',
+        color: isActive ? 'var(--kh-accent)' : '#94a3b8',
+        fontSize: 10, fontWeight: 800, letterSpacing: -0.01,
+      }}>
+      <span style={{ fontSize: 22 }}>{it.icon}</span>
+      <span>{it.label}</span>
+    </button>
+  );
+
   return (
     <nav style={{
-      display: 'flex', background: '#fff',
+      display: 'flex', background: '#fff', position: 'relative',
       padding: '6px 4px 10px',
       borderTop: '1px solid #f1f5f9',
       boxShadow: '0 -4px 16px rgba(15,23,42,0.05)',
     }}>
-      {items.map((it) => (
-        <button
-          key={it.id}
-          onClick={() => onAction(`Mở ${it.label}…`)}
-          style={{
-            flex: 1, border: 0, background: 'transparent',
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-            gap: 2, padding: '6px 4px', cursor: 'pointer',
-            fontFamily: 'inherit',
-            color: it.id === 'home' ? 'var(--kh-accent)' : '#94a3b8',
-            fontSize: 10, fontWeight: 800,
-            letterSpacing: -0.01,
-          }}>
-          <span style={{ fontSize: 22 }}>{it.icon}</span>
-          <span>{it.label}</span>
-        </button>
-      ))}
+      {visible.map((it) => tab(it, it.id === active))}
+
+      {overflow && (
+        <React.Fragment>
+          <button
+            onClick={() => setMoreOpen((v) => !v)}
+            style={{
+              flex: 1, border: 0, background: 'transparent',
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              gap: 2, padding: '6px 4px', cursor: 'pointer', fontFamily: 'inherit',
+              color: (moreOpen || activeInHidden) ? 'var(--kh-accent)' : '#94a3b8',
+              fontSize: 10, fontWeight: 800, letterSpacing: -0.01,
+            }}>
+            <span style={{ fontSize: 22 }}>⋯</span>
+            <span>Thêm</span>
+          </button>
+
+          {moreOpen && (
+            <React.Fragment>
+              {/* click-away backdrop */}
+              <div
+                onClick={() => setMoreOpen(false)}
+                style={{ position: 'fixed', inset: 0, zIndex: 40 }}
+              />
+              {/* popover anchored bottom-right above the More tab */}
+              <div style={{
+                position: 'absolute', right: 8, bottom: '100%', marginBottom: 8,
+                background: '#fff', borderRadius: 16, zIndex: 41,
+                boxShadow: '0 12px 32px -8px rgba(15,23,42,0.25), 0 0 0 1px rgba(15,23,42,0.05)',
+                padding: 8, minWidth: 180,
+                display: 'flex', flexDirection: 'column', gap: 2,
+                animation: 'kh-pop-in 0.14s ease-out',
+              }}>
+                {hidden.map((it) => {
+                  const isActive = it.id === active;
+                  return (
+                    <button
+                      key={it.id}
+                      onClick={() => { setMoreOpen(false); onAction(`Mở ${it.label}…`); }}
+                      className="kh-press"
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '10px 12px', borderRadius: 12, border: 0,
+                        background: isActive ? 'var(--kh-accent-soft)' : 'transparent',
+                        color: isActive ? 'var(--kh-accent-deep)' : '#475569',
+                        fontFamily: 'inherit', fontSize: 14, fontWeight: 800,
+                        cursor: 'pointer', textAlign: 'left', width: '100%',
+                      }}>
+                      <span style={{ fontSize: 20 }}>{it.icon}</span>
+                      <span>{it.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {/* little caret */}
+              <div style={{
+                position: 'absolute', right: 8 + 78, bottom: '100%', marginBottom: 2,
+                width: 12, height: 12, background: '#fff', transform: 'rotate(45deg)',
+                zIndex: 41, boxShadow: '2px 2px 4px rgba(15,23,42,0.06)',
+              }} />
+            </React.Fragment>
+          )}
+        </React.Fragment>
+      )}
     </nav>
   );
 }
@@ -161,27 +234,95 @@ function WideSidebar({ onAction }) {
 function HeroCard({ state, subj, minutesLeft, size = 'lg' }) {
   if (!state.now) {
     const small = size === 'sm' || size === 'xs';
+    const showTomorrow = !state.pendingBreak && typeof KH_TOMORROW !== 'undefined';
+
+    // Break state — simple centered message
+    if (state.pendingBreak) {
+      return (
+        <div style={{
+          borderRadius: small ? 20 : 28, padding: small ? 18 : 28,
+          background: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          gap: 14, textAlign: 'center',
+          boxShadow: '0 1px 3px rgba(15,23,42,0.06)',
+          flex: 1, minHeight: 0,
+        }}>
+          <div style={{ fontSize: small ? 40 : 64 }} aria-hidden="true">☕</div>
+          <div>
+            <div style={{ fontSize: small ? 18 : 28, fontWeight: 900 }}>Đang nghỉ giữa giờ</div>
+            <div style={{ fontSize: small ? 12 : 15, color: '#64748b', fontWeight: 700, marginTop: 4 }}>
+              Toán bắt đầu 09:00
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Done — show tomorrow's schedule alongside
     return (
       <div style={{
-        borderRadius: small ? 20 : 28, padding: small ? 18 : 28,
+        borderRadius: small ? 20 : 28, overflow: 'hidden',
         background: '#fff',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: 14, textAlign: 'center',
+        display: 'flex', flexDirection: small ? 'column' : 'row',
         boxShadow: '0 1px 3px rgba(15,23,42,0.06)',
         flex: 1, minHeight: 0,
       }}>
-        <div style={{ fontSize: small ? 40 : 64 }} aria-hidden="true">🎉</div>
-        <div>
-          <div style={{ fontSize: small ? 18 : 28, fontWeight: 900 }}>
-            {state.pendingBreak ? 'Đang nghỉ giữa giờ' : 'Học xong rồi!'}
+        {/* Left / Top: done message */}
+        <div style={{
+          padding: small ? '16px 18px' : '24px 28px',
+          display: 'flex', flexDirection: 'column', justifyContent: 'center',
+          gap: small ? 6 : 8, flexShrink: 0,
+          borderBottom: small ? '1px solid #f1f5f9' : 'none',
+          borderRight: small ? 'none' : '1px solid #f1f5f9',
+        }}>
+          <div style={{ fontSize: small ? 32 : 48, lineHeight: 1 }}>🌙</div>
+          <div style={{ fontSize: small ? 16 : 22, fontWeight: 900, color: '#1e293b' }}>
+            Hết giờ học rồi!
           </div>
-          <div style={{
-            fontSize: small ? 12 : 15, color: '#64748b',
-            fontWeight: 700, marginTop: 4,
-          }}>
-            {state.pendingBreak ? 'Toán bắt đầu 09:00' : 'Hẹn gặp lại ngày mai.'}
+          <div style={{ fontSize: small ? 11 : 13, color: '#64748b', fontWeight: 700 }}>
+            Nghỉ ngơi đi, Khôi nhé 😊
           </div>
         </div>
+
+        {/* Right / Bottom: tomorrow's schedule */}
+        {showTomorrow && (
+          <div style={{
+            flex: 1, padding: small ? '12px 18px' : '16px 22px',
+            display: 'flex', flexDirection: 'column', gap: small ? 6 : 8,
+            overflow: 'hidden',
+          }}>
+            <div style={{
+              fontSize: small ? 9 : 11, fontWeight: 900, color: '#94a3b8',
+              letterSpacing: 0.12, textTransform: 'uppercase',
+            }}>Thứ Năm — Ngày mai</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: small ? 4 : 6 }}>
+              {KH_TOMORROW.map((p) => {
+                const s = KH_SUBJECTS[p.sid];
+                return (
+                  <div key={p.n} style={{
+                    display: 'flex', alignItems: 'center', gap: small ? 8 : 10,
+                    padding: small ? '6px 8px' : '7px 10px',
+                    borderRadius: small ? 10 : 12, background: '#f8fafc',
+                  }}>
+                    <div style={{
+                      width: small ? 6 : 8, height: small ? 6 : 8,
+                      borderRadius: 999, background: s.color, flexShrink: 0,
+                    }} />
+                    <span style={{
+                      flex: 1, fontSize: small ? 11 : 13, fontWeight: 800,
+                      color: '#1e293b', overflow: 'hidden',
+                      textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>{s.name}</span>
+                    <span style={{
+                      fontSize: small ? 10 : 11, color: '#94a3b8',
+                      fontWeight: 700, flexShrink: 0,
+                    }}>{p.start}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -442,7 +583,7 @@ function HeroPhonePortrait({ tweaks, time, onAction, insets = {} }) {
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.02 }}>Chào Khôi! 👋</div>
             <div style={{ fontSize: 12, color: '#64748b', fontWeight: 700, marginTop: 2 }}>
-              Thứ Tư · {state.label}
+              Thứ Tư 28/05 · {state.label}
             </div>
           </div>
           {tweaks.showGami && (
@@ -544,7 +685,7 @@ function HeroPhoneLandscape({ tweaks, time, onAction }) {
           <div>
             <div style={{ fontSize: 18, fontWeight: 900 }}>Chào Khôi! 👋</div>
             <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>
-              Thứ Tư · {state.label}
+              Thứ Tư 28/05 · {state.label}
             </div>
           </div>
           {tweaks.showGami && (
@@ -635,7 +776,7 @@ function HeroTabletPortrait({ tweaks, time, onAction }) {
           <div>
             <h1 className="kh-h1" style={{ fontSize: 32 }}>Chào Khôi! 👋</h1>
             <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 15, fontWeight: 700 }}>
-              Thứ Tư, 26 Tháng 5 · {state.label}
+              Thứ Tư 28/05 · {state.label}
             </p>
           </div>
           {tweaks.showGami && (
@@ -715,7 +856,7 @@ function HeroDesktop({ tweaks, time, onAction }) {
           <div>
             <h1 className="kh-h1" style={{ fontSize: 34 }}>Chào buổi sáng, Khôi! ☀️</h1>
             <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: 15, fontWeight: 700 }}>
-              Thứ Tư, 26 Tháng 5 · {state.label} · Tuần 14
+              Thứ Tư 28/05 · {state.label} · Tuần 14
             </p>
           </div>
           {tweaks.showGami && (

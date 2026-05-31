@@ -3,11 +3,11 @@
 
 // ── Full weekly schedule (mirror of lib/data/schedule.ts) ───────────────
 const WEEK_DAYS = [
-  { id: 'monday',    label: 'Thứ Hai', short: 'T2', narrow: 'H' },
-  { id: 'tuesday',   label: 'Thứ Ba',  short: 'T3', narrow: 'B' },
-  { id: 'wednesday', label: 'Thứ Tư',  short: 'T4', narrow: 'T' },
-  { id: 'thursday',  label: 'Thứ Năm', short: 'T5', narrow: 'N' },
-  { id: 'friday',    label: 'Thứ Sáu', short: 'T6', narrow: 'S' },
+  { id: 'monday',    label: 'Thứ Hai', short: 'T2', narrow: 'H', date: '26/05' },
+  { id: 'tuesday',   label: 'Thứ Ba',  short: 'T3', narrow: 'B', date: '27/05' },
+  { id: 'wednesday', label: 'Thứ Tư',  short: 'T4', narrow: 'T', date: '28/05' },
+  { id: 'thursday',  label: 'Thứ Năm', short: 'T5', narrow: 'N', date: '29/05' },
+  { id: 'friday',    label: 'Thứ Sáu', short: 'T6', narrow: 'S', date: '30/05' },
 ];
 
 const WEEKLY = {
@@ -196,7 +196,7 @@ function DayTabs({ activeDay, todayId, onChange, compact }) {
             key={d.id}
             onClick={() => onChange(d.id)}
             style={{
-              flex: 1, padding: compact ? '6px 4px' : '10px 8px',
+              flex: 1, padding: compact ? '5px 4px' : '8px 8px',
               border: 0, borderRadius: 12,
               background: active ? 'var(--kh-accent)' : 'transparent',
               color: active ? '#fff' : (d.id === todayId ? 'var(--kh-accent-deep)' : '#475569'),
@@ -205,8 +205,13 @@ function DayTabs({ activeDay, todayId, onChange, compact }) {
               boxShadow: active ? '0 4px 10px -3px color-mix(in oklab, var(--kh-accent) 50%, transparent)' : 'none',
               position: 'relative',
               letterSpacing: -0.01,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1,
             }}>
-            {compact ? d.short : d.label}
+            <span>{compact ? d.short : d.label}</span>
+            <span style={{
+              fontSize: compact ? 9 : 11, fontWeight: 800,
+              opacity: active ? 0.85 : 0.6,
+            }}>{d.date}</span>
             {d.id === todayId && !active && (
               <span style={{
                 position: 'absolute', bottom: 2, left: '50%',
@@ -244,6 +249,7 @@ function WeekGrid({ orient = 'cols-periods', currentN, todayId, onPick, compact,
             borderRadius: 12,
           }}>
             <div>{d.label}</div>
+            <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.7, marginTop: 1 }}>{d.date}</div>
             {d.id === todayId && (
               <div style={{ fontSize: 10, marginTop: 2 }}>Hôm nay</div>
             )}
@@ -300,6 +306,7 @@ function WeekGrid({ orient = 'cols-periods', currentN, todayId, onPick, compact,
             borderRadius: 12,
           }}>
             <span>{d.label}</span>
+            <span style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8' }}>{d.date}</span>
             {d.id === todayId && (
               <span style={{ fontSize: 10, color: 'var(--kh-accent)' }}>● hôm nay</span>
             )}
@@ -409,7 +416,7 @@ function SchedulePhonePortrait({ tweaks, time, onAction, insets = {} }) {
           }}>{dayPeriods.length}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 15, fontWeight: 900 }}>
-              {WEEK_DAYS.find((d) => d.id === activeDay).label}
+              {WEEK_DAYS.find((d) => d.id === activeDay).label}, {WEEK_DAYS.find((d) => d.id === activeDay).date}
             </div>
             <div style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>
               {dayPeriods.length} tiết · {dayPeriods[0].start} → {dayPeriods.at(-1).end}
@@ -598,6 +605,9 @@ function ScheduleTabletLandscape({ tweaks, time, onAction }) {
             }}>Hôm nay</div>
             <div style={{ fontSize: 26, fontWeight: 900, marginTop: 2 }}>
               {todayDay.label}
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 800, opacity: 0.85, marginTop: 1 }}>
+              {todayDay.date}
             </div>
             <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.85, marginBottom: 12 }}>
               {WEEKLY[now.todayId].length} tiết · 07:30 → 11:10

@@ -30,7 +30,7 @@ function DashboardHero({ tweaks, time, onAction }) {
           <div>
             <h1 className="kh-h1">Chào Khôi! 👋</h1>
             <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 15, fontWeight: 600 }}>
-              Thứ Tư, 27 Tháng 5 · {state.label}
+              Thứ Tư 28/05 · {state.label}
             </p>
           </div>
           {showGami && (
@@ -140,20 +140,57 @@ function DashboardHero({ tweaks, time, onAction }) {
           </div>
         ) : (
           <div style={{
-            borderRadius: 32, padding: 36, minHeight: 200,
+            borderRadius: 32, overflow: 'hidden',
             background: '#fff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            gap: 18, textAlign: 'center', boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+            display: 'flex', alignItems: 'stretch',
+            boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+            minHeight: 200,
           }}>
-            <div style={{ fontSize: 64 }} aria-hidden="true">🎉</div>
-            <div>
-              <div style={{ fontSize: 28, fontWeight: 900, color: '#1e293b' }}>
-                {state.pendingBreak ? 'Đang nghỉ giữa giờ' : 'Học xong rồi!'}
+            {/* Left: done message */}
+            <div style={{
+              padding: '28px 32px', display: 'flex', flexDirection: 'column',
+              justifyContent: 'center', gap: 8, flex: '0 0 auto',
+            }}>
+              <div style={{ fontSize: 52, lineHeight: 1 }}>🌙</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: '#1e293b' }}>
+                {state.pendingBreak ? 'Đang nghỉ giữa giờ' : 'Hết giờ học rồi!'}
               </div>
-              <div style={{ fontSize: 15, color: '#64748b', fontWeight: 700, marginTop: 4 }}>
-                {state.pendingBreak ? 'Toán bắt đầu lúc 09:00' : 'Hẹn gặp lại ngày mai nhé.'}
+              <div style={{ fontSize: 14, color: '#64748b', fontWeight: 700 }}>
+                {state.pendingBreak ? 'Toán bắt đầu lúc 09:00' : 'Nghỉ ngơi đi, Khôi nhé 😊'}
               </div>
             </div>
+            {/* Divider */}
+            <div style={{ width: 1, background: '#f1f5f9', flexShrink: 0 }} />
+            {/* Right: tomorrow's schedule */}
+            {!state.pendingBreak && (
+              <div style={{
+                flex: 1, padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 10, overflow: 'hidden',
+              }}>
+                <div style={{
+                  fontSize: 11, fontWeight: 900, color: '#94a3b8',
+                  letterSpacing: 0.12, textTransform: 'uppercase',
+                }}>Thứ Năm — Ngày mai</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {KH_TOMORROW.map((p) => {
+                    const s = KH_SUBJECTS[p.sid];
+                    return (
+                      <div key={p.n} style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '8px 10px', borderRadius: 12,
+                        background: '#f8fafc',
+                      }}>
+                        <div style={{
+                          width: 8, height: 8, borderRadius: 999,
+                          background: s.color, flexShrink: 0,
+                        }} />
+                        <span style={{ flex: 1, fontSize: 13, fontWeight: 800, color: '#1e293b', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
+                        <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, flexShrink: 0 }}>{p.start}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

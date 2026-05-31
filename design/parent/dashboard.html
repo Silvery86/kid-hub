@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kid Hub — Parent (Re-design) · Responsive</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles/styles.css" />
+  <style>
+    html, body { margin: 0; padding: 0; font-family: 'Nunito', system-ui, sans-serif; background: #f4f1ec; }
+    body { color: #2a2520; }
+    .kh-bezel { border-radius: 38px; background: #1d1f24; padding: 8px;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12); }
+    .kh-bezel-screen { border-radius: 30px; overflow: hidden; width: 100%; height: 100%;
+      position: relative; background: #f5f2ec; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="../components/design-canvas.jsx"></script>
+  <script type="text/babel" src="../components/android-frame.jsx"></script>
+  <script type="text/babel" src="../components/ios-frame.jsx"></script>
+  <script type="text/babel" src="../components/browser-window.jsx"></script>
+  <script type="text/babel" src="../components/tweaks-panel.jsx"></script>
+  <script type="text/babel" src="../components/shared.jsx"></script>
+  <script type="text/babel" src="../components/parent-v2.jsx"></script>
+
+  <script type="text/babel" data-presets="env,react">
+    const { useState, useEffect } = React;
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "parentView": "overview",
+      "showFrame": true
+    }/*EDITMODE-END*/;
+
+    function Toast({ msg }) {
+      if (!msg) return null;
+      return <div className="kh-toast" key={msg.k}>{msg.text}</div>;
+    }
+
+    function Variant({ render }) {
+      const [toast, setToast] = useState(null);
+      useEffect(() => {
+        if (!toast) return;
+        const t = setTimeout(() => setToast(null), 1600);
+        return () => clearTimeout(t);
+      }, [toast]);
+      const onAction = (text) => setToast({ k: Date.now(), text });
+      return (
+        <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+          {render(onAction)}
+          <Toast msg={toast} />
+        </div>
+      );
+    }
+
+    function MobileLandscapeBezel({ width, height, children }) {
+      return (
+        <div className="kh-bezel" style={{ width, height, position: 'relative' }}>
+          <div className="kh-bezel-screen" style={{ width: width - 16, height: height - 16 }}>{children}</div>
+          <div style={{ position: 'absolute', right: 4, top: '50%', width: 4, height: 90, borderRadius: 4, background: 'rgba(255,255,255,0.65)', transform: 'translateY(-50%)' }} />
+        </div>
+      );
+    }
+
+    function Framed({ kind, width, height, children, tab }) {
+      const useFrame = window.__useFrame;
+      if (!useFrame) return (
+        <div style={{ width, height, borderRadius: 22, overflow: 'hidden', boxShadow: '0 20px 50px -20px rgba(15,23,42,0.25)' }}>{children}</div>
+      );
+      if (kind === 'phone-p') return <IOSDevice width={width} height={height}>{children}</IOSDevice>;
+      if (kind === 'phone-l') return <MobileLandscapeBezel width={width} height={height}>{children}</MobileLandscapeBezel>;
+      if (kind === 'tablet')  return <AndroidDevice width={width} height={height}>{children}</AndroidDevice>;
+      if (kind === 'desktop') return (
+        <ChromeWindow width={width} height={height} tabs={[{ title: tab || 'Kid Hub · Parent' }]} activeIndex={0} url="kidhub.app/parent">{children}</ChromeWindow>
+      );
+      return children;
+    }
+
+    function fiveUp({ idPrefix, labelPrefix, tab, comps, tweaks }) {
+      const [PP, PL, TP, TL, D] = comps;
+      const insets = tweaks.showFrame ? { top: 52, bottom: 28 } : {};
+      return [
+        <DCArtboard key="pp" id={`${idPrefix}-pp`} label={`${labelPrefix} · Phone P · 390×844`} width={390} height={844}>
+          <Framed kind="phone-p" width={390} height={844} tab={tab}>
+            <Variant render={(a) => <PP tweaks={tweaks} onAction={a} insets={insets} />} />
+          </Framed>
+        </DCArtboard>,
+        <DCArtboard key="pl" id={`${idPrefix}-pl`} label={`${labelPrefix} · Phone L · 844×390`} width={844} height={390}>
+          <Framed kind="phone-l" width={844} height={390} tab={tab}>
+            <Variant render={(a) => <PL tweaks={tweaks} onAction={a} />} />
+          </Framed>
+        </DCArtboard>,
+        <DCArtboard key="tp" id={`${idPrefix}-tp`} label={`${labelPrefix} · Tablet P · 820×1180`} width={820} height={1180}>
+          <Framed kind="tablet" width={820} height={1180} tab={tab}>
+            <Variant render={(a) => <TP tweaks={tweaks} onAction={a} />} />
+          </Framed>
+        </DCArtboard>,
+        <DCArtboard key="tl" id={`${idPrefix}-tl`} label={`${labelPrefix} · Tablet L · 1280×800`} width={1280} height={800}>
+          <Framed kind="tablet" width={1280} height={800} tab={tab}>
+            <Variant render={(a) => <TL tweaks={tweaks} onAction={a} />} />
+          </Framed>
+        </DCArtboard>,
+        <DCArtboard key="d" id={`${idPrefix}-d`} label={`${labelPrefix} · Desktop · 1440×900`} width={1440} height={900}>
+          <Framed kind="desktop" width={1440} height={900} tab={tab}>
+            <Variant render={(a) => <D tweaks={tweaks} onAction={a} />} />
+          </Framed>
+        </DCArtboard>,
+      ];
+    }
+
+    function App() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      window.__useFrame = t.showFrame;
+
+      return (
+        <React.Fragment>
+          <DesignCanvas minScale={0.04} maxScale={2}>
+            <DCSection id="parent" title="/parent · Tổng quan (Re-design)"
+              subtitle="Overview dashboard: kid profile + stats + quick actions + manager previews + activity. Schedule/Grades open as sub-pages — use the 'View' tweak or click a manager card.">
+              {fiveUp({ idPrefix: 'par', labelPrefix: 'Parent', tab: 'Kid Hub · Parent',
+                comps: [ParentV2PhoneP, ParentV2PhoneL, ParentV2TabletP, ParentV2TabletL, ParentV2Desktop], tweaks: t })}
+            </DCSection>
+
+            <DCSection id="kid-access" title="/parent/kid-access · Quyền truy cập (Re-design)"
+              subtitle="Screen-time budget (today + weekly) · reward unlocks · feature toggles · difficulty caps · activity log.">
+              {fiveUp({ idPrefix: 'ka', labelPrefix: 'Kid Access', tab: 'Kid Hub · Quyền truy cập',
+                comps: [KidAccessV2PhoneP, KidAccessV2PhoneL, KidAccessV2TabletP, KidAccessV2TabletL, KidAccessV2Desktop], tweaks: t })}
+            </DCSection>
+          </DesignCanvas>
+
+          <TweaksPanel title="Tweaks">
+            <TweakSection label="/parent view">
+              <TweakSelect label="View" value={t.parentView}
+                onChange={(v) => setTweak('parentView', v)}
+                options={[
+                  { value: 'overview', label: 'Tổng quan (overview)' },
+                  { value: 'schedule', label: 'Lịch học (sub-page)' },
+                  { value: 'grades',   label: 'Điểm số (sub-page)' },
+                ]} />
+            </TweakSection>
+            <TweakSection label="Look">
+              <TweakToggle label="Show device frame" value={t.showFrame}
+                onChange={(v) => setTweak('showFrame', v)} />
+            </TweakSection>
+            <TweakSection label="Tips">
+              <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>
+                <strong>/parent</strong> opens on an overview. Click a manager card (or use the View tweak) to drill into Lịch học / Điểm số, then ← back.<br/><br/>
+                <strong>/kid-access</strong> — toggle features, set difficulty caps, adjust screen time. All fire action toasts.
+              </div>
+            </TweakSection>
+          </TweaksPanel>
+        </React.Fragment>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

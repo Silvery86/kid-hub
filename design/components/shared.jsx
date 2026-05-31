@@ -23,6 +23,15 @@ const TODAY_PERIODS = [
   { n: 5, sid: 'science',    start: '10:30', end: '11:10' },
 ];
 
+// Thursday — shown in "upcoming" section when today is done
+const TOMORROW_PERIODS = [
+  { n: 1, sid: 'vietnamese', start: '07:30', end: '08:10' },
+  { n: 2, sid: 'vietnamese', start: '08:10', end: '08:50' },
+  { n: 3, sid: 'math',       start: '09:00', end: '09:40' },
+  { n: 4, sid: 'english',    start: '09:40', end: '10:20' },
+  { n: 5, sid: 'art',        start: '10:30', end: '11:10' },
+];
+
 // Mock current state — driven by a "time-of-day" tweak. Returns the
 // active period plus a 0..1 progress within that period.
 function computeNow(timeMode) {
@@ -214,6 +223,7 @@ function DayRail({ periods, currentN, progress, onPick }) {
 Object.assign(window, {
   KH_SUBJECTS: SUBJECTS,
   KH_TODAY: TODAY_PERIODS,
+  KH_TOMORROW: TOMORROW_PERIODS,
   KH_HOMEWORK: HOMEWORK_ITEMS,
   KH_USER: USER_PROGRESS,
   khComputeNow: computeNow,

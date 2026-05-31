@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Kid Hub — English · Responsive</title>
+  <title>Kid Hub — Math · Responsive</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="../styles/styles.css" />
   <style>
     html, body { margin: 0; padding: 0; font-family: 'Nunito', system-ui, sans-serif; background: #f4f1ec; }
     body { color: #1e293b; }
@@ -24,26 +24,25 @@
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
-  <script type="text/babel" src="design-canvas.jsx"></script>
-  <script type="text/babel" src="android-frame.jsx"></script>
-  <script type="text/babel" src="ios-frame.jsx"></script>
-  <script type="text/babel" src="browser-window.jsx"></script>
-  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" src="../components/design-canvas.jsx"></script>
+  <script type="text/babel" src="../components/android-frame.jsx"></script>
+  <script type="text/babel" src="../components/ios-frame.jsx"></script>
+  <script type="text/babel" src="../components/browser-window.jsx"></script>
+  <script type="text/babel" src="../components/tweaks-panel.jsx"></script>
 
-  <script type="text/babel" src="shared.jsx"></script>
-  <script type="text/babel" src="dashboard-v2-responsive.jsx"></script>
-  <script type="text/babel" src="math.jsx"></script>
-  <script type="text/babel" src="english.jsx"></script>
+  <script type="text/babel" src="../components/shared.jsx"></script>
+  <script type="text/babel" src="../components/dashboard-v2-responsive.jsx"></script>
+  <script type="text/babel" src="../components/math.jsx"></script>
 
   <script type="text/babel" data-presets="env,react">
     const { useState, useEffect } = React;
 
     const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-      "accent": "#10b981",
-      "phase": "result",
+      "accent": "#3b82f6",
+      "phase": "idle",
       "showHomework": true,
       "showFrame": true,
-      "density": "roomy"
+      "density": "cozy"
     }/*EDITMODE-END*/;
 
     const ACCENTS = {
@@ -88,6 +87,7 @@
       );
     }
 
+    // Wraps an artboard in the right device frame for its viewport.
     function Framed({ kind, width, height, children, urlSuffix = '' }) {
       const useFrame = window.__useFrame;
       if (!useFrame) {
@@ -109,6 +109,8 @@
       return children;
     }
 
+    // Section builder — returns an ARRAY of 5 artboards (NOT a component,
+    // because DesignCanvas's dcFlatten only unwraps Fragments).
     function fiveUp({ idPrefix, labelPrefix, urlSuffix, comps, tweaks, useFrame }) {
       const [PP, PL, TP, TL, D] = comps;
       const insets = useFrame ? { top: 52, bottom: 28 } : {};
@@ -143,10 +145,10 @@
 
     function App() {
       const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
-      window.__useFrame = t.showFrame;
+      window.__useFrame = t.showFrame; // shared with <Framed>
 
       useEffect(() => {
-        const a = ACCENTS[t.accent] || ACCENTS['#10b981'];
+        const a = ACCENTS[t.accent] || ACCENTS['#3b82f6'];
         const r = document.documentElement.style;
         r.setProperty('--kh-accent', t.accent);
         r.setProperty('--kh-accent-hover', a.hover);
@@ -158,32 +160,28 @@
       return (
         <React.Fragment>
           <DesignCanvas minScale={0.03} maxScale={2}>
-            <DCSection id="hub" title="English Hub · /english"
-              subtitle="Hub screen with 3 mini-game cards (English green). Toggle the homework banner.">
-              {fiveUp({ idPrefix: 'hub', labelPrefix: 'Hub', urlSuffix: 'English',
-                tweaks: t, useFrame: t.showFrame,
-                comps: [EnglishHubPhoneP, EnglishHubPhoneL, EnglishHubTabletP, EnglishHubTabletL, EnglishHubDesktop] })}
+            <DCSection id="hub" title="Math Hub · /math"
+              subtitle="The hub screen with 3 mini-game cards. Toggle 'Hôm nay có bài tập' to add the homework banner.">
+              {fiveUp({ idPrefix: 'hub', labelPrefix: 'Hub', urlSuffix: 'Math', tweaks: t, useFrame: t.showFrame,
+                comps: [MathHubPhoneP, MathHubPhoneL, MathHubTabletP, MathHubTabletL, MathHubDesktop] })}
             </DCSection>
 
-            <DCSection id="alphabet" title="Alphabet Explorer · Nhận biết chữ"
-              subtitle="Upper ↔ lower letter recognition. Big single-letter prompt, three letter buttons.">
-              {fiveUp({ idPrefix: 'alphabet', labelPrefix: 'Alphabet', urlSuffix: 'English',
-                tweaks: t, useFrame: t.showFrame,
-                comps: [AlphaPhoneP, AlphaPhoneL, AlphaTabletP, AlphaTabletL, AlphaDesktop] })}
+            <DCSection id="counting" title="Đếm Sao · Counting Stars"
+              subtitle="Count emoji objects (1–10). Phase tweak switches between playing / result.">
+              {fiveUp({ idPrefix: 'counting', labelPrefix: 'Counting', urlSuffix: 'Math', tweaks: t, useFrame: t.showFrame,
+                comps: [CountingPhoneP, CountingPhoneL, CountingTabletP, CountingTabletL, CountingDesktop] })}
             </DCSection>
 
-            <DCSection id="vocabulary" title="Word Safari · Ghép hình & từ"
-              subtitle="Image-to-word vocabulary matching. Emoji prompt with English word answers.">
-              {fiveUp({ idPrefix: 'vocab', labelPrefix: 'Safari', urlSuffix: 'English',
-                tweaks: t, useFrame: t.showFrame,
-                comps: [SafariPhoneP, SafariPhoneL, SafariTabletP, SafariTabletL, SafariDesktop] })}
+            <DCSection id="ninja" title="Number Ninja · Cộng & trừ"
+              subtitle="Tap the correct sum/difference. Two big answer buttons.">
+              {fiveUp({ idPrefix: 'ninja', labelPrefix: 'Ninja', urlSuffix: 'Math', tweaks: t, useFrame: t.showFrame,
+                comps: [NinjaPhoneP, NinjaPhoneL, NinjaTabletP, NinjaTabletL, NinjaDesktop] })}
             </DCSection>
 
-            <DCSection id="phonics" title="Sound Hunt · Tìm âm chữ cái"
-              subtitle="Phonics — pick the emoji whose word starts with the target letter sound.">
-              {fiveUp({ idPrefix: 'phonics', labelPrefix: 'Sound', urlSuffix: 'English',
-                tweaks: t, useFrame: t.showFrame,
-                comps: [SoundPhoneP, SoundPhoneL, SoundTabletP, SoundTabletL, SoundDesktop] })}
+            <DCSection id="shapes" title="Khám Phá Hình · Shape Quest"
+              subtitle="Match shape name to shape (and vice versa). Inline SVGs.">
+              {fiveUp({ idPrefix: 'shapes', labelPrefix: 'Shapes', urlSuffix: 'Math', tweaks: t, useFrame: t.showFrame,
+                comps: [ShapesPhoneP, ShapesPhoneL, ShapesTabletP, ShapesTabletL, ShapesDesktop] })}
             </DCSection>
           </DesignCanvas>
 
@@ -200,9 +198,9 @@
                 onChange={(v) => setTweak('showHomework', v)} />
             </TweakSection>
             <TweakSection label="Look">
-              <TweakColor label="App accent" value={t.accent}
+              <TweakColor label="Hub accent" value={t.accent}
                 onChange={(v) => setTweak('accent', v)}
-                options={['#10b981', '#3b82f6', '#f43f5e', '#8b5cf6']} />
+                options={['#3b82f6', '#10b981', '#f43f5e', '#8b5cf6']} />
               <TweakRadio label="Density" value={t.density}
                 onChange={(v) => setTweak('density', v)}
                 options={[{ value: 'cozy', label: 'Cozy' }, { value: 'roomy', label: 'Roomy' }]} />
@@ -211,8 +209,8 @@
             </TweakSection>
             <TweakSection label="Tips">
               <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.45 }}>
-                4 sections × 5 viewports = 20 artboards. The 'Phase' toggle swaps Playing ↔ Result
-                for all 3 mini-games at once. Hub uses the English (emerald) brand color.
+                4 sections × 5 viewports = 20 artboards. Open any one fullscreen with ⤢.
+                The 'Phase' toggle swaps Playing ↔ Result for all 3 mini-games at once.
               </div>
             </TweakSection>
           </TweaksPanel>
