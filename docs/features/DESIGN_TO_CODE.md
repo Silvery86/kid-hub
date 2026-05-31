@@ -20,7 +20,8 @@ on `window`. The `styles/styles.css` mirrors `app/globals.css @theme {}` tokens.
 | `design/components/math.jsx` | `/math` — hub + 3 mini-games (hub/playing/result) | Phone-P, Phone-L, Tablet-P, Tablet-L, Desktop |
 | `design/components/english.jsx` | `/english` — hub + 3 mini-games (hub/playing/result) | Phone-P, Phone-L, Tablet-P, Tablet-L, Desktop |
 | `design/components/games.jsx` | `/games` — game selection hub | Phone-P, Phone-L, Tablet-P, Tablet-L, Desktop |
-| `design/components/parent.jsx` | `/parent/pin`, `/parent` dashboard | Phone-P, Phone-L, Tablet-P, Tablet-L, Desktop |
+| `design/components/extras.jsx` | `/unlock`, `/grades`, `/homework`, `/parent/kid-access` | Phone-P, Phone-L, Tablet-P, Tablet-L, Desktop |
+| `design/components/parent.jsx` | `/parent/pin`, `/parent` dashboard, `/parent/login` | Phone-P, Phone-L, Tablet-P, Tablet-L, Desktop |
 | `design/styles/styles.css` | Token reference (mirrors `app/globals.css`) | — |
 
 **HTML preview files** in `design/pages/` are viewer-only artefacts rendered
@@ -103,7 +104,7 @@ page.tsx (Server Component)
 | `/homework` | `app/(dashboard)/homework/page.tsx` | `extras.jsx` | Designed + Implemented |
 | `/math` | `app/(games)/math/page.tsx` | `math.jsx` | Designed + Implemented |
 | `/english` | `app/(games)/english/page.tsx` | `english.jsx` | Designed + Implemented |
-| `/games` | `app/(dashboard)/games/page.tsx` | `games.jsx`, `GAME_DESIGN.md` | Designed + Implemented |
+| `/games` | `app/(dashboard)/games/page.tsx` | `games.jsx`, `docs/design/GAME_DESIGN.md` | Designed + Implemented |
 | `/parent` | `app/(parent)/parent/page.tsx` | `parent.jsx`, `Kid Hub Parent - Responsive.html` | Designed + Implemented |
 | `/parent/pin` | `app/(parent)/parent/pin/page.tsx` | `parent.jsx` (PIN section) | Designed + Implemented |
 | `/parent/login` | `app/(parent)/parent/login/page.tsx` | `parent.jsx` (login section) | Designed + Implemented |

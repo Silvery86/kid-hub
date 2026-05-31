@@ -24,6 +24,7 @@ interface WeekGridProps {
   compact?: boolean
   mini?: boolean
   className?: string
+  dateByDay?: Partial<Record<DayOfWeek, string>>
 }
 
 export const WeekGrid = ({
@@ -35,6 +36,7 @@ export const WeekGrid = ({
   compact = false,
   mini = false,
   className = '',
+  dateByDay,
 }: WeekGridProps) => {
   const schoolDays = schoolDaysFromSchedule(days)
   const slotLabels = getPeriodSlotLabels(schoolDays)
@@ -51,6 +53,7 @@ export const WeekGrid = ({
         <div />
         {SCHOOL_DAYS.map((dow) => {
           const isToday = dow === todayDow
+          const date = dateByDay?.[dow]
           return (
             <div
               key={dow}
@@ -62,6 +65,7 @@ export const WeekGrid = ({
             >
               <div className="hidden sm:block">{DAY_LABELS[dow]}</div>
               <div className="sm:hidden">{dayShortLabel(dow)}</div>
+              {date ? <div className="mt-0.5 text-[10px] font-bold opacity-75">{date}</div> : null}
               {isToday ? <div className="mt-0.5 text-[10px] font-extrabold text-schedule">Hôm nay</div> : null}
             </div>
           )
@@ -128,19 +132,23 @@ export const WeekGrid = ({
       {SCHOOL_DAYS.map((dow) => {
         const daySchedule = schoolDays.find((d) => d.day === dow)
         const isToday = dow === todayDow
+        const date = dateByDay?.[dow]
         return (
           <div key={dow} className="contents">
             <div
-              className="flex items-center gap-2 rounded-xl px-2 text-[13px] font-black"
+              className="flex flex-col justify-center rounded-xl px-2 py-1"
               style={{
                 color: isToday ? 'var(--color-schedule-deep)' : '#1e293b',
                 background: isToday ? 'var(--color-schedule-soft)' : 'transparent',
               }}
             >
-              <span>{DAY_LABELS[dow]}</span>
-              {isToday ? (
-                <span className="text-[10px] font-extrabold text-schedule">● hôm nay</span>
-              ) : null}
+              <div className="flex items-center gap-2">
+                <span className="text-[13px] font-black">{DAY_LABELS[dow]}</span>
+                {isToday ? (
+                  <span className="text-[10px] font-extrabold text-schedule">● hôm nay</span>
+                ) : null}
+              </div>
+              {date ? <span className="text-[10px] font-bold opacity-60">{date}</span> : null}
             </div>
             {Array.from({ length: maxPeriods }, (_, i) => {
               const periodNumber = i + 1

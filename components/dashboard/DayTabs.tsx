@@ -12,14 +12,16 @@ interface DayTabsProps {
   todayDow: DayOfWeek | null
   onChange: (day: DayOfWeek) => void
   compact?: boolean
+  dateByDay?: Partial<Record<DayOfWeek, string>>
 }
 
-export const DayTabs = ({ activeDay, todayDow, onChange, compact = true }: DayTabsProps) => {
+export const DayTabs = ({ activeDay, todayDow, onChange, compact = true, dateByDay }: DayTabsProps) => {
   return (
     <div className="flex gap-1 rounded-2xl bg-white p-1 shadow-sm">
       {SCHOOL_DAYS.map((dow) => {
         const active = dow === activeDay
         const isToday = dow === todayDow
+        const date = dateByDay?.[dow]
         return (
           <button
             key={dow}
@@ -27,7 +29,7 @@ export const DayTabs = ({ activeDay, todayDow, onChange, compact = true }: DayTa
             onClick={() => onChange(dow)}
             className={cn(
               'relative flex-1 rounded-xl border-0 font-black transition-colors',
-              compact ? 'px-1 py-1.5 text-[11px]' : 'px-2 py-2.5 text-[13px]',
+              compact ? 'px-1 py-1 text-[11px]' : 'px-2 py-2.5 text-[13px]',
               active
                 ? 'bg-schedule text-white shadow-[0_4px_10px_-3px_color-mix(in_oklab,var(--color-schedule)_50%,transparent)]'
                 : isToday
@@ -35,7 +37,12 @@ export const DayTabs = ({ activeDay, todayDow, onChange, compact = true }: DayTa
                   : 'text-slate-600'
             )}
           >
-            {compact ? dayShortLabel(dow) : DAY_LABELS[dow]}
+            <div>{compact ? dayShortLabel(dow) : DAY_LABELS[dow]}</div>
+            {date ? (
+              <div className={cn('text-[9px] font-bold leading-tight', active ? 'opacity-85' : 'opacity-50')}>
+                {date}
+              </div>
+            ) : null}
             {isToday && !active ? (
               <span
                 className="absolute bottom-0.5 left-1/2 size-1 -translate-x-1/2 rounded-full bg-schedule"

@@ -6,18 +6,19 @@ import { useMemo, useState, useEffect } from 'react'
 import { useSchedule } from '@/hooks/useSchedule'
 import { useUserProgress } from '@/hooks/useUserProgress'
 import { getSubjectById } from '@/lib/data/subjects'
-import { formatDayTimeRange, schoolPeriodsOnly } from '@/lib/schedule-display'
+import { formatDayTimeRange, getTodayDDMM, schoolPeriodsOnly } from '@/lib/schedule-display'
 import { DayRail } from '@/components/dashboard/DayRail'
 import { BadgeModal } from '@/components/dashboard/BadgeModal'
 import { GameEntryCard } from '@/components/games/GameEntryCard'
-import type { DailySchedule, WeeklySchedule, HomeworkItem } from '@/types'
+import type { DailySchedule, WeeklySchedule, HomeworkItem, ClassPeriod } from '@/types'
 
 interface DashboardViewProps {
   initialSchedule: DailySchedule[]
   initialHomework: HomeworkItem[]
+  eveningBlocks?: ClassPeriod[]
 }
 
-export const DashboardView = ({ initialSchedule, initialHomework }: DashboardViewProps) => {
+export const DashboardView = ({ initialSchedule, initialHomework, eveningBlocks = [] }: DashboardViewProps) => {
   const weeklySchedule: WeeklySchedule = { weekStartDate: '', days: initialSchedule }
   const {
     todaySchedule,
@@ -55,8 +56,8 @@ export const DashboardView = ({ initialSchedule, initialHomework }: DashboardVie
             <h1 className="text-3xl font-extrabold tracking-tight text-text-primary" suppressHydrationWarning>
               Chào Khôi!
             </h1>
-            <p className="mt-1 text-sm font-semibold text-text-secondary portrait:text-base">
-              Thứ Tư · {currentPeriod?.startTime ?? '09:15'} · Tuần 14
+            <p className="mt-1 text-sm font-semibold text-text-secondary portrait:text-base" suppressHydrationWarning>
+              Thứ Tư{mounted ? ` ${getTodayDDMM()}` : ''} · {currentPeriod?.startTime ?? '09:15'} · Tuần 14
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -156,7 +157,7 @@ export const DashboardView = ({ initialSchedule, initialHomework }: DashboardVie
               <span className="text-xs font-bold text-text-muted">
                 {schoolPeriods.length > 0
                   ? `${schoolPeriods.length} tiết · ${formatDayTimeRange(periods)}`
-                  : 'Không có tiết học'}
+                  : eveningBlocks.length > 0 ? `${eveningBlocks.length} buổi tối` : 'Không có tiết học'}
               </span>
             </div>
             {schoolPeriods.length > 0 ? (
@@ -165,8 +166,27 @@ export const DashboardView = ({ initialSchedule, initialHomework }: DashboardVie
                 currentPeriodNumber={nowPeriodNumber}
                 progress={periodProgress}
               />
-            ) : (
+            ) : eveningBlocks.length === 0 ? (
               <p className="py-4 text-center text-sm font-bold text-text-muted">Hôm nay không có lịch học.</p>
+            ) : null}
+            {eveningBlocks.length > 0 && (
+              <div className={schoolPeriods.length > 0 ? 'mt-3 border-t border-slate-100 pt-3' : ''}>
+                <p className="mb-2 text-[10px] font-extrabold tracking-widest text-text-muted uppercase">
+                  Học thêm buổi tối
+                </p>
+                <div className="flex flex-col gap-2">
+                  {eveningBlocks.map((blk, i) => {
+                    const subj = getSubjectById(blk.subjectId)
+                    return (
+                      <div key={blk.id ?? i} className="flex items-center gap-2.5 rounded-xl bg-slate-50 px-3 py-2">
+                        <span className="text-base leading-none">{subj?.icon ?? '📚'}</span>
+                        <span className="flex-1 text-sm font-bold text-text-primary">{subj?.name ?? blk.subjectId}</span>
+                        <span className="text-xs font-semibold tabular-nums text-text-muted">{blk.startTime}–{blk.endTime}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
             )}
           </section>
 

@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Parent Dashboard — Feature Review (Updated 2026-05-30)</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f1f5f9; color: #0f172a; line-height: 1.5; }
+
+  /* ── Layout ── */
+  .page { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { font-size: 28px; font-weight: 900; color: #0f172a; }
+  h2 { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 14px; }
+  h3 { font-size: 14px; font-weight: 800; color: #334155; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .06em; }
+  p  { font-size: 14px; color: #475569; line-height: 1.6; }
+
+  /* ── Section wrapper ── */
+  .section { background: white; border-radius: 20px; padding: 28px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.07); }
+
+  /* ── Status badges ── */
+  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 99px; letter-spacing: .04em; }
+  .badge-done    { background: #dcfce7; color: #166534; }
+  .badge-static  { background: #fef9c3; color: #854d0e; }
+  .badge-missing { background: #fee2e2; color: #991b1b; }
+  .badge-new     { background: #dbeafe; color: #1e40af; }
+  .badge-partial { background: #fce7f3; color: #9d174d; }
+
+  /* ── Route header row ── */
+  .route-row { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+  .route-code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; font-weight: 700; color: #3b82f6; background: #eff6ff; padding: 2px 8px; border-radius: 6px; }
+
+  /* ── Feature grid ── */
+  .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-top: 14px; }
+  .feature-card { border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 16px 18px; background: #fafafa; }
+  .feature-card .title { font-size: 14px; font-weight: 800; color: #0f172a; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .feature-card .desc  { font-size: 13px; color: #64748b; line-height: 1.5; }
+  .feature-card .note  { margin-top: 8px; font-size: 12px; font-weight: 700; color: #94a3b8; }
+  .feature-card.proposed { background: #f0f9ff; border-color: #bae6fd; }
+  .feature-card.warn     { background: #fffbeb; border-color: #fde68a; }
+  .feature-card.danger   { background: #fff1f2; border-color: #fecdd3; }
+
+  /* ── Gap table ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+  th { text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: #94a3b8; border-bottom: 2px solid #f1f5f9; }
+  td { padding: 11px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; background: #f1f5f9; padding: 2px 6px; border-radius: 5px; }
+
+  /* ── Proposal panels ── */
+  .proposal { border-left: 4px solid #3b82f6; padding-left: 18px; margin-bottom: 20px; }
+  .proposal h3 { font-size: 15px; font-weight: 800; color: #1e40af; margin-bottom: 4px; text-transform: none; letter-spacing: normal; }
+  .proposal ul { padding-left: 18px; font-size: 13px; color: #475569; margin-top: 6px; }
+  .proposal ul li { margin-bottom: 4px; }
+  .proposal .effort { margin-top: 8px; font-size: 12px; font-weight: 700; }
+  .effort-low    { color: #16a34a; }
+  .effort-medium { color: #d97706; }
+  .effort-high   { color: #dc2626; }
+
+  /* ── Wireframe boxes ── */
+  .wireframe { background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 14px; padding: 20px; margin-top: 12px; font-size: 12px; font-family: 'SF Mono', 'Fira Code', monospace; color: #64748b; white-space: pre; line-height: 1.7; overflow-x: auto; }
+
+  /* ── Divider ── */
+  .divider { border: none; border-top: 1.5px solid #f1f5f9; margin: 22px 0; }
+
+  /* ── TOC ── */
+  .toc { background: #f8fafc; border-radius: 14px; padding: 18px 22px; margin-bottom: 28px; }
+  .toc h3 { font-size: 12px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
+  .toc a  { display: block; font-size: 13px; font-weight: 700; color: #3b82f6; text-decoration: none; padding: 2px 0; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* ── Header bar ── */
+  .header { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; border-radius: 20px; padding: 28px 32px; margin-bottom: 28px; }
+  .header h1 { color: white; font-size: 26px; }
+  .header .sub { margin-top: 6px; opacity: .8; font-size: 14px; }
+  .header .meta { margin-top: 16px; display: flex; gap: 20px; flex-wrap: wrap; }
+  .header .meta-item { background: rgba(255,255,255,.15); border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 700; }
+
+  /* ── Priority tag ── */
+  .pri { display: inline-block; font-size: 10px; font-weight: 900; padding: 2px 8px; border-radius: 99px; letter-spacing: .06em; vertical-align: middle; margin-left: 6px; }
+  .pri-p0 { background: #fee2e2; color: #991b1b; }
+  .pri-p1 { background: #fce7f3; color: #9d174d; }
+  .pri-p2 { background: #dbeafe; color: #1e40af; }
+  .pri-p3 { background: #f1f5f9; color: #64748b; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>🧑‍💻 Parent Dashboard — Feature Review</h1>
+    <div class="sub">Audit of current state · gap analysis · proposed additions for parent monitoring &amp; control</div>
+    <div class="meta">
+      <div class="meta-item">📅 2026-05-30</div>
+      <div class="meta-item">Branch: main</div>
+      <div class="meta-item">Routes reviewed: 4</div>
+      <div class="meta-item">Gaps found: 6 · Implemented: 6 · Pending: 0</div>
+    </div>
+    <div style="margin-top:16px;background:rgba(255,255,255,.15);border-radius:12px;padding:12px 16px;font-size:13px;font-weight:700;">
+      ✅ G1, G6 implemented 2026-05-30 — TodayOverviewPanel added to /parent<br>
+      ✅ G2 implemented 2026-05-30 — KidProgressPanel replaces static ActivitySidebar in /parent/kid-access<br>
+      ✅ G5 implemented 2026-05-30 — kidAccessSettings persisted to DB (migration: 20260530131215_add_kid_access_settings)<br>
+      ✅ G3 implemented 2026-05-31 — ScreenTimeLog model + heartbeat tracker + live card with +/− limit controls<br>
+      ✅ G4 implemented 2026-05-31 — ActivityEvent model + emission in math/english/homework + RecentActivityPanel
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>Contents</h3>
+    <a href="#current-state">1. Current State — What's Already Built</a>
+    <a href="#gap-analysis">2. Gap Analysis — What's Missing</a>
+    <a href="#proposals">3. Proposed Additions</a>
+    <a href="#server-audit">4. Server Actions Audit</a>
+    <a href="#priority-table">5. Priority &amp; Effort Table</a>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- 1. CURRENT STATE -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="section" id="current-state">
+    <h2>1. Current State — What's Already Built</h2>
+    <p>The parent area covers 4 routes. Below is what each one currently does and its fidelity to the design.</p>
+
+    <hr class="divider" />
+
+    <!-- /parent -->
+    <div class="route-row">
+      <span class="route-code">/parent</span>
+      <span class="badge badge-done">✓ Implemented</span>
+      <span style="font-size:13px;color:#64748b">app/(parent)/parent/page.tsx + ParentDashboardView.tsx</span>
+    </div>
+    <p style="margin-bottom:12px">Two-panel dashboard (or tabbed on phone). Data fetched via <code>getScheduleAction</code> and <code>getReportCardAction</code> as Server Component props.</p>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="title">📅 Schedule Manager</div>
+        <div class="desc">Full CRUD on school periods and extra classes. Add/edit/delete periods, cancel a specific occurrence with override.</div>
+        <div class="note">Actions: createPeriod · updatePeriod · deletePeriod · createExtraClass · cancelExtraClass</div>
+      </div>
+      <div class="feature-card">
+        <div class="title">🌟 Grades Manager</div>
+        <div class="desc">Parent edits each subject's score for S1/S2. Badge tier (excellent/good/needs-practice) auto-calculated from score.</div>
+        <div class="note">Action: upsertGradeAction (parent-auth guarded)</div>
+      </div>
+      <div class="feature-card warn">
+        <div class="title">📝 Homework Add</div>
+        <div class="badge badge-partial" style="margin-bottom:6px">Partial</div>
+        <div class="desc">Parent can add/delete daily homework items only through the Schedule Manager row. There is NO read-only parent view of homework status or completion rate.</div>
+        <div class="note">Actions exist but only used kid-side for marking done</div>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- /parent/kid-access -->
+    <div class="route-row">
+      <span class="route-code">/parent/kid-access</span>
+      <span class="badge badge-partial">⚠ Partial — static data</span>
+      <span style="font-size:13px;color:#64748b">components/parent/kid-access/KidAccessView.tsx</span>
+    </div>
+    <p style="margin-bottom:12px">Controls what the kid can access. Works for feature toggles. Screen time and recent activity are entirely hardcoded.</p>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="title">🛡️ Feature Toggles</div>
+        <div class="desc">Parent can turn on/off individual features (games, views, settings) per group. Stored in localStorage via useLocalStorage.</div>
+        <div class="note">Note: persisted in browser storage only — not synced to DB</div>
+      </div>
+      <div class="feature-card">
+        <div class="title">🔑 Kid Pattern Setup</div>
+        <div class="desc">Parent can set the kid's unlock pattern. Backed by server action. Works correctly.</div>
+        <div class="note">Stored server-side correctly</div>
+      </div>
+      <div class="feature-card warn">
+        <div class="title">⏱️ Screen Time Card</div>
+        <div class="badge badge-static" style="margin-bottom:6px">HARDCODED</div>
+        <div class="desc">Shows "47 / 120 min" always. Hardcoded in KidAccessView.tsx lines 24-25. No DB model for screen time exists.</div>
+        <div class="note">const used = 47; const total = 120;</div>
+      </div>
+      <div class="feature-card warn">
+        <div class="title">📋 Recent Activity Feed</div>
+        <div class="badge badge-static" style="margin-bottom:6px">HARDCODED</div>
+        <div class="desc">3 static items. No activity logging exists in the DB schema or repository layer. Would need a new model.</div>
+        <div class="note">const RECENT_ACTIVITY = [{...},{...},{...}]</div>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- /parent/pin and /parent/login -->
+    <div style="display:flex;gap:24px;flex-wrap:wrap">
+      <div style="flex:1;min-width:240px">
+        <div class="route-row">
+          <span class="route-code">/parent/pin</span>
+          <span class="badge badge-done">✓ Implemented</span>
+        </div>
+        <p>PIN entry with lockout logic, shake animation, session cookie set on success. Fully matches design.</p>
+      </div>
+      <div style="flex:1;min-width:240px">
+        <div class="route-row">
+          <span class="route-code">/parent/login</span>
+          <span class="badge badge-done">✓ Implemented</span>
+        </div>
+        <p>Multi-step login (email → welcome → create PIN → success). Matches design file login section.</p>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- 2. GAP ANALYSIS -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="section" id="gap-analysis">
+    <h2>2. Gap Analysis — What a Parent Can't Do Yet</h2>
+    <p>These are control and monitoring capabilities a parent reasonably expects but that are currently absent or broken.</p>
+
+    <table style="margin-top:16px">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Capability</th>
+          <th>Status</th>
+          <th>Root Cause</th>
+          <th>Priority</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="background:#f0fdf4">
+          <td><strong>G1</strong></td>
+          <td><strong>See today's homework &amp; completion status</strong><br><span style="color:#64748b;font-size:12px">Parent assigned homework but can't see if kid did it without leaving the parent area</span></td>
+          <td><span class="badge badge-done">✅ Implemented</span></td>
+          <td><code>TodayOverviewPanel</code> added to <code>/parent</code>. Shows school periods + evening blocks + homework checklist with ✅/⬜ per item. Combined with G6 into a "🏠 Hôm nay" panel.</td>
+          <td><span class="pri pri-p0">P0</span></td>
+        </tr>
+        <tr style="background:#f0fdf4">
+          <td><strong>G2</strong></td>
+          <td><strong>View kid's game progress &amp; stats</strong><br><span style="color:#64748b;font-size:12px">Points, streak, best scores, badges earned</span></td>
+          <td><span class="badge badge-done">✅ Implemented</span></td>
+          <td><code>getKidProgressAction</code> in <code>server/actions/kid-progress.actions.ts</code>. <code>KidProgressPanel</code> replaces static <code>ActivitySidebar</code> in <code>/parent/kid-access</code>. Shows points, streak, math/english best stars, badges.</td>
+          <td><span class="pri pri-p1">P1</span></td>
+        </tr>
+        <tr style="background:#f0fdf4">
+          <td><strong>G3</strong></td>
+          <td><strong>Real screen time tracking</strong><br><span style="color:#64748b;font-size:12px">How long kid used the app today vs. daily limit</span></td>
+          <td><span class="badge badge-done">✅ Implemented</span></td>
+          <td>Migration <code>20260531020415_add_screen_time_and_activity</code>. <code>ScreenTimeTracker</code> (client) heartbeats every 60s via <code>addScreenTimeAction</code> in both dashboard + games layouts. <code>ScreenTimeCard</code> shows live data with +/− 30 min limit buttons.</td>
+          <td><span class="pri pri-p2">P2</span></td>
+        </tr>
+        <tr style="background:#f0fdf4">
+          <td><strong>G4</strong></td>
+          <td><strong>Real recent activity feed</strong><br><span style="color:#64748b;font-size:12px">Last N actions kid took: games played, homework done</span></td>
+          <td><span class="badge badge-done">✅ Implemented</span></td>
+          <td><code>ActivityEvent</code> model. Events emitted in <code>saveMathProgressAction</code>, <code>saveEnglishProgressAction</code>, and <code>toggleHomeworkDoneAction</code>. <code>RecentActivityPanel</code> shows last 10 events with timestamps in <code>/parent/kid-access</code> sidebar.</td>
+          <td><span class="pri pri-p2">P2</span></td>
+        </tr>
+        <tr style="background:#f0fdf4">
+          <td><strong>G5</strong></td>
+          <td><strong>Feature toggles persisted server-side</strong><br><span style="color:#64748b;font-size:12px">Previously only saved to browser localStorage — cleared on device switch</span></td>
+          <td><span class="badge badge-done">✅ Implemented</span></td>
+          <td>Migration <code>20260530131215_add_kid_access_settings</code> adds <code>users.kid_access_settings</code> JSON column. <code>saveKidAccessSettingsAction</code> called on every toggle. <code>KidAccessView</code> receives <code>initialToggles</code> from server.</td>
+          <td><span class="pri pri-p1">P1</span></td>
+        </tr>
+        <tr style="background:#f0fdf4">
+          <td><strong>G6</strong></td>
+          <td><strong>Quick "Today at a glance" for parent</strong><br><span style="color:#64748b;font-size:12px">One-screen summary: today's classes + homework to do + kid stats</span></td>
+          <td><span class="badge badge-done">✅ Implemented</span></td>
+          <td><code>TodayOverviewPanel</code> is now the default landing panel. Phone: new "🏠 Hôm nay" tab (first, default). Tablet: 3-column layout — Hôm nay | Thời khóa biểu | Điểm số.</td>
+          <td><span class="pri pri-p1">P1</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- 3. PROPOSED ADDITIONS -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="section" id="proposals">
+    <h2>3. Proposed Additions</h2>
+
+    <!-- G1 — Homework Status Tab -->
+    <div class="proposal">
+      <h3>G1 — Homework Status Panel (new tab in /parent) <span class="pri pri-p0">P0</span></h3>
+      <p>Add a third tab "📝 Bài tập" alongside Lịch học and Điểm số. The tab shows today's homework list and which ones the kid has checked off.</p>
+      <ul>
+        <li>Re-use <code>getTodayHomeworkAction</code> in <code>ParentDashboardPage</code> (already no-auth, safe to call server-side).</li>
+        <li>Display: subject pill + homework label + ✅/⬜ done indicator + timestamp when completed.</li>
+        <li>Parent can also <strong>delete</strong> a homework item from this tab via <code>deleteDailyHomeworkAction</code>.</li>
+        <li>Show completion summary badge: "3/5 hoàn thành".</li>
+      </ul>
+      <div class="wireframe">┌─────────────────────────────────────────────┐
+│  📝 Bài tập hôm nay          3/5 hoàn thành │
+├─────────────────────────────────────────────┤
+│  ✅  🔢 Toán  Bài 12 — Phép cộng   09:14    │
+│  ✅  📖 TV    Tập viết chữ M        09:30    │
+│  ⬜  🌍 Anh   Học 5 từ mới                  │
+│  ⬜  🔬 KH    Vẽ vòng đời bướm              │
+│  ⬜  🎨 MT    Tô màu bức tranh              │
+│                             [+ Thêm bài tập] │
+└─────────────────────────────────────────────┘</div>
+      <div class="effort effort-low">⬤ Low effort — no new server action needed; reuse existing data + addDailyHomeworkAction form already in ScheduleManager</div>
+    </div>
+
+    <!-- G2 — Kid Stats Panel -->
+    <div class="proposal">
+      <h3>G2 — Kid Progress &amp; Stats Panel (new section in /parent/kid-access) <span class="pri pri-p1">P1</span></h3>
+      <p>Replace the hardcoded recent activity sidebar with a real <strong>Kid Stats Card</strong> that shows points, streak, and game best scores pulled from <code>UserProgress</code>.</p>
+      <ul>
+        <li>New read action needed: <code>getKidProgressAction</code> in <code>server/actions/progress.actions.ts</code> (parent-auth guarded, reads <code>UserProgress</code> + <code>GameBestScore[]</code>).</li>
+        <li>New read in progress.repository: <code>getFullProgress(userId)</code> — joins <code>UserProgress</code> with <code>GameBestScore</code> and <code>EarnedBadge</code>.</li>
+        <li>Display: total points · current streak · math/english best star scores · badges earned.</li>
+        <li>The existing <code>ActivitySidebar</code> in <code>KidAccessView.tsx</code> can be replaced with this component.</li>
+      </ul>
+      <div class="wireframe">┌──────────────────────────────┐
+│  🌟 Tiến độ của Khôi         │
+├──────────────────────────────┤
+│  🏅 Điểm tổng:  340 pts      │
+│  🔥 Chuỗi ngày: 5 ngày       │
+├──────────────────────────────┤
+│  🔢 Toán  ★★★ Lv3 cấp độ    │
+│  🔤 Anh   ★★☆ Lv2 cấp độ    │
+├──────────────────────────────┤
+│  Huy hiệu đã nhận: 3         │
+│  🌟  🧮  📚                  │
+└──────────────────────────────┘</div>
+      <div class="effort effort-medium">⬤ Medium effort — 1 new repository read + 1 new server action + 1 new component</div>
+    </div>
+
+    <!-- G3 — Screen Time -->
+    <div class="proposal">
+      <h3>G3 — Real Screen Time Tracking <span class="pri pri-p2">P2</span></h3>
+      <p>Track actual time spent in the kid session and compare against a parent-configurable daily limit.</p>
+      <ul>
+        <li>New Prisma model: <code>ScreenTimeLog { id, userId, date, startedAt, endedAt, durationSecs }</code>.</li>
+        <li>Kid layout (<code>app/(dashboard)/layout.tsx</code>) starts a session on mount and closes it on unload via Server Action.</li>
+        <li>New parent action: <code>getScreenTimeAction(date)</code> — sums durations for userId+date.</li>
+        <li>New parent action: <code>setScreenTimeLimitAction(limitMinutes)</code> — stores on <code>User.screenTimeLimitMins</code> (new field).</li>
+        <li>Parent <code>/parent/kid-access</code> screen time card becomes live: shows real used/limit with an edit button for the limit.</li>
+      </ul>
+      <div class="effort effort-high">⬤ High effort — DB migration required; session tracking needs careful edge-case handling (browser close, background)</div>
+    </div>
+
+    <!-- G4 — Activity Log -->
+    <div class="proposal">
+      <h3>G4 — Real Activity Feed <span class="pri pri-p2">P2</span></h3>
+      <p>Log key kid-side events (game finished, page visited, homework marked) and surface the last 10 in <code>/parent/kid-access</code>.</p>
+      <ul>
+        <li>New Prisma model: <code>ActivityEvent { id, userId, type, label, createdAt }</code>. Types: <code>GAME_COMPLETE | PAGE_VIEW | HOMEWORK_DONE</code>.</li>
+        <li>Emit events at the end of game sessions (already have <code>saveMathProgressAction</code> — add a log call there).</li>
+        <li>New parent action: <code>getRecentActivityAction(limit)</code>.</li>
+        <li>Replace static <code>RECENT_ACTIVITY</code> array in <code>KidAccessView.tsx</code> with server-fetched data.</li>
+      </ul>
+      <div class="effort effort-high">⬤ High effort — DB migration + event emission in multiple existing actions</div>
+    </div>
+
+    <!-- G5 — Feature toggles server-side -->
+    <div class="proposal">
+      <h3>G5 — Persist Feature Toggles to DB <span class="pri pri-p1">P1</span></h3>
+      <p>Currently, kid access toggles only live in <code>localStorage</code>. On a new device or after clearing browser data, all restrictions reset to default (everything ON).</p>
+      <ul>
+        <li>New JSON column on <code>User</code> model: <code>kidAccessSettings Json?</code>.</li>
+        <li>New actions: <code>getKidAccessSettingsAction</code> + <code>saveKidAccessSettingsAction(settings)</code> (parent-auth guarded).</li>
+        <li><code>KidAccessView</code> migrates from <code>useLocalStorage</code> to a new hook <code>useKidAccessSettings</code> that calls these actions.</li>
+        <li>Kid-facing middleware/layout reads the DB value to enforce toggle restrictions (currently toggles are parent-UI-only and not actually enforced).</li>
+      </ul>
+      <div class="effort effort-medium">⬤ Medium effort — DB migration + 2 actions + hook refactor + enforcement layer</div>
+    </div>
+
+    <!-- G6 — Today at a Glance -->
+    <div class="proposal">
+      <h3>G6 — "Today at a Glance" summary view in /parent <span class="pri pri-p1">P1</span></h3>
+      <p>Add a new default landing panel (or a new tab "🏠 Hôm nay") that gives parent a read-only summary instead of dropping them into the schedule editor.</p>
+      <ul>
+        <li>Reuse <code>getTodayViewAction</code> (already returns school periods + evening blocks + homework for today).</li>
+        <li>Combine with G2 kid stats — total points + streak at the top.</li>
+        <li>Three columns on tablet: Today's Classes · Homework Status · Kid Stats.</li>
+        <li>Navigation: "Hôm nay" becomes the default tab; "Lịch học" and "Điểm số" move to an "Chỉnh sửa" sub-section.</li>
+      </ul>
+      <div class="wireframe">╔═══════════════════════════════════════════════════════════════╗
+║  👋 Xin chào!  Thứ Sáu, 30/05/2026              🔥 5 ngày   ║
+╠══════════════╦════════════════════╦═══════════════════════════╣
+║  📅 Lịch hôm ║  📝 Bài tập        ║  🌟 Tiến độ Khôi         ║
+║  ───────     ║  ───────           ║  ─────────                ║
+║  07:00 Toán  ║  ✅ Bài 12 Toán   ║  🏅 340 điểm             ║
+║  08:00 Tiếng ║  ⬜ Tập viết       ║  🔢 Toán ★★★             ║
+║  09:30 Khoa  ║  ⬜ Từ mới Anh    ║  🔤 Anh  ★★☆             ║
+║              ║                    ║                            ║
+║  + 3 tiết TV ║  Hoàn thành: 1/3  ║  [Xem chi tiết →]        ║
+╚══════════════╩════════════════════╩═══════════════════════════╝</div>
+      <div class="effort effort-low">⬤ Low effort (for read-only) — all data already available via existing actions; only new UI components needed</div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- 4. SERVER ACTIONS AUDIT -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="section" id="server-audit">
+    <h2>4. Server Actions Audit</h2>
+    <p>Which actions exist, which are parent-auth guarded, and what's missing.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Action File</th>
+          <th>Action</th>
+          <th>Auth</th>
+          <th>Used in Parent Dashboard?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>schedule.actions</code></td>
+          <td><code>getScheduleAction</code></td>
+          <td>None (read)</td>
+          <td>✅ ParentDashboardPage</td>
+        </tr>
+        <tr>
+          <td><code>schedule.actions</code></td>
+          <td><code>getTodayViewAction</code></td>
+          <td>None (read)</td>
+          <td>❌ Not used in parent — only kid dashboard uses this. Could power G6 "Today" tab.</td>
+        </tr>
+        <tr>
+          <td><code>schedule.actions</code></td>
+          <td><code>createPeriod · updatePeriod · deletePeriod</code></td>
+          <td>✅ Parent session</td>
+          <td>✅ ScheduleManager</td>
+        </tr>
+        <tr>
+          <td><code>schedule.actions</code></td>
+          <td><code>createExtraClass · cancelExtraClass · restoreExtraClass</code></td>
+          <td>✅ Parent session</td>
+          <td>✅ ScheduleManager</td>
+        </tr>
+        <tr>
+          <td><code>schedule.actions</code></td>
+          <td><code>addDailyHomeworkAction</code></td>
+          <td>✅ Parent session</td>
+          <td>✅ ScheduleManager (buried deep)</td>
+        </tr>
+        <tr>
+          <td><code>schedule.actions</code></td>
+          <td><code>deleteDailyHomeworkAction</code></td>
+          <td>✅ Parent session</td>
+          <td>✅ ScheduleManager (buried deep)</td>
+        </tr>
+        <tr>
+          <td><code>schedule.actions</code></td>
+          <td><code>toggleHomeworkDoneAction</code></td>
+          <td>None (kid-facing)</td>
+          <td>❌ Not in parent. Read status visible only to kid.</td>
+        </tr>
+        <tr>
+          <td><code>homework.actions</code></td>
+          <td><code>getTodayHomeworkAction</code></td>
+          <td>None (read)</td>
+          <td>❌ Kid-facing only. Could be used for G1 Homework Status.</td>
+        </tr>
+        <tr>
+          <td><code>grades.actions</code></td>
+          <td><code>getReportCardAction</code></td>
+          <td>None (read)</td>
+          <td>✅ ParentDashboardPage</td>
+        </tr>
+        <tr>
+          <td><code>grades.actions</code></td>
+          <td><code>upsertGradeAction</code></td>
+          <td>✅ Parent session</td>
+          <td>✅ GradesManager</td>
+        </tr>
+        <tr>
+          <td><code>rewards.actions</code></td>
+          <td><code>awardPointsAction</code></td>
+          <td>None</td>
+          <td>❌ Kid-facing only (called on game end). No parent read.</td>
+        </tr>
+        <tr>
+          <td style="color:#ef4444">⚠ MISSING</td>
+          <td><code>getKidProgressAction</code></td>
+          <td>Needs parent session</td>
+          <td>Needed for G2: read UserProgress + GameBestScore + badges</td>
+        </tr>
+        <tr>
+          <td style="color:#ef4444">⚠ MISSING</td>
+          <td><code>getKidAccessSettingsAction</code></td>
+          <td>Needs parent session</td>
+          <td>Needed for G5: read kid access toggles from DB</td>
+        </tr>
+        <tr>
+          <td style="color:#ef4444">⚠ MISSING</td>
+          <td><code>saveKidAccessSettingsAction</code></td>
+          <td>Needs parent session</td>
+          <td>Needed for G5: persist toggle state</td>
+        </tr>
+        <tr>
+          <td style="color:#ef4444">⚠ MISSING (G3)</td>
+          <td><code>getScreenTimeAction</code></td>
+          <td>Needs parent session</td>
+          <td>Needed for G3: real screen time — requires new DB model first</td>
+        </tr>
+        <tr>
+          <td style="color:#ef4444">⚠ MISSING (G4)</td>
+          <td><code>getRecentActivityAction</code></td>
+          <td>Needs parent session</td>
+          <td>Needed for G4: real activity feed — requires new DB model first</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:16px;padding:14px 18px;background:#fffbeb;border-radius:12px;border:1.5px solid #fde68a">
+      <strong style="font-size:13px;color:#92400e">⚠ Auth Guard Inconsistency</strong>
+      <p style="font-size:13px;color:#78350f;margin-top:4px">
+        Both <code>grades.actions.ts</code> and <code>schedule.actions.ts</code> define their own local <code>requireParentSession()</code> instead of
+        importing from <code>server/lib/auth-guard.ts</code>. This violates the CLAUDE.md rule
+        <em>"Copy-paste requireParentSession — import it from server/lib/auth-guard.ts"</em>.
+        Should be fixed as a separate housekeeping task.
+      </p>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- 5. PRIORITY TABLE -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="section" id="priority-table">
+    <h2>5. Priority &amp; Effort Summary</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Gap</th>
+          <th>Feature</th>
+          <th>Priority</th>
+          <th>Effort</th>
+          <th>DB Migration?</th>
+          <th>New Actions?</th>
+          <th>Design Change?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="background:#f0fdf4">
+          <td><strong>G1</strong></td>
+          <td>Homework Status — "🏠 Hôm nay" tab in /parent</td>
+          <td><span class="pri pri-p0">P0</span></td>
+          <td style="color:#16a34a;font-weight:700">Low</td>
+          <td>No</td>
+          <td>Reused getTodayViewAction</td>
+          <td><span class="badge badge-done">✅ Done 2026-05-30</span> TodayOverviewPanel + new tab</td>
+        </tr>
+        <tr style="background:#f0fdf4">
+          <td><strong>G2</strong></td>
+          <td>Kid Progress Stats in /parent/kid-access</td>
+          <td><span class="pri pri-p1">P1</span></td>
+          <td style="color:#d97706;font-weight:700">Medium</td>
+          <td>No</td>
+          <td>1 new (getKidProgressAction)</td>
+          <td><span class="badge badge-done">✅ Done 2026-05-30</span> KidProgressPanel live</td>
+        </tr>
+        <tr style="background:#f0fdf4">
+          <td><strong>G5</strong></td>
+          <td>Feature Toggles → DB persistence</td>
+          <td><span class="pri pri-p1">P1</span></td>
+          <td style="color:#d97706;font-weight:700">Medium</td>
+          <td>Yes — User.kidAccessSettings column</td>
+          <td>2 new (get + save)</td>
+          <td><span class="badge badge-done">✅ Done 2026-05-30</span> Migration applied</td>
+        </tr>
+        <tr style="background:#f0fdf4">
+          <td><strong>G6</strong></td>
+          <td>"Today at a Glance" default tab</td>
+          <td><span class="pri pri-p1">P1</span></td>
+          <td style="color:#16a34a;font-weight:700">Low</td>
+          <td>No</td>
+          <td>Reused getTodayViewAction</td>
+          <td><span class="badge badge-done">✅ Done 2026-05-30</span> 3-col tablet + phone default tab</td>
+        </tr>
+        <tr style="background:#f0fdf4">
+          <td><strong>G3</strong></td>
+          <td>Real screen time tracking</td>
+          <td><span class="pri pri-p2">P2</span></td>
+          <td style="color:#dc2626;font-weight:700">High</td>
+          <td>Yes — ScreenTimeLog model + screenTimeLimitMins on User</td>
+          <td>2 new (repo + actions) + ScreenTimeTracker component</td>
+          <td><span class="badge badge-done">✅ Done 2026-05-31</span></td>
+        </tr>
+        <tr style="background:#f0fdf4">
+          <td><strong>G4</strong></td>
+          <td>Real recent activity feed</td>
+          <td><span class="pri pri-p2">P2</span></td>
+          <td style="color:#dc2626;font-weight:700">High</td>
+          <td>Yes — ActivityEvent model</td>
+          <td>1 new repo + emit calls in math/english/schedule actions</td>
+          <td><span class="badge badge-done">✅ Done 2026-05-31</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:20px;padding:16px 20px;background:#f0f9ff;border-radius:14px;border:1.5px solid #bae6fd">
+      <strong style="font-size:14px;color:#0369a1">Recommended Implementation Order</strong>
+      <ol style="margin-top:8px;padding-left:20px;font-size:13px;color:#0c4a6e;line-height:2">
+        <li><strong>G1</strong> — Homework Status tab (no DB change, immediate parent value, low risk)</li>
+        <li><strong>G6</strong> — Today at a Glance tab (no DB change, great UX improvement, low risk)</li>
+        <li><strong>G2</strong> — Kid Progress panel (1 new action, replaces useless static UI)</li>
+        <li><strong>G5</strong> — DB-persist toggles (requires migration, but fixes a real reliability bug)</li>
+        <li><strong>G3 + G4</strong> — Screen time &amp; activity log (requires design discussion on DB models first)</li>
+      </ol>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

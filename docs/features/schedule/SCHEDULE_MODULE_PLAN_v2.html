@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Schedule Module — Plan v2 Review · Kid Hub</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f1f5f9; color: #0f172a; line-height: 1.55;
+  }
+  .page { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { font-size: 28px; font-weight: 900; }
+  h2 { font-size: 18px; font-weight: 800; margin-bottom: 14px; }
+  h3 { font-size: 14px; font-weight: 800; color: #334155; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .06em; }
+  p, li { font-size: 14px; color: #475569; line-height: 1.65; }
+  ul, ol { padding-left: 20px; margin: 8px 0; }
+  li { margin-bottom: 5px; }
+
+  .hero {
+    background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 50%, #faf5ff 100%);
+    border: 1.5px solid #bfdbfe; border-radius: 20px;
+    padding: 28px 32px; margin-bottom: 24px;
+  }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; font-size: 13px; color: #64748b; }
+  .hero-meta span { background: white; border-radius: 8px; padding: 4px 10px; font-weight: 700; }
+
+  .section {
+    background: white; border-radius: 20px; padding: 28px;
+    margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.07);
+  }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 800; padding: 3px 10px;
+    border-radius: 99px; letter-spacing: .04em;
+  }
+  .badge-done    { background: #dcfce7; color: #166534; }
+  .badge-partial { background: #fef9c3; color: #854d0e; }
+  .badge-missing { background: #fee2e2; color: #991b1b; }
+  .badge-new     { background: #dbeafe; color: #1e40af; }
+  .badge-design  { background: #f3e8ff; color: #6b21a8; }
+  .badge-warn    { background: #fff7ed; color: #9a3412; }
+
+  .summary-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px; margin-top: 16px;
+  }
+  .stat-card {
+    border: 1.5px solid #e2e8f0; border-radius: 14px;
+    padding: 16px 18px; background: #fafafa;
+  }
+  .stat-card .num { font-size: 32px; font-weight: 900; line-height: 1; }
+  .stat-card .lbl { font-size: 12px; font-weight: 700; color: #64748b; margin-top: 4px; }
+  .stat-card.ok   .num { color: #16a34a; }
+  .stat-card.warn .num { color: #d97706; }
+  .stat-card.bad  .num { color: #dc2626; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+  th {
+    text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .06em; color: #94a3b8;
+    border-bottom: 2px solid #f1f5f9;
+  }
+  td { padding: 11px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td code, p code {
+    font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px;
+    background: #f1f5f9; padding: 2px 6px; border-radius: 5px; color: #be185d;
+  }
+
+  .callout {
+    border-left: 4px solid #3b82f6; padding: 12px 16px; margin: 14px 0;
+    background: #eff6ff; border-radius: 0 10px 10px 0; font-size: 13px; color: #1e3a8a;
+  }
+  .callout-warn {
+    border-left-color: #f97316; background: #fff7ed; color: #9a3412;
+  }
+  .callout-danger {
+    border-left-color: #ef4444; background: #fef2f2; color: #991b1b;
+  }
+
+  .wireframe {
+    background: #0f172a; color: #e2e8f0; border-radius: 12px;
+    padding: 16px; font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 11px; line-height: 1.5; overflow-x: auto; margin: 12px 0;
+    white-space: pre;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .feature-card {
+    border: 1.5px solid #e2e8f0; border-radius: 14px;
+    padding: 16px 18px; background: #fafafa;
+  }
+  .feature-card .title { font-size: 14px; font-weight: 800; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .feature-card .desc  { font-size: 13px; color: #64748b; }
+  .feature-card.danger { background: #fff1f2; border-color: #fecdd3; }
+  .feature-card.warn   { background: #fffbeb; border-color: #fde68a; }
+  .feature-card.ok     { background: #f0fdf4; border-color: #bbf7d0; }
+
+  .check { color: #16a34a; font-weight: 900; }
+  .cross { color: #dc2626; font-weight: 900; }
+  .partial { color: #d97706; font-weight: 900; }
+
+  .toc a { color: #3b82f6; text-decoration: none; font-size: 13px; font-weight: 600; }
+  .toc a:hover { text-decoration: underline; }
+  .toc li { margin-bottom: 6px; }
+
+  .proposal {
+    border-left: 4px solid #3b82f6; padding-left: 18px; margin-bottom: 20px;
+  }
+  .proposal h3 { font-size: 15px; font-weight: 800; color: #1e40af; text-transform: none; letter-spacing: normal; margin-bottom: 6px; }
+  .effort { font-size: 12px; font-weight: 700; margin-top: 8px; }
+  .effort-low    { color: #16a34a; }
+  .effort-medium { color: #d97706; }
+  .effort-high   { color: #dc2626; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="hero">
+  <span class="badge badge-partial">⚠ Partial Implementation — PM Review Required</span>
+  <h1 style="margin-top:10px;">Schedule Module — Plan v2</h1>
+  <p style="margin-top:8px; max-width:720px;">
+    Implementation audit of the Grade 1 Reality Upgrade against the v1 plan
+    (<code>SCHEDULE_MODULE_PLAN.md</code>) and the subsequent responsive redesign
+    (<code>SCHEDULE_DESIGN.html</code>). Backend and parent tools are largely complete;
+    kid-facing evening/homework integration and reward wiring remain open.
+  </p>
+  <div class="hero-meta">
+    <span>Version 2.0.0</span>
+    <span>Date: 2026-05-30</span>
+    <span>Route: <code>/schedule</code></span>
+    <span>Authors: PM · Lead Dev · Designer · QA</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2>At a Glance</h2>
+  <div class="summary-grid">
+    <div class="stat-card ok"><div class="num">12/12</div><div class="lbl">Schema &amp; repository layer</div></div>
+    <div class="stat-card ok"><div class="num">8/8</div><div class="lbl">Server actions &amp; services</div></div>
+    <div class="stat-card ok"><div class="num">3/3</div><div class="lbl">Parent ScheduleManager tabs</div></div>
+    <div class="stat-card warn"><div class="num">2/6</div><div class="lbl">QA acceptance criteria</div></div>
+    <div class="stat-card bad"><div class="num">0</div><div class="lbl">Kid sees evening classes</div></div>
+    <div class="stat-card bad"><div class="num">0</div><div class="lbl">Homework awards points (kid UI)</div></div>
+  </div>
+  <div class="callout-danger" style="margin-top:16px;">
+    <strong>Bottom line:</strong> The v1 plan marked the feature "✅ Implemented" but a later schedule-route redesign
+    (<code>ScheduleView</code> / <code>WeekGrid</code>) removed the kid-facing evening + homework panel without
+    relocating it. Parents can configure evening classes and daily homework; Khôi cannot see or interact with them
+    through the intended UI paths.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2>Table of Contents</h2>
+  <ol class="toc">
+    <li><a href="#design-evolution">Design Evolution — What Changed Since v1</a></li>
+    <li><a href="#implementation-audit">Implementation Audit by Layer</a></li>
+    <li><a href="#qa-gate">QA Acceptance Criteria (Pre-Merge Gate)</a></li>
+    <li><a href="#quality-gaps">Product Quality Gaps</a></li>
+    <li><a href="#recommendations">Recommended Next Steps</a></li>
+    <li><a href="#architecture">Current Architecture Reference</a></li>
+    <li><a href="#decisions">Updated Decisions Log</a></li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section" id="design-evolution">
+  <h2>1. Design Evolution — What Changed Since v1</h2>
+  <p>After v1 was written, a separate responsive redesign landed. It supersedes parts of the v1 kid-view spec.</p>
+
+  <h3 style="margin-top:20px;">1.1 Schedule Route — Layout Pivot</h3>
+  <table>
+    <thead>
+      <tr><th>Aspect</th><th>v1 Plan</th><th>Current Implementation</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Primary grid</td>
+        <td><code>ScheduleGrid</code> — 5-column morning grid</td>
+        <td><code>WeekGrid</code> — orientation-aware (rows-periods / cols-periods)</td>
+        <td><span class="badge badge-design">Design change</span></td>
+      </tr>
+      <tr>
+        <td>Right panel (landscape)</td>
+        <td><code>TodayPlanCard</code> — evening classes + homework swimlanes</td>
+        <td>SubjectLegend + period detail + week stats (school only)</td>
+        <td><span class="badge badge-missing">Evening/homework removed</span></td>
+      </tr>
+      <tr>
+        <td>Phone portrait</td>
+        <td>Tab 1 "Hôm Nay" (evening + homework) · Tab 2 "Tuần Này"</td>
+        <td><code>DayTabs</code> + <code>DayList</code> — school periods only</td>
+        <td><span class="badge badge-missing">Evening/homework absent</span></td>
+      </tr>
+      <tr>
+        <td>Page shell</td>
+        <td><code>TabletPageContainer</code> wrapper</td>
+        <td><code>h-dvh bg-shell-kid</code> full-bleed (matches games hub pattern)</td>
+        <td><span class="badge badge-done">Shipped</span></td>
+      </tr>
+      <tr>
+        <td>Loading state</td>
+        <td><code>loading.tsx</code> skeleton</td>
+        <td><code>app/(dashboard)/schedule/loading.tsx</code> exists</td>
+        <td><span class="badge badge-done">Shipped</span></td>
+      </tr>
+      <tr>
+        <td>Subject display</td>
+        <td>Icon keys from <code>lib/icons.ts</code></td>
+        <td>Subject hex colors + emoji icons via <code>lib/data/subjects.ts</code> (<code>PeriodCell</code>)</td>
+        <td><span class="badge badge-design">Design change</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout-warn">
+    <strong>Disposition decision (from SCHEDULE_DESIGN.html §12):</strong> Option 1 was recommended —
+    remove <code>TodayPlanCard</code> from <code>/schedule</code>; evening plan lives on the dashboard.
+    That relocation was <em>not completed</em>: the dashboard shows homework as a read-only list without
+    interactive checkboxes or points, and evening extra classes appear nowhere in kid UI.
+  </div>
+
+  <h3 style="margin-top:20px;">1.2 v1 Wireframe vs Current Landscape Layout</h3>
+  <div class="grid-2">
+    <div>
+      <p><strong>v1 Plan — two swimlanes</strong></p>
+      <div class="wireframe">┌────────────────────────┬─────────────────────────┐
+│  BUỔI SÁNG 🌅          │  TỐI NAY 🌙             │
+│  ScheduleGrid          │  EveningBlockChip       │
+│  (5 school periods)    │  HomeworkCheckbox       │
+└────────────────────────┴─────────────────────────┘</div>
+    </div>
+    <div>
+      <p><strong>Current — school timetable focus</strong></p>
+      <div class="wireframe">┌────────────────────────┬─────────────────────────┐
+│  WeekGrid              │  TodayAccentCard (school)│
+│  (orientation-aware)   │  SubjectLegend           │
+│  DayRail (tablet P)    │  PeriodDetailCard        │
+│                        │  Week stats              │
+└────────────────────────┴─────────────────────────┘
+  ↑ No evening blocks    ↑ No homework checkboxes</div>
+    </div>
+  </div>
+
+  <h3 style="margin-top:20px;">1.3 New Components (Responsive Redesign — Shipped)</h3>
+  <table>
+    <thead><tr><th>Component</th><th>Role</th><th>File</th></tr></thead>
+    <tbody>
+      <tr><td><code>ScheduleView</code></td><td>Orientation router — phone P / tablet P / landscape</td><td><code>components/dashboard/ScheduleView.tsx</code></td></tr>
+      <tr><td><code>WeekGrid</code></td><td>CSS-grid timetable with <code>orient</code> prop</td><td><code>components/dashboard/WeekGrid.tsx</code></td></tr>
+      <tr><td><code>PeriodCell</code></td><td>color-mix tinted cell, pulse dot for live period</td><td><code>components/dashboard/PeriodCell.tsx</code></td></tr>
+      <tr><td><code>DayTabs</code></td><td>Mon–Fri tab selector (phone portrait)</td><td><code>components/dashboard/DayTabs.tsx</code></td></tr>
+      <tr><td><code>DayList</code></td><td>Vertical period rows (phone portrait)</td><td><code>components/dashboard/DayList.tsx</code></td></tr>
+      <tr><td><code>DayRail</code></td><td>Horizontal mini-period strip</td><td><code>components/dashboard/DayRail.tsx</code></td></tr>
+      <tr><td><code>SubjectLegend</code></td><td>Subject distribution bar chart</td><td><code>components/dashboard/SubjectLegend.tsx</code></td></tr>
+      <tr><td><code>SubjectIcon</code></td><td>Reusable subject emoji badge</td><td><code>components/dashboard/SubjectIcon.tsx</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:20px;">1.4 Design Tokens</h3>
+  <table>
+    <thead><tr><th>Token (v1 plan)</th><th>Status</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>--color-band-morning</code> / afternoon / evening</td>
+        <td><span class="badge badge-missing">Not added</span></td>
+        <td>Evening/homework components use inline Tailwind palette classes (<code>violet-50</code>, <code>amber-50</code>) — violates semantic token rule</td>
+      </tr>
+      <tr>
+        <td><code>--color-schedule</code> / deep / soft</td>
+        <td><span class="badge badge-done">Added</span></td>
+        <td>In <code>app/globals.css @theme {}</code> — used by schedule header, tabs, accent card</td>
+      </tr>
+      <tr>
+        <td>Subject hex <code>color</code> + <code>icon</code> fields</td>
+        <td><span class="badge badge-done">Added</span></td>
+        <td><code>lib/data/subjects.ts</code> — required for <code>PeriodCell</code> color-mix tinting</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:20px;">1.5 Homework UX — Split Across Two Paths</h3>
+  <table>
+    <thead><tr><th>Surface</th><th>Component</th><th>Toggle action</th><th>Awards points?</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>/homework</code> (dedicated route)</td>
+        <td><code>HomeworkItemRow</code></td>
+        <td><code>markHomeworkDoneAction</code></td>
+        <td><span class="cross">✗</span> No</td>
+      </tr>
+      <tr>
+        <td><code>/dashboard</code> homework panel</td>
+        <td>Inline div (read-only)</td>
+        <td>None — display only</td>
+        <td><span class="cross">✗</span> No</td>
+      </tr>
+      <tr>
+        <td>v1 plan — <code>TodayPlanCard</code></td>
+        <td><code>HomeworkCheckbox</code></td>
+        <td><code>toggleHomeworkDoneAction</code> + <code>awardPointsAction</code></td>
+        <td><span class="check">✓</span> Yes (built, not wired)</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section" id="implementation-audit">
+  <h2>2. Implementation Audit by Layer</h2>
+
+  <h3>2.1 Database &amp; Schema</h3>
+  <table>
+    <thead><tr><th>Item</th><th>v1 Spec</th><th>Actual</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td><code>DayOfWeek</code> + sat/sun</td><td>Add weekend days</td><td>In schema + seed</td><td><span class="check">✓</span></td></tr>
+      <tr><td><code>EventType</code> enum</td><td>SCHOOL_PERIOD / EXTRA_CLASS</td><td>Present</td><td><span class="check">✓</span></td></tr>
+      <tr><td><code>ClassPeriod.periodNumber</code> optional</td><td>Nullable for EXTRA_CLASS</td><td>Present</td><td><span class="check">✓</span></td></tr>
+      <tr><td><code>iconKey</code>, <code>sortOrder</code></td><td>New columns</td><td>Present</td><td><span class="check">✓</span></td></tr>
+      <tr><td><code>isHomework</code> / <code>homeworkNote</code> dropped</td><td>Drop in migration</td><td>Dropped from schema</td><td><span class="check">✓</span></td></tr>
+      <tr><td><code>DailyHomework</code> model</td><td>New table</td><td>Present + seeded</td><td><span class="check">✓</span></td></tr>
+      <tr><td><code>ExtraClassOverride</code> model</td><td>New table</td><td>Present</td><td><span class="check">✓</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:20px;">2.2 Server Layer</h3>
+  <table>
+    <thead><tr><th>File / Function</th><th>Status</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>progress.repository.ts</code> — <code>addUserPoints</code></td><td><span class="check">✓</span></td><td>Extracted; math/english repos re-export</td></tr>
+      <tr><td><code>schedule.repository.ts</code> — all CRUD</td><td><span class="check">✓</span></td><td>getEveningBlocks, getDailyHomework, overrides, count cap</td></tr>
+      <tr><td><code>schedule.service.ts</code> — buildTodayView</td><td><span class="partial">⚠</span></td><td><code>filterCancelledSlots</code> <em>hides</em> cancelled classes — contradicts PM decision #4 (strikethrough, stay visible)</td></tr>
+      <tr><td><code>getTodayViewAction</code></td><td><span class="check">✓</span> built</td><td><strong>Not called</strong> by any page component</td></tr>
+      <tr><td><code>awardPointsAction</code></td><td><span class="check">✓</span></td><td>Only used inside orphaned <code>HomeworkCheckbox</code></td></tr>
+      <tr><td><code>cancelExtraClassAction</code> / <code>restoreExtraClassAction</code></td><td><span class="check">✓</span></td><td>Only reachable via orphaned <code>TodayPlanCard</code></td></tr>
+      <tr><td><code>MAX_EVENING_BLOCKS_PER_DAY = 3</code></td><td><span class="check">✓</span></td><td>Enforced in action + ScheduleManager UI</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:20px;">2.3 Client Components — v1 Module Components</h3>
+  <table>
+    <thead><tr><th>Component</th><th>Built?</th><th>Wired to a route?</th></tr></thead>
+    <tbody>
+      <tr><td><code>TodayPlanCard</code></td><td><span class="check">✓</span></td><td><span class="cross">✗</span> Orphaned — no imports outside its own file</td></tr>
+      <tr><td><code>EveningBlockChip</code></td><td><span class="check">✓</span></td><td><span class="cross">✗</span> Only used by TodayPlanCard</td></tr>
+      <tr><td><code>HomeworkCheckbox</code></td><td><span class="check">✓</span></td><td><span class="cross">✗</span> Only used by TodayPlanCard</td></tr>
+      <tr><td><code>ScheduleManager</code> (parent, 3 tabs)</td><td><span class="check">✓</span></td><td><span class="check">✓</span> <code>/parent</code> — School · Evening · Homework</td></tr>
+      <tr><td><code>useSchedule</code> visibility pause</td><td><span class="check">✓</span></td><td><span class="check">✓</span> Used by ScheduleView + DashboardView</td></tr>
+      <tr><td><code>lib/icons.ts</code></td><td><span class="check">✓</span></td><td><span class="partial">⚠</span> Evening/homework components only; schedule grid uses subject icons</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:20px;">2.4 Deleted / Superseded</h3>
+  <table>
+    <thead><tr><th>v1 Reference</th><th>Current State</th></tr></thead>
+    <tbody>
+      <tr><td><code>ScheduleGrid.tsx</code></td><td>Deleted — replaced by <code>WeekGrid</code></td></tr>
+      <tr><td><code>ScheduleGrid.tsx TOTAL_PERIODS = 5</code> hardcode</td><td>Resolved — grid is data-driven</td></tr>
+      <tr><td>Two-panel <code>page.tsx</code></td><td>Replaced — fetches school schedule only via <code>getScheduleAction</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section" id="qa-gate">
+  <h2>3. QA Acceptance Criteria (Pre-Merge Gate)</h2>
+  <p>From v1 §2.3 — updated with current verification status.</p>
+  <table>
+    <thead><tr><th>#</th><th>Criterion</th><th>Status</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>Evening extra classes appear in the correct day column below school blocks</td>
+        <td><span class="cross">✗ FAIL</span></td>
+        <td><code>getTodayViewAction</code> unused; no evening UI on any kid route</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>Recurring extra class marked "cancelled today" does <strong>not</strong> appear on that date</td>
+        <td><span class="partial">⚠ PARTIAL</span></td>
+        <td>Backend filters cancelled IDs; but v1 PM decision #4 says show strikethrough (visible). Service contradicts spec. No kid UI to verify either way.</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>Daily homework added by parent appears only on its target date</td>
+        <td><span class="partial">⚠ PARTIAL</span></td>
+        <td>Data layer correct; visible on <code>/homework</code> and dashboard (read-only). Parent add works via ScheduleManager.</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>Checking off homework awards configured points + reward animation</td>
+        <td><span class="cross">✗ FAIL</span></td>
+        <td><code>/homework</code> uses <code>markHomeworkDoneAction</code> (no points). <code>HomeworkCheckbox</code> with <code>awardPointsAction</code> is unwired.</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>Schedule renders correctly in landscape phone, portrait phone, iPad landscape</td>
+        <td><span class="check">✓ PASS</span></td>
+        <td><code>ScheduleView</code> has orientation-specific blocks; responsive redesign complete for <em>school timetable</em> only.</td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td><code>useSchedule</code> polling pauses when tab hidden</td>
+        <td><span class="check">✓ PASS</span></td>
+        <td><code>document.visibilityState === 'visible'</code> guard in <code>hooks/useSchedule.ts</code></td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="callout" style="margin-top:14px;">
+    <strong>QA verdict:</strong> Not merge-ready for the full Grade 1 Reality feature scope.
+    School timetable responsive redesign passes; evening plan + reward homework loop fails.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section" id="quality-gaps">
+  <h2>4. Product Quality Gaps</h2>
+  <div class="summary-grid" style="grid-template-columns:1fr;">
+    <div class="feature-card danger">
+      <div class="title"><span class="badge badge-missing">P0</span> Evening classes invisible to kid</div>
+      <div class="desc">Parent can create EXTRA_CLASS entries in ScheduleManager, but no kid route renders them. Trọng Khôi cannot see English Tue/Thu 18:00–19:30 anywhere in the app.</div>
+    </div>
+    <div class="feature-card danger">
+      <div class="title"><span class="badge badge-missing">P0</span> Homework completion does not award points</div>
+      <div class="desc">The reward loop (<code>toggleHomeworkDoneAction</code> → <code>awardPointsAction</code>) exists in <code>HomeworkCheckbox</code> but the live homework routes use the legacy <code>markHomeworkDoneAction</code> path with no points field.</div>
+    </div>
+    <div class="feature-card warn">
+      <div class="title"><span class="badge badge-warn">P1</span> Cancelled extra class behaviour contradicts PM decision</div>
+      <div class="desc"><code>buildTodayView</code> calls <code>filterCancelledSlots</code> which removes cancelled classes. PM decision #4: keep visible with strikethrough + "Đã huỷ" badge. <code>EveningBlockChip</code> supports strikethrough but never receives cancelled items.</div>
+    </div>
+    <div class="feature-card warn">
+      <div class="title"><span class="badge badge-warn">P1</span> Orphaned components (dead code risk)</div>
+      <div class="desc"><code>TodayPlanCard</code>, <code>HomeworkCheckbox</code>, <code>EveningBlockChip</code> are fully built but unused. Will drift from live design tokens and subject data unless wired or deleted.</div>
+    </div>
+    <div class="feature-card warn">
+      <div class="title"><span class="badge badge-warn">P1</span> Dashboard homework panel is read-only</div>
+      <div class="desc"><code>DashboardView</code> shows homework items with static check circles — no tap handler, no navigation to <code>/homework</code>, no points display.</div>
+    </div>
+    <div class="feature-card warn">
+      <div class="title"><span class="badge badge-warn">P2</span> Time-band semantic tokens missing</div>
+      <div class="desc">v1 specified <code>--color-band-morning/afternoon/evening</code> in <code>@theme {}</code>. Current evening/homework components use raw palette classes (<code>violet-50</code>, <code>amber-50</code>, <code>emerald-50</code>).</div>
+    </div>
+    <div class="feature-card warn">
+      <div class="title"><span class="badge badge-warn">P2</span> No Playwright e2e coverage</div>
+      <div class="desc">No specs under <code>e2e/schedule/</code>. Responsive schedule redesign and homework reward loop are untested in CI.</div>
+    </div>
+    <div class="feature-card ok">
+      <div class="title"><span class="badge badge-done">OK</span> Parent configuration flow</div>
+      <div class="desc">ScheduleManager 3-tab UI, evening cap validation, daily homework quick-add, PIN-gated mutations — all functional.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section" id="recommendations">
+  <h2>5. Recommended Next Steps</h2>
+  <p>PM must choose a disposition for evening + homework before dev continues. Three viable paths:</p>
+
+  <div class="proposal">
+    <h3>Option A — Wire TodayPlanCard into existing surfaces (lowest churn)</h3>
+    <ul>
+      <li>Add <code>getTodayViewAction</code> fetch to <code>/dashboard</code> and render <code>TodayPlanCard</code> below the day rail (landscape) or as a new section (portrait).</li>
+      <li>Replace <code>HomeworkItemRow</code> on <code>/homework</code> with <code>HomeworkCheckbox</code> (or merge points logic into HomeworkItemRow).</li>
+      <li>Fix <code>buildTodayView</code>: stop filtering cancelled IDs; pass full evening list + <code>cancelledIds</code> to <code>EveningBlockChip</code>.</li>
+      <li>Keep <code>/schedule</code> as school-timetable-only per SCHEDULE_DESIGN Option 1.</li>
+    </ul>
+    <div class="effort effort-low">Effort: Low–Medium · ~2–3 files wired, 1 service fix</div>
+  </div>
+
+  <div class="proposal">
+    <h3>Option B — Integrate evening into ScheduleView (matches v1 two-panel vision)</h3>
+    <ul>
+      <li>Restore two-panel landscape layout: WeekGrid + TodayPlanCard side-by-side.</li>
+      <li>Phone portrait: add "Hôm Nay" tab with TodayPlanCard content below DayList.</li>
+      <li>Requires reconciling aside panel crowding noted in SCHEDULE_DESIGN §12.</li>
+    </ul>
+    <div class="effort effort-medium">Effort: Medium · ScheduleView refactor + responsive testing</div>
+  </div>
+
+  <div class="proposal">
+    <h3>Option C — Delete orphaned components; rebuild homework rewards in /homework only</h3>
+    <ul>
+      <li>Remove TodayPlanCard, HomeworkCheckbox, EveningBlockChip.</li>
+      <li>Enhance <code>/homework</code> with points + star animation; add evening section to dashboard or new <code>/today</code> route.</li>
+      <li>Higher design work; avoids maintaining two homework UIs.</li>
+    </ul>
+    <div class="effort effort-high">Effort: High · design + delete + rebuild</div>
+  </div>
+
+  <div class="callout">
+    <strong>Recommendation:</strong> Option A aligns with the already-shipped SCHEDULE_DESIGN Option 1
+    (schedule = school only) while completing the v1 feature promise on the dashboard and homework routes.
+    Fix the cancelled-class service bug regardless of which option is chosen.
+  </div>
+
+  <h3 style="margin-top:20px;">Additional tasks (all options)</h3>
+  <table>
+    <thead><tr><th>Task</th><th>Layer</th><th>Priority</th></tr></thead>
+    <tbody>
+      <tr><td>Fix <code>filterCancelledSlots</code> — keep cancelled items in list, mark via <code>cancelledIds</code></td><td>Service</td><td>P1</td></tr>
+      <tr><td>Unify homework toggle to single action path with points</td><td>Action + UI</td><td>P0</td></tr>
+      <tr><td>Add <code>--color-band-*</code> tokens; replace raw palette in evening/homework components</td><td>Design tokens</td><td>P2</td></tr>
+      <tr><td>Playwright specs: homework toggle awards points, evening block visible after parent add</td><td>QA</td><td>P2</td></tr>
+      <tr><td>Update v1 <code>SCHEDULE_MODULE_PLAN.md</code> status from "Implemented" to reflect partial state</td><td>Docs</td><td>P3</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section" id="architecture">
+  <h2>6. Current Architecture Reference</h2>
+
+  <h3>6.1 Data Flow (as built)</h3>
+  <div class="wireframe">Parent (PIN)                         Kid (no auth)
+─────────────                         ─────────────
+ScheduleManager                       /schedule → getScheduleAction → ScheduleView (school only)
+  ├─ createExtraClassAction             /dashboard → getScheduleAction + getTodayHomeworkAction
+  ├─ addDailyHomeworkAction               └─ read-only homework list (no toggle)
+  └─ cancelExtraClassAction             /homework → getTodayHomeworkAction → HomeworkListView
+                                              └─ markHomeworkDoneAction (no points)
+
+Built but unwired:
+  getTodayViewAction → TodayPlanCard → EveningBlockChip + HomeworkCheckbox (+ awardPointsAction)</div>
+
+  <h3 style="margin-top:20px;">6.2 Key Files</h3>
+  <table>
+    <thead><tr><th>Path</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><code>prisma/schema.prisma</code></td><td>ClassPeriod, DailyHomework, ExtraClassOverride</td></tr>
+      <tr><td><code>server/repositories/schedule.repository.ts</code></td><td>All schedule DB access</td></tr>
+      <tr><td><code>server/repositories/progress.repository.ts</code></td><td>Shared addUserPoints</td></tr>
+      <tr><td><code>server/services/schedule.service.ts</code></td><td>buildTodayView, deriveTimeBand, overlap validation</td></tr>
+      <tr><td><code>server/actions/schedule.actions.ts</code></td><td>CRUD + getTodayViewAction</td></tr>
+      <tr><td><code>server/actions/rewards.actions.ts</code></td><td>awardPointsAction</td></tr>
+      <tr><td><code>components/dashboard/ScheduleView.tsx</code></td><td>Live kid schedule (school timetable)</td></tr>
+      <tr><td><code>components/dashboard/TodayPlanCard.tsx</code></td><td>Evening + homework panel (orphaned)</td></tr>
+      <tr><td><code>components/parent/ScheduleManager.tsx</code></td><td>Parent 3-tab editor</td></tr>
+      <tr><td><code>lib/icons.ts</code></td><td>ICON_MAP for evening/homework event types</td></tr>
+      <tr><td><code>lib/schedule-display.ts</code></td><td>Week stats, time formatting, schoolPeriodsOnly filter</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:20px;">6.3 Related Docs (moved to this folder)</h3>
+  <ul>
+    <li><code>docs/features/schedule/SCHEDULE_MODULE_PLAN.md</code> — v1 plan (historical reference)</li>
+    <li><code>docs/features/schedule/SCHEDULE_DESIGN.html</code> — responsive redesign spec</li>
+    <li><code>docs/features/schedule/SCHEDULE_MODULE_PLAN_v2.html</code> — this review document</li>
+    <li><code>design/components/schedule.jsx</code> — source design mockup</li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section" id="decisions">
+  <h2>7. Updated Decisions Log</h2>
+  <table>
+    <thead><tr><th>#</th><th>Question</th><th>v1 Decision</th><th>v2 Update</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>Weekend extra classes?</td>
+        <td>Yes — sat/sun in DayOfWeek</td>
+        <td>Schema + parent UI support it; kid UI N/A until evening panel wired</td>
+        <td><span class="badge badge-partial">Backend only</span></td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>awardPointsAction required?</td>
+        <td>Yes — part of this feature</td>
+        <td>Action exists; not connected to live homework UI</td>
+        <td><span class="badge badge-missing">Unwired</span></td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>Max 3 evening blocks/day?</td>
+        <td>Enforced action + UI</td>
+        <td>Working in ScheduleManager + createExtraClassAction</td>
+        <td><span class="badge badge-done">Done</span></td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>Cancelled class: strikethrough or hidden?</td>
+        <td>Strikethrough — stay visible</td>
+        <td>Service hides them; EveningBlockChip strikethrough never triggered</td>
+        <td><span class="badge badge-missing">Bug</span></td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>Schedule route layout</td>
+        <td>Two-panel: grid + TodayPlanCard</td>
+        <td>Redesigned to WeekGrid + school-only aside (SCHEDULE_DESIGN Option 1 recommended)</td>
+        <td><span class="badge badge-design">Design pivot</span></td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td>Where does evening + homework live for kid?</td>
+        <td>On /schedule right panel</td>
+        <td><strong>OPEN — PM must decide:</strong> dashboard, /homework, or back on /schedule</td>
+        <td><span class="badge badge-warn">Open</span></td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td>ScheduleGrid vs WeekGrid</td>
+        <td>Extend ScheduleGrid</td>
+        <td>ScheduleGrid deleted; WeekGrid is canonical</td>
+        <td><span class="badge badge-done">Resolved</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2>8. PM Sign-Off Checklist</h2>
+  <table>
+    <thead><tr><th></th><th>Decision</th><th>PM</th><th>Date</th></tr></thead>
+    <tbody>
+      <tr><td>☐</td><td>Choose Option A / B / C for evening + homework kid UI</td><td></td><td></td></tr>
+      <tr><td>☐</td><td>Confirm cancelled extra class = strikethrough (fix service)</td><td></td><td></td></tr>
+      <tr><td>☐</td><td>Confirm homework points flow via HomeworkCheckbox or merge into /homework</td><td></td><td></td></tr>
+      <tr><td>☐</td><td>Approve time-band token addition to globals.css</td><td></td><td></td></tr>
+      <tr><td>☐</td><td>Approve e2e test scope for schedule module</td><td></td><td></td></tr>
+      <tr><td>☐</td><td>Authorize dev to wire orphaned components or delete them</td><td></td><td></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p style="text-align:center; font-size:12px; color:#94a3b8; margin-top:32px;">
+  Kid Hub · Schedule Module Plan v2 · Generated 2026-05-30 ·
+  Supersedes v1 status claim; v1 plan retained as historical reference.
+</p>
+
+</div>
+</body>
+</html>

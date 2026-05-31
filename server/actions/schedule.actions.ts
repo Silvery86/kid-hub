@@ -12,6 +12,8 @@ import { cookies } from 'next/headers'
 import { verifySessionToken, SESSION_COOKIE } from '@/server/services/auth.service'
 import { validatePeriodOverlap, buildTodayView, jsDateToDayOfWeek } from '@/server/services/schedule.service'
 import * as scheduleRepo from '@/server/repositories/schedule.repository'
+import { logActivity } from '@/server/repositories/activity.repository'
+import { getSubjectById } from '@/lib/data/subjects'
 import type { DayOfWeek, DailySchedule, TodayView } from '@/types'
 import { DEFAULT_USER_ID, MAX_EVENING_BLOCKS_PER_DAY } from '@/lib/constants'
 
@@ -72,6 +74,20 @@ const requireParentSession = async (): Promise<void> => {
 const todayStr = (): string => new Date().toISOString().split('T')[0]!
 
 // ── Read actions ──────────────────────────────────────────────
+
+/** Retrieves all EXTRA_CLASS (evening) blocks for every day, grouped by day. */
+export const getAllEveningBlocksAction = async (): Promise<{
+  success: boolean
+  data?: DailySchedule[]
+  error?: string
+}> => {
+  try {
+    const data = await scheduleRepo.getAllEveningBlocks(DEFAULT_USER_ID)
+    return { success: true, data }
+  } catch {
+    return { success: false, error: 'Failed to fetch evening blocks' }
+  }
+}
 
 /** Retrieves the weekly SCHOOL_PERIOD schedule, optionally filtered to a specific day. */
 export const getScheduleAction = async (
@@ -310,6 +326,13 @@ export const toggleHomeworkDoneAction = async (
       parsed.data.isDone
     )
     revalidatePath('/schedule')
+
+    if (parsed.data.isDone) {
+      const subj = getSubjectById(updated.subjectId)
+      const icon = subj?.icon ?? '📝'
+      void logActivity(DEFAULT_USER_ID, 'HOMEWORK_DONE', updated.label, icon)
+    }
+
     return { success: true, points: isDone ? updated.points : 0 }
   } catch {
     return { success: false, error: 'Failed to update homework' }

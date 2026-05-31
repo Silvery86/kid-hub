@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kid Hub — Project Overview</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f1f5f9;
+    color: #0f172a;
+    line-height: 1.6;
+  }
+  .page { max-width: 1180px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { font-size: 30px; font-weight: 900; }
+  h2 { font-size: 20px; font-weight: 800; margin-bottom: 14px; }
+  h3 { font-size: 14px; font-weight: 800; color: #334155; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .06em; }
+  p, li { color: #475569; font-size: 14px; }
+  ul, ol { margin-top: 6px; padding-left: 20px; }
+  li { margin-bottom: 4px; }
+
+  .hero {
+    background: linear-gradient(130deg, #eff6ff 0%, #f0f9ff 52%, #faf5ff 100%);
+    border: 1.5px solid #bfdbfe;
+    border-radius: 20px;
+    padding: 28px 30px;
+    margin-bottom: 22px;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .meta span {
+    background: #ffffff;
+    border: 1px solid #dbeafe;
+    color: #475569;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .section {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 24px;
+    margin-bottom: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.07);
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 9px;
+    letter-spacing: .04em;
+  }
+  .ok { background: #dcfce7; color: #166534; }
+  .warn { background: #fef9c3; color: #854d0e; }
+  .risk { background: #fee2e2; color: #991b1b; }
+  .info { background: #dbeafe; color: #1e40af; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 900px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    background: #fafafa;
+    padding: 14px 16px;
+  }
+  .card h4 {
+    font-size: 14px;
+    font-weight: 800;
+    margin-bottom: 5px;
+    color: #0f172a;
+  }
+  .card p { font-size: 13px; color: #64748b; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 13px;
+  }
+  th {
+    text-align: left;
+    padding: 10px 12px;
+    color: #94a3b8;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    border-bottom: 2px solid #f1f5f9;
+  }
+  td {
+    vertical-align: top;
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  tr:last-child td { border-bottom: none; }
+  code {
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 12px;
+    background: #f1f5f9;
+    color: #be185d;
+    border-radius: 5px;
+    padding: 2px 6px;
+    white-space: nowrap;
+  }
+  .nowrap { white-space: nowrap; }
+
+  .flow {
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 12px;
+    padding: 14px;
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  .callout {
+    border-left: 4px solid #3b82f6;
+    background: #eff6ff;
+    color: #1e3a8a;
+    border-radius: 0 10px 10px 0;
+    padding: 12px 14px;
+    margin-top: 10px;
+    font-size: 13px;
+  }
+  .callout.warn {
+    border-left-color: #f97316;
+    background: #fff7ed;
+    color: #9a3412;
+  }
+  .callout.risk {
+    border-left-color: #ef4444;
+    background: #fef2f2;
+    color: #991b1b;
+  }
+
+  .toc a { color: #2563eb; text-decoration: none; font-size: 13px; font-weight: 600; }
+  .toc a:hover { text-decoration: underline; }
+
+  .footer {
+    text-align: center;
+    margin-top: 18px;
+    color: #94a3b8;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <span class="pill info">Project Snapshot</span>
+    <h1 style="margin-top:10px;">Kid Hub — Project Overview</h1>
+    <p style="margin-top:8px; max-width:840px;">
+      Consolidated technical and architectural overview of the current codebase, including route map, workflow rules, design-to-code process, and practical automation opportunities.
+    </p>
+    <div class="meta">
+      <span>Scope: Whole repository</span>
+      <span>App style: Single-household family dashboard</span>
+      <span>Framework: Next.js App Router</span>
+      <span>Audit date: 2026-05-31</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Contents</h2>
+    <ol class="toc">
+      <li><a href="#tech">All Technical Used in Current Project</a></li>
+      <li><a href="#rules-structure">Project Rules and Technical Structure</a></li>
+      <li><a href="#routes">Routes Overview (Parent ↔ Child) + Detailed Route Catalog</a></li>
+      <li><a href="#design-to-code">How <code>docs/features/DESIGN_TO_CODE.md</code> Works + Automation Plan</a></li>
+      <li><a href="#recommendations">Recommended Features to Add Next</a></li>
+    </ol>
+  </div>
+
+  <div class="section" id="tech">
+    <h2>1) All Technical Used in Current Project</h2>
+
+    <h3>1.1 Runtime and Core Framework</h3>
+    <div class="grid-3">
+      <div class="card">
+        <h4>Frontend App</h4>
+        <p><code>next@16.1.6</code> (App Router), <code>react@19.2.3</code>, <code>react-dom@19.2.3</code>.</p>
+      </div>
+      <div class="card">
+        <h4>Language and Types</h4>
+        <p><code>typescript@5</code> strict mode enabled (<code>strict</code>, <code>noUncheckedIndexedAccess</code>, <code>noImplicitOverride</code>).</p>
+      </div>
+      <div class="card">
+        <h4>Server Mutation Model</h4>
+        <p>Next.js Server Actions in <code>server/actions/</code> with Zod validation and auth checks.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:18px;">1.2 Styling, UI, and Responsive System</h3>
+    <table>
+      <thead>
+        <tr><th>Area</th><th>Technology</th><th>Current Usage</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>CSS framework</td><td><code>tailwindcss@4</code></td><td>Token-based classes from <code>app/globals.css @theme {}</code></td></tr>
+        <tr><td>Class merge helper</td><td><code>tailwind-merge</code> + <code>clsx</code></td><td><code>lib/utils.ts</code> style composition</td></tr>
+        <tr><td>Icons</td><td><code>lucide-react</code> + emoji domain icons</td><td>UI actions + subject/event icon system</td></tr>
+        <tr><td>Responsive strategy</td><td>Custom variants <code>portrait:</code> and <code>landscape:</code></td><td>Route-level orientation-specific render paths</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:18px;">1.3 Data and Persistence</h3>
+    <table>
+      <thead>
+        <tr><th>Layer</th><th>Technology</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Database</td><td>PostgreSQL + <code>pg</code></td><td>Configured via Prisma driver adapter</td></tr>
+        <tr><td>ORM</td><td><code>prisma@7</code> + <code>@prisma/client@7</code></td><td>Schema includes users, schedule, grades, game progress, activity logs</td></tr>
+        <tr><td>Validation</td><td><code>zod</code></td><td>Input schema validation in server actions</td></tr>
+        <tr><td>State management</td><td><code>zustand</code></td><td>Client-side progress/game state</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:18px;">1.4 Security and Auth</h3>
+    <table>
+      <thead>
+        <tr><th>Concern</th><th>Implementation</th><th>Location</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>JWT</td><td><code>jose</code> (kid session, parent access/refresh)</td><td><code>middleware.ts</code>, auth service/actions</td></tr>
+        <tr><td>Password/PIN hashing</td><td><code>bcryptjs</code></td><td>Parent login/PIN service layer</td></tr>
+        <tr><td>Rate limiting</td><td>Upstash sliding window (<code>@upstash/ratelimit</code>, <code>@upstash/redis</code>)</td><td>Middleware POST protection on parent auth routes</td></tr>
+        <tr><td>Session transport</td><td>HttpOnly cookies</td><td>Kid and parent protected surfaces</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:18px;">1.5 Quality Tooling and Ops</h3>
+    <table>
+      <thead>
+        <tr><th>Area</th><th>Current Setup</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Linting / formatting</td><td><code>eslint</code>, <code>prettier</code>, <code>prettier-plugin-tailwindcss</code></td></tr>
+        <tr><td>E2E tests</td><td><code>@playwright/test</code> with <code>playwright.config.ts</code>; specs under <code>e2e/</code></td></tr>
+        <tr><td>PWA</td><td><code>manifest.json</code> + <code>sw.js</code> + <code>ServiceWorkerRegistrar</code></td></tr>
+        <tr><td>Containerization</td><td><code>Dockerfile</code>, <code>docker-compose.yml</code>, Next standalone output</td></tr>
+        <tr><td>Git safety</td><td>Secret scanner pre-push hook in <code>scripts/git-hooks/pre-push.sh</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout warn">
+      <strong>Important:</strong> <code>README.md</code> contains stale stack references (e.g., Next 15 / Prisma 6 and legacy localStorage notes) and should be refreshed to match the current Next 16 + Prisma 7 architecture.
+    </div>
+  </div>
+
+  <div class="section" id="rules-structure">
+    <h2>2) All Rules and Technical Structure of Project</h2>
+
+    <h3>2.1 Non-Negotiable Engineering Rules</h3>
+    <table>
+      <thead>
+        <tr><th>Rule Category</th><th>Current Rule</th><th>Source</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Layering</td><td><code>page.tsx</code> → actions → services → repositories; no DB in components</td><td><code>CLAUDE.md</code>, <code>docs/TEAM_WORKFLOW.md</code></td></tr>
+        <tr><td>Auth guard</td><td>Parent mutations must use <code>requireParentSession()</code></td><td><code>server/lib/auth-guard.ts</code> convention</td></tr>
+        <tr><td>Token discipline</td><td>Semantic colors/radii in <code>@theme {}</code>; no raw palette for semantic UI</td><td><code>CLAUDE.md</code>, design workflow docs</td></tr>
+        <tr><td>Constants reuse</td><td>No hardcoded school year or user strings; use <code>lib/constants.ts</code></td><td><code>CLAUDE.md</code></td></tr>
+        <tr><td>Client safety</td><td>No <code>server/</code> imports inside hooks/components</td><td><code>CLAUDE.md</code>, <code>docs/TEAM_WORKFLOW.md</code></td></tr>
+        <tr><td>Testing style</td><td>Playwright with data-testid selectors; avoid arbitrary sleeps</td><td><code>CLAUDE.md</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:18px;">2.2 Folder-Level Responsibility Map</h3>
+    <table>
+      <thead>
+        <tr><th>Folder</th><th>Responsibility</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>app/</code></td><td>Route entrypoints and layout composition</td><td>Server Components fetch data and pass props down</td></tr>
+        <tr><td><code>components/ui/</code></td><td>Reusable primitives</td><td>No domain logic</td></tr>
+        <tr><td><code>components/&lt;domain&gt;/</code></td><td>Feature/domain presentation</td><td>Calls hooks and UI primitives</td></tr>
+        <tr><td><code>hooks/</code></td><td>Client state + server action orchestration</td><td>No Prisma/server imports</td></tr>
+        <tr><td><code>server/actions/</code></td><td>Input validation, auth, orchestration</td><td>Server-only entrypoint for UI mutations</td></tr>
+        <tr><td><code>server/services/</code></td><td>Business logic / rules</td><td>Pure functions, no direct DB calls</td></tr>
+        <tr><td><code>server/repositories/</code></td><td>Prisma data access only</td><td>Mutation ownership checks expected</td></tr>
+        <tr><td><code>lib/</code></td><td>Cross-layer utilities, constants, static data</td><td>Safe for both server and client (unless explicit)</td></tr>
+        <tr><td><code>prisma/</code></td><td>Schema, migrations, seed</td><td>Schema is source of DB truth</td></tr>
+        <tr><td><code>docs/</code></td><td>Specs, process docs, design docs</td><td>Includes team workflow and feature plans</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:18px;">2.3 Technical Architecture at Runtime</h3>
+    <div class="flow">Browser UI
+  -> App Router page/layout render
+  -> Server Actions (validated by Zod)
+  -> Service layer (business logic)
+  -> Repository layer (Prisma queries)
+  -> PostgreSQL
+
+Cross-cutting runtime guards:
+  - middleware.ts (kid/parent session verification + parent auth rate limit)
+  - ErrorBoundary wrappers in dashboard/games layout groups
+  - Activity logging repository for selected user actions</div>
+  </div>
+
+  <div class="section" id="routes">
+    <h2>3) Routes Overview (Parent ↔ Child) + Detailed Route Table</h2>
+
+    <h3>3.1 Parent-to-Child Runtime Flow</h3>
+    <div class="flow">Child entry:
+  "/" -> redirect "/kid-unlock" -> (kid session established) -> kid routes
+    /dashboard, /schedule, /grades, /homework, /games, /math, /english, /unlock
+
+Parent entry:
+  /parent/login -> /parent/pin -> /parent
+    /parent and /parent/* protected by parent access token
+
+Switching:
+  Kid sidebar -> "/parent" (switch to parent mode)
+  Parent sidebar -> "/dashboard" (return to kid mode)</div>
+
+    <h3 style="margin-top:18px;">3.2 Complete Route Catalog (All Current Routes)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Route</th>
+          <th>Group</th>
+          <th>Audience</th>
+          <th>Main Purpose</th>
+          <th>Data Source</th>
+          <th>Primary UI</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code>/</code></td><td>root</td><td>Kid entry</td><td>Redirect entrypoint</td><td>none</td><td><code>app/page.tsx</code></td></tr>
+        <tr><td><code>/kid-unlock</code></td><td>root</td><td>Kid</td><td>Kid unlock gate before kid app surfaces</td><td>auth/session actions</td><td><code>KidUnlockScreen</code></td></tr>
+
+        <tr><td><code>/dashboard</code></td><td><code>(dashboard)</code></td><td>Kid</td><td>Daily hub: current class, day rail, games, homework panel</td><td><code>getScheduleAction</code>, <code>getTodayViewAction</code>, <code>getTodayHomeworkAction</code></td><td><code>DashboardView</code></td></tr>
+        <tr><td><code>/schedule</code></td><td><code>(dashboard)</code></td><td>Kid</td><td>Weekly timetable and evening blocks, orientation-aware</td><td><code>getScheduleAction</code>, <code>getAllEveningBlocksAction</code></td><td><code>ScheduleView</code></td></tr>
+        <tr><td><code>/grades</code></td><td><code>(dashboard)</code></td><td>Kid</td><td>Report card by semester</td><td><code>getReportCardAction</code></td><td><code>GradesView</code></td></tr>
+        <tr><td><code>/homework</code></td><td><code>(dashboard)</code></td><td>Kid</td><td>Homework list and completion interactions</td><td><code>getTodayHomeworkAction</code></td><td><code>HomeworkListView</code></td></tr>
+        <tr><td><code>/games</code></td><td><code>(dashboard)</code></td><td>Kid</td><td>Game launcher hub</td><td>mostly static + user progress context</td><td><code>GamesHubView</code></td></tr>
+        <tr><td><code>/unlock</code></td><td><code>(dashboard)</code></td><td>Kid</td><td>Badges/achievements page</td><td>user progress context</td><td><code>BadgesView</code></td></tr>
+
+        <tr><td><code>/math</code></td><td><code>(games)</code></td><td>Kid</td><td>Math game hub + gameplay</td><td><code>getTodayMathHomework</code>, homework date/day helpers</td><td><code>MathHub</code></td></tr>
+        <tr><td><code>/english</code></td><td><code>(games)</code></td><td>Kid</td><td>English game hub + gameplay</td><td><code>getTodayEnglishHomework</code>, homework date/day helpers</td><td><code>EnglishHub</code></td></tr>
+
+        <tr><td><code>/parent/login</code></td><td><code>(parent)</code></td><td>Parent</td><td>Parent login entry</td><td>auth actions</td><td><code>ParentLoginView</code></td></tr>
+        <tr><td><code>/parent/pin</code></td><td><code>(parent)</code></td><td>Parent</td><td>PIN gate/setup flow</td><td>auth actions</td><td><code>ParentPinScreen</code></td></tr>
+        <tr><td><code>/parent</code></td><td><code>(parent)</code></td><td>Parent</td><td>Parent dashboard: manage schedule and grades</td><td><code>getScheduleAction</code>, <code>getTodayViewAction</code>, <code>getReportCardAction</code></td><td><code>ParentDashboardView</code></td></tr>
+        <tr><td><code>/parent/kid-access</code></td><td><code>(parent)</code></td><td>Parent</td><td>Kid access controls, progress, activity, screen time</td><td><code>getKidProgressAction</code>, <code>getKidAccessSettingsAction</code>, <code>getScreenTimeAction</code>, <code>getRecentActivityAction</code></td><td><code>KidAccessView</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:18px;">3.3 Current Working Flow Per Route (Detailed)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Route</th>
+          <th>Used For</th>
+          <th>Current Working Flow (Runtime)</th>
+          <th>Mutations / Navigation Outcome</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>/</code></td>
+          <td>App entry alias</td>
+          <td><code>app/page.tsx</code> immediately calls Next redirect to <code>/kid-unlock</code>.</td>
+          <td>No UI render here; always forwards to kid unlock flow.</td>
+        </tr>
+        <tr>
+          <td><code>/kid-unlock</code></td>
+          <td>Kid access gate before all kid surfaces</td>
+          <td>Renders <code>KidUnlockScreen</code>.<br>Middleware keeps kid routes protected using <code>KID_SESSION_COOKIE</code>.</td>
+          <td>Successful unlock establishes kid session and allows navigation to kid routes.</td>
+        </tr>
+        <tr>
+          <td><code>/dashboard</code></td>
+          <td>Main kid hub (today status + quick actions)</td>
+          <td>Server page parallel-fetches <code>getScheduleAction</code>, <code>getTodayHomeworkAction</code>, <code>getTodayViewAction</code>.<br>Passes props to <code>DashboardView</code>.<br>Client side uses <code>useSchedule</code> + <code>useUserProgress</code> for live indicators.</td>
+          <td>Provides links to <code>/math</code>, <code>/english</code>, parent mode switch, and badge modal.</td>
+        </tr>
+        <tr>
+          <td><code>/schedule</code></td>
+          <td>Weekly schedule explorer (school + evening blocks)</td>
+          <td>Server page parallel-fetches <code>getScheduleAction</code> and <code>getAllEveningBlocksAction</code>.<br>Renders <code>ScheduleView</code> with orientation-specific UI paths (phone/tablet/landscape).</td>
+          <td>Read-heavy route; parent editing is done from parent surfaces, not here.</td>
+        </tr>
+        <tr>
+          <td><code>/grades</code></td>
+          <td>Kid report-card view</td>
+          <td>Server page calls <code>getReportCardAction</code> and renders <code>GradesView</code>.</td>
+          <td>No direct mutation in kid view; parent updates grades from <code>/parent</code>.</td>
+        </tr>
+        <tr>
+          <td><code>/homework</code></td>
+          <td>Homework list and completion flow</td>
+          <td>Server page fetches via <code>getTodayHomeworkAction</code>.<br>Client <code>HomeworkListView</code> renders pending/completed groups and item rows.</td>
+          <td>Row interaction calls <code>markHomeworkDoneAction</code>, then refreshes route state.</td>
+        </tr>
+        <tr>
+          <td><code>/games</code></td>
+          <td>Game launcher hub</td>
+          <td>Renders <code>GamesHubView</code> under dashboard shell.<br>Acts as child-friendly switchboard to game suites.</td>
+          <td>Navigates to <code>/math</code> and <code>/english</code>.</td>
+        </tr>
+        <tr>
+          <td><code>/unlock</code></td>
+          <td>Badges and achievement collection</td>
+          <td>Renders <code>BadgesView</code> in kid shell; consumes progress context/state.</td>
+          <td>No direct server mutation from this page; display + motivation surface.</td>
+        </tr>
+        <tr>
+          <td><code>/math</code></td>
+          <td>Math game hub and gameplay</td>
+          <td>Server page computes <code>todayDayOfWeek()</code> + <code>todayDateKey()</code>, fetches <code>getTodayMathHomework</code>, passes to <code>MathHub</code>.<br>Runs inside <code>(games)</code> dark immersive layout.</td>
+          <td>Game actions update local progress and route-level game states; user can return to hub/dashboard.</td>
+        </tr>
+        <tr>
+          <td><code>/english</code></td>
+          <td>English game hub and gameplay</td>
+          <td>Server page computes date/day context and fetches <code>getTodayEnglishHomework</code>.<br>Passes payload to <code>EnglishHub</code> in games layout.</td>
+          <td>Similar interaction model to math route with English-specific game loops.</td>
+        </tr>
+        <tr>
+          <td><code>/parent/login</code></td>
+          <td>Parent authentication entry</td>
+          <td>Renders <code>ParentLoginView</code>.<br>Middleware treats as parent public path and applies POST rate limiting.</td>
+          <td>Successful login flow progresses to protected parent surfaces.</td>
+        </tr>
+        <tr>
+          <td><code>/parent/pin</code></td>
+          <td>PIN verification / setup gate</td>
+          <td>Renders <code>ParentPinScreen</code> for PIN challenge/setup before full parent dashboard control.</td>
+          <td>Successful validation enables entry to <code>/parent</code> features.</td>
+        </tr>
+        <tr>
+          <td><code>/parent</code></td>
+          <td>Parent operations dashboard (schedule + grades)</td>
+          <td>Server page parallel-fetches <code>getScheduleAction</code>, <code>getReportCardAction</code>, <code>getTodayViewAction</code>.<br>Renders <code>ParentDashboardView</code> with manager panels.</td>
+          <td>Parent mutations (create/update/delete periods, extra classes, homework, grades) occur here through guarded actions.</td>
+        </tr>
+        <tr>
+          <td><code>/parent/kid-access</code></td>
+          <td>Parental controls and monitoring</td>
+          <td>Server page parallel-fetches: <code>getKidProgressAction</code>, <code>getKidAccessSettingsAction</code>, <code>getScreenTimeAction</code>, <code>getRecentActivityAction(10)</code>.<br>Renders <code>KidAccessView</code>.</td>
+          <td>Toggles and settings updates are parent-only; supports governance over child experience.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:18px;">3.4 Route Group Layout Responsibilities</h3>
+    <table>
+      <thead><tr><th>Layout</th><th>Route Group</th><th>What It Adds</th></tr></thead>
+      <tbody>
+        <tr><td><code>app/layout.tsx</code></td><td>global</td><td>Nunito font, PWA metadata/viewport, service worker registrar</td></tr>
+        <tr><td><code>app/(dashboard)/layout.tsx</code></td><td>kid dashboard surfaces</td><td>AppSidebar, UserProgress provider, ScreenTimeTracker, ErrorBoundary</td></tr>
+        <tr><td><code>app/(games)/layout.tsx</code></td><td>game routes</td><td>Dark full-screen game shell + ErrorBoundary + progress provider</td></tr>
+        <tr><td><code>app/(parent)/layout.tsx</code></td><td>parent surfaces</td><td>Parent sidebar nav shell (auth protection enforced by middleware)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      Middleware matcher currently protects all kid-facing route prefixes and all parent routes; it also rate-limits parent login POST requests and auto-renews parent access via refresh token when valid.
+    </div>
+  </div>
+
+  <div class="section" id="design-to-code">
+    <h2>4) How <code>docs/features/DESIGN_TO_CODE.md</code> Works + Ways to Automate</h2>
+
+    <h3>4.1 How It Works Today (Manual, Structured Workflow)</h3>
+    <table>
+      <thead>
+        <tr><th>Step</th><th>Current Design-to-Code Behavior</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Design inventory</td><td>Maps each route to its source design file in <code>design/components/*.jsx</code></td></tr>
+        <tr><td>Responsive mapping</td><td>Defines mapping from 5 design variants (Phone-P/L, Tablet-P/L, Desktop) to Tailwind breakpoint/orientation strategy</td></tr>
+        <tr><td>Token conversion rules</td><td>Enforces semantic token class usage from <code>app/globals.css @theme</code>; avoids raw palette classes for semantic colors</td></tr>
+        <tr><td>Architecture constraints</td><td>Reinforces layering and server/client boundaries before edits</td></tr>
+        <tr><td>Prompt templates</td><td>Provides standard templates: update page, new page, add missing design file</td></tr>
+        <tr><td>Pre-flight checklist</td><td>Requires full design + implementation read, diff listing, PM approval before coding</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:18px;">4.2 Current Limitations</h3>
+    <div class="grid-2">
+      <div class="card">
+        <h4>No automatic drift detection</h4>
+        <p>There is no script that checks whether route UI and design JSX are out of sync; compliance is review-based.</p>
+      </div>
+      <div class="card">
+        <h4>No CI enforcement</h4>
+        <p>No GitHub workflow currently validates checklist completion, token usage policy, or route coverage against design inventory.</p>
+      </div>
+      <div class="card">
+        <h4>No machine-readable spec index</h4>
+        <p>Route/design status is Markdown only; no JSON manifest exists to power automated checks.</p>
+      </div>
+      <div class="card">
+        <h4>Prompt correctness depends on humans</h4>
+        <p>Templates are strong but not executable policies; agents can still skip steps without explicit guardrails.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:18px;">4.3 Practical Automation Plan (High ROI)</h3>
+    <table>
+      <thead><tr><th>Automation</th><th>What to Build</th><th>Impact</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="nowrap">Design manifest generator</span></td>
+          <td>Create <code>scripts/design/build-manifest.ts</code> to produce <code>design/manifest.json</code> from <code>DESIGN_TO_CODE.md</code> + <code>design/components</code> + <code>app/**/page.tsx</code></td>
+          <td>Single source for route/design coverage</td>
+        </tr>
+        <tr>
+          <td>Drift report command</td>
+          <td>Add <code>pnpm design:check</code> that flags missing design files, missing routes, or stale status rows</td>
+          <td>Fast pre-PR confidence</td>
+        </tr>
+        <tr>
+          <td>Semantic token lint</td>
+          <td>Add custom lint script to flag raw semantic palette classes (allowing neutral utility shades where approved)</td>
+          <td>Prevents visual token drift</td>
+        </tr>
+        <tr>
+          <td>PR checklist gate</td>
+          <td>Add CI workflow requiring a completed design-to-code checklist section in PR template</td>
+          <td>Makes pre-flight enforceable</td>
+        </tr>
+        <tr>
+          <td>Visual regression snapshots</td>
+          <td>Playwright screenshot matrix for key routes in 5 viewport variants</td>
+          <td>Catches accidental responsive regressions</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout warn">
+      Suggested implementation order: <strong>(1)</strong> manifest + <code>design:check</code>, <strong>(2)</strong> PR template gate, <strong>(3)</strong> viewport screenshot tests. This gives value quickly without blocking developer velocity too early.
+    </div>
+  </div>
+
+  <div class="section" id="recommendations">
+    <h2>5) Recommended Features to Add</h2>
+
+    <h3>5.1 Product Features (User Value)</h3>
+    <table>
+      <thead><tr><th>Priority</th><th>Feature</th><th>Why It Helps</th><th>Suggested Scope</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="pill risk">P0</span></td>
+          <td>Homework reward loop unification</td>
+          <td>Current homework completion paths are split; points consistency can drift</td>
+          <td>One canonical completion action + reusable checkbox UI across <code>/dashboard</code> and <code>/homework</code></td>
+        </tr>
+        <tr>
+          <td><span class="pill warn">P1</span></td>
+          <td>Parent notification center</td>
+          <td>Parents need quick insight on missed homework, streak drops, lockouts</td>
+          <td>Simple activity digest cards + filter by date/action type</td>
+        </tr>
+        <tr>
+          <td><span class="pill warn">P1</span></td>
+          <td>Adaptive practice recommendations</td>
+          <td>Tie grades + game scores to personalized next-step suggestions</td>
+          <td>Rules-based engine first; no ML required initially</td>
+        </tr>
+        <tr>
+          <td><span class="pill warn">P2</span></td>
+          <td>Parent weekly planning wizard</td>
+          <td>Simplifies schedule + homework setup and reduces manual repetitive edits</td>
+          <td>Template-based schedule generation + copy-week action</td>
+        </tr>
+        <tr>
+          <td><span class="pill info">P2</span></td>
+          <td>Offline-first homework sync queue</td>
+          <td>Tablet mode benefits from resilient offline interactions</td>
+          <td>Queue server actions and replay when connectivity returns</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:18px;">5.2 Engineering and Reliability Features</h3>
+    <table>
+      <thead><tr><th>Priority</th><th>Feature</th><th>Reason</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill risk">P0</span></td><td>CI pipeline (<code>lint</code> + <code>typecheck</code> + <code>playwright</code> smoke)</td><td>No GitHub Actions workflows currently detected</td></tr>
+        <tr><td><span class="pill warn">P1</span></td><td>Route-level <code>error.tsx</code> and <code>not-found.tsx</code></td><td>Improves recovery UX and avoids white screens</td></tr>
+        <tr><td><span class="pill warn">P1</span></td><td>Security headers baseline in <code>next.config.ts</code></td><td>Strengthens browser-side attack mitigation</td></tr>
+        <tr><td><span class="pill warn">P1</span></td><td>Ownership guard audit in repositories</td><td>Prepare for future multi-user extension safely</td></tr>
+        <tr><td><span class="pill info">P2</span></td><td>README rewrite to match current architecture</td><td>Reduces onboarding confusion from stale docs</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout risk">
+      <strong>Top recommendation:</strong> add CI and design drift checks first. These upgrades protect every future feature and reduce regression risk across all route groups.
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Appendix — Observed Test and Automation Baseline</h2>
+    <table>
+      <thead><tr><th>Area</th><th>Current State</th></tr></thead>
+      <tbody>
+        <tr><td>Playwright spec files</td><td><code>e2e/auth/middleware.spec.ts</code>, <code>e2e/games/games-hub.spec.ts</code>, <code>e2e/responsive/viewport-matrix.spec.ts</code></td></tr>
+        <tr><td>Web server for tests</td><td><code>corepack pnpm dev</code> via Playwright <code>webServer</code> config</td></tr>
+        <tr><td>Secret scanning hook</td><td><code>scripts/git-hooks/pre-push.sh</code> present</td></tr>
+        <tr><td>GitHub Actions workflows</td><td>None found in <code>.github/</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="footer">Kid Hub • PROJECT_OVERVIEW • Generated from repository audit on 2026-05-31</p>
+</div>
+</body>
+</html>

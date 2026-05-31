@@ -252,6 +252,25 @@ export const getUserById = async (userId: string) => {
   return db.user.findUnique({ where: { id: userId } })
 }
 
+/** Reads the stored kid access feature toggle state. Returns null if never saved (use defaults). */
+export const getKidAccessSettings = async (
+  userId: string
+): Promise<Record<string, boolean> | null> => {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { kidAccessSettings: true },
+  })
+  return (user?.kidAccessSettings as Record<string, boolean> | null) ?? null
+}
+
+/** Persists the kid access feature toggle state to the database. */
+export const saveKidAccessSettings = async (
+  userId: string,
+  settings: Record<string, boolean>
+): Promise<void> => {
+  await updateUser({ where: { id: userId }, data: { kidAccessSettings: settings } })
+}
+
 /** Gets or creates the default app user (single-user app). */
 export const getOrCreateDefaultUser = async (
   id: string,

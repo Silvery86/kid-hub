@@ -77,12 +77,16 @@ export interface ParentSaveState {
 interface ScheduleManagerProps {
   initialSchedule: DailySchedule[]
   embedded?: boolean
+  readOnly?: boolean
+  weekDates?: Record<DayOfWeek, string>
   onSaveStateChange?: (state: ParentSaveState) => void
 }
 
 export const ScheduleManager = ({
   initialSchedule,
   embedded = false,
+  readOnly = false,
+  weekDates,
   onSaveStateChange,
 }: ScheduleManagerProps) => {
   const router = useRouter()
@@ -202,8 +206,8 @@ export const ScheduleManager = ({
   }
 
   useEffect(() => {
-    onSaveStateChange?.({ save: handleSave, isPending, isSaved })
-  }, [onSaveStateChange, isPending, isSaved])
+    if (!readOnly) onSaveStateChange?.({ save: handleSave, isPending, isSaved })
+  }, [readOnly, onSaveStateChange, isPending, isSaved])
 
   // ── Evening extra class handler ─────────────────────────────
 
@@ -266,6 +270,13 @@ export const ScheduleManager = ({
         )}
       </div>
 
+      {/* Read-only notice */}
+      {readOnly && (
+        <div className="flex items-center gap-2 rounded-2xl bg-amber-50 px-4 py-2.5 text-xs font-extrabold text-amber-700">
+          🔒 Tuần đã qua — chỉ xem, không thể chỉnh sửa
+        </div>
+      )}
+
       {/* ── School periods tab ── */}
       {activeTab === 'school' && (
         <div className="flex flex-1 flex-col gap-4 overflow-hidden">
@@ -297,11 +308,16 @@ export const ScheduleManager = ({
                 key={dow}
                 onClick={() => setActiveDay(dow)}
                 className={cn(
-                  'flex-1 rounded-xl py-2 text-sm font-bold transition-colors',
+                  'flex-1 rounded-xl py-1.5 text-sm font-bold transition-colors',
                   activeDay === dow ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                 )}
               >
-                {DAY_LABELS[dow].replace('Thứ ', '')}
+                <div>{DAY_LABELS[dow].replace('Thứ ', '')}</div>
+                {weekDates?.[dow] ? (
+                  <div className={cn('text-[10px] font-semibold leading-tight', activeDay === dow ? 'text-blue-400' : 'text-slate-400')}>
+                    {weekDates[dow]}
+                  </div>
+                ) : null}
               </button>
             ))}
           </div>
@@ -311,33 +327,40 @@ export const ScheduleManager = ({
               <div key={period.tempId} className="flex items-center gap-2 rounded-2xl bg-slate-50 p-3">
                 <select
                   value={period.subjectId}
+                  disabled={readOnly}
                   onChange={(e) => handleUpdatePeriod(activeDay, period.tempId, 'subjectId', e.target.value)}
-                  className="flex-1 rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none"
+                  className="flex-1 rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none disabled:opacity-60"
                 >
                   {SUBJECTS.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
                 <input type="time" value={period.startTime}
+                  disabled={readOnly}
                   onChange={(e) => handleUpdatePeriod(activeDay, period.tempId, 'startTime', e.target.value)}
-                  className="w-28 rounded-xl border-2 border-slate-200 bg-white px-2 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none"
+                  className="w-28 rounded-xl border-2 border-slate-200 bg-white px-2 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none disabled:opacity-60"
                 />
                 <span className="text-sm font-bold text-slate-400">–</span>
                 <input type="time" value={period.endTime}
+                  disabled={readOnly}
                   onChange={(e) => handleUpdatePeriod(activeDay, period.tempId, 'endTime', e.target.value)}
-                  className="w-28 rounded-xl border-2 border-slate-200 bg-white px-2 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none"
+                  className="w-28 rounded-xl border-2 border-slate-200 bg-white px-2 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none disabled:opacity-60"
                 />
-                <button onClick={() => handleDeletePeriod(activeDay, period.tempId)}
-                  aria-label="Xóa tiết học"
-                  className="flex min-h-10 min-w-10 items-center justify-center rounded-xl p-2 text-red-400 hover:bg-red-50 hover:text-red-600"
-                >
-                  <Trash2 size={18} />
-                </button>
+                {!readOnly && (
+                  <button onClick={() => handleDeletePeriod(activeDay, period.tempId)}
+                    aria-label="Xóa tiết học"
+                    className="flex min-h-10 min-w-10 items-center justify-center rounded-xl p-2 text-red-400 hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
               </div>
             ))}
-            <button onClick={() => handleAddPeriod(activeDay)}
-              className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 py-3 text-sm font-bold text-slate-500 hover:border-blue-400 hover:text-blue-500"
-            >
-              <Plus size={18} /> Thêm tiết học
-            </button>
+            {!readOnly && (
+              <button onClick={() => handleAddPeriod(activeDay)}
+                className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 py-3 text-sm font-bold text-slate-500 hover:border-blue-400 hover:text-blue-500"
+              >
+                <Plus size={18} /> Thêm tiết học
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -360,17 +383,22 @@ export const ScheduleManager = ({
             {(['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as DayOfWeek[]).map((dow) => (
               <button key={dow} onClick={() => setEveningDay(dow)}
                 className={cn(
-                  'rounded-xl py-2 text-xs font-bold transition-colors',
+                  'rounded-xl py-1.5 text-xs font-bold transition-colors',
                   eveningDay === dow ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                 )}
               >
-                {DAY_LABELS[dow].replace('Thứ ', '').replace('Chủ ', 'CN')}
+                <div>{DAY_LABELS[dow].replace('Thứ ', '').replace('Chủ ', 'CN')}</div>
+                {weekDates?.[dow] ? (
+                  <div className={cn('text-[9px] font-semibold leading-tight', eveningDay === dow ? 'text-violet-400' : 'text-slate-400')}>
+                    {weekDates[dow]}
+                  </div>
+                ) : null}
               </button>
             ))}
           </div>
 
-          {/* Add evening block form */}
-          <div className="flex flex-col gap-3 rounded-2xl bg-violet-50 p-4">
+          {/* Add evening block form — hidden when read-only */}
+          {!readOnly && <div className="flex flex-col gap-3 rounded-2xl bg-violet-50 p-4">
             <p className="text-sm font-extrabold text-violet-800 flex items-center gap-1">
               <Moon size={14} /> Thêm buổi học — {DAY_LABELS[eveningDay]}
             </p>
@@ -405,7 +433,7 @@ export const ScheduleManager = ({
                 <Plus size={16} /> {eveningPending ? 'Đang lưu...' : 'Thêm'}
               </KidButton>
             </div>
-          </div>
+          </div>}
         </div>
       )}
 
@@ -413,7 +441,7 @@ export const ScheduleManager = ({
       {activeTab === 'homework' && (
         <div className="flex flex-1 flex-col gap-4 overflow-y-auto">
           <p className="text-sm font-bold text-slate-500">
-            Thêm bài tập cho một ngày cụ thể
+            {readOnly ? 'Bài tập đã giao (chỉ xem)' : 'Thêm bài tập cho một ngày cụ thể'}
           </p>
 
           {hwError && (
@@ -422,7 +450,7 @@ export const ScheduleManager = ({
             </div>
           )}
 
-          <div className="flex flex-col gap-3 rounded-2xl bg-amber-50 p-4">
+          {!readOnly && <div className="flex flex-col gap-3 rounded-2xl bg-amber-50 p-4">
             <p className="text-sm font-extrabold text-amber-800 flex items-center gap-1">
               <BookOpen size={14} /> Thêm bài về nhà
             </p>
@@ -470,7 +498,7 @@ export const ScheduleManager = ({
                 {hwSaved ? <><Check size={16} /> Đã thêm!</> : <><Plus size={16} /> {hwPending ? 'Đang lưu...' : 'Thêm'}</>}
               </KidButton>
             </div>
-          </div>
+          </div>}
         </div>
       )}
     </div>

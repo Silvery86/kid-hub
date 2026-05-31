@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Schedule Route — Design Spec · Kid Hub</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px; line-height: 1.6; color: #1e293b;
+      background: #f8fafc; padding: 32px;
+    }
+    h1 { font-size: 28px; font-weight: 900; color: #0f172a; margin-bottom: 6px; }
+    h2 {
+      font-size: 17px; font-weight: 800; color: #0f172a;
+      margin: 36px 0 12px; padding-bottom: 6px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    h3 { font-size: 13px; font-weight: 800; color: #475569; margin: 18px 0 6px; text-transform: uppercase; letter-spacing: .06em; }
+    p { color: #334155; margin-bottom: 10px; }
+    code {
+      font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px;
+      background: #f1f5f9; border: 1px solid #e2e8f0;
+      border-radius: 4px; padding: 1px 5px; color: #be185d;
+    }
+    pre {
+      background: #0f172a; color: #e2e8f0;
+      border-radius: 10px; padding: 16px; font-size: 12px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      line-height: 1.55; overflow-x: auto; margin: 10px 0;
+    }
+    pre code { background: none; border: none; color: inherit; padding: 0; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0 20px; font-size: 13px; }
+    th {
+      background: #f1f5f9; color: #475569; font-weight: 800;
+      padding: 8px 12px; text-align: left; border-bottom: 2px solid #e2e8f0;
+      white-space: nowrap;
+    }
+    td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+    tr:hover td { background: #fafafa; }
+    .pill {
+      display: inline-block; padding: 2px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; letter-spacing: .03em;
+    }
+    .new   { background: #dcfce7; color: #166534; }
+    .mod   { background: #fef9c3; color: #854d0e; }
+    .del   { background: #fee2e2; color: #991b1b; }
+    .warn  { background: #fff7ed; color: #9a3412; }
+    .card {
+      background: #fff; border-radius: 12px; padding: 18px 22px;
+      border: 1px solid #e2e8f0; margin-bottom: 16px;
+    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .tag { font-size: 11px; font-weight: 700; color: #64748b; }
+    .meta { color: #64748b; font-size: 13px; margin-bottom: 20px; }
+    .note {
+      background: #eff6ff; border-left: 4px solid #3b82f6;
+      border-radius: 0 8px 8px 0; padding: 10px 14px; margin: 10px 0;
+      font-size: 13px; color: #1e3a8a;
+    }
+    .warn-box {
+      background: #fff7ed; border-left: 4px solid #f97316;
+      border-radius: 0 8px 8px 0; padding: 10px 14px; margin: 10px 0;
+      font-size: 13px; color: #9a3412;
+    }
+    ul { padding-left: 20px; margin-bottom: 10px; }
+    li { margin-bottom: 4px; color: #334155; }
+  </style>
+</head>
+<body>
+
+<h1>Schedule Route — Design Spec</h1>
+<p class="meta">
+  Source design: <code>design/components/schedule.jsx</code> ·
+  Target route: <code>app/(dashboard)/schedule/</code> ·
+  Status: <span class="pill mod">Pending Review</span>
+</p>
+
+<!-- ──────────────────────────────────────────────── -->
+<h2>1. Summary of Changes</h2>
+
+<p>The current schedule is a single 5-column grid that works acceptably on tablet landscape but is unusable on phone and cramped on phone landscape. The redesign introduces <strong>orientation-aware rendering</strong>: a tab-per-day list view on phone portrait, a compact mini-grid on phone landscape, and a richer grid + panel layout on tablet and desktop.</p>
+
+<p>The largest breaking change is in <strong>subject data</strong>: the new <code>PeriodCell</code> uses <code>color-mix(in oklab, &lt;hex&gt; 14%, white)</code> for cell tinting, which requires each subject to expose a raw hex color rather than a Tailwind class name.</p>
+
+<div class="note">Schedule is inside <code>(dashboard)</code> so <code>AppSidebar</code> is already provided by <code>app/(dashboard)/layout.tsx</code>. The hub components do NOT need to import it themselves (unlike <code>/math</code> and <code>/english</code> which are in the separate <code>(games)</code> layout).</div>
+
+<!-- ──────────────────────────────────────────────── -->
+<h2>2. Five-Viewport Overview</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Viewport</th>
+      <th>Breakpoint / orientation</th>
+      <th>Layout</th>
+      <th>Primary component</th>
+      <th>Right / aside</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Phone Portrait</strong></td>
+      <td><code>portrait</code> ≤ ~480px wide</td>
+      <td>Single-column, scrollable</td>
+      <td><code>DayTabs</code> + summary card + <code>DayList</code></td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td><strong>Phone Landscape</strong></td>
+      <td><code>landscape</code> ≤ ~568px tall</td>
+      <td>Narrow icon rail + main content</td>
+      <td><code>WeekGrid orient="rows-periods"</code> compact+mini</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td><strong>Tablet Portrait</strong></td>
+      <td><code>portrait</code> 768–1024px wide</td>
+      <td>AppSidebar + main column</td>
+      <td><code>WeekGrid orient="rows-periods"</code></td>
+      <td>Bottom today rail (<code>DayRail</code>)</td>
+    </tr>
+    <tr>
+      <td><strong>Tablet Landscape</strong></td>
+      <td><code>landscape</code> 768–1024px tall</td>
+      <td>AppSidebar + main + aside</td>
+      <td><code>WeekGrid orient="cols-periods"</code></td>
+      <td>280px: today accent card + <code>SubjectLegend</code></td>
+    </tr>
+    <tr>
+      <td><strong>Desktop</strong></td>
+      <td><code>landscape</code> ≥ 1280px</td>
+      <td>Wide sidebar + main + aside</td>
+      <td><code>WeekGrid orient="cols-periods"</code></td>
+      <td>320px: selected period detail + <code>SubjectLegend</code> + week stats</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ──────────────────────────────────────────────── -->
+<h2>3. Grid Orientation System</h2>
+
+<p><code>WeekGrid</code> supports two orientations controlled by an <code>orient</code> prop:</p>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>orient="rows-periods" (Portrait)</h3>
+    <p>Periods are <strong>rows</strong>, days are <strong>columns</strong>. A 64px time label column appears on the left. Best when the screen has more vertical space than horizontal.</p>
+    <pre><code>         T2    T3    T4    T5    T6
+Tiết 1  [cell][cell][cell][cell][cell]
+Tiết 2  [cell][cell][cell][cell][cell]
+Tiết 3  [cell][cell][cell][cell][cell]
+Tiết 4  [cell][cell][cell][cell][cell]
+Tiết 5  [cell][cell][cell][cell][cell]</code></pre>
+  </div>
+  <div class="card">
+    <h3>orient="cols-periods" (Landscape)</h3>
+    <p>Periods are <strong>columns</strong>, days are <strong>rows</strong>. A 100px day label column appears on the left. Best when the screen has more horizontal space.</p>
+    <pre><code>          T1     T2     T3     T4     T5
+Thứ Hai  [cell][cell][cell][cell][cell]
+Thứ Ba   [cell][cell][cell][cell][cell]
+Thứ Tư   [cell][cell][cell][cell][cell]
+Thứ Năm  [cell][cell][cell][cell][cell]
+Thứ Sáu  [cell][cell][cell][cell][cell]</code></pre>
+  </div>
+</div>
+
+<!-- ──────────────────────────────────────────────── -->
+<h2>4. PeriodCell Redesign</h2>
+
+<p>This is the most visually significant change. The current cell is a passive <code>div</code>; the new cell is a tappable <code>button</code> with subject-color tinting.</p>
+
+<table>
+  <thead>
+    <tr><th>Property</th><th>Current</th><th>New</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Element</td>
+      <td><code>div</code></td>
+      <td><code>button</code> (interactive, calls <code>onPick</code>)</td>
+    </tr>
+    <tr>
+      <td>Normal bg</td>
+      <td>Full subject color via <code>colorClass</code> (e.g. <code>bg-blue-500</code>)</td>
+      <td><code>color-mix(in oklab, &lt;hex&gt; 14%, white)</code> — very light tint</td>
+    </tr>
+    <tr>
+      <td>Current (isNow) bg</td>
+      <td>Same color + <code>scale-[1.03] shadow-lg ring-2 ring-white</code></td>
+      <td>Full subject <code>&lt;hex&gt;</code> + <code>box-shadow: 0 10px 24px -12px &lt;color&gt;</code></td>
+    </tr>
+    <tr>
+      <td>Text color</td>
+      <td>Always <code>text-white</code></td>
+      <td>Normal: subject hex; isNow: <code>#fff</code></td>
+    </tr>
+    <tr>
+      <td>Content</td>
+      <td>Subject name + time (time hidden in portrait)</td>
+      <td>Subject icon (emoji) + name; <code>compact</code> hides time, <code>mini</code> = icon+name only on one line</td>
+    </tr>
+    <tr>
+      <td>Pulse dot</td>
+      <td>White ping animation (top-right)</td>
+      <td>Same — white dot top-right when <code>isNow</code></td>
+    </tr>
+    <tr>
+      <td>Free cell</td>
+      <td><code>bg-slate-50</code>, <code>—</code> text</td>
+      <td><code>bg-#f8fafc</code>, <code>border: 2px dashed #e2e8f0</code>, <code>—</code> text</td>
+    </tr>
+    <tr>
+      <td>Border radius</td>
+      <td><code>rounded-xl</code> (12px)</td>
+      <td>Normal: 14px; compact: 10px (via inline style)</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="warn-box">
+  <strong>Breaking dep:</strong> <code>color-mix(in oklab, …)</code> requires a CSS color value, not a Tailwind class name. Subject objects must gain a <code>color: string</code> field (hex). See Delta D-01.
+</div>
+
+<!-- ──────────────────────────────────────────────── -->
+<h2>5. New Component Inventory</h2>
+
+<table>
+  <thead>
+    <tr><th>Component</th><th>File</th><th>Status</th><th>Purpose</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>DayTabs</code></td>
+      <td><code>components/dashboard/DayTabs.tsx</code></td>
+      <td><span class="pill new">New</span></td>
+      <td>5-tab day selector used in phone portrait. Active tab: <code>--color-schedule</code> bg. Today tab: dot indicator when not active. <code>compact</code> prop uses short labels (T2–T6) vs full (Thứ Hai…).</td>
+    </tr>
+    <tr>
+      <td><code>DayList</code></td>
+      <td><code>components/dashboard/DayList.tsx</code></td>
+      <td><span class="pill new">New</span></td>
+      <td>Vertical stacked period rows for phone portrait. Each row: period number badge (accent bg if current) + subject icon box + name + time + "Đang học" pill if current. White card, border highlight + shadow when current.</td>
+    </tr>
+    <tr>
+      <td><code>DayRail</code></td>
+      <td><code>components/dashboard/DayRail.tsx</code></td>
+      <td><span class="pill new">New</span></td>
+      <td>Horizontal strip of 5 period mini-cells for the tablet portrait bottom rail. Shows the full day at a glance. Current period highlighted.</td>
+    </tr>
+    <tr>
+      <td><code>SubjectLegend</code></td>
+      <td><code>components/dashboard/SubjectLegend.tsx</code></td>
+      <td><span class="pill new">New</span></td>
+      <td>Ranked list of subjects by period count. Each row: small subject icon + name + period count + color progress bar (width = share of total periods). Used in tablet-L and desktop right aside.</td>
+    </tr>
+    <tr>
+      <td><code>WeekGrid</code></td>
+      <td><code>components/dashboard/WeekGrid.tsx</code></td>
+      <td><span class="pill new">New</span> (replaces <code>ScheduleGrid</code>)</td>
+      <td>Full-week grid with <code>orient</code> prop. Wraps <code>PeriodCell</code>. Accepts <code>compact</code> (smaller cells) and <code>mini</code> (icon+name only) flags. Calls <code>onPick({ day, period })</code> on cell click.</td>
+    </tr>
+    <tr>
+      <td><code>ScheduleGrid</code></td>
+      <td><code>components/dashboard/ScheduleGrid.tsx</code></td>
+      <td><span class="pill del">Replaced</span></td>
+      <td>Old single-orientation grid. Replaced by <code>WeekGrid</code>.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ──────────────────────────────────────────────── -->
+<h2>6. DayList — Row Card Anatomy</h2>
+
+<div class="card">
+  <pre><code>┌─────────────────────────────────────────────────────────┐
+│  [badge]  [icon]  Toán Học            09:00 – 09:40     │
+│  border highlight + shadow when isNow                    │
+│                                          [Đang học] pill │
+└─────────────────────────────────────────────────────────┘
+
+badge: 32×32px, borderRadius 10px
+  normal: bg #f1f5f9, text #64748b
+  isNow:  bg subject.color, text #fff
+  content: period number (1–5)
+
+icon box (Subj): 40×40px square with subject color bg + emoji
+  (same as existing Subj helper component in design)
+
+text block:
+  subject name — 14px 800 #1e293b
+  time — 12px 700 #64748b
+
+Đang học pill: accent tone (green/teal or schedule accent color)</code></pre>
+</div>
+
+<!-- ──────────────────────────────────────────────── -->
+<h2>7. DayTabs — Tab Anatomy</h2>
+
+<div class="card">
+  <pre><code>┌─────────────────────────────────────────────┐  bg: #fff, borderRadius 16px
+│  [T2]  [T3]  [T4]  [T5]  [T6]             │  shadow: 0 1px 3px rgba(15,23,42,0.05)
+└─────────────────────────────────────────────┘
+
+Each tab:
+  flex:1, padding: 6px 4px (compact) / 10px 8px (full)
+  border: 0, borderRadius: 12px
+  font: 11px (compact) / 13px (full), weight 900
+
+Active tab:
+  background: var(--color-schedule)  ← accent blue
+  color: #fff
+  box-shadow: 0 4px 10px -3px color-mix(in oklab, accent 50%, transparent)
+
+Inactive tab (today):
+  color: var(--color-schedule-deep)
+  dot: 4×4px circle at bottom-center, bg var(--color-schedule)
+
+Inactive tab (other):
+  color: #475569</code></pre>
+</div>
+
+<!-- ──────────────────────────────────────────────── -->
+<h2>8. Today Accent Card (Tablet-L / Desktop aside)</h2>
+
+<div class="card">
+  <pre><code>┌──────────────────────────────────────┐
+│ LABEL  Hôm nay                        │  bg: var(--color-schedule)
+│  Thứ Tư                              │  color: #fff, borderRadius 22px
+│  5 tiết · 07:30 → 11:10             │  padding: 18px
+│                                      │  boxShadow: 0 16px 32px -16px var(--color-schedule)
+│  ┌──┐ Hoạt động            07:30    │
+│  ├──┤ Tiếng Việt           08:10    │  period mini-list rows:
+│  ├──┤ Toán Học ●currently  09:00    │    current row: rgba(255,255,255,0.22) bg
+│  ├──┤ Nhạc                 09:40    │    other rows: rgba(255,255,255,0.08) bg
+│  └──┘ Khoa học             10:30    │    period badge: 22×22px bg rgba(255,255,255,0.2)
+└──────────────────────────────────────┘</code></pre>
+</div>
+
+<!-- ──────────────────────────────────────────────── -->
+<h2>9. Desktop Detail Panel — Selected Period Card</h2>
+
+<div class="card">
+  <pre><code>┌──────────────────────────────────────────┐
+│ THỨ TƯ · TIẾT 3       (uppercase label) │  bg: subject.color
+│ Toán Học               (32px, 900)      │  color: #fff
+│ 09:00 – 09:40 · 40 phút (14px)          │  borderRadius: 22px, padding: 20px
+│                                          │  boxShadow: 0 18px 36px -18px subject.color
+│  [Mở bài học]  [🎮 Chơi game]           │  watermark emoji: absolute -right-2.5 -bottom-7
+│                                          │              130px, opacity 0.18
+└──────────────────────────────────────────┘
+
+"Mở bài học" button: bg #fff, color subject.color, borderRadius 999px
+"🎮 Chơi game" button: only shown for math/english subjects
+  bg rgba(255,255,255,0.2), color #fff</code></pre>
+</div>
+
+<!-- ──────────────────────────────────────────────── -->
+<h2>10. Design Tokens Required</h2>
+
+<table>
+  <thead>
+    <tr><th>Token</th><th>Value</th><th>Status</th><th>Usage</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>--color-schedule</code></td>
+      <td><code>#3b82f6</code> (same blue as math)</td>
+      <td><span class="pill new">Add to @theme</span></td>
+      <td>DayTabs active bg, today column highlight, today accent card bg</td>
+    </tr>
+    <tr>
+      <td><code>--color-schedule-deep</code></td>
+      <td><code>#1d4ed8</code></td>
+      <td><span class="pill new">Add to @theme</span></td>
+      <td>Today tab inactive text, today column header text</td>
+    </tr>
+    <tr>
+      <td><code>--color-schedule-soft</code></td>
+      <td><code>color-mix(in oklab, #3b82f6 10%, white)</code> ≈ <code>#eff6ff</code></td>
+      <td><span class="pill new">Add to @theme</span></td>
+      <td>Today column header background, day summary card icon bg</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note">These token names mirror the <code>--color-math-*</code> / <code>--color-english-*</code> naming pattern already in <code>app/globals.css</code>. The schedule accent is intentionally the same blue as math (both use <code>#3b82f6</code>) — different semantic token, same value.</div>
+
+<!-- ──────────────────────────────────────────────── -->
+<h2>11. Subject Data Changes (D-01)</h2>
+
+<p>The new <code>PeriodCell</code> requires each subject to have a <code>color</code> hex value and an <code>icon</code> emoji. Currently <code>lib/data/subjects.ts</code> uses <code>colorClass</code> (Tailwind class string).</p>
+
+<table>
+  <thead>
+    <tr><th>Subject</th><th>Current <code>colorClass</code></th><th>Add <code>color</code> (hex)</th><th>Add <code>icon</code> (emoji)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Toán Học (math)</td><td><code>bg-blue-500</code></td><td><code>#3b82f6</code></td><td>📐</td></tr>
+    <tr><td>Tiếng Việt (vietnamese)</td><td><code>bg-red-500</code></td><td><code>#ef4444</code></td><td>📖</td></tr>
+    <tr><td>Tiếng Anh (english)</td><td><code>bg-emerald-500</code></td><td><code>#10b981</code></td><td>🔤</td></tr>
+    <tr><td>Khoa học (science)</td><td><code>bg-purple-500</code></td><td><code>#8b5cf6</code></td><td>🔬</td></tr>
+    <tr><td>Thể dục (pe)</td><td><code>bg-amber-500</code></td><td><code>#f59e0b</code></td><td>⚽</td></tr>
+    <tr><td>Mỹ thuật (art)</td><td><code>bg-pink-500</code></td><td><code>#ec4899</code></td><td>🎨</td></tr>
+    <tr><td>Âm nhạc (music)</td><td><code>bg-orange-500</code></td><td><code>#f97316</code></td><td>🎵</td></tr>
+    <tr><td>Đạo đức (ethics)</td><td><code>bg-teal-500</code></td><td><code>#14b8a6</code></td><td>🌱</td></tr>
+    <tr><td>Tin học (it)</td><td><code>bg-cyan-500</code></td><td><code>#06b6d4</code></td><td>💻</td></tr>
+    <tr><td>Hoạt động (activities)</td><td><code>bg-lime-500</code></td><td><code>#84cc16</code></td><td>🌟</td></tr>
+  </tbody>
+</table>
+
+<div class="note">The <code>colorClass</code> field can be kept for backwards compat with any other component that still uses it (e.g. existing <code>TodayPlanCard</code>). Add <code>color</code> and <code>icon</code> as additional fields.</div>
+
+<!-- ──────────────────────────────────────────────── -->
+<h2>12. TodayPlanCard — Disposition</h2>
+
+<div class="warn-box">
+  <strong>Decision needed:</strong> The current page shows <code>TodayPlanCard</code> (evening classes + homework) in the right panel. The new design replaces the right panel with a "Hôm nay" <em>school timetable summary</em> (accent card + SubjectLegend). The evening plan is no longer in the design mockup.
+  <br><br>
+  Options:
+  <ol style="margin-left:18px; margin-top:8px;">
+    <li>Remove <code>TodayPlanCard</code> from the schedule page entirely — its content (evening homework) is visible elsewhere (dashboard).</li>
+    <li>Keep it below the SubjectLegend in the aside (may crowd the panel).</li>
+    <li>Move it to a separate section of phone portrait (below DayList).</li>
+  </ol>
+  <strong>Recommendation:</strong> Option 1 — the schedule route focuses on school timetable only. Evening plan stays on the dashboard.
+</div>
+
+<!-- ──────────────────────────────────────────────── -->
+<h2>13. Delta Table</h2>
+
+<table>
+  <thead>
+    <tr><th>ID</th><th>File(s)</th><th>Type</th><th>What changes</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>D-01</strong></td>
+      <td><code>lib/data/subjects.ts</code></td>
+      <td><span class="pill mod">Modify</span></td>
+      <td>Add <code>color: string</code> (hex) and <code>icon: string</code> (emoji) fields to every subject object. Keep <code>colorClass</code> for backwards compat.</td>
+    </tr>
+    <tr>
+      <td><strong>D-02</strong></td>
+      <td><code>app/globals.css</code></td>
+      <td><span class="pill mod">Modify</span></td>
+      <td>Add <code>--color-schedule</code>, <code>--color-schedule-deep</code>, <code>--color-schedule-soft</code> tokens inside <code>@theme {}</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>D-03</strong></td>
+      <td><code>components/dashboard/WeekGrid.tsx</code></td>
+      <td><span class="pill new">New file</span></td>
+      <td>New client component. Props: <code>orient</code>, <code>days</code> (weekly data), <code>todayDow</code>, <code>currentPeriod</code>, <code>onPick</code>, <code>compact?</code>, <code>mini?</code>. Renders CSS grid with <code>PeriodCell</code> children. Orientation-specific column/row templates (see §3).</td>
+    </tr>
+    <tr>
+      <td><strong>D-04</strong></td>
+      <td><code>components/dashboard/PeriodCell.tsx</code></td>
+      <td><span class="pill new">New file</span></td>
+      <td>Extracted from WeekGrid. <code>button</code> element, color-mix tint bg, pulse dot, icon+name layout, <code>compact</code>/<code>mini</code> props. Uses <code>subject.color</code> (hex) directly in <code>style</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>D-05</strong></td>
+      <td><code>components/dashboard/DayTabs.tsx</code></td>
+      <td><span class="pill new">New file</span></td>
+      <td>5-tab selector. Props: <code>activeDay</code>, <code>todayDow</code>, <code>onChange</code>, <code>compact?</code>. Active: <code>bg-schedule</code> + shadow. Today inactive: dot indicator. See §7.</td>
+    </tr>
+    <tr>
+      <td><strong>D-06</strong></td>
+      <td><code>components/dashboard/DayList.tsx</code></td>
+      <td><span class="pill new">New file</span></td>
+      <td>Vertical period row list for phone portrait. Props: <code>dayId</code>, <code>periods</code>, <code>currentPeriodNumber</code>, <code>onPick?</code>. See §6 for anatomy.</td>
+    </tr>
+    <tr>
+      <td><strong>D-07</strong></td>
+      <td><code>components/dashboard/DayRail.tsx</code></td>
+      <td><span class="pill new">New file</span></td>
+      <td>Horizontal mini-period strip for tablet portrait bottom rail. Props: <code>periods</code>, <code>currentPeriodNumber</code>, <code>onPick?</code>. Each cell: period number + subject icon, current = subject color bg.</td>
+    </tr>
+    <tr>
+      <td><strong>D-08</strong></td>
+      <td><code>components/dashboard/SubjectLegend.tsx</code></td>
+      <td><span class="pill new">New file</span></td>
+      <td>Subject distribution list. Props: <code>days</code> (weekly data to compute counts). Sorted by period count desc. Color progress bar uses <code>subject.color</code>. See §5.</td>
+    </tr>
+    <tr>
+      <td><strong>D-09</strong></td>
+      <td><code>app/(dashboard)/schedule/page.tsx</code></td>
+      <td><span class="pill mod">Modify</span></td>
+      <td>Remove <code>TabletPageContainer</code> wrapper. New shell: <code>h-dvh bg-shell-kid overflow-hidden portrait:overflow-y-auto</code> (same pattern as EnglishHub/MathHub, minus the sidebar offset because <code>(dashboard)/layout.tsx</code> already provides it). Remove <code>TodayPlanCard</code> from right panel (see §12). Wire orientation-specific content blocks.</td>
+    </tr>
+    <tr>
+      <td><strong>D-10</strong></td>
+      <td><code>components/dashboard/ScheduleGrid.tsx</code></td>
+      <td><span class="pill del">Delete / replace</span></td>
+      <td>Superseded by <code>WeekGrid</code>. Keep file until <code>WeekGrid</code> is confirmed working, then delete.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ──────────────────────────────────────────────── -->
+<h2>14. Responsive Layout Structure</h2>
+
+<p>Following the same pattern as EnglishHub and MathHub — both DOM trees in the page, CSS hides the wrong one:</p>
+
+<pre><code>// app/(dashboard)/schedule/page.tsx (simplified structure)
+&lt;div className="h-dvh bg-shell-kid overflow-hidden portrait:overflow-y-auto"&gt;
+
+  {/* ── PHONE PORTRAIT ─────────────────────────────────────────── */}
+  &lt;div className="flex portrait:flex hidden flex-col h-full px-3.5 pb-4 gap-3"&gt;
+    &lt;Header /&gt;                  {/* "Lịch học" + week info + edit btn */}
+    &lt;DayTabs ... compact /&gt;
+    &lt;DaySummaryCard /&gt;          {/* period count + day name + time range */}
+    &lt;DayList ... /&gt;             {/* scrollable period rows */}
+  &lt;/div&gt;
+
+  {/* ── LANDSCAPE: tablet-portrait / tablet-L / desktop ────────── */}
+  &lt;div className="portrait:hidden flex h-full gap-4 p-4 lg:p-6"&gt;
+    &lt;div className="flex-1 flex flex-col gap-3 min-w-0"&gt;
+      &lt;Header /&gt;
+      {/* Phone landscape: rows-periods compact+mini */}
+      {/* Tablet portrait: rows-periods full */}
+      {/* Tablet-L / Desktop: cols-periods full */}
+      &lt;WeekGrid orient={...} ... /&gt;
+      {/* Tablet portrait bottom rail */}
+      &lt;TodayRail className="hidden lg:hidden ..." /&gt;
+    &lt;/div&gt;
+    {/* Tablet-L + Desktop right aside */}
+    &lt;aside className="hidden lg:flex flex-col gap-3 w-[280px] lg:w-[320px]"&gt;
+      &lt;TodayCard /&gt;             {/* accent bg, today's periods */}
+      &lt;SubjectLegend /&gt;
+      {/* Desktop only: selected period detail + week stats */}
+    &lt;/aside&gt;
+  &lt;/div&gt;
+
+&lt;/div&gt;</code></pre>
+
+<div class="note">
+  Note: the <code>(dashboard)</code> layout already applies <code>pl-16 portrait:pl-0 lg:pl-56 portrait:pb-16</code> to the page container (from <code>app/(dashboard)/layout.tsx</code>). The schedule page itself does <strong>not</strong> need to re-apply sidebar offset classes — this differs from <code>/math</code> and <code>/english</code> which are in the sidebar-less <code>(games)</code> layout.
+</div>
+
+<!-- ──────────────────────────────────────────────── -->
+<h2>15. Implementation Sequence</h2>
+
+<ol style="padding-left:20px; line-height:2.2;">
+  <li>D-01 — Add <code>color</code> + <code>icon</code> to <code>lib/data/subjects.ts</code></li>
+  <li>D-02 — Add schedule tokens to <code>app/globals.css</code></li>
+  <li>D-04 — New <code>PeriodCell.tsx</code> (no external deps beyond subject data)</li>
+  <li>D-03 — New <code>WeekGrid.tsx</code> (depends on PeriodCell)</li>
+  <li>D-05 — New <code>DayTabs.tsx</code></li>
+  <li>D-06 — New <code>DayList.tsx</code></li>
+  <li>D-07 — New <code>DayRail.tsx</code></li>
+  <li>D-08 — New <code>SubjectLegend.tsx</code></li>
+  <li>D-09 — Rewrite <code>app/(dashboard)/schedule/page.tsx</code></li>
+  <li>D-10 — Delete old <code>ScheduleGrid.tsx</code></li>
+</ol>
+
+<p style="margin-top:20px; color:#64748b; font-size:12px;">
+  Generated from <code>design/components/schedule.jsx</code> ·
+  Cross-referenced with <code>app/(dashboard)/schedule/page.tsx</code> and <code>components/dashboard/ScheduleGrid.tsx</code> ·
+  Responsive rules from <code>docs/FE/RESPONSIVE_SUMMARY.md</code>
+</p>
+
+</body>
+</html>

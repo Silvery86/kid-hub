@@ -1,29 +1,41 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo } from 'react'
-import { useLocalStorage } from '@/hooks/useLocalStorage'
+import { useMemo, useState, useTransition } from 'react'
 import {
-  DEFAULT_KID_ACCESS_TOGGLES,
   KID_ACCESS_FEATURES,
   KID_ACCESS_GROUP_LABELS,
   type KidAccessGroup,
 } from '@/lib/data/kid-access'
-import { STORAGE_KEYS } from '@/lib/constants'
 import { AccessToggleRow } from './AccessToggleRow'
 import { KidPatternSetup } from './KidPatternSetup'
+import { KidProgressPanel } from './KidProgressPanel'
+import { RecentActivityPanel } from './RecentActivityPanel'
 import { cn } from '@/lib/utils'
+import type { KidProgressData } from '@/server/actions/kid-progress.actions'
+import type { ScreenTimeData } from '@/server/actions/screen-time.actions'
+import type { ActivityItem } from '@/server/actions/kid-access.actions'
+import { saveKidAccessSettingsAction } from '@/server/actions/kid-access.actions'
+import { setScreenTimeLimitAction } from '@/server/actions/screen-time.actions'
 
-const RECENT_ACTIVITY = [
-  { icon: '🔢', text: 'Chơi Number Ninja · Cấp 2', time: '09:20', dur: '12 phút' },
-  { icon: '🔤', text: 'Mở Word Safari · Cấp 1', time: '08:55', dur: '8 phút' },
-  { icon: '📅', text: 'Xem lịch học', time: '07:35', dur: '2 phút' },
-] as const
+function ScreenTimeCard({
+  screenTime,
+  compact = false,
+}: {
+  screenTime: ScreenTimeData
+  compact?: boolean
+}) {
+  const [limitMins, setLimitMins] = useState(screenTime.limitMins)
+  const [, startTransition] = useTransition()
 
-function ScreenTimeCard({ compact = false }: { compact?: boolean }) {
-  const total = 120
-  const used = 47
-  const pct = Math.round((used / total) * 100)
+  const usedMins = Math.round(screenTime.usedSecs / 60)
+  const pct = Math.min(100, Math.round((usedMins / limitMins) * 100))
+
+  const adjustLimit = (delta: number) => {
+    const next = Math.min(480, Math.max(30, limitMins + delta))
+    setLimitMins(next)
+    startTransition(() => { void setScreenTimeLimitAction(next) })
+  }
 
   return (
     <div
@@ -38,15 +50,35 @@ function ScreenTimeCard({ compact = false }: { compact?: boolean }) {
             Thời gian màn hình hôm nay
           </div>
           <div className={cn('font-black leading-none', compact ? 'text-xl' : 'text-[26px]')}>
-            {used} / {total} phút
+            {usedMins} / {limitMins} phút
           </div>
         </div>
-        <span className="shrink-0 rounded-full bg-white/20 px-3 py-1.5 text-xs font-extrabold">
-          Điều chỉnh
-        </span>
+        {!compact && (
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={() => adjustLimit(-30)}
+              className="rounded-full bg-white/20 px-2.5 py-1 text-sm font-extrabold hover:bg-white/30"
+              aria-label="Giảm 30 phút"
+            >
+              −
+            </button>
+            <button
+              type="button"
+              onClick={() => adjustLimit(30)}
+              className="rounded-full bg-white/20 px-2.5 py-1 text-sm font-extrabold hover:bg-white/30"
+              aria-label="Tăng 30 phút"
+            >
+              +
+            </button>
+          </div>
+        )}
       </div>
       <div className={cn('overflow-hidden rounded-full bg-white/25', compact ? 'h-2' : 'h-2.5')}>
-        <div className="h-full rounded-full bg-white" style={{ width: `${pct}%` }} />
+        <div
+          className={cn('h-full rounded-full', pct >= 100 ? 'bg-red-300' : 'bg-white')}
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   )
@@ -86,41 +118,28 @@ function AccessGroups({
   )
 }
 
-function ActivitySidebar({ compact }: { compact?: boolean }) {
-  return (
-    <aside className="flex flex-col gap-3">
-      <div className="text-xs font-extrabold tracking-wide text-slate-400 uppercase">
-        Hoạt động gần đây
-      </div>
-      {RECENT_ACTIVITY.map((a) => (
-        <div
-          key={a.text}
-          className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm md:rounded-[18px] md:p-4"
-        >
-          <span className={compact ? 'text-xl' : 'text-2xl'} aria-hidden="true">
-            {a.icon}
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-extrabold text-slate-800">{a.text}</div>
-            {!compact ? (
-              <div className="mt-0.5 text-xs font-bold text-slate-400">Hôm nay {a.time}</div>
-            ) : null}
-          </div>
-          <span className="shrink-0 text-xs font-extrabold text-slate-500">{a.dur}</span>
-        </div>
-      ))}
-    </aside>
-  )
-}
-
-export function KidAccessView() {
-  const [toggles, setToggles] = useLocalStorage<Record<string, boolean>>(
-    STORAGE_KEYS.KID_ACCESS_TOGGLES,
-    DEFAULT_KID_ACCESS_TOGGLES
-  )
+export function KidAccessView({
+  kidProgress,
+  initialToggles,
+  screenTime,
+  recentActivity,
+}: {
+  kidProgress: KidProgressData | null
+  initialToggles: Record<string, boolean>
+  screenTime: ScreenTimeData
+  recentActivity: ActivityItem[]
+}) {
+  const [toggles, setToggles] = useState<Record<string, boolean>>(initialToggles)
+  const [, startTransition] = useTransition()
 
   const handleToggle = (id: string) => {
-    setToggles((prev) => ({ ...prev, [id]: !(prev[id] ?? true) }))
+    setToggles((prev) => {
+      const next = { ...prev, [id]: !(prev[id] ?? true) }
+      startTransition(() => {
+        void saveKidAccessSettingsAction(next)
+      })
+      return next
+    })
   }
 
   const headerBack = (
@@ -146,7 +165,7 @@ export function KidAccessView() {
           {headerBack}
         </div>
         <KidPatternSetup compact />
-        <ScreenTimeCard compact />
+        <ScreenTimeCard screenTime={screenTime} compact />
         <AccessGroups toggles={toggles} onToggle={handleToggle} compact />
       </div>
 
@@ -164,10 +183,25 @@ export function KidAccessView() {
           {headerBack}
         </div>
         <KidPatternSetup />
-        <ScreenTimeCard />
+        <ScreenTimeCard screenTime={screenTime} />
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 overflow-hidden lg:grid-cols-[1fr_280px]">
           <div className="min-h-0 overflow-y-auto">{mainGroups}</div>
-          <ActivitySidebar />
+          <aside className="flex flex-col gap-5 overflow-y-auto">
+            <div>
+              <div className="mb-2 text-xs font-extrabold tracking-wide text-slate-400 uppercase">
+                Tiến độ của Khôi
+              </div>
+              <div className="rounded-[22px] bg-white p-4 shadow-sm">
+                <KidProgressPanel progress={kidProgress} />
+              </div>
+            </div>
+            <div>
+              <div className="mb-2 text-xs font-extrabold tracking-wide text-slate-400 uppercase">
+                Hoạt động gần đây
+              </div>
+              <RecentActivityPanel activities={recentActivity} />
+            </div>
+          </aside>
         </div>
       </div>
     </div>

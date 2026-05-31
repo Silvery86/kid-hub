@@ -14,18 +14,22 @@ import { DAY_LABELS } from '@/lib/constants'
 import { getSubjectById } from '@/lib/data/subjects'
 import {
   computeWeekStats,
+  dayShortLabel,
   formatDayTimeRange,
   formatPeriodDuration,
   formatWeekSubtitleForOffset,
   getIsoWeekNumber,
   getMondayForWeekOffset,
+  getWeekDates,
   schoolDaysFromSchedule,
   schoolPeriodsOnly,
 } from '@/lib/schedule-display'
+import { DAYS_OF_WEEK } from '@/lib/constants'
 import type { ClassPeriod, DailySchedule, DayOfWeek } from '@/types'
 
 interface ScheduleViewProps {
   initialSchedule: DailySchedule[]
+  allEveningBlocks?: DailySchedule[]
 }
 
 const parseTimeToMinutes = (time: string): number => {
@@ -46,17 +50,23 @@ interface SelectedCell {
   period: ClassPeriod
 }
 
-export const ScheduleView = ({ initialSchedule }: ScheduleViewProps) => {
+export const ScheduleView = ({ initialSchedule, allEveningBlocks = [] }: ScheduleViewProps) => {
   const weeklySchedule = useMemo(() => ({ weekStartDate: '', days: initialSchedule }), [initialSchedule])
   const { allDays, todayDow, currentPeriod, todaySchedule } = useSchedule(weeklySchedule)
   const schoolDays = useMemo(() => schoolDaysFromSchedule(allDays), [allDays])
   const stats = useMemo(() => computeWeekStats(schoolDays), [schoolDays])
+
+  const eveningByDay = useMemo(
+    () => new Map(allEveningBlocks.map((d) => [d.day, d.periods])),
+    [allEveningBlocks]
+  )
 
   const defaultDay = todayDow ?? 'monday'
   const [activeDay, setActiveDay] = useState<DayOfWeek>(defaultDay)
   const [selected, setSelected] = useState<SelectedCell | null>(null)
   const [weekOffset, setWeekOffset] = useState(0)
 
+  const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset])
   const isCurrentWeek = weekOffset === 0
   const displayTodayDow = isCurrentWeek ? todayDow : null
   const currentPeriodNumber = isCurrentWeek ? (currentPeriod?.periodNumber ?? null) : null
@@ -100,9 +110,10 @@ export const ScheduleView = ({ initialSchedule }: ScheduleViewProps) => {
           onNextWeek={() => setWeekOffset((o) => o + 1)}
           onThisWeek={() => setWeekOffset(0)}
         />
-        <DayTabs activeDay={activeDay} todayDow={displayTodayDow} onChange={setActiveDay} compact />
+        <DayTabs activeDay={activeDay} todayDow={displayTodayDow} onChange={setActiveDay} compact dateByDay={weekDates} />
         <DaySummaryCard
           dayLabel={DAY_LABELS[activeDay]}
+          date={weekDates[activeDay]}
           periodCount={schoolPeriodsOnly(activePeriods).length}
           timeRange={formatDayTimeRange(activePeriods)}
           isToday={activeDay === displayTodayDow}
@@ -113,7 +124,9 @@ export const ScheduleView = ({ initialSchedule }: ScheduleViewProps) => {
             currentPeriodNumber={activeDay === displayTodayDow ? currentPeriodNumber : null}
             onPick={(p) => handlePick({ day: activeDay, period: p })}
           />
+          <EveningBlockList blocks={eveningByDay.get(activeDay) ?? []} />
         </div>
+        <WeekEveningSection eveningByDay={eveningByDay} />
       </div>
 
       {/* ── Tablet portrait ────────────────────────────────────────── */}
@@ -133,9 +146,11 @@ export const ScheduleView = ({ initialSchedule }: ScheduleViewProps) => {
             todayDow={displayTodayDow}
             currentPeriodNumber={currentPeriodNumber}
             onPick={handlePick}
+            dateByDay={weekDates}
           />
         </div>
-        {isCurrentWeek && todayDow && todayPeriods.length > 0 ? (
+        <WeekEveningSection eveningByDay={eveningByDay} dateByDay={weekDates} />
+        {isCurrentWeek && todayDow && (todayPeriods.length > 0 || (eveningByDay.get(todayDow) ?? []).length > 0) ? (
           <div className="shrink-0 rounded-[22px] bg-white p-4 shadow-sm">
             <div className="mb-2.5 flex items-baseline justify-between">
               <span className="text-[15px] font-black text-text-primary">
@@ -145,14 +160,15 @@ export const ScheduleView = ({ initialSchedule }: ScheduleViewProps) => {
                 {schoolPeriodsOnly(todayPeriods).length} tiết · {formatDayTimeRange(todayPeriods)}
               </span>
             </div>
-            <DayRail
-              periods={todayPeriods}
-              currentPeriodNumber={currentPeriodNumber}
-              progress={
-                currentPeriod ? periodProgress(currentPeriod, new Date()) : null
-              }
-              onPick={(p) => todayDow && handlePick({ day: todayDow, period: p })}
-            />
+            {todayPeriods.length > 0 && (
+              <DayRail
+                periods={todayPeriods}
+                currentPeriodNumber={currentPeriodNumber}
+                progress={currentPeriod ? periodProgress(currentPeriod, new Date()) : null}
+                onPick={(p) => todayDow && handlePick({ day: todayDow, period: p })}
+              />
+            )}
+            <EveningBlockList blocks={eveningByDay.get(todayDow) ?? []} />
           </div>
         ) : null}
       </div>
@@ -180,6 +196,7 @@ export const ScheduleView = ({ initialSchedule }: ScheduleViewProps) => {
               onPick={handlePick}
               compact
               mini
+              dateByDay={weekDates}
             />
           </div>
 
@@ -190,16 +207,21 @@ export const ScheduleView = ({ initialSchedule }: ScheduleViewProps) => {
               todayDow={displayTodayDow}
               currentPeriodNumber={currentPeriodNumber}
               onPick={handlePick}
+              dateByDay={weekDates}
             />
           </div>
+
+          <WeekEveningSection eveningByDay={eveningByDay} dateByDay={weekDates} />
         </div>
 
         <aside className="hidden w-[280px] shrink-0 flex-col gap-3 overflow-y-auto md:landscape:flex lg:w-[320px]">
-          {isCurrentWeek && todayDow && todayPeriods.length > 0 ? (
+          {isCurrentWeek && todayDow && (todayPeriods.length > 0 || (eveningByDay.get(todayDow) ?? []).length > 0) ? (
             <div className="lg:hidden">
               <TodayAccentCard
                 dayLabel={DAY_LABELS[todayDow]}
+                date={isCurrentWeek ? weekDates[todayDow] : undefined}
                 periods={todayPeriods}
+                eveningBlocks={eveningByDay.get(todayDow) ?? []}
                 currentPeriodNumber={currentPeriodNumber}
               />
             </div>
@@ -335,11 +357,13 @@ function ScheduleHeader({
 
 function DaySummaryCard({
   dayLabel,
+  date,
   periodCount,
   timeRange,
   isToday,
 }: {
   dayLabel: string
+  date?: string
   periodCount: number
   timeRange: string
   isToday: boolean
@@ -350,7 +374,9 @@ function DaySummaryCard({
         {periodCount}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-[15px] font-black text-text-primary">{dayLabel}</div>
+        <div className="text-[15px] font-black text-text-primary">
+          {dayLabel}{date ? <span className="ml-1.5 text-[13px] font-bold text-text-muted">{date}</span> : null}
+        </div>
         <div className="text-xs font-bold text-text-secondary">
           {periodCount} tiết · {timeRange}
         </div>
@@ -364,13 +390,103 @@ function DaySummaryCard({
   )
 }
 
+/**
+ * Full-week evening class overview card. Shows every day (Mon–Sun) that has
+ * EXTRA_CLASS entries. This is the only place Saturday/Sunday classes appear
+ * since the main WeekGrid only shows Mon–Fri school periods.
+ */
+function WeekEveningSection({
+  eveningByDay,
+  dateByDay,
+}: {
+  eveningByDay: Map<DayOfWeek, ClassPeriod[]>
+  dateByDay?: Partial<Record<DayOfWeek, string>>
+}) {
+  const activeDays = DAYS_OF_WEEK.filter((d) => (eveningByDay.get(d) ?? []).length > 0)
+  if (activeDays.length === 0) return null
+
+  return (
+    <div className="shrink-0 rounded-[22px] bg-white p-4 shadow-sm">
+      <p className="mb-3 text-[11px] font-extrabold uppercase tracking-wider text-text-muted">
+        🌙 Học thêm buổi tối
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {activeDays.map((day) => {
+          const blocks = eveningByDay.get(day) ?? []
+          const date = dateByDay?.[day]
+          return (
+            <div
+              key={day}
+              className="flex min-w-[140px] flex-1 flex-col gap-1.5 rounded-[14px] bg-slate-50 px-3 py-2.5"
+            >
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wide">
+                  {DAY_LABELS[day]}
+                </span>
+                {date ? <span className="text-[10px] font-bold text-slate-400">{date}</span> : null}
+              </div>
+              {blocks.map((blk, i) => {
+                const subj = getSubjectById(blk.subjectId)
+                return (
+                  <div key={blk.id ?? i} className="flex items-center gap-2">
+                    <span className="text-sm leading-none">{subj?.icon ?? '📚'}</span>
+                    <span className="flex-1 text-[13px] font-bold text-text-primary">
+                      {subj?.name ?? blk.subjectId}
+                    </span>
+                    <span className="shrink-0 text-[11px] font-semibold tabular-nums text-text-muted">
+                      {blk.startTime}–{blk.endTime}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/** Renders a compact list of evening EXTRA_CLASS blocks. Returns null when empty. */
+function EveningBlockList({ blocks }: { blocks: ClassPeriod[] }) {
+  if (blocks.length === 0) return null
+  return (
+    <div className="mt-3 border-t border-slate-100 pt-3">
+      <p className="mb-2 text-[10px] font-extrabold uppercase tracking-widest text-text-muted">
+        Học thêm buổi tối
+      </p>
+      <div className="flex flex-col gap-2">
+        {blocks.map((blk, i) => {
+          const subj = getSubjectById(blk.subjectId)
+          return (
+            <div
+              key={blk.id ?? i}
+              className="flex items-center gap-2.5 rounded-xl bg-slate-50 px-3 py-2"
+            >
+              <span className="text-base leading-none">{subj?.icon ?? '📚'}</span>
+              <span className="flex-1 text-sm font-bold text-text-primary">{subj?.name ?? blk.subjectId}</span>
+              <span className="text-xs font-semibold tabular-nums text-text-muted">
+                {blk.startTime}–{blk.endTime}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function TodayAccentCard({
   dayLabel,
+  date,
   periods,
+  eveningBlocks = [],
   currentPeriodNumber,
 }: {
   dayLabel: string
+  date?: string
   periods: ClassPeriod[]
+  eveningBlocks?: ClassPeriod[]
   currentPeriodNumber: number | null
 }) {
   const school = schoolPeriodsOnly(periods).sort(
@@ -384,33 +500,58 @@ function TodayAccentCard({
     >
       <p className="text-[10px] font-extrabold uppercase tracking-widest opacity-85">Hôm nay</p>
       <p className="mt-0.5 text-[26px] font-black leading-tight">{dayLabel}</p>
+      {date ? <p className="text-sm font-bold opacity-75">{date}</p> : null}
       <p className="mt-1 text-xs font-bold opacity-85">
-        {school.length} tiết · {formatDayTimeRange(periods)}
+        {school.length} tiết{eveningBlocks.length > 0 ? ` · ${eveningBlocks.length} buổi tối` : ''}{school.length > 0 ? ` · ${formatDayTimeRange(periods)}` : ''}
       </p>
-      <div className="mt-3 flex flex-col gap-1.5">
-        {school.map((p) => {
-          const subject = getSubjectById(p.subjectId)
-          const isNow = currentPeriodNumber != null && p.periodNumber === currentPeriodNumber
-          return (
-            <div
-              key={p.periodNumber}
-              className="flex items-center gap-2 rounded-[10px] px-2 py-1.5"
-              style={{
-                background: isNow ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.08)',
-              }}
-            >
+      {school.length > 0 && (
+        <div className="mt-3 flex flex-col gap-1.5">
+          {school.map((p) => {
+            const subject = getSubjectById(p.subjectId)
+            const isNow = currentPeriodNumber != null && p.periodNumber === currentPeriodNumber
+            return (
               <div
-                className="grid size-[22px] shrink-0 place-items-center rounded-[7px] text-[11px] font-black"
-                style={{ background: 'rgba(255,255,255,0.2)' }}
+                key={p.periodNumber}
+                className="flex items-center gap-2 rounded-[10px] px-2 py-1.5"
+                style={{
+                  background: isNow ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.08)',
+                }}
               >
-                {p.periodNumber}
+                <div
+                  className="grid size-[22px] shrink-0 place-items-center rounded-[7px] text-[11px] font-black"
+                  style={{ background: 'rgba(255,255,255,0.2)' }}
+                >
+                  {p.periodNumber}
+                </div>
+                <span className="min-w-0 flex-1 truncate text-xs font-extrabold">{subject?.name}</span>
+                <span className="text-[11px] font-extrabold opacity-85">{p.startTime}</span>
               </div>
-              <span className="min-w-0 flex-1 truncate text-xs font-extrabold">{subject?.name}</span>
-              <span className="text-[11px] font-extrabold opacity-85">{p.startTime}</span>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      )}
+      {eveningBlocks.length > 0 && (
+        <div className={school.length > 0 ? 'mt-3 border-t border-white/20 pt-3' : 'mt-3'}>
+          <p className="mb-1.5 text-[10px] font-extrabold uppercase tracking-widest opacity-70">
+            Buổi tối
+          </p>
+          <div className="flex flex-col gap-1.5">
+            {eveningBlocks.map((blk, i) => {
+              const subj = getSubjectById(blk.subjectId)
+              return (
+                <div
+                  key={blk.id ?? i}
+                  className="flex items-center gap-2 rounded-[10px] bg-white/10 px-2 py-1.5"
+                >
+                  <span className="text-sm leading-none">{subj?.icon ?? '📚'}</span>
+                  <span className="min-w-0 flex-1 truncate text-xs font-extrabold">{subj?.name ?? blk.subjectId}</span>
+                  <span className="text-[11px] font-extrabold opacity-85">{blk.startTime}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

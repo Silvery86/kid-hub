@@ -10,7 +10,14 @@ import { revalidatePath } from 'next/cache'
 import { DEFAULT_USER_ID } from '@/lib/constants'
 import { saveEnglishSession, getTodayEnglishHomework } from '@/server/services/english.service'
 import { todayDateKey, todayDayOfWeek } from '@/server/services/homework.service'
+import { logActivity } from '@/server/repositories/activity.repository'
 import type { EnglishSessionResult } from '@/server/services/english.service'
+
+const ENGLISH_MINIGAME_LABELS: Record<string, string> = {
+  alphabet: 'Bảng chữ cái',
+  vocabulary: 'Từ vựng',
+  phonics: 'Phát âm',
+}
 
 const SaveEnglishProgressSchema = z.object({
   minigame: z.enum(['alphabet', 'vocabulary', 'phonics']),
@@ -52,6 +59,9 @@ export const saveEnglishProgressAction = async (
       revalidatePath('/homework')
       revalidatePath('/dashboard')
     }
+
+    const label = `Tiếng Anh · ${ENGLISH_MINIGAME_LABELS[data.minigame] ?? data.minigame} · Cấp ${data.level}`
+    void logActivity(DEFAULT_USER_ID, 'GAME_COMPLETE', label, '🔤')
 
     return { success: true, data: result }
   } catch {

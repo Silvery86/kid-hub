@@ -35,6 +35,8 @@ model User {
   kidPatternHash         String?
   kidPatternAttempts     Int       @default(0)
   kidPatternLockedUntil  DateTime?
+  kidAccessSettings      Json?     // Record<string, boolean> — feature toggle state; null = all defaults
+  screenTimeLimitMins    Int       @default(120) // daily screen time limit set by parent
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
 
@@ -48,6 +50,8 @@ model User {
   englishProgress       EnglishProgress[]
   dailyHomework         DailyHomework[]
   extraClassOverrides   ExtraClassOverride[]
+  screenTimeLogs        ScreenTimeLog[]
+  activityEvents        ActivityEvent[]
 
   @@map("users")
 }
@@ -300,4 +304,36 @@ model EnglishProgress {
   @@index([userId, completedAt])
   @@index([userId, homeworkPeriodId])
   @@map("english_progress")
+}
+
+// ── Screen Time ───────────────────────────────────────────────
+
+/// Accumulates total screen time per kid per day in seconds. One record per (userId, date).
+model ScreenTimeLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String   @db.VarChar(10) // "YYYY-MM-DD"
+  totalSecs Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@map("screen_time_logs")
+}
+
+// ── Activity Feed ─────────────────────────────────────────────
+
+/// Records a significant kid-side event for the parent activity feed.
+model ActivityEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   @db.VarChar(30)  // GAME_COMPLETE | HOMEWORK_DONE
+  label     String   @db.VarChar(150) // human-readable description shown to parent
+  iconKey   String?  @db.VarChar(10)  // emoji displayed in the feed
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("activity_events")
 }

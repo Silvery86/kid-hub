@@ -169,6 +169,21 @@ export const getEveningBlocks = async (
   return rows.map(toClassPeriod)
 }
 
+/** Retrieves ALL EXTRA_CLASS entries for a user, grouped by day. */
+export const getAllEveningBlocks = async (userId: string): Promise<DailySchedule[]> => {
+  const rows = await db.classPeriod.findMany({
+    where: { userId, eventType: 'EXTRA_CLASS' },
+    orderBy: [{ day: 'asc' }, { sortOrder: 'asc' }, { startTime: 'asc' }],
+  })
+  const byDay = new Map<DayOfWeek, ClassPeriod[]>()
+  for (const row of rows) {
+    const day = row.day as DayOfWeek
+    if (!byDay.has(day)) byDay.set(day, [])
+    byDay.get(day)!.push(toClassPeriod(row))
+  }
+  return Array.from(byDay.entries()).map(([day, periods]) => ({ day, periods }))
+}
+
 /** Returns periodIds that have an ExtraClassOverride for the given date. */
 export const getOverridesForDate = async (
   userId: string,

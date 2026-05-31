@@ -177,3 +177,25 @@ export const dayShortLabel = (dow: DayOfWeek): string =>
 
 export const schoolDaysFromSchedule = (days: DailySchedule[]): DailySchedule[] =>
   SCHOOL_DAYS.map((dow) => days.find((d) => d.day === dow) ?? { day: dow, periods: [] })
+
+const ALL_WEEK_DAYS: DayOfWeek[] = [
+  'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+]
+
+/** Returns DD/MM date string for every day of the given week offset (0 = this week). */
+export const getWeekDates = (weekOffset: number): Record<DayOfWeek, string> => {
+  const monday = getMondayForWeekOffset(weekOffset)
+  return Object.fromEntries(
+    ALL_WEEK_DAYS.map((dow, i) => {
+      const d = new Date(monday)
+      d.setDate(monday.getDate() + i)
+      return [dow, `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`]
+    })
+  ) as Record<DayOfWeek, string>
+}
+
+/** Returns today's date as DD/MM. Client-side only — use after mount to avoid SSR mismatch. */
+export const getTodayDDMM = (): string => {
+  const d = new Date()
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
+}

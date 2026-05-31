@@ -6,16 +6,15 @@ import * as homeworkRepo from '@/server/repositories/homework.repository'
 import { todayDateKey, todayDayOfWeek } from '@/server/services/homework.service'
 import type { HomeworkItem } from '@/types'
 
-/** Fetches today's homework periods with completion status. No auth required — kid-facing. */
+/** Fetches today's homework items (DailyHomework) with completion status. No auth required — kid-facing. */
 export const getTodayHomeworkAction = async (): Promise<{
   success: boolean
   data?: HomeworkItem[]
   error?: string
 }> => {
   try {
-    const day = todayDayOfWeek()
-    if (!day) return { success: true, data: [] }
-    const data = await homeworkRepo.getTodayHomework(DEFAULT_USER_ID, day, todayDateKey())
+    // DailyHomework is keyed by date only — no day-of-week filter needed, works on weekends too.
+    const data = await homeworkRepo.getTodayHomework(DEFAULT_USER_ID, 'monday', todayDateKey())
     return { success: true, data }
   } catch {
     return { success: false, error: 'Failed to fetch homework' }
