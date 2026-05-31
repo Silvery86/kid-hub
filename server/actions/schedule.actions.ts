@@ -14,7 +14,7 @@ import { validatePeriodOverlap, buildTodayView, jsDateToDayOfWeek } from '@/serv
 import * as scheduleRepo from '@/server/repositories/schedule.repository'
 import { logActivity } from '@/server/repositories/activity.repository'
 import { getSubjectById } from '@/lib/data/subjects'
-import type { DayOfWeek, DailySchedule, TodayView } from '@/types'
+import type { DayOfWeek, DailyHomework, DailySchedule, TodayView } from '@/types'
 import { DEFAULT_USER_ID, MAX_EVENING_BLOCKS_PER_DAY } from '@/lib/constants'
 
 // ── Schemas ───────────────────────────────────────────────────
@@ -136,6 +136,23 @@ export const getTodayViewAction = async (): Promise<{
   }
 }
 
+/** Retrieves homework items for a specific date (parent action). */
+export const getDailyHomeworkByDateAction = async (
+  date: string
+): Promise<{ success: boolean; data?: DailyHomework[]; error?: string }> => {
+  try {
+    await requireParentSession()
+    const parsed = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).safeParse(date)
+    if (!parsed.success) return { success: false, error: 'Invalid date' }
+    const data = await scheduleRepo.getDailyHomework(DEFAULT_USER_ID, parsed.data)
+    return { success: true, data }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Failed to fetch daily homework'
+    if (msg === 'Unauthorized') return { success: false, error: 'Unauthorized' }
+    return { success: false, error: msg }
+  }
+}
+
 // ── School period mutations ───────────────────────────────────
 
 /** Creates a new SCHOOL_PERIOD. Validates overlap and revalidates affected paths. */
@@ -231,6 +248,18 @@ export const createExtraClassAction = async (
     const count = await scheduleRepo.countEveningBlocks(DEFAULT_USER_ID, data.day as DayOfWeek)
     if (count >= MAX_EVENING_BLOCKS_PER_DAY) {
       return { success: false, error: `Tối đa ${MAX_EVENING_BLOCKS_PER_DAY} buổi học thêm mỗi ngày` }
+    }
+    const existing = await scheduleRepo.getEveningBlocks(DEFAULT_USER_ID, data.day as DayOfWeek)
+    const overlaps = validatePeriodOverlap(
+      {
+        subjectId: data.subjectId,
+        startTime: data.startTime,
+        endTime: data.endTime,
+      },
+      existing
+    )
+    if (overlaps) {
+      return { success: false, error: 'Khung giờ bị trùng với buổi học tối đã có' }
     }
     const id = await scheduleRepo.createPeriod({
       ...data,

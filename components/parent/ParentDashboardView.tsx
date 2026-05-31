@@ -75,20 +75,12 @@ export function ParentDashboardView({
 
   const activityItems = useMemo(() => {
     const items: { icon: string; text: string; meta: string }[] = []
-    for (const p of todayView?.schoolPeriods.slice(0, 3) ?? []) {
-      const subject = getSubjectById(p.subjectId)
-      items.push({
-        icon: subject?.icon ?? '📘',
-        text: `Tiết ${p.periodNumber}: ${subject?.name ?? p.subjectId}`,
-        meta: `${p.startTime} - ${p.endTime}`,
-      })
-    }
     for (const hw of todayView?.homework.slice(0, 3) ?? []) {
       const subject = getSubjectById(hw.subjectId)
       items.push({
-        icon: hw.isDone ? '✅' : subject?.icon ?? '📝',
-        text: hw.label,
-        meta: hw.isDone ? 'Đã hoàn thành' : 'Bài tập hôm nay',
+        icon: subject?.icon ?? '📝',
+        text: `Đã thêm bài tập: ${hw.label}`,
+        meta: subject?.name ?? hw.subjectId,
       })
     }
     return items.slice(0, 5)
@@ -133,18 +125,7 @@ export function ParentDashboardView({
     </div>
   )
 
-  const schedulePanelAction = isPastWeek ? weekNav : (
-    scheduleSave ? (
-      <div className="flex items-center gap-2">
-        {weekNav}
-        <ParentSaveButton
-          onClick={scheduleSave.save}
-          isPending={scheduleSave.isPending}
-          isSaved={scheduleSave.isSaved}
-        />
-      </div>
-    ) : weekNav
-  )
+  const schedulePanelAction = weekNav
 
   const gradesPanelAction = gradesSave ? (
     <ParentSaveButton
@@ -153,6 +134,25 @@ export function ParentDashboardView({
       isSaved={gradesSave.isSaved}
     />
   ) : null
+
+  const subpageIdentityChips = (
+    <div className="hidden items-center gap-2 md:flex">
+      <div className="inline-flex items-center gap-2 rounded-pill bg-white px-3 py-1.5 shadow-sm">
+        <span className="grid size-7 place-items-center rounded-full bg-amber-100">🧒</span>
+        <div className="leading-tight">
+          <p className="text-xs font-black text-slate-700">Khôi</p>
+          <p className="text-[10px] font-bold text-slate-400">Lớp 1A</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => void handleSignOut()}
+        className="rounded-pill bg-white px-3 py-1.5 text-xs font-black text-red-600 shadow-sm hover:bg-red-50"
+      >
+        🔓 Đăng xuất
+      </button>
+    </div>
+  )
 
   const managerEditorPanel = activeTab === 'schedule' ? (
     <section className="flex min-h-0 flex-1 flex-col rounded-[24px] bg-white p-4 shadow-sm md:p-5 lg:p-6">
@@ -170,7 +170,10 @@ export function ParentDashboardView({
             <p className="text-xs font-bold text-slate-500">Thêm, sửa, xóa tiết học của Khôi</p>
           </div>
         </div>
-        {schedulePanelAction}
+        <div className="flex items-center gap-2">
+          {subpageIdentityChips}
+          {schedulePanelAction}
+        </div>
       </div>
       <div className="min-h-0 flex-1">
         <ScheduleManager
@@ -198,7 +201,10 @@ export function ParentDashboardView({
             <p className="text-xs font-bold text-slate-500">Cập nhật điểm từng môn</p>
           </div>
         </div>
-        {gradesPanelAction}
+        <div className="flex items-center gap-2">
+          {subpageIdentityChips}
+          {gradesPanelAction}
+        </div>
       </div>
       <div className="min-h-0 flex-1">
         <GradesManager initialGrades={initialGrades} embedded onSaveStateChange={onGradesSaveState} />
