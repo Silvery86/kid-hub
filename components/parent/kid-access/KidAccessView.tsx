@@ -84,6 +84,88 @@ function ScreenTimeCard({
   )
 }
 
+function RewardCard({
+  compact = false,
+}: {
+  compact?: boolean
+}) {
+  const [enabled, setEnabled] = useState(true)
+  return (
+    <div className={cn('rounded-[22px] border border-amber-200 bg-amber-50', compact ? 'p-3.5' : 'p-4')}>
+      <div className="flex items-center gap-3">
+        <span className={cn(compact ? 'text-2xl' : 'text-3xl')} aria-hidden="true">🎁</span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-black text-amber-800">Phần thưởng thời gian chơi</p>
+          <p className="mt-0.5 text-xs font-bold text-amber-700">
+            Mỗi bài tập hoàn thành = +15 phút chơi game
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setEnabled((v) => !v)}
+          className={cn(
+            'rounded-full px-3 py-1.5 text-xs font-extrabold text-white',
+            enabled ? 'bg-amber-500' : 'bg-slate-400'
+          )}
+        >
+          {enabled ? 'Đang bật' : 'Đang tắt'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function DifficultyCaps({
+  compact = false,
+}: {
+  compact?: boolean
+}) {
+  const [mathLevel, setMathLevel] = useState(2)
+  const [englishLevel, setEnglishLevel] = useState(3)
+
+  const Row = ({
+    emoji,
+    label,
+    value,
+    onChange,
+  }: {
+    emoji: string
+    label: string
+    value: number
+    onChange: (next: number) => void
+  }) => (
+    <div className="flex items-center gap-2.5">
+      <span className={cn(compact ? 'text-base' : 'text-lg')} aria-hidden="true">{emoji}</span>
+      <span className="min-w-0 flex-1 text-sm font-extrabold text-slate-700">{label}</span>
+      <div className="flex gap-1">
+        {[1, 2, 3].map((lv) => (
+          <button
+            key={lv}
+            type="button"
+            onClick={() => onChange(lv)}
+            className={cn(
+              'grid size-8 place-items-center rounded-lg text-xs font-black',
+              value >= lv ? 'bg-btn-primary text-white' : 'bg-slate-100 text-slate-500'
+            )}
+          >
+            {lv}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+
+  return (
+    <div className={cn('rounded-[22px] bg-white shadow-sm', compact ? 'p-3.5' : 'p-4')}>
+      <p className="mb-3 text-xs font-extrabold tracking-wide text-slate-400 uppercase">Giới hạn độ khó</p>
+      <div className="flex flex-col gap-3">
+        <Row emoji="🧮" label="Toán" value={mathLevel} onChange={setMathLevel} />
+        <Row emoji="🔤" label="Tiếng Anh" value={englishLevel} onChange={setEnglishLevel} />
+      </div>
+    </div>
+  )
+}
+
 function AccessGroups({
   toggles,
   onToggle,
@@ -151,22 +233,26 @@ export function KidAccessView({
     </Link>
   )
 
-  const mainGroups = useMemo(
-    () => <AccessGroups toggles={toggles} onToggle={handleToggle} />,
-    [toggles]
-  )
+  const mainGroups = useMemo(() => <AccessGroups toggles={toggles} onToggle={handleToggle} />, [toggles])
+  const compactGroups = useMemo(() => <AccessGroups toggles={toggles} onToggle={handleToggle} compact />, [toggles])
 
   return (
     <div className="flex min-h-dvh flex-col bg-slate-50">
       {/* Phone */}
       <div className="flex flex-1 flex-col gap-3.5 overflow-y-auto p-3.5 md:hidden">
         <div className="flex items-center justify-between gap-2">
-          <h1 className="text-xl font-black text-slate-800">🛡️ Quyền truy cập</h1>
+          <div>
+            <h1 className="text-xl font-black text-slate-800">🛡️ Quyền truy cập</h1>
+            <p className="text-xs font-bold text-slate-500">Kiểm soát nội dung và thời gian của Khôi</p>
+          </div>
           {headerBack}
         </div>
-        <KidPatternSetup compact />
         <ScreenTimeCard screenTime={screenTime} compact />
-        <AccessGroups toggles={toggles} onToggle={handleToggle} compact />
+        <RewardCard compact />
+        <DifficultyCaps compact />
+        <KidPatternSetup compact />
+        {compactGroups}
+        <RecentActivityPanel activities={recentActivity} />
       </div>
 
       {/* Tablet+ */}
@@ -182,11 +268,15 @@ export function KidAccessView({
           </div>
           {headerBack}
         </div>
-        <KidPatternSetup />
         <ScreenTimeCard screenTime={screenTime} />
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 overflow-hidden lg:grid-cols-[1fr_280px]">
-          <div className="min-h-0 overflow-y-auto">{mainGroups}</div>
+        <RewardCard />
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 overflow-hidden lg:grid-cols-[1.45fr_1fr]">
+          <div className="min-h-0 overflow-y-auto">
+            {mainGroups}
+          </div>
           <aside className="flex flex-col gap-5 overflow-y-auto">
+            <DifficultyCaps />
+            <KidPatternSetup />
             <div>
               <div className="mb-2 text-xs font-extrabold tracking-wide text-slate-400 uppercase">
                 Tiến độ của Khôi
@@ -197,7 +287,7 @@ export function KidAccessView({
             </div>
             <div>
               <div className="mb-2 text-xs font-extrabold tracking-wide text-slate-400 uppercase">
-                Hoạt động gần đây
+                Nhật ký hoạt động
               </div>
               <RecentActivityPanel activities={recentActivity} />
             </div>

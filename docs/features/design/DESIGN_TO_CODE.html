@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kid Hub — Design to Code Sync</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --ink: #0f172a;
+      --sub: #475569;
+      --line: #e2e8f0;
+      --ok: #047857;
+      --ok-bg: #d1fae5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, "Segoe UI", Roboto, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.5;
+    }
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 20px 48px;
+    }
+    h1, h2 { margin: 0 0 10px; }
+    p { margin: 0; color: var(--sub); }
+    .meta {
+      margin-top: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #334155;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      margin-top: 16px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      background: var(--ok-bg);
+      color: var(--ok);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+    th, td {
+      border-top: 1px solid var(--line);
+      padding: 10px 8px;
+      vertical-align: top;
+      text-align: left;
+    }
+    th {
+      font-size: 12px;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: #64748b;
+      font-weight: 800;
+      border-top: 0;
+      padding-top: 0;
+    }
+    code {
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 12px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>DESIGN_TO_CODE — Current Sync</h1>
+    <p>Route-to-design synchronization snapshot for today. This file is the source of truth at <code>docs/features/design/DESIGN_TO_CODE.html</code>.</p>
+    <div class="meta">Updated: 2026-05-31 (parent v2 mapping refresh)</div>
+
+    <section class="card">
+      <h2>Automation Status</h2>
+      <div class="badge">✓ Auto design checks passing</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Check</th>
+            <th>Status</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Route → Design Coverage</td>
+            <td>Pass</td>
+            <td>All app routes are documented or explicitly skipped.</td>
+          </tr>
+          <tr>
+            <td>Design File Inventory</td>
+            <td>Pass</td>
+            <td>All non-utility files in <code>design/components</code> are tracked.</td>
+          </tr>
+          <tr>
+            <td>Viewport Export Coverage</td>
+            <td>Pass</td>
+            <td>Every required design file exports <code>*TabletL</code> and <code>*PhoneP</code>.</td>
+          </tr>
+          <tr>
+            <td>Semantic Token Compliance</td>
+            <td>Pass</td>
+            <td>No token violations in scanned TSX files.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Design File Inventory</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Design File</th>
+            <th>Covers</th>
+            <th>Viewports</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>design/components/dashboard-v2-responsive.jsx</code></td><td><code>/dashboard</code></td><td>Phone-P, Phone-L, Tablet-P, Tablet-L, Desktop</td></tr>
+          <tr><td><code>design/components/dashboard-v2.jsx</code></td><td><code>/dashboard</code> (Tablet-L reference)</td><td>Tablet-L only</td></tr>
+          <tr><td><code>design/components/schedule.jsx</code></td><td><code>/schedule</code></td><td>Phone-P, Phone-L, Tablet-P, Tablet-L, Desktop</td></tr>
+          <tr><td><code>design/components/math.jsx</code></td><td><code>/math</code></td><td>Phone-P, Phone-L, Tablet-P, Tablet-L, Desktop</td></tr>
+          <tr><td><code>design/components/english.jsx</code></td><td><code>/english</code></td><td>Phone-P, Phone-L, Tablet-P, Tablet-L, Desktop</td></tr>
+          <tr><td><code>design/components/games.jsx</code></td><td><code>/games</code></td><td>Phone-P, Phone-L, Tablet-P, Tablet-L, Desktop</td></tr>
+          <tr><td><code>design/components/extras.jsx</code></td><td><code>/unlock</code>, <code>/grades</code>, <code>/homework</code></td><td>Phone-P, Phone-L, Tablet-P, Tablet-L, Desktop</td></tr>
+          <tr><td><code>design/components/parent.jsx</code></td><td><code>/parent/pin</code>, <code>/parent/login</code></td><td>Phone-P, Phone-L, Tablet-P, Tablet-L, Desktop</td></tr>
+          <tr><td><code>design/components/parent-v2.jsx</code></td><td><code>/parent</code> (overview + schedule/grades sub-pages), <code>/parent/kid-access</code></td><td>Phone-P, Phone-L, Tablet-P, Tablet-L, Desktop</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Route &amp; Design Status</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Route</th>
+            <th>Page File</th>
+            <th>Design Source</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>/</code></td><td><code>app/page.tsx</code></td><td>—</td><td>N/A — redirect only</td></tr>
+          <tr><td><code>/kid-unlock</code></td><td><code>app/kid-unlock/page.tsx</code></td><td>—</td><td>Code-only</td></tr>
+          <tr><td><code>/dashboard</code></td><td><code>app/(dashboard)/dashboard/page.tsx</code></td><td><code>dashboard-v2-responsive.jsx</code>, <code>design/kid/dashboard.html</code></td><td>Designed + Implemented</td></tr>
+          <tr><td><code>/games</code></td><td><code>app/(dashboard)/games/page.tsx</code></td><td><code>games.jsx</code>, <code>design/kid/games.html</code></td><td>Designed + Implemented</td></tr>
+          <tr><td><code>/schedule</code></td><td><code>app/(dashboard)/schedule/page.tsx</code></td><td><code>schedule.jsx</code>, <code>design/kid/schedule.html</code></td><td>Designed + Implemented</td></tr>
+          <tr><td><code>/grades</code></td><td><code>app/(dashboard)/grades/page.tsx</code></td><td><code>extras.jsx</code>, <code>design/kid/grades.html</code></td><td>Designed + Implemented</td></tr>
+          <tr><td><code>/homework</code></td><td><code>app/(dashboard)/homework/page.tsx</code></td><td><code>extras.jsx</code>, <code>design/kid/grades.html</code></td><td>Designed + Implemented</td></tr>
+          <tr><td><code>/unlock</code></td><td><code>app/(dashboard)/unlock/page.tsx</code></td><td><code>extras.jsx</code>, <code>design/kid/grades.html</code></td><td>Designed + Implemented</td></tr>
+          <tr><td><code>/math</code></td><td><code>app/(games)/math/page.tsx</code></td><td><code>math.jsx</code>, <code>design/kid/math.html</code></td><td>Designed + Implemented</td></tr>
+          <tr><td><code>/english</code></td><td><code>app/(games)/english/page.tsx</code></td><td><code>english.jsx</code>, <code>design/kid/english.html</code></td><td>Designed + Implemented</td></tr>
+          <tr><td><code>/parent</code></td><td><code>app/(parent)/parent/page.tsx</code></td><td><code>parent-v2.jsx</code> (overview + schedule/grades sub-pages), <code>design/parent/dashboard.html</code></td><td>Designed + Implemented</td></tr>
+          <tr><td><code>/parent/login</code></td><td><code>app/(parent)/parent/login/page.tsx</code></td><td><code>parent.jsx</code>, <code>design/parent/auth.html</code></td><td>Designed + Implemented</td></tr>
+          <tr><td><code>/parent/pin</code></td><td><code>app/(parent)/parent/pin/page.tsx</code></td><td><code>parent.jsx</code>, <code>design/parent/auth.html</code></td><td>Designed + Implemented</td></tr>
+          <tr><td><code>/parent/kid-access</code></td><td><code>app/(parent)/parent/kid-access/page.tsx</code></td><td><code>parent-v2.jsx</code>, <code>design/parent/dashboard.html</code></td><td>Designed + Implemented</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>

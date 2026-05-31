@@ -417,7 +417,7 @@
         </tr>
         <tr>
           <td><code>pnpm design:manifest</code></td>
-          <td>Regenerates <code>design/manifest.json</code> from DESIGN_TO_CODE.md and filesystem.</td>
+          <td>Regenerates <code>design/manifest.json</code> from <code>docs/features/design/DESIGN_TO_CODE.html</code> and filesystem.</td>
           <td>After adding a new route or design file</td>
         </tr>
         <tr>
@@ -436,13 +436,13 @@
         <tr>
           <td><span class="badge info">1</span></td>
           <td>Route → Design Coverage</td>
-          <td>Every <code>app/**/page.tsx</code> has a design file entry in DESIGN_TO_CODE.md §5</td>
+          <td>Every <code>app/**/page.tsx</code> has a design file entry in <code>DESIGN_TO_CODE.html</code> route table</td>
           <td>Add a row to §5 or mark as <code>Code-only</code></td>
         </tr>
         <tr>
           <td><span class="badge info">2</span></td>
           <td>Design File Inventory</td>
-          <td>Every <code>design/components/*.jsx</code> is listed in DESIGN_TO_CODE.md §1</td>
+          <td>Every <code>design/components/*.jsx</code> is listed in <code>DESIGN_TO_CODE.html</code> inventory table</td>
           <td>Add a §1 row or add to <code>utilityDesignFiles</code> in config</td>
         </tr>
         <tr>
@@ -491,13 +491,13 @@
     <div class="prompt-card">
       <h4>🗺️ Add new route to design tracking</h4>
       <div class="meta">Use: after creating a new app/[route]/page.tsx</div>
-      <div class="prompt-box">I added a new route at [ROUTE] (file: [PAGE_PATH]). Update DESIGN_TO_CODE.md §5 by adding a new row for this route. The design source is [DESIGN_FILE or "—" if code-only] and the status is [Designed + Implemented / Code-only / Design-only]. Then run `pnpm design:check` to verify Check 1 passes.</div>
+      <div class="prompt-box">I added a new route at [ROUTE] (file: [PAGE_PATH]). Update <code>docs/features/design/DESIGN_TO_CODE.html</code> by adding a new row in the Route &amp; Design Status table for this route. The design source is [DESIGN_FILE or "—" if code-only] and the status is [Designed + Implemented / Code-only / Design-only]. Then run `pnpm design:check` to verify Check 1 passes.</div>
     </div>
 
     <div class="prompt-card">
       <h4>📁 Register new design file</h4>
       <div class="meta">Use: after adding a new .jsx file to design/components/</div>
-      <div class="prompt-box">I added a new design file `design/components/[FILENAME].jsx`. Add a row to DESIGN_TO_CODE.md §1 with: the filename, the routes it covers, and its viewport variants. Then run `pnpm design:check` to verify Checks 2 and 3 pass.</div>
+      <div class="prompt-box">I added a new design file `design/components/[FILENAME].jsx`. Add a row to the Design File Inventory table in <code>docs/features/design/DESIGN_TO_CODE.html</code> with: the filename, the routes it covers, and its viewport variants. Then run `pnpm design:check` to verify Checks 2 and 3 pass.</div>
     </div>
 
     <div class="prompt-card">

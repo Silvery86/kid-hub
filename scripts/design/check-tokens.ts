@@ -86,14 +86,14 @@ function scanFile(filePath: string): Violation[] {
   const lines = content.split('\n')
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
+    const line = lines[i] ?? ''
     for (const rule of config.semanticViolations) {
       const match = line.match(rule.pattern)
       if (match) {
         violations.push({
           file: path.relative(ROOT, filePath).replace(/\\/g, '/'),
           line: i + 1,
-          match: match[0],
+          match: match[0] ?? '',
           suggestion: rule.suggestion,
         })
       }

@@ -177,7 +177,7 @@
       <tbody>
         <tr><td>New route added without design file</td><td>Noticed only in code review — or never</td><td><code>design:check</code> prints "Route /new-page has no design entry"</td></tr>
         <tr><td>Design file deleted, route table not updated</td><td>Doc becomes stale silently</td><td>Manifest diff fails — referenced file missing on disk</td></tr>
-        <tr><td>New design file not documented</td><td>File exists in <code>design/components/</code> but no row in DESIGN_TO_CODE.md</td><td>Check 2 prints "Undocumented design file: parent-v2.jsx"</td></tr>
+        <tr><td>New design file not documented</td><td>File exists in <code>design/components/</code> but no row in <code>docs/features/design/DESIGN_TO_CODE.html</code></td><td>Check 2 prints "Undocumented design file: parent-v2.jsx"</td></tr>
         <tr><td>Viewport variant missing from design file</td><td>Discovered during implementation when component doesn't exist</td><td>Check 3 flags missing exports before work starts</td></tr>
         <tr><td>Raw palette class used for semantic color</td><td>Caught only if reviewer knows the token map</td><td>Check 4 prints file + line + suggestion</td></tr>
         <tr><td>PR opens with all of the above</td><td>Manual checklist in PR template</td><td>CI fails with specific errors; blocks merge</td></tr>
@@ -267,7 +267,7 @@
         <tr><td><code>extras.jsx</code></td><td><span class="badge ok">✓</span></td><td>None</td></tr>
         <tr><td><code>parent.jsx</code></td><td><span class="badge ok">✓</span></td><td>None</td></tr>
         <tr><td><code>shared.jsx</code></td><td><span class="badge ok">✓</span></td><td>Utility-only — explicitly excluded from coverage check</td></tr>
-        <tr><td><code>parent-v2.jsx</code></td><td><span class="badge missing">✗ Missing</span></td><td>New design file — not yet added to DESIGN_TO_CODE.md §1 or §5</td></tr>
+        <tr><td><code>parent-v2.jsx</code></td><td><span class="badge missing">✗ Missing</span></td><td>New design file — not yet added to <code>DESIGN_TO_CODE.html</code> inventory or route table</td></tr>
         <tr><td><code>android-frame.jsx</code></td><td><span class="badge info">N/A</span></td><td>Preview utility — excluded from coverage check (no route covers)</td></tr>
         <tr><td><code>browser-window.jsx</code></td><td><span class="badge info">N/A</span></td><td>Preview utility — excluded</td></tr>
         <tr><td><code>ios-frame.jsx</code></td><td><span class="badge info">N/A</span></td><td>Preview utility — excluded</td></tr>
@@ -277,7 +277,7 @@
     </table>
 
     <div class="callout warn" style="margin-top:16px">
-      <strong>1 real gap found today:</strong> <code>parent-v2.jsx</code> exists on disk but is not documented in DESIGN_TO_CODE.md.
+      <strong>1 real gap found today:</strong> <code>parent-v2.jsx</code> exists on disk but is not documented in <code>DESIGN_TO_CODE.html</code>.
       The automated check would catch this immediately on the next run.
     </div>
 
@@ -311,11 +311,11 @@
     <div class="check c1">
       <h4>Check 1 — Route → Design Coverage</h4>
       <div class="meta">
-        <span class="badge info">Reads: DESIGN_TO_CODE.md §5</span>
+        <span class="badge info">Reads: DESIGN_TO_CODE.html (Route &amp; Design Status)</span>
         <span class="badge info">Reads: app/**/page.tsx (filesystem)</span>
         <span class="badge ok">Phase 1</span>
       </div>
-      <p>Cross-references every <code>app/**/page.tsx</code> path against the route table in <code>docs/features/DESIGN_TO_CODE.md</code> §5. Fails if:</p>
+      <p>Cross-references every <code>app/**/page.tsx</code> path against the Route &amp; Design Status table in <code>docs/features/design/DESIGN_TO_CODE.html</code>. Fails if:</p>
       <ul>
         <li>A <code>page.tsx</code> route has no row in the MD table (new route not documented)</li>
         <li>A row in the MD table references a design file that doesn't exist on disk</li>
@@ -327,11 +327,11 @@
     <div class="check c2">
       <h4>Check 2 — Design File Inventory</h4>
       <div class="meta">
-        <span class="badge info">Reads: DESIGN_TO_CODE.md §1</span>
+        <span class="badge info">Reads: DESIGN_TO_CODE.html (Design File Inventory)</span>
         <span class="badge info">Reads: design/components/ (filesystem)</span>
         <span class="badge ok">Phase 1</span>
       </div>
-      <p>Scans <code>design/components/*.jsx</code> and checks each file is documented in §1 of DESIGN_TO_CODE.md. Fails if:</p>
+      <p>Scans <code>design/components/*.jsx</code> and checks each file is documented in the Design File Inventory table of <code>DESIGN_TO_CODE.html</code>. Fails if:</p>
       <ul>
         <li>A <code>.jsx</code> file in <code>design/components/</code> is not listed in §1 (undocumented design file)</li>
         <li>A file listed in §1 no longer exists on disk (stale reference)</li>
@@ -361,7 +361,7 @@
         <span class="badge warn">Phase 2</span>
         <span class="badge new">Configurable allowlist</span>
       </div>
-      <p>Scans all TSX files for raw Tailwind semantic palette classes where a design token exists. The token map comes from DESIGN_TO_CODE.md §3. Flags:</p>
+      <p>Scans all TSX files for raw Tailwind semantic palette classes where a design token exists. The token map comes from <code>DESIGN_TO_CODE.html</code>. Flags:</p>
       <ul>
         <li><code>bg-blue-500</code> / <code>bg-blue-600</code> used for primary UI actions → should be <code>bg-btn-primary</code></li>
         <li>Direct colour classes on subject-coded elements → should use <code>bg-math</code>, <code>bg-english</code>, etc.</li>
@@ -490,7 +490,7 @@
 <span class="ok">✓  14 routes scanned · 13 have design coverage · 1 skipped (code-only)</span>
 
 <span class="cm">── Check 2: Design File Inventory ────────────────────</span>
-<span class="ok">✓  8 design component files · all documented in DESIGN_TO_CODE.md</span>
+<span class="ok">✓  8 design component files · all documented in DESIGN_TO_CODE.html</span>
 
 <span class="cm">── Check 3: Viewport Export Coverage ─────────────────</span>
 <span class="ok">✓  8 design files · all have TabletL (primary) viewport · all have PhoneP</span>
@@ -517,7 +517,7 @@
 
 <span class="cm">── Check 2: Design File Inventory ────────────────────</span>
 <span class="err">✗  1 undocumented design file found:</span>
-<span class="err">     design/components/parent-v2.jsx  — not in DESIGN_TO_CODE.md §1</span>
+<span class="err">     design/components/parent-v2.jsx  — not in DESIGN_TO_CODE.html inventory table</span>
 <span class="err">     → Add a row to §1 or mark it as utility in design-check.config.ts</span>
 
 <span class="cm">── Check 3: Viewport Export Coverage ─────────────────</span>
@@ -553,7 +553,7 @@
           <p><strong>Estimated effort:</strong> 3–4 hours · <strong>Value:</strong> Immediately catches undocumented design files and new routes without design coverage.</p>
           <ul>
             <li>Write <code>scripts/design/design-check.config.ts</code> — utility file exclusion list, route skip list (code-only, N/A)</li>
-            <li>Write <code>scripts/design/build-manifest.ts</code> — parse DESIGN_TO_CODE.md table with regex, scan <code>design/components/</code>, scan <code>app/**/page.tsx</code>, output <code>design/manifest.json</code></li>
+            <li>Write <code>scripts/design/build-manifest.ts</code> — parse <code>docs/features/design/DESIGN_TO_CODE.html</code> tables, scan <code>design/components/</code>, scan <code>app/**/page.tsx</code>, output <code>design/manifest.json</code></li>
             <li>Write <code>scripts/design/check-coverage.ts</code> — read manifest, run Checks 1 and 2, print results, exit 0/1</li>
             <li>Add <code>"design:manifest"</code> and <code>"design:check"</code> to <code>package.json</code></li>
             <li>Add <code>design/manifest.json</code> and <code>design/drift-report.html</code> to <code>.gitignore</code></li>

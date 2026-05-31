@@ -5,7 +5,8 @@
  *   Every app page.tsx has a corresponding design file entry (unless explicitly skipped).
  *
  * Check 2: Design File Inventory
- *   Every .jsx in design/components/ is documented in DESIGN_TO_CODE.md §1,
+ *   Every .jsx in design/components/ is documented in DESIGN_TO_CODE.html
+ *   (Design File Inventory table),
  *   and every documented file still exists on disk.
  *
  * Reads design/manifest.json (build it first with `pnpm design:manifest`).
@@ -61,7 +62,7 @@ function runCoverageChecks(): boolean {
     allPassed = false
     err(`${routesMissingDesign.length} route(s) have no design entry:`)
     for (const route of routesMissingDesign) {
-      hint(`${route}  — add a row to DESIGN_TO_CODE.md §5 or mark as code-only`)
+      hint(`${route}  — add a row to DESIGN_TO_CODE.html route table or mark as code-only`)
     }
   }
 
@@ -72,14 +73,14 @@ function runCoverageChecks(): boolean {
   const totalDesignFiles = manifest.designFiles.filter((d: any) => !d.isUtility).length
 
   if (undocumentedDesignFiles.length === 0 && missingOnDisk.length === 0) {
-    ok(`${totalDesignFiles} design component files · all documented in DESIGN_TO_CODE.md`)
+    ok(`${totalDesignFiles} design component files · all documented in DESIGN_TO_CODE.html`)
   } else {
     if (undocumentedDesignFiles.length > 0) {
       allPassed = false
       err(`${undocumentedDesignFiles.length} undocumented design file(s) found:`)
       for (const file of undocumentedDesignFiles) {
-        hint(`${file}  — not in DESIGN_TO_CODE.md §1`)
-        hint(`Add a row to §1 or mark it as utility in design-check.config.ts`)
+        hint(`${file}  — not in DESIGN_TO_CODE.html inventory table`)
+        hint(`Add an inventory row or mark it as utility in design-check.config.ts`)
       }
     }
     if (missingOnDisk.length > 0) {
