@@ -1,7 +1,7 @@
-# Kid Hub — End-to-End Deployment Guide
+# End-to-End Deployment Guide — Kid Hub
 
-**Status:** Live (updated May 2026)
-**Stack:** Next.js 16 · Neon Postgres · Vercel · Upstash Redis · Cloudflare R2
+> **Status:** Live (updated May 2026)
+> **Stack:** Next.js 16 · Neon Postgres · Vercel · Upstash Redis · Cloudflare R2
 
 ---
 
@@ -9,12 +9,12 @@
 
 Register for all services before starting. Everything below is free for a single-household app.
 
-| Service | Register at | Free tier limits | Card required |
+| Service | Register At | Free Tier Limits | Card Required |
 |---|---|---|---|
-| **GitHub** | github.com | Unlimited public repos; 2 000 Actions min/month private | No |
-| **Vercel** | vercel.com | 100 GB bandwidth, unlimited deploys, 10 s function timeout | No |
+| **GitHub** | github.com | Unlimited public repos; 2,000 Actions min/month private | No |
+| **Vercel** | vercel.com | 100 GB bandwidth, unlimited deploys, 10s function timeout | No |
 | **Neon** | neon.tech | 0.5 GB storage, 190 compute-hours/month, 1 project, 10 branches | No |
-| **Upstash** | upstash.com | 10 000 requests/day, 256 MB Redis | No |
+| **Upstash** | upstash.com | 10,000 requests/day, 256 MB Redis | No |
 | **Cloudflare R2** | cloudflare.com | 10 GB storage, 1M writes, 10M reads/month, zero egress fees | Yes (identity only, not charged) |
 
 ---
@@ -47,9 +47,10 @@ generator client {
 "postinstall": "prisma generate"
 ```
 
-### 1.4 Force dynamic rendering on all data pages (required — prevents stale static builds)
+### 1.4 Force dynamic rendering on all data pages (required)
 
 Already done. The following pages have `export const dynamic = 'force-dynamic'`:
+
 - `app/(dashboard)/dashboard/page.tsx`
 - `app/(dashboard)/schedule/page.tsx`
 - `app/(dashboard)/grades/page.tsx`
@@ -62,21 +63,22 @@ Already done. The following pages have `export const dynamic = 'force-dynamic'`:
 
 ### Step 1 — Neon (Database)
 
-**Register:** https://neon.tech → Sign up free
+**Register:** neon.tech → Sign up free
 
 **Create project:**
+
 1. New Project → choose region closest to you (e.g. `ap-southeast-1` for Vietnam)
 2. Database name: `neondb` (default is fine)
 3. Note both connection strings from **Connection Details** panel:
 
-| Connection type | When to use | Where endpoint contains |
+| Connection Type | When to Use | Where Endpoint Contains |
 |---|---|---|
 | **Direct** (unpooled) | Migrations, seeding, local dev | no `-pooler` in hostname |
 | **Pooled** | Production app runtime (Vercel) | `-pooler` in hostname |
 
 **Env vars you collect from Neon:**
 
-| Variable | Which connection | Example format |
+| Variable | Which Connection | Example Format |
 |---|---|---|
 | `DATABASE_URL` | Pooled | `postgresql://user:pass@ep-xxx-pooler.region.aws.neon.tech/neondb?sslmode=require` |
 | `DATABASE_URL_UNPOOLED` | Direct | `postgresql://user:pass@ep-xxx.region.aws.neon.tech/neondb?sslmode=require` |
@@ -100,6 +102,7 @@ DATABASE_URL="<your-direct-url>" pnpm prisma:seed
 ```
 
 Expected output:
+
 ```
 ✅ Default user seeded: Khôi (id: khoi-default-user)
 ✅ Weekly schedule seeded: 20 periods across 5 days
@@ -109,19 +112,21 @@ Expected output:
 
 ### Step 2 — Upstash (Rate Limiting Redis)
 
-**Register:** https://upstash.com → Sign up free
+**Register:** upstash.com → Sign up free
 
 **Create database:**
+
 1. Console → Create Database
 2. Name: `kid-hub-ratelimit`
 3. Region: same as your Neon region
 4. Type: Regional (free)
 
 **Get credentials:**
+
 1. Click your database → REST API tab
 2. Copy both values shown:
 
-| Variable | Where to find it | Notes |
+| Variable | Where to Find It | Notes |
 |---|---|---|
 | `UPSTASH_REDIS_REST_URL` | REST API tab → UPSTASH_REDIS_REST_URL | Starts with `https://` |
 | `UPSTASH_REDIS_REST_TOKEN` | REST API tab → UPSTASH_REDIS_REST_TOKEN | Long base64 string |
@@ -134,14 +139,16 @@ Without these, the app still works but PIN rate limiting is disabled (middleware
 
 Only needed when the English audio/image module is launched.
 
-**Register:** https://cloudflare.com → Sign up (free, identity verification required, no charge)
+**Register:** cloudflare.com → Sign up (free, identity verification required, no charge)
 
 **Create bucket:**
+
 1. Dashboard → R2 Object Storage → Create bucket
 2. Name: `kid-hub-media`
 3. Enable public access → copy the public bucket URL
 
 **Bucket structure to upload to later:**
+
 ```
 kid-hub-media/
   english/
@@ -151,7 +158,7 @@ kid-hub-media/
 
 **Env var you collect from R2:**
 
-| Variable | Where to find it |
+| Variable | Where to Find It |
 |---|---|
 | `NEXT_PUBLIC_MEDIA_BASE_URL` | R2 bucket → Public bucket URL (e.g. `https://pub-xxxx.r2.dev`) |
 
@@ -159,13 +166,14 @@ kid-hub-media/
 
 ### Step 4 — Vercel (Hosting)
 
-**Register:** https://vercel.com → Sign up free with GitHub account
+**Register:** vercel.com → Sign up free with GitHub account
 
 **Create project:**
+
 1. New Project → Import Git Repository → select `kid-hub`
 2. Framework: Next.js (auto-detected)
 3. Root directory: `/` (default)
-4. Build command: `pnpm build` (auto-detected from package.json)
+4. Build command: `pnpm build` (auto-detected from `package.json`)
 5. Install command: `pnpm install` (auto-detected)
 
 **Set environment variables:**
@@ -191,13 +199,7 @@ Go to: Project Settings → Environment Variables → add each one with scope **
 | `UPSTASH_REDIS_REST_URL` | REST URL from Upstash console | Production, Preview |
 | `UPSTASH_REDIS_REST_TOKEN` | REST token from Upstash console | Production, Preview |
 
-**From Cloudflare R2 (optional, add later when English module launches):**
-
-| Key | Value | Scope |
-|---|---|---|
-| `NEXT_PUBLIC_MEDIA_BASE_URL` | Public bucket URL from R2 | Production, Preview |
-
-**Trigger first deploy:** Click Deploy (or push a commit to main).
+**Trigger first deploy:** Click Deploy (or push a commit to `main`).
 
 ---
 
@@ -205,9 +207,9 @@ Go to: Project Settings → Environment Variables → add each one with scope **
 
 Go to: GitHub repo → Settings → Secrets and variables → Actions → New repository secret
 
-**From Vercel** (get these from Vercel Account Settings → Tokens and Project Settings):
+**From Vercel:**
 
-| Secret name | Where to find it |
+| Secret Name | Where to Find It |
 |---|---|
 | `VERCEL_TOKEN` | vercel.com → Account Settings → Tokens → Create |
 | `VERCEL_ORG_ID` | Vercel Project Settings → General → Team/Org ID |
@@ -215,27 +217,20 @@ Go to: GitHub repo → Settings → Secrets and variables → Actions → New re
 
 **From Neon:**
 
-| Secret name | Which URL |
+| Secret Name | Which URL |
 |---|---|
 | `DATABASE_URL` | Pooled Neon URL (same as Vercel env var) |
 | `DATABASE_URL_UNPOOLED` | Direct Neon URL — used only for `prisma migrate deploy` in CI |
 
 **App secrets:**
 
-| Secret name | Notes |
+| Secret Name | Notes |
 |---|---|
 | `SESSION_SECRET` | Same value as Vercel env var — needed for auth in Playwright tests |
 
-**From Upstash (optional):**
-
-| Secret name | Notes |
-|---|---|
-| `UPSTASH_REDIS_REST_URL` | Only if rate limiting must be active during CI tests |
-| `UPSTASH_REDIS_REST_TOKEN` | Pair with above |
-
 ---
 
-## 3. Local Development .env.local
+## 3. Local Development `.env.local`
 
 Create `.env.local` in project root (gitignored). Use the **direct** Neon URL for local dev.
 
@@ -292,7 +287,6 @@ pnpm test
 | Pages show no data after deploy | Pages were statically rendered during build when DB was empty | Ensure `export const dynamic = 'force-dynamic'` on all data pages |
 | `prisma migrate deploy` fails | Running against pooled URL | Always use direct (unpooled) URL for migrations |
 | Random redirect to `/parent/pin` | SESSION_SECRET mismatch between environments | Confirm same SESSION_SECRET value in Vercel and locally |
-| `dotenv: not found` when running scripts | `dotenv-cli` not installed | Use `tsx --env-file=.env.local` instead (already fixed in package.json) |
 | PIN rate limit 429 not working | Upstash vars not set | Add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` to Vercel |
 
 ---
@@ -300,30 +294,29 @@ pnpm test
 ## 6. Go-Live Checklist
 
 **Code:**
+
 - [ ] `output: 'standalone'` removed from `next.config.ts`
 - [ ] Prisma `binaryTargets` updated in `prisma/schema.prisma`
 - [ ] `postinstall: prisma generate` in `package.json`
 - [ ] Data pages have `export const dynamic = 'force-dynamic'`
 
 **Neon:**
+
 - [ ] Project created, region chosen
 - [ ] Both connection strings copied (direct + pooled)
 - [ ] `prisma migrate deploy` run against direct URL — all migrations applied
 - [ ] `pnpm prisma:seed` run — user and schedule seeded
 
 **Vercel:**
+
 - [ ] Project linked to GitHub repo
 - [ ] `DATABASE_URL` set (pooled URL with `?pgbouncer=true&connect_timeout=15`)
 - [ ] `SESSION_SECRET` set (32+ chars)
 - [ ] Optional: Upstash and R2 vars set if features are active
 - [ ] First deploy succeeded
 
-**GitHub Actions (when CI pipeline is added):**
-- [ ] `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` set
-- [ ] `DATABASE_URL_UNPOOLED` set for migration step
-- [ ] `SESSION_SECRET` set for Playwright auth fixture
+**Smoke Tests on Live URL:**
 
-**Smoke tests on live URL:**
 - [ ] Parent PIN login works
 - [ ] Dashboard loads with schedule data
 - [ ] Grades page loads

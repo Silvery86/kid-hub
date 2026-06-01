@@ -58,8 +58,8 @@ Stop after editing files, report what changed, and wait for the PM to say "commi
 
 ## Architecture — Quick Reference
 
-Full layering rules and anti-patterns: `docs/TEAM_WORKFLOW.md`
-Stability risks and priority fix list: `docs/STABILITY_PLAN.md`
+Full layering rules and anti-patterns: `docs/guides/team-workflow.md`
+Stability risks and priority fix list: `docs/architecture/stability-plan.md`
 
 | Layer | Directory | One-line rule |
 |---|---|---|

@@ -1,17 +1,17 @@
-# Kid Hub — Installation & Setup Guide
+# Kid Hub — Getting Started
 
-Generated: 2026-05-03
+> Generated: 2026-05-03
 
 ---
 
 ## Prerequisites
 
-| Tool | Minimum version | Install |
+| Tool | Minimum Version | Install |
 |---|---|---|
-| Node.js | 20 LTS | https://nodejs.org |
+| Node.js | 20 LTS | nodejs.org |
 | npm | 10+ (bundled with Node 20) | — |
-| Docker Desktop | 4.x | https://www.docker.com/products/docker-desktop |
-| Git | 2.x | https://git-scm.com |
+| Docker Desktop | 4.x | docker.com |
+| Git | 2.x | git-scm.com |
 
 ---
 
@@ -43,6 +43,7 @@ JWT signing secret for parent session cookies. Must be at least 32 characters lo
 The middleware throws at startup if this is missing or too short.
 
 **Generate a secure value:**
+
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
@@ -57,11 +58,12 @@ PostgreSQL connection string. If you are using the Docker Compose setup (recomme
 set automatically in `docker-compose.yml` and does **not** need to be in `.env.local`.
 
 For a local PostgreSQL instance (not Docker):
+
 ```ini
 DATABASE_URL=postgresql://<user>:<password>@localhost:5432/kidhub
 ```
 
-### Optional Variables (Upstash Redis Rate Limiting)
+### Optional Variables — Upstash Redis Rate Limiting
 
 Without these, the PIN rate limiter degrades gracefully — PIN attempts are not rate-limited,
 but the app functions normally. **Required for production.**
@@ -72,7 +74,8 @@ UPSTASH_REDIS_REST_TOKEN=<your-rest-token>
 ```
 
 **Get credentials:**
-1. Sign up at https://upstash.com (free tier: 10,000 commands/day)
+
+1. Sign up at upstash.com (free tier: 10,000 commands/day)
 2. Create a Redis database (any region)
 3. Copy the REST URL and REST Token from the database dashboard
 
@@ -92,7 +95,7 @@ UPSTASH_REDIS_REST_TOKEN=your-rest-token
 
 ---
 
-## 3. Database Setup (Docker — Recommended)
+## 3. Database Setup — Docker (Recommended)
 
 Docker Compose starts PostgreSQL 16 and the Next.js dev server together with a single command.
 
@@ -104,7 +107,7 @@ docker compose up
 
 The first run builds the Next.js image (~2 minutes). Subsequent starts are instant.
 
-- App: http://localhost:3000
+- App: `http://localhost:3000`
 - PostgreSQL: `localhost:5432` (user: `kidhub`, password: `kidhub_dev`, db: `kidhub`)
 
 ### Rebuild after dependency changes
@@ -142,22 +145,24 @@ docker compose down -v
 
 ---
 
-## 4. Local Development (without Docker)
+## 4. Local Development — Without Docker
 
 If you prefer to run PostgreSQL natively:
 
 1. Install PostgreSQL 16
 2. Create user and database:
+
    ```sql
    CREATE USER kidhub WITH PASSWORD 'kidhub_dev';
    CREATE DATABASE kidhub OWNER kidhub;
    ```
+
 3. Set `DATABASE_URL` in `.env.local`
 4. Run migrations: `npm run prisma:migrate`
 5. Seed: `npm run prisma:seed`
 6. Start the dev server: `npm run dev`
 
-App is available at http://localhost:3000.
+App is available at `http://localhost:3000`.
 
 ---
 
@@ -230,7 +235,7 @@ test('protected page loads', async ({ page, context }) => {
 
 ---
 
-## 6. Git Hooks (Security Shield)
+## 6. Git Hooks — Security Shield
 
 Install the pre-push hook to prevent accidental secret commits:
 
@@ -240,11 +245,13 @@ ln -sf ../../scripts/git-hooks/pre-push.sh .git/hooks/pre-push
 ```
 
 **Test the scanner without pushing:**
+
 ```bash
 git diff HEAD~1 HEAD | bash scripts/git-hooks/pre-push.sh --test
 ```
 
 **Bypass (emergency only — requires PM approval):**
+
 ```bash
 git push --no-verify
 ```
@@ -267,6 +274,7 @@ npm run build         # Next.js production build (reveals type errors)
 ### "SESSION_SECRET env var must be set and at least 32 characters long"
 
 The middleware throws this on every request if the secret is missing or too short.
+
 - Check that `.env.local` exists in the project root.
 - Verify `SESSION_SECRET` is at least 32 characters.
 - In Docker: the `environment:` block in `docker-compose.yml` must have `SESSION_SECRET` set.
@@ -278,6 +286,7 @@ The database is empty. Run `npm run prisma:migrate` to apply all migrations.
 ### Playwright tests fail with "SESSION_SECRET must be set"
 
 The test fixture (`e2e/fixtures/auth.ts`) reads `SESSION_SECRET` from `process.env`.
+
 - Ensure `.env.local` exists and has `SESSION_SECRET`.
 - The test scripts use `dotenv -e .env.local --` prefix to load it.
 
@@ -289,8 +298,10 @@ Docker port mapping in `docker-compose.yml` (e.g., `'5433:5432'`) and update `DA
 ### Upstash rate limit not active in Docker
 
 Restart Docker after adding credentials to `.env.local`:
+
 ```bash
 docker compose down && docker compose up --build
 ```
+
 The `env_file: [.env.local]` directive in `docker-compose.yml` reads the file at container
 start time — it does not hot-reload.
