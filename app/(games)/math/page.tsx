@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 /** Math hub page — Server Component that fetches today's math homework and renders the game hub. */
 
 import { MathHub } from '@/components/games/MathHub'

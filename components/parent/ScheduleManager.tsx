@@ -37,6 +37,7 @@ type EditablePeriod = {
   subjectId: string
   startTime: string
   endTime: string
+  iconKey?: string
 }
 
 type EditableSchedule = Record<DayOfWeek, EditablePeriod[]>
@@ -865,7 +866,7 @@ export const ScheduleManager = ({
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-extrabold text-slate-700">
-                      {icon.emoji} {subject?.name ?? item.subjectId}
+                      {icon?.emoji} {subject?.name ?? item.subjectId}
                     </p>
                     <p className="truncate text-xs font-semibold text-slate-500">{item.label}</p>
                   </div>

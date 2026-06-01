@@ -26,8 +26,17 @@ function createPrismaClient(): PrismaClient {
   })
 }
 
-export const db: PrismaClient = globalForPrisma.prisma ?? createPrismaClient()
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = db
+function getDb(): PrismaClient {
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = createPrismaClient()
+  }
+  return globalForPrisma.prisma
 }
+
+// Proxy defers client creation (and DATABASE_URL validation) to first query,
+// so Next.js can import this module at build time without a live database.
+export const db = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    return getDb()[prop as keyof PrismaClient]
+  },
+})
