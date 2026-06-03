@@ -16,6 +16,10 @@ export const metadata: Metadata = {
   title: 'Kid Hub',
   description: 'Your school hub — schedule, grades & learning games!',
   manifest: '/manifest.json',
+  icons: {
+    apple: '/icons/apple-touch-icon.png',
+    icon: '/icons/icon-192.png',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',

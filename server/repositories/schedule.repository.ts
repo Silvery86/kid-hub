@@ -23,6 +23,7 @@ export interface CreatePeriodInput {
 
 export interface UpdatePeriodInput {
   id: string
+  userId: string
   subjectId?: string
   startTime?: string
   endTime?: string
@@ -138,7 +139,7 @@ export const createPeriod = async (data: CreatePeriodInput): Promise<string> => 
 /** Updates an existing class period record by its ID. */
 export const updatePeriod = async (data: UpdatePeriodInput): Promise<void> => {
   await db.classPeriod.update({
-    where: { id: data.id },
+    where: { id: data.id, userId: data.userId },
     data: {
       ...(data.subjectId ? { subjectId: data.subjectId } : {}),
       ...(data.startTime ? { startTime: data.startTime } : {}),
@@ -151,8 +152,8 @@ export const updatePeriod = async (data: UpdatePeriodInput): Promise<void> => {
 }
 
 /** Deletes a class period record by its ID. */
-export const deletePeriod = async (id: string): Promise<void> => {
-  await db.classPeriod.delete({ where: { id } })
+export const deletePeriod = async (id: string, userId: string): Promise<void> => {
+  await db.classPeriod.delete({ where: { id, userId } })
 }
 
 // ── Evening extra class queries ──────────────────────────────

@@ -13,6 +13,7 @@ import { verifySessionToken, SESSION_COOKIE } from '@/server/services/auth.servi
 import { validatePeriodOverlap, buildTodayView, jsDateToDayOfWeek } from '@/server/services/schedule.service'
 import * as scheduleRepo from '@/server/repositories/schedule.repository'
 import { logActivity } from '@/server/repositories/activity.repository'
+import { addUserPoints } from '@/server/repositories/progress.repository'
 import { getSubjectById } from '@/lib/data/subjects'
 import type { DayOfWeek, DailyHomework, DailySchedule, TodayView } from '@/types'
 import { DEFAULT_USER_ID, MAX_EVENING_BLOCKS_PER_DAY } from '@/lib/constants'
@@ -202,7 +203,7 @@ export const updatePeriodAction = async (
     if (!parsed.success) {
       return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
     }
-    await scheduleRepo.updatePeriod(parsed.data)
+    await scheduleRepo.updatePeriod({ ...parsed.data, userId: DEFAULT_USER_ID })
     revalidatePath('/dashboard')
     revalidatePath('/schedule')
     return { success: true }
@@ -221,7 +222,7 @@ export const deletePeriodAction = async (
     await requireParentSession()
     const parsed = z.string().min(1).safeParse(id)
     if (!parsed.success) return { success: false, error: 'Invalid period ID' }
-    await scheduleRepo.deletePeriod(parsed.data)
+    await scheduleRepo.deletePeriod(parsed.data, DEFAULT_USER_ID)
     revalidatePath('/dashboard')
     revalidatePath('/schedule')
     return { success: true }
@@ -360,6 +361,7 @@ export const toggleHomeworkDoneAction = async (
       const subj = getSubjectById(updated.subjectId)
       const icon = subj?.icon ?? '📝'
       void logActivity(DEFAULT_USER_ID, 'HOMEWORK_DONE', updated.label, icon)
+      await addUserPoints(DEFAULT_USER_ID, updated.points)
     }
 
     return { success: true, points: isDone ? updated.points : 0 }

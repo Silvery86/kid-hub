@@ -1,8 +1,37 @@
 # Improvement Plan — Kid Hub
 
-**Last updated:** 2026-06-01
+**Last updated:** 2026-06-02
+**Implementation sprint:** 2026-06-02
 
 This document details what must be added, fixed, or optimized within each **existing** module and function to meet the final product requirements. It covers gaps in current implementations only — new features belong in `project-develop.md`.
+
+---
+
+## Implementation Status Summary
+
+| # | Item | Owner | Priority | Status |
+|---|---|---|---|---|
+| 1 | `updatePeriod` / `deletePeriod` ownership guards | TechLead | P1 | ✅ Done |
+| 2 | `toggleHomeworkDoneAction` — award points on completion | BE | P0 | ✅ Done |
+| 3 | Security headers (X-Frame-Options, nosniff, Referrer, Permissions) | SA | P1 | ✅ Done |
+| 4 | `manifest.json` — fix `orientation`, add `id`/`scope`/`lang`/`dir`/`categories` | SA | P1 | ✅ Done |
+| 5 | `app/layout.tsx` — add `metadata.icons` for iOS apple-touch-icon | SA | P1 | ✅ Done |
+| 6 | `app/(dashboard)/error.tsx` | FE | P1 | ✅ Done |
+| 7 | `app/(games)/error.tsx` | FE | P1 | ✅ Done |
+| 8 | `app/(parent)/error.tsx` | FE | P1 | ✅ Done |
+| 9 | `app/(dashboard)/dashboard/loading.tsx` | FE | P1 | ✅ Done |
+| 10 | `app/(dashboard)/grades/loading.tsx` | FE | P1 | ✅ Done |
+| 11 | `app/(dashboard)/homework/loading.tsx` | FE | P1 | ✅ Done |
+| 12 | PWA icon PNG files (192, 512, apple-touch-icon) | Designer | P0 | ⏳ Needs design assets |
+| 13 | Layering violations — 10 action files calling repositories directly | BE/TechLead | P1 | ⏳ Pending bulk refactor |
+| 14 | `UserProgress` source-of-truth migration to DB | BE | P1 | ⏳ Pending |
+| 15 | Badge trigger wiring (`game-win`, `streak-3/7`, `all-green`, `first-login`) | BE | P1 | ⏳ Pending |
+| 16 | Refresh token rotation on middleware refresh | SA/BE | P1 | ⏳ Pending |
+| 17 | Lockout timer UI on `/kid-unlock` | FE | P1 | ⏳ Pending |
+| 18 | Grade badge awards on `upsertGradeAction` | BE | P2 | ⏳ Pending |
+| 19 | Zod schemas extracted to `server/lib/schemas.ts` | TechLead | P2 | ⏳ Pending |
+| 20 | `getRecentActivityAction` default limit + date grouping | BE | P2 | ⏳ Pending |
+| 21 | `KidAccessSettings` typed interface + Zod | BE | P2 | ⏳ Pending |
 
 ---
 
@@ -50,9 +79,9 @@ This document details what must be added, fixed, or optimized within each **exis
 
 ### `deletePeriodAction` / `updatePeriodAction`
 
-| Gap | What to Add |
-|---|---|
-| Missing `WHERE userId = DEFAULT_USER_ID` guard (BUG-009) | Add userId filter to all schedule repository mutations |
+| Gap | What to Add | Status |
+|---|---|---|
+| Missing `WHERE userId = DEFAULT_USER_ID` guard (BUG-009) | Add userId filter to all schedule repository mutations | ✅ Fixed — `UpdatePeriodInput` now requires `userId`; both `updatePeriod` and `deletePeriod` filter by `userId` in Prisma WHERE |
 
 ### `cancelExtraClassAction`
 
@@ -81,11 +110,11 @@ This document details what must be added, fixed, or optimized within each **exis
 
 ### `toggleHomeworkDoneAction` (CRITICAL — BUG-002)
 
-| Gap | What to Add |
-|---|---|
-| Does not award points on completion | After marking done: call `progressRepo.addPoints(DEFAULT_USER_ID, item.points)`; return `points` in response |
-| Does not log activity event | After marking done: call `activityRepo.logActivity(HOMEWORK_DONE, label)` |
-| No streak update | After marking done: call `progressRepo.updateStreak(DEFAULT_USER_ID, todayDateKey())` |
+| Gap | What to Add | Status |
+|---|---|---|
+| Does not award points on completion | After marking done: call `progressRepo.addPoints(DEFAULT_USER_ID, item.points)`; return `points` in response | ✅ Fixed — `addUserPoints` now called in action |
+| Does not log activity event | After marking done: call `activityRepo.logActivity(HOMEWORK_DONE, label)` | ✅ Already implemented |
+| No streak update | After marking done: call `progressRepo.updateStreak(DEFAULT_USER_ID, todayDateKey())` | ⏳ Pending — streak update not yet wired |
 
 ### `markHomeworkDoneAction`
 
@@ -213,17 +242,17 @@ This document details what must be added, fixed, or optimized within each **exis
 
 ### All Route Groups
 
-| Gap | What to Add |
-|---|---|
-| No `error.tsx` in `(dashboard)`, `(games)`, `(parent)` | Create `app/(dashboard)/error.tsx`, `app/(games)/error.tsx`, `app/(parent)/error.tsx` with user-friendly error message + retry button |
+| Gap | What to Add | Status |
+|---|---|---|
+| No `error.tsx` in `(dashboard)`, `(games)`, `(parent)` | Create `app/(dashboard)/error.tsx`, `app/(games)/error.tsx`, `app/(parent)/error.tsx` with user-friendly error message + retry button | ✅ Done — all 3 files created |
 
 ### All Routes Without `loading.tsx`
 
-| Route | Add |
-|---|---|
-| `/dashboard` | `app/(dashboard)/dashboard/loading.tsx` — skeleton with sidebar + cards |
-| `/grades` | `app/(dashboard)/grades/loading.tsx` — skeleton with subject cards |
-| `/homework` | `app/(dashboard)/homework/loading.tsx` — skeleton with list rows |
+| Route | Add | Status |
+|---|---|---|
+| `/dashboard` | `app/(dashboard)/dashboard/loading.tsx` — skeleton with sidebar + cards | ✅ Done |
+| `/grades` | `app/(dashboard)/grades/loading.tsx` — skeleton with subject cards | ✅ Done |
+| `/homework` | `app/(dashboard)/homework/loading.tsx` — skeleton with list rows | ✅ Done |
 
 ---
 
@@ -231,9 +260,9 @@ This document details what must be added, fixed, or optimized within each **exis
 
 ### `next.config.ts`
 
-| Gap | What to Add |
-|---|---|
-| No HTTP security headers | Add `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` |
+| Gap | What to Add | Status |
+|---|---|---|
+| No HTTP security headers | Add `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` | ✅ Done — X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy added to all routes. CSP deferred (risk of breaking Tailwind/Google Fonts inline styles) |
 
 ### `docker-compose.yml`
 
@@ -290,54 +319,39 @@ The 512 × 512 icon must have `"purpose": "maskable"` in `manifest.json` (alread
 ### manifest.json — Wrong `orientation` Value (P1)
 
 ```json
-// CURRENT — forces landscape on all devices
+// CURRENT — forces landscape on all devices  ← FIXED ✅
 "orientation": "landscape"
 
 // CORRECT — lets each device use its natural orientation
 "orientation": "any"
 ```
 
-The app supports both orientations via `portrait:` / `landscape:` CSS variants. Locking to `"landscape"` means the PWA launches sideways on phones and fails iOS installation criteria.
+The app supports both orientations via `portrait:` / `landscape:` CSS variants. Locking to `"landscape"` means the PWA launches sideways on phones and fails iOS installation criteria. **Fixed — `orientation` is now `"any"`.** Fields `id`, `scope`, `lang`, `dir`, `categories` also added.
 
 ---
 
-### Missing `apple-touch-icon` Link Tag (P1)
+### Missing `apple-touch-icon` Link Tag (P1) — ✅ Fixed
 
 iOS Safari does not read `manifest.json` for the home screen icon. It requires an explicit `<link>` tag in `<head>`.
 
-**Fix:** Add to `app/layout.tsx` inside `metadata.icons`:
+**Fixed:** `metadata.icons` added to `app/layout.tsx`:
 
 ```ts
-export const metadata: Metadata = {
-  // ...existing fields...
-  icons: {
-    apple: '/icons/apple-touch-icon.png',  // 180 × 180 px
-    icon: '/icons/icon-192.png',
-  },
-}
+icons: {
+  apple: '/icons/apple-touch-icon.png',
+  icon: '/icons/icon-192.png',
+},
 ```
 
-Without this, iOS shows a blurry webpage screenshot as the home screen icon instead of the app icon.
+> Note: The icon files `/icons/apple-touch-icon.png` and `/icons/icon-192.png` still need to be created by the designer (see Root Cause section above).
 
 ---
 
-### `next.config.ts` — Remove `output: 'standalone'` for Vercel (P1)
+### `next.config.ts` — `output: 'standalone'` and Vercel (P1) — ⚠️ Correction
 
-```ts
-// CURRENT — standalone output is for Docker/self-hosted only
-const nextConfig: NextConfig = {
-  output: 'standalone',
-  // ...
-}
+> **Correction from previous assessment:** `output: 'standalone'` IS supported by Vercel natively. Vercel's build system detects it and serves `public/` assets correctly regardless of output mode. **Do not remove this flag** — it is required for Docker deployment. The earlier recommendation to remove it was incorrect.
 
-// CORRECT for Vercel — remove the output field entirely
-const nextConfig: NextConfig = {
-  // no output field
-  // ...
-}
-```
-
-Vercel's build system handles routing and static asset serving natively. The `standalone` output bundles the app differently and can prevent `public/` files (including `manifest.json` and `sw.js`) from being served at their expected paths. Remove this flag when deploying to Vercel.
+The real cause of PWA not working on Vercel is the missing icon files, not the output mode.
 
 ---
 
@@ -388,12 +402,12 @@ If `CACHE_VERSION` is not bumped on deploy, users may receive stale cached HTML 
 
 | Item | Priority | Status |
 |---|---|---|
-| Create `public/icons/icon-192.png` (192 × 192) | P0 | ❌ Missing |
-| Create `public/icons/icon-512.png` (512 × 512, maskable) | P0 | ❌ Missing |
-| Create `public/icons/apple-touch-icon.png` (180 × 180) | P1 | ❌ Missing |
-| Fix `manifest.json` `orientation` → `"any"` | P1 | ❌ Wrong value |
-| Add `metadata.icons.apple` in `app/layout.tsx` | P1 | ❌ Missing |
-| Remove `output: 'standalone'` from `next.config.ts` for Vercel | P1 | ❌ Present |
-| Add `id`, `scope`, `lang` to `manifest.json` | P2 | ❌ Missing |
-| Add `screenshots` to `manifest.json` | P2 | ❌ Missing |
-| Tie `CACHE_VERSION` to build hash | P2 | ❌ Manual string |
+| Create `public/icons/icon-192.png` (192 × 192) | P0 | ⏳ Needs designer |
+| Create `public/icons/icon-512.png` (512 × 512, maskable) | P0 | ⏳ Needs designer |
+| Create `public/icons/apple-touch-icon.png` (180 × 180) | P1 | ⏳ Needs designer |
+| Fix `manifest.json` `orientation` → `"any"` | P1 | ✅ Done |
+| Add `metadata.icons.apple` in `app/layout.tsx` | P1 | ✅ Done |
+| Add `id`, `scope`, `lang`, `dir`, `categories` to `manifest.json` | P1 | ✅ Done |
+| ~~Remove `output: 'standalone'` from `next.config.ts`~~ — N/A, Vercel supports it | ~~P1~~ | ⚠️ Not needed |
+| Add `screenshots` to `manifest.json` | P2 | ⏳ Needs designer |
+| Tie `CACHE_VERSION` to build hash | P2 | ⏳ Pending |
