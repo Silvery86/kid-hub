@@ -12,8 +12,9 @@ import { cookies } from 'next/headers'
 import { verifySessionToken, SESSION_COOKIE } from '@/server/services/auth.service'
 import { validatePeriodOverlap, buildTodayView, jsDateToDayOfWeek } from '@/server/services/schedule.service'
 import * as scheduleRepo from '@/server/repositories/schedule.repository'
-import { logActivity } from '@/server/repositories/activity.repository'
-import { addUserPoints } from '@/server/repositories/progress.repository'
+import { addUserPoints, updateStreak } from '@/server/repositories/progress.repository'
+import { recordActivity } from '@/server/services/activity.service'
+import { checkAndAwardStreakBadges } from '@/server/services/rewards.service'
 import { getSubjectById } from '@/lib/data/subjects'
 import type { DayOfWeek, DailyHomework, DailySchedule, TodayView } from '@/types'
 import { DEFAULT_USER_ID, MAX_EVENING_BLOCKS_PER_DAY } from '@/lib/constants'
@@ -360,8 +361,10 @@ export const toggleHomeworkDoneAction = async (
     if (parsed.data.isDone) {
       const subj = getSubjectById(updated.subjectId)
       const icon = subj?.icon ?? '📝'
-      void logActivity(DEFAULT_USER_ID, 'HOMEWORK_DONE', updated.label, icon)
+      void recordActivity(DEFAULT_USER_ID, 'HOMEWORK_DONE', updated.label, icon)
+      const newStreak = await updateStreak(DEFAULT_USER_ID)
       await addUserPoints(DEFAULT_USER_ID, updated.points)
+      void checkAndAwardStreakBadges(DEFAULT_USER_ID, newStreak)
     }
 
     return { success: true, points: isDone ? updated.points : 0 }

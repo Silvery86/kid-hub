@@ -4,7 +4,8 @@ import { cookies } from 'next/headers'
 import { z } from 'zod'
 import { verifySessionToken, SESSION_COOKIE } from '@/server/services/auth.service'
 import { getKidAccessSettings, saveKidAccessSettings } from '@/server/repositories/user.repository'
-import { getRecentActivity, type ActivityEventRow } from '@/server/repositories/activity.repository'
+import { fetchRecentActivity } from '@/server/services/activity.service'
+import type { ActivityEventRow } from '@/server/repositories/activity.repository'
 import { DEFAULT_USER_ID } from '@/lib/constants'
 
 const requireParentSession = async (): Promise<void> => {
@@ -46,7 +47,7 @@ export const getRecentActivityAction = async (
 ): Promise<{ success: boolean; data?: ActivityItem[]; error?: string }> => {
   try {
     await requireParentSession()
-    const rows: ActivityEventRow[] = await getRecentActivity(DEFAULT_USER_ID, limit)
+    const rows: ActivityEventRow[] = await fetchRecentActivity(DEFAULT_USER_ID, limit)
     return {
       success: true,
       data: rows.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() })),

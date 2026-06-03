@@ -10,7 +10,8 @@ import { revalidatePath } from 'next/cache'
 import { DEFAULT_USER_ID } from '@/lib/constants'
 import { saveEnglishSession, getTodayEnglishHomework } from '@/server/services/english.service'
 import { todayDateKey, todayDayOfWeek } from '@/server/services/homework.service'
-import { logActivity } from '@/server/repositories/activity.repository'
+import { recordActivity } from '@/server/services/activity.service'
+import { checkAndAwardGameWinBadge } from '@/server/services/rewards.service'
 import type { EnglishSessionResult } from '@/server/services/english.service'
 
 const ENGLISH_MINIGAME_LABELS: Record<string, string> = {
@@ -61,7 +62,8 @@ export const saveEnglishProgressAction = async (
     }
 
     const label = `Tiếng Anh · ${ENGLISH_MINIGAME_LABELS[data.minigame] ?? data.minigame} · Cấp ${data.level}`
-    void logActivity(DEFAULT_USER_ID, 'GAME_COMPLETE', label, '🔤')
+    void recordActivity(DEFAULT_USER_ID, 'GAME_COMPLETE', label, '🔤')
+    void checkAndAwardGameWinBadge(DEFAULT_USER_ID)
 
     return { success: true, data: result }
   } catch {

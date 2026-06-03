@@ -14,6 +14,7 @@ export const ComingSoonCard = ({ emoji, name, desc, compact = false }: ComingSoo
     <div
       className={cn(
         'relative flex flex-col border-2 border-dashed border-slate-200 bg-white',
+        'pointer-events-none cursor-not-allowed select-none opacity-50',
         compact ? 'gap-1.5 rounded-2xl p-3.5' : 'gap-2 rounded-[20px] p-4'
       )}
       aria-disabled="true"

@@ -5,6 +5,8 @@ import { DEFAULT_USER_ID } from '@/lib/constants'
 import * as homeworkRepo from '@/server/repositories/homework.repository'
 import { todayDateKey, todayDayOfWeek } from '@/server/services/homework.service'
 import type { HomeworkItem } from '@/types'
+import { addUserPoints, updateStreak } from '@/server/repositories/progress.repository'
+import { recordActivity } from '@/server/services/activity.service'
 
 /** Fetches today's homework items (DailyHomework) with completion status. No auth required — kid-facing. */
 export const getTodayHomeworkAction = async (): Promise<{
@@ -27,6 +29,9 @@ export const markHomeworkDoneAction = async (
 ): Promise<{ success: boolean; error?: string }> => {
   try {
     await homeworkRepo.markDone(periodId, DEFAULT_USER_ID, todayDateKey())
+    await updateStreak(DEFAULT_USER_ID)
+    await addUserPoints(DEFAULT_USER_ID, 10)
+    void recordActivity(DEFAULT_USER_ID, 'HOMEWORK_DONE', 'Bài tập hôm nay', '📝')
     revalidatePath('/homework')
     revalidatePath('/dashboard')
     return { success: true }
