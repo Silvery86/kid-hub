@@ -5,8 +5,13 @@
  * All mutations are guarded by Zod validation.
  */
 
-import { z } from 'zod'
 import { cookies } from 'next/headers'
+import {
+  ParentEmailSchema,
+  ParentPasswordSchema,
+  ParentPinSchema,
+  KidPatternSchema,
+} from '@/server/lib/schemas'
 import {
   calcLockoutExpiry,
   compareKidPattern,
@@ -29,29 +34,19 @@ import {
   verifyParentAccessToken,
   verifyParentRefreshToken,
 } from '@/server/services/auth.service'
+import { checkAndAwardFirstLoginBadge } from '@/server/services/rewards.service'
 import * as userRepo from '@/server/repositories/user.repository'
 import {
   DEFAULT_USER_ID,
-  KID_PATTERN_LENGTH,
   KID_PATTERN_LOCKOUT_SECONDS,
   KID_SESSION_TTL_SECONDS,
   MAX_KID_PATTERN_ATTEMPTS,
   MAX_PIN_ATTEMPTS,
   MAX_PARENT_LOGIN_ATTEMPTS,
-  PIN_LENGTH,
   PARENT_ACCESS_TTL_SECONDS,
   PARENT_LOGIN_LOCKOUT_SECONDS,
   PARENT_REFRESH_TTL_SECONDS,
 } from '@/lib/constants'
-
-const ParentEmailSchema = z.string().trim().toLowerCase().email('Invalid email format')
-const ParentPasswordSchema = z
-  .string()
-  .min(8, 'Password must be at least 8 characters')
-  .max(128, 'Password is too long')
-const KidPatternSchema = z
-  .string()
-  .regex(new RegExp(`^[1-6]{${KID_PATTERN_LENGTH}}$`), 'Invalid unlock pattern format')
 
 const PARENT_ACCESS_COOKIE_OPTIONS = {
   httpOnly: true,
@@ -309,6 +304,7 @@ export const verifyKidPatternAction = async (
     }
 
     await userRepo.resetKidPatternAttempts(DEFAULT_USER_ID)
+    void checkAndAwardFirstLoginBadge(DEFAULT_USER_ID)
     const kidToken = await createKidSessionToken(DEFAULT_USER_ID)
     const cookieStore = await cookies()
     cookieStore.set(KID_SESSION_COOKIE, kidToken, KID_SESSION_COOKIE_OPTIONS)
@@ -365,9 +361,7 @@ export const signOutKidAction = async (): Promise<{ success: boolean; error?: st
   }
 }
 
-const ParentPinSchema = z
-  .string()
-  .regex(/^\d{4}$/, `PIN must be exactly ${PIN_LENGTH} digits`)
+
 
 /** Whether the household has a parent PIN configured. */
 export const checkParentPinAction = async (): Promise<{ hasPin: boolean }> => {

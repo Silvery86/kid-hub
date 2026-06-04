@@ -1,36 +1,12 @@
 'use server'
 
-/**
- * Server Actions for subject grades: fetch report card and upsert individual grades.
- * All mutations are validated with Zod and guarded by parent session check.
- */
-
-import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
-import { cookies } from 'next/headers'
-import { verifySessionToken, SESSION_COOKIE } from '@/server/services/auth.service'
-import { calculateBadge } from '@/server/services/grades.service'
-import * as gradesRepo from '@/server/repositories/grades.repository'
-import * as userRepo from '@/server/repositories/user.repository'
-import { buildReportCard } from '@/server/services/grades.service'
+import { calculateBadge, fetchReportCard, saveGrade } from '@/server/services/grades.service'
+import { checkAndAwardGradeBadges } from '@/server/services/rewards.service'
+import { requireParentSession } from '@/server/lib/auth-guard'
+import { UpsertGradeSchema } from '@/server/lib/schemas'
 import type { ReportCard } from '@/types'
 import { DEFAULT_USER_ID } from '@/lib/constants'
-
-const UpsertGradeSchema = z.object({
-  subjectId: z.string().min(1),
-  score: z.number().min(0).max(10),
-  semester: z.union([z.literal(1), z.literal(2)]),
-  academicYear: z.string().regex(/^\d{4}-\d{4}$/),
-})
-
-/** Ensures the request comes from an authenticated parent session. */
-const requireParentSession = async (): Promise<void> => {
-  const cookieStore = await cookies()
-  const token = cookieStore.get(SESSION_COOKIE)?.value
-  if (!token) throw new Error('Unauthorized')
-  const session = await verifySessionToken(token)
-  if (!session) throw new Error('Unauthorized')
-}
 
 /** Retrieves the full report card for the default user. */
 export const getReportCardAction = async (): Promise<{
@@ -39,11 +15,7 @@ export const getReportCardAction = async (): Promise<{
   error?: string
 }> => {
   try {
-    const userId = DEFAULT_USER_ID
-    const user = await userRepo.getUserById(userId)
-    if (!user) return { success: true, data: { userId, grades: [], averageScore: 0 } }
-    const grades = await gradesRepo.getReportCard(userId)
-    return { success: true, data: buildReportCard(userId, grades) }
+    return { success: true, data: await fetchReportCard(DEFAULT_USER_ID) }
   } catch {
     return { success: false, error: 'Failed to fetch report card' }
   }
@@ -61,7 +33,8 @@ export const upsertGradeAction = async (
     }
     const data = parsed.data
     const badge = calculateBadge(data.score)
-    await gradesRepo.upsertGrade(DEFAULT_USER_ID, { ...data, badge })
+    await saveGrade(DEFAULT_USER_ID, { ...data, badge })
+    void checkAndAwardGradeBadges(DEFAULT_USER_ID, data.subjectId, data.score)
     revalidatePath('/grades')
     revalidatePath('/dashboard')
     return { success: true }

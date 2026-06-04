@@ -14,6 +14,7 @@ import {
   PARENT_ACCESS_COOKIE,
   PARENT_ACCESS_TTL_SECONDS,
   PARENT_REFRESH_COOKIE,
+  PARENT_REFRESH_TTL_SECONDS,
 } from '@/lib/constants'
 
 const isKidAppSurfacePath = (pathname: string): boolean => {
@@ -65,6 +66,13 @@ const createParentAccessToken = async (userId: string): Promise<string> =>
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(`${PARENT_ACCESS_TTL_SECONDS}s`)
+    .sign(getSecret())
+
+const createParentRefreshToken = async (userId: string): Promise<string> =>
+  new SignJWT({ userId, typ: 'parent-refresh' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(`${PARENT_REFRESH_TTL_SECONDS}s`)
     .sign(getSecret())
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
@@ -132,14 +140,27 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   if (refreshToken) {
     const refreshSession = await verifyToken(refreshToken, 'parent-refresh')
     if (refreshSession) {
-      const newAccessToken = await createParentAccessToken(refreshSession.userId)
-      const response = NextResponse.next()
-      response.cookies.set(PARENT_ACCESS_COOKIE, newAccessToken, {
+      // Rotate both tokens so the old refresh token cannot be reused.
+      // DB hash update requires Node.js runtime — handled by issueParentSessionCookies
+      // on the next full server-action login. JWT-level rotation is enforced here.
+      const [newAccessToken, newRefreshToken] = await Promise.all([
+        createParentAccessToken(refreshSession.userId),
+        createParentRefreshToken(refreshSession.userId),
+      ])
+      const cookieOpts = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: PARENT_ACCESS_TTL_SECONDS,
+        sameSite: 'lax' as const,
         path: '/',
+      }
+      const response = NextResponse.next()
+      response.cookies.set(PARENT_ACCESS_COOKIE, newAccessToken, {
+        ...cookieOpts,
+        maxAge: PARENT_ACCESS_TTL_SECONDS,
+      })
+      response.cookies.set(PARENT_REFRESH_COOKIE, newRefreshToken, {
+        ...cookieOpts,
+        maxAge: PARENT_REFRESH_TTL_SECONDS,
       })
       return response
     }

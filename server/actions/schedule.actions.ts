@@ -6,72 +6,26 @@
  * All mutations are validated with Zod and guarded by parent session check.
  */
 
-import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
-import { cookies } from 'next/headers'
-import { verifySessionToken, SESSION_COOKIE } from '@/server/services/auth.service'
 import { validatePeriodOverlap, buildTodayView, jsDateToDayOfWeek } from '@/server/services/schedule.service'
 import * as scheduleRepo from '@/server/repositories/schedule.repository'
-import { addUserPoints, updateStreak } from '@/server/repositories/progress.repository'
+import { addPoints, incrementStreak } from '@/server/services/progress.service'
 import { recordActivity } from '@/server/services/activity.service'
 import { checkAndAwardStreakBadges } from '@/server/services/rewards.service'
+import { requireParentSession } from '@/server/lib/auth-guard'
 import { getSubjectById } from '@/lib/data/subjects'
+import {
+  IdSchema,
+  DateStringSchema,
+  DayOfWeekSchema,
+  CreatePeriodSchema,
+  CreateExtraClassSchema,
+  UpdatePeriodSchema,
+  AddDailyHomeworkSchema,
+  ToggleHomeworkDoneSchema,
+} from '@/server/lib/schemas'
 import type { DayOfWeek, DailyHomework, DailySchedule, TodayView } from '@/types'
 import { DEFAULT_USER_ID, MAX_EVENING_BLOCKS_PER_DAY } from '@/lib/constants'
-
-// ── Schemas ───────────────────────────────────────────────────
-
-const DaySchema = z.enum([
-  'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
-])
-
-const TimeSchema = z.string().regex(/^\d{2}:\d{2}$/)
-
-const CreatePeriodSchema = z.object({
-  day: DaySchema,
-  periodNumber: z.number().int().min(1).max(10),
-  subjectId: z.string().min(1),
-  startTime: TimeSchema,
-  endTime: TimeSchema,
-  roomNumber: z.string().optional(),
-})
-
-const CreateExtraClassSchema = z.object({
-  day: DaySchema,
-  subjectId: z.string().min(1),
-  startTime: TimeSchema,
-  endTime: TimeSchema,
-  iconKey: z.string().max(30).optional(),
-  sortOrder: z.number().int().min(0).optional(),
-})
-
-const UpdatePeriodSchema = z.object({
-  id: z.string().min(1),
-  subjectId: z.string().min(1).optional(),
-  startTime: TimeSchema.optional(),
-  endTime: TimeSchema.optional(),
-  roomNumber: z.string().optional(),
-  iconKey: z.string().max(30).optional(),
-  sortOrder: z.number().int().min(0).optional(),
-})
-
-const AddDailyHomeworkSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  subjectId: z.string().min(1),
-  label: z.string().min(1).max(150),
-  iconKey: z.string().max(30).optional(),
-  points: z.number().int().min(1).max(50).optional(),
-})
-
-// ── Auth guard ────────────────────────────────────────────────
-
-const requireParentSession = async (): Promise<void> => {
-  const cookieStore = await cookies()
-  const token = cookieStore.get(SESSION_COOKIE)?.value
-  if (!token) throw new Error('Unauthorized')
-  const session = await verifySessionToken(token)
-  if (!session) throw new Error('Unauthorized')
-}
 
 const todayStr = (): string => new Date().toISOString().split('T')[0]!
 
@@ -144,7 +98,7 @@ export const getDailyHomeworkByDateAction = async (
 ): Promise<{ success: boolean; data?: DailyHomework[]; error?: string }> => {
   try {
     await requireParentSession()
-    const parsed = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).safeParse(date)
+    const parsed = DateStringSchema.safeParse(date)
     if (!parsed.success) return { success: false, error: 'Invalid date' }
     const data = await scheduleRepo.getDailyHomework(DEFAULT_USER_ID, parsed.data)
     return { success: true, data }
@@ -221,7 +175,7 @@ export const deletePeriodAction = async (
 ): Promise<{ success: boolean; error?: string }> => {
   try {
     await requireParentSession()
-    const parsed = z.string().min(1).safeParse(id)
+    const parsed = IdSchema.safeParse(id)
     if (!parsed.success) return { success: false, error: 'Invalid period ID' }
     await scheduleRepo.deletePeriod(parsed.data, DEFAULT_USER_ID)
     revalidatePath('/dashboard')
@@ -286,8 +240,8 @@ export const cancelExtraClassAction = async (
 ): Promise<{ success: boolean; error?: string }> => {
   try {
     await requireParentSession()
-    const idParsed = z.string().min(1).safeParse(periodId)
-    const dateParsed = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).safeParse(date)
+    const idParsed = IdSchema.safeParse(periodId)
+    const dateParsed = DateStringSchema.safeParse(date)
     if (!idParsed.success || !dateParsed.success) {
       return { success: false, error: 'Invalid input' }
     }
@@ -349,7 +303,7 @@ export const toggleHomeworkDoneAction = async (
   isDone: boolean
 ): Promise<{ success: boolean; points?: number; error?: string }> => {
   try {
-    const parsed = z.object({ id: z.string().min(1), isDone: z.boolean() }).safeParse({ id, isDone })
+    const parsed = ToggleHomeworkDoneSchema.safeParse({ id, isDone })
     if (!parsed.success) return { success: false, error: 'Invalid input' }
     const updated = await scheduleRepo.toggleDailyHomeworkDone(
       parsed.data.id,
@@ -362,8 +316,8 @@ export const toggleHomeworkDoneAction = async (
       const subj = getSubjectById(updated.subjectId)
       const icon = subj?.icon ?? '📝'
       void recordActivity(DEFAULT_USER_ID, 'HOMEWORK_DONE', updated.label, icon)
-      const newStreak = await updateStreak(DEFAULT_USER_ID)
-      await addUserPoints(DEFAULT_USER_ID, updated.points)
+      const newStreak = await incrementStreak(DEFAULT_USER_ID)
+      await addPoints(DEFAULT_USER_ID, updated.points)
       void checkAndAwardStreakBadges(DEFAULT_USER_ID, newStreak)
     }
 
@@ -379,7 +333,7 @@ export const deleteDailyHomeworkAction = async (
 ): Promise<{ success: boolean; error?: string }> => {
   try {
     await requireParentSession()
-    const parsed = z.string().min(1).safeParse(id)
+    const parsed = IdSchema.safeParse(id)
     if (!parsed.success) return { success: false, error: 'Invalid ID' }
     await scheduleRepo.deleteDailyHomework(parsed.data, DEFAULT_USER_ID)
     revalidatePath('/schedule')

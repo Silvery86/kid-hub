@@ -1,17 +1,8 @@
 'use server'
 
-import { cookies } from 'next/headers'
-import { verifySessionToken, SESSION_COOKIE } from '@/server/services/auth.service'
-import { getUserProgress } from '@/server/repositories/user.repository'
+import { requireParentSession } from '@/server/lib/auth-guard'
+import { fetchUserProgress } from '@/server/services/user.service'
 import { DEFAULT_USER_ID } from '@/lib/constants'
-
-const requireParentSession = async (): Promise<void> => {
-  const cookieStore = await cookies()
-  const token = cookieStore.get(SESSION_COOKIE)?.value
-  if (!token) throw new Error('Unauthorized')
-  const session = await verifySessionToken(token)
-  if (!session) throw new Error('Unauthorized')
-}
 
 export interface KidProgressData {
   totalPoints: number
@@ -29,7 +20,7 @@ export const getKidProgressAction = async (): Promise<{
 }> => {
   try {
     await requireParentSession()
-    const progress = await getUserProgress(DEFAULT_USER_ID)
+    const progress = await fetchUserProgress(DEFAULT_USER_ID)
     if (!progress) return { success: true, data: null }
 
     const mathBestStars = progress.bestScores

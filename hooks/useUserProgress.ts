@@ -1,13 +1,12 @@
 'use client'
 
-/** User progress context — manages points, streaks, and badge state persisted to localStorage. */
-
 import {
   createContext,
   createElement,
   useContext,
   useCallback,
   useMemo,
+  useEffect,
   type ReactNode,
 } from 'react'
 import type { UserProgress } from '@/types'
@@ -15,20 +14,24 @@ import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { STORAGE_KEYS } from '@/lib/constants'
 import { BADGE_DEFINITIONS } from '@/lib/data/badges'
 import { calculateNewStreak } from '@/lib/utils'
+import {
+  getProgressAction,
+  syncPointsAction,
+  syncStreakAction,
+} from '@/server/actions/progress.actions'
 
-// Seed progress — first-login and streak-3 badges pre-awarded for demonstration
+// Minimal starting state — replaced by DB data on first mount.
 const DEFAULT_PROGRESS: UserProgress = {
   userId: 'khoi',
-  totalPoints: 150,
-  currentStreak: 3,
-  lastActiveDate: '2026-03-13',
+  totalPoints: 0,
+  currentStreak: 0,
+  lastActiveDate: '',
   earnedBadges: BADGE_DEFINITIONS.map((def) => ({
     id: def.id,
     name: def.name,
     description: def.description,
     iconEmoji: def.iconEmoji,
-    isEarned: def.id === 'first-login' || def.id === 'streak-3',
-    earnedAt: def.id === 'first-login' || def.id === 'streak-3' ? '2026-03-10' : undefined,
+    isEarned: false,
   })),
   bestScores: [],
 }
@@ -48,9 +51,39 @@ export const UserProgressProvider = ({ children }: { children: ReactNode }) => {
     DEFAULT_PROGRESS
   )
 
+  // On mount: pull from DB and sync if DB is ahead of localStorage.
+  useEffect(() => {
+    getProgressAction().then((result) => {
+      if (!result.success || !result.data) return
+      const db = result.data
+      setProgress((prev) => {
+        // Prefer DB when totals diverge or localStorage has never been set.
+        if (db.totalPoints < prev.totalPoints && prev.totalPoints > 0) return prev
+        const earnedSet = new Set(db.earnedBadgeIds)
+        return {
+          ...prev,
+          totalPoints: db.totalPoints,
+          currentStreak: db.currentStreak,
+          lastActiveDate: db.lastActiveDate,
+          earnedBadges: prev.earnedBadges.map((b) =>
+            earnedSet.has(b.id) ? { ...b, isEarned: true } : b
+          ),
+        }
+      })
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const addPoints = useCallback(
     (amount: number) => {
+      // Optimistic update — immediately visible to the kid.
       setProgress((prev) => ({ ...prev, totalPoints: prev.totalPoints + amount }))
+      // Persist to DB and reconcile with authoritative total.
+      void syncPointsAction(amount).then((result) => {
+        if (result.success && result.newTotal !== undefined) {
+          setProgress((prev) => ({ ...prev, totalPoints: result.newTotal! }))
+        }
+      })
     },
     [setProgress]
   )
@@ -61,6 +94,17 @@ export const UserProgressProvider = ({ children }: { children: ReactNode }) => {
       if (prev.lastActiveDate === today) return prev
       const newStreak = calculateNewStreak(prev.currentStreak, prev.lastActiveDate, today)
       return { ...prev, currentStreak: newStreak, lastActiveDate: today }
+    })
+    // Persist to DB and reconcile streak with server-calculated value.
+    void syncStreakAction().then((result) => {
+      if (result.success && result.newStreak !== undefined) {
+        const today2 = new Date().toISOString().split('T')[0] ?? ''
+        setProgress((prev) => ({
+          ...prev,
+          currentStreak: result.newStreak!,
+          lastActiveDate: today2,
+        }))
+      }
     })
   }, [setProgress])
 

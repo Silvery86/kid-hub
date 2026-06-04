@@ -5,13 +5,13 @@
  * Kid-facing (no parent auth required) — saving progress and marking homework done.
  */
 
-import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { DEFAULT_USER_ID } from '@/lib/constants'
 import { saveEnglishSession, getTodayEnglishHomework } from '@/server/services/english.service'
 import { todayDateKey, todayDayOfWeek } from '@/server/services/homework.service'
 import { recordActivity } from '@/server/services/activity.service'
 import { checkAndAwardGameWinBadge } from '@/server/services/rewards.service'
+import { SaveEnglishProgressSchema } from '@/server/lib/schemas'
 import type { EnglishSessionResult } from '@/server/services/english.service'
 
 const ENGLISH_MINIGAME_LABELS: Record<string, string> = {
@@ -20,15 +20,6 @@ const ENGLISH_MINIGAME_LABELS: Record<string, string> = {
   phonics: 'Phát âm',
 }
 
-const SaveEnglishProgressSchema = z.object({
-  minigame: z.enum(['alphabet', 'vocabulary', 'phonics']),
-  level: z.union([z.literal(1), z.literal(2), z.literal(3)]),
-  correctCount: z.number().int().min(0).max(10),
-  incorrectCount: z.number().int().min(0).max(10),
-  timeSpentSecs: z.number().int().min(1).max(600),
-  homeworkPeriodId: z.string().optional(),
-  homeworkDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-})
 
 /** Saves a completed English session to the database and optionally marks homework done. */
 export const saveEnglishProgressAction = async (
