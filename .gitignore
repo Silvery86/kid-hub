@@ -41,7 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 #docs
-.github
+.github/skills/*
 /lib/generated/prisma
 
 # design automation — generated outputs
