@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, CheckCircle2 } from 'lucide-react'
-import { markHomeworkDoneAction } from '@/server/actions/homework.actions'
+import { completeHomeworkAction } from '@/server/actions/homework.actions'
 import { getSubjectById } from '@/lib/data/subjects'
 import { KidButton } from '@/components/ui/KidButton'
 import { cn } from '@/lib/utils'
@@ -28,7 +28,7 @@ export const HomeworkMode = ({ initialItems }: HomeworkModeProps) => {
     startTransition(async () => {
       const updated = items.map((i) => (i.periodId === periodId ? { ...i, isDone: true } : i))
       setItems(updated)
-      await markHomeworkDoneAction(periodId)
+      await completeHomeworkAction(periodId)
       if (updated.every((i) => i.isDone)) {
         setShowCelebration(true)
         setTimeout(() => router.push('/dashboard'), 2000)

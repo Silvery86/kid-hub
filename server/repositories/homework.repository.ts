@@ -22,10 +22,11 @@ export const getTodayHomework = async (
   }))
 }
 
-/** Marks a DailyHomework item as done. `periodId` maps to DailyHomework.id. */
-export const markDone = async (periodId: string, userId: string, _date: string): Promise<void> => {
-  await db.dailyHomework.update({
-    where: { id: periodId, userId },
+/** Marks a DailyHomework item as done. Returns { marked: true } only on first completion. */
+export const markDone = async (periodId: string, userId: string): Promise<{ marked: boolean }> => {
+  const result = await db.dailyHomework.updateMany({
+    where: { id: periodId, userId, isDone: false },
     data: { isDone: true, doneAt: new Date() },
   })
+  return { marked: result.count > 0 }
 }

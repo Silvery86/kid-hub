@@ -6,7 +6,7 @@
 import 'server-only'
 
 import * as englishRepo from '@/server/repositories/english.repository'
-import * as homeworkRepo from '@/server/repositories/homework.repository'
+import { completeHomework } from '@/server/services/homework.service'
 import { calculateStars, calculatePointsEarned } from '@/hooks/useGameSession'
 import { GAME_QUESTIONS_PER_SESSION } from '@/lib/constants'
 import type { EnglishGameType, DifficultyLevel, SaveEnglishProgressInput } from '@/types'
@@ -55,8 +55,8 @@ export const saveEnglishSession = async (
 
   await englishRepo.addUserPoints(userId, pointsEarned)
 
-  if (input.homeworkPeriodId && input.homeworkDate) {
-    await homeworkRepo.markDone(input.homeworkPeriodId, userId, input.homeworkDate)
+  if (input.homeworkPeriodId) {
+    await completeHomework(userId, input.homeworkPeriodId)
   }
 
   return { starsEarned: stars, score, pointsEarned, isNewBest }
