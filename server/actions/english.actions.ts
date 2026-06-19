@@ -13,12 +13,13 @@ import { todayDateKey, todayDayOfWeek } from '@/server/services/homework.service
 import { recordActivity } from '@/server/services/activity.service'
 import { checkAndAwardGameWinBadge } from '@/server/services/rewards.service'
 import type { EnglishSessionResult } from '@/server/services/english.service'
+import type { EnglishGameType, ActionResult } from '@/types'
 
-const ENGLISH_MINIGAME_LABELS: Record<string, string> = {
+const ENGLISH_MINIGAME_LABELS = {
   alphabet: 'Bảng chữ cái',
   vocabulary: 'Từ vựng',
   phonics: 'Phát âm',
-}
+} satisfies Record<EnglishGameType, string>
 
 const SaveEnglishProgressSchema = z.object({
   minigame: z.enum(['alphabet', 'vocabulary', 'phonics']),
@@ -33,7 +34,7 @@ const SaveEnglishProgressSchema = z.object({
 /** Saves a completed English session to the database and optionally marks homework done. */
 export const saveEnglishProgressAction = async (
   input: unknown
-): Promise<{ success: boolean; data?: EnglishSessionResult; error?: string }> => {
+): Promise<ActionResult<EnglishSessionResult>> => {
   try {
     const parsed = SaveEnglishProgressSchema.safeParse(input)
     if (!parsed.success) {
@@ -72,11 +73,9 @@ export const saveEnglishProgressAction = async (
 }
 
 /** Fetches today's pending English homework period for the hub banner. */
-export const getTodayEnglishHomeworkAction = async (): Promise<{
-  success: boolean
-  data?: { periodId: string; homeworkNote: string } | null
-  error?: string
-}> => {
+export const getTodayEnglishHomeworkAction = async (): Promise<
+  ActionResult<{ periodId: string; homeworkNote: string } | null>
+> => {
   try {
     const day = todayDayOfWeek()
     const date = todayDateKey()

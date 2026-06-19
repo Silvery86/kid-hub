@@ -13,24 +13,12 @@ import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { saveEnglishProgressAction } from '@/server/actions/english.actions'
 import { STORAGE_KEYS } from '@/lib/constants'
 import { todayDateKey } from '@/lib/clientDateUtils'
-import type { DifficultyLevel, GameBestScore, EnglishGameType } from '@/types'
+import type { DifficultyLevel, GameBestScore, EnglishGameType, UseGameSessionHookResult } from '@/types'
 
 interface UseEnglishSessionOptions {
   minigame: EnglishGameType
   secondsPerQuestion: number
   homeworkPeriodId?: string
-}
-
-interface UseEnglishSessionResult {
-  state: ReturnType<typeof useGameSession>['state']
-  starsEarned: 1 | 2 | 3
-  pointsEarned: number
-  isProcessing: React.MutableRefObject<boolean>
-  start: (level: DifficultyLevel) => void
-  answerCorrect: () => void
-  answerWrong: () => void
-  bestScore: GameBestScore | null
-  saveError: string | null
 }
 
 /**
@@ -42,7 +30,7 @@ export const useEnglishSession = ({
   minigame,
   secondsPerQuestion,
   homeworkPeriodId,
-}: UseEnglishSessionOptions): UseEnglishSessionResult => {
+}: UseEnglishSessionOptions): UseGameSessionHookResult => {
   const { state, startGame, answerCorrect: rawCorrect, answerWrong: rawWrong } = useGameSession()
   const { initialise, play } = useAudio()
   const { addPoints } = useUserProgress()

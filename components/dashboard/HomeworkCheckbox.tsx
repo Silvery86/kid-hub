@@ -10,7 +10,6 @@ import { getSubjectById } from '@/lib/data/subjects'
 import { toggleHomeworkDoneAction } from '@/server/actions/schedule.actions'
 import { awardPointsAction } from '@/server/actions/rewards.actions'
 import type { DailyHomework } from '@/types'
-import { DEFAULT_USER_ID } from '@/lib/constants'
 
 interface HomeworkCheckboxProps {
   item: DailyHomework
@@ -34,8 +33,8 @@ export const HomeworkCheckbox = ({ item }: HomeworkCheckboxProps) => {
         setIsDone(!next)
         return
       }
-      if (next && result.points && result.points > 0) {
-        await awardPointsAction(DEFAULT_USER_ID, result.points)
+      if (next && result.data.points > 0) {
+        await awardPointsAction(result.data.points)
         setShowPoints(true)
         setTimeout(() => setShowPoints(false), 2000)
       }

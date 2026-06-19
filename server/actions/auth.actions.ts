@@ -30,6 +30,7 @@ import {
   verifyParentRefreshToken,
 } from '@/server/services/auth.service'
 import * as userRepo from '@/server/repositories/user.repository'
+import type { ActionVoidResult, AuthActionResult } from '@/types'
 import {
   DEFAULT_USER_ID,
   KID_PATTERN_LENGTH,
@@ -126,7 +127,7 @@ const ensureParentSession = async (): Promise<{ ok: boolean; userId?: string }> 
 export const registerParentAccountAction = async (
   email: string,
   password: string
-): Promise<{ success: boolean; error?: string }> => {
+): Promise<ActionVoidResult> => {
   const parsedEmail = ParentEmailSchema.safeParse(email)
   if (!parsedEmail.success) {
     return { success: false, error: parsedEmail.error.issues[0]?.message ?? 'Validation error' }
@@ -166,7 +167,7 @@ export const registerParentAccountAction = async (
 export const parentLoginAction = async (
   email: string,
   password: string
-): Promise<{ success: boolean; error?: string; isLocked?: boolean; lockoutSeconds?: number }> => {
+): Promise<AuthActionResult> => {
   const parsedEmail = ParentEmailSchema.safeParse(email)
   if (!parsedEmail.success) {
     return { success: false, error: parsedEmail.error.issues[0]?.message ?? 'Validation error' }
@@ -186,6 +187,7 @@ export const parentLoginAction = async (
     if (isLockedOut(record.parentLoginAttempts, record.parentLoginLockedUntil)) {
       return {
         success: false,
+        error: 'Tài khoản bị khóa tạm thời',
         isLocked: true,
         lockoutSeconds: getLockoutSecondsRemaining(record.parentLoginLockedUntil),
       }
@@ -203,6 +205,7 @@ export const parentLoginAction = async (
       if (shouldLock) {
         return {
           success: false,
+          error: 'Tài khoản bị khóa tạm thời',
           isLocked: true,
           lockoutSeconds: getLockoutSecondsRemaining(lockoutUntil ?? null),
         }
@@ -219,10 +222,7 @@ export const parentLoginAction = async (
 }
 
 /** Refreshes parent session using refresh cookie when possible. */
-export const refreshParentSessionAction = async (): Promise<{
-  success: boolean
-  error?: string
-}> => {
+export const refreshParentSessionAction = async (): Promise<ActionVoidResult> => {
   const result = await ensureParentSession()
   if (!result.ok) {
     return { success: false, error: 'Session refresh failed' }
@@ -246,9 +246,7 @@ export const checkParentSessionAction = async (): Promise<{
 }
 
 /** Stores or updates the kid unlock pattern (requires active parent session). */
-export const setKidPatternAction = async (
-  pattern: string
-): Promise<{ success: boolean; error?: string }> => {
+export const setKidPatternAction = async (pattern: string): Promise<ActionVoidResult> => {
   const parsed = KidPatternSchema.safeParse(pattern)
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
@@ -269,9 +267,7 @@ export const setKidPatternAction = async (
 }
 
 /** Verifies kid unlock pattern and mints a kid session cookie on success. */
-export const verifyKidPatternAction = async (
-  pattern: string
-): Promise<{ success: boolean; error?: string; isLocked?: boolean; lockoutSeconds?: number }> => {
+export const verifyKidPatternAction = async (pattern: string): Promise<AuthActionResult> => {
   const parsed = KidPatternSchema.safeParse(pattern)
   if (!parsed.success) {
     return { success: false, error: 'Invalid unlock pattern' }
@@ -286,6 +282,7 @@ export const verifyKidPatternAction = async (
     if (isLockedOut(record.kidPatternAttempts, record.kidPatternLockedUntil)) {
       return {
         success: false,
+        error: 'Đã nhập sai quá nhiều lần',
         isLocked: true,
         lockoutSeconds: getLockoutSecondsRemaining(record.kidPatternLockedUntil),
       }
@@ -301,6 +298,7 @@ export const verifyKidPatternAction = async (
       if (shouldLock) {
         return {
           success: false,
+          error: 'Đã nhập sai quá nhiều lần',
           isLocked: true,
           lockoutSeconds: getLockoutSecondsRemaining(lockUntil ?? null),
         }
@@ -335,7 +333,7 @@ export const checkKidSessionAction = async (): Promise<{
 }
 
 /** Clears the parent session cookie, terminating the authenticated session. */
-export const signOutParentAction = async (): Promise<{ success: boolean; error?: string }> => {
+export const signOutParentAction = async (): Promise<ActionVoidResult> => {
   try {
     const cookieStore = await cookies()
     const refresh = cookieStore.get(PARENT_REFRESH_COOKIE)?.value
@@ -355,7 +353,7 @@ export const signOutParentAction = async (): Promise<{ success: boolean; error?:
 }
 
 /** Clears only kid unlock cookie, keeping parent account session intact. */
-export const signOutKidAction = async (): Promise<{ success: boolean; error?: string }> => {
+export const signOutKidAction = async (): Promise<ActionVoidResult> => {
   try {
     const cookieStore = await cookies()
     cookieStore.delete(KID_SESSION_COOKIE)
@@ -391,9 +389,7 @@ export const clearParentAccessAction = async (): Promise<{ success: boolean }> =
 }
 
 /** Saves a new parent PIN (requires active parent session). */
-export const setPinAction = async (
-  pin: string
-): Promise<{ success: boolean; error?: string }> => {
+export const setPinAction = async (pin: string): Promise<ActionVoidResult> => {
   const parsed = ParentPinSchema.safeParse(pin)
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Invalid PIN' }
@@ -417,15 +413,7 @@ export const setPinAction = async (
  * Verifies parent PIN and issues parent session cookies on success.
  * Used on `/parent/pin` after account login when access cookie was cleared.
  */
-export const verifyPinAction = async (
-  pin: string
-): Promise<{
-  success: boolean
-  error?: string
-  isLocked?: boolean
-  lockoutSeconds?: number
-  isWrong?: boolean
-}> => {
+export const verifyPinAction = async (pin: string): Promise<AuthActionResult> => {
   const parsed = ParentPinSchema.safeParse(pin)
   if (!parsed.success) {
     return { success: false, error: 'Invalid PIN' }
@@ -440,6 +428,7 @@ export const verifyPinAction = async (
     if (isLockedOut(pinRecord.attempts, pinRecord.lockedUntil)) {
       return {
         success: false,
+        error: 'PIN bị khóa tạm thời',
         isLocked: true,
         lockoutSeconds: getLockoutSecondsRemaining(pinRecord.lockedUntil),
       }
@@ -455,6 +444,7 @@ export const verifyPinAction = async (
       if (shouldLock) {
         return {
           success: false,
+          error: 'PIN bị khóa tạm thời',
           isLocked: true,
           lockoutSeconds: getLockoutSecondsRemaining(lockUntil ?? null),
         }

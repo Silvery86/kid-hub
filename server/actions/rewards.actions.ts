@@ -7,21 +7,17 @@
 
 import { z } from 'zod'
 import { addUserPoints } from '@/server/repositories/progress.repository'
-
-const AwardSchema = z.object({
-  userId: z.string().min(1),
-  points: z.number().int().min(1).max(50),
-})
+import { DEFAULT_USER_ID } from '@/lib/constants'
+import type { ActionResult } from '@/types'
 
 export const awardPointsAction = async (
-  userId: string,
   points: number
-): Promise<{ success: boolean; newTotal?: number; error?: string }> => {
-  const parsed = AwardSchema.safeParse({ userId, points })
-  if (!parsed.success) return { success: false, error: 'Invalid input' }
+): Promise<ActionResult<{ newTotal: number }>> => {
+  const parsed = z.number().int().min(1).max(50).safeParse(points)
+  if (!parsed.success) return { success: false, error: 'Invalid points value' }
   try {
-    const newTotal = await addUserPoints(parsed.data.userId, parsed.data.points)
-    return { success: true, newTotal }
+    const newTotal = await addUserPoints(DEFAULT_USER_ID, parsed.data)
+    return { success: true, data: { newTotal } }
   } catch {
     return { success: false, error: 'Failed to award points' }
   }

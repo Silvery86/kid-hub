@@ -47,3 +47,4 @@ next-env.d.ts
 # design automation — generated outputs
 /design/manifest.json
 /design/drift-report.html
+.study/*

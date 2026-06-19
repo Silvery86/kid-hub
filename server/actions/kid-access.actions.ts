@@ -1,27 +1,15 @@
 'use server'
 
-import { cookies } from 'next/headers'
 import { z } from 'zod'
-import { verifySessionToken, SESSION_COOKIE } from '@/server/services/auth.service'
+import { requireParentSession } from '@/server/lib/auth-guard'
 import { getKidAccessSettings, saveKidAccessSettings } from '@/server/repositories/user.repository'
 import { fetchRecentActivity } from '@/server/services/activity.service'
 import type { ActivityEventRow } from '@/server/repositories/activity.repository'
 import { DEFAULT_USER_ID } from '@/lib/constants'
-
-const requireParentSession = async (): Promise<void> => {
-  const cookieStore = await cookies()
-  const token = cookieStore.get(SESSION_COOKIE)?.value
-  if (!token) throw new Error('Unauthorized')
-  const session = await verifySessionToken(token)
-  if (!session) throw new Error('Unauthorized')
-}
+import type { ActionResult, ActionVoidResult } from '@/types'
 
 /** Returns saved feature toggle state. Null means the parent hasn't customised yet — use defaults. */
-export const getKidAccessSettingsAction = async (): Promise<{
-  success: boolean
-  data?: Record<string, boolean> | null
-  error?: string
-}> => {
+export const getKidAccessSettingsAction = async (): Promise<ActionResult<Record<string, boolean> | null>> => {
   try {
     await requireParentSession()
     const settings = await getKidAccessSettings(DEFAULT_USER_ID)
@@ -44,7 +32,7 @@ export interface ActivityItem {
 /** Parent-facing: returns the last N kid activity events, newest first. */
 export const getRecentActivityAction = async (
   limit = 10
-): Promise<{ success: boolean; data?: ActivityItem[]; error?: string }> => {
+): Promise<ActionResult<ActivityItem[]>> => {
   try {
     await requireParentSession()
     const rows: ActivityEventRow[] = await fetchRecentActivity(DEFAULT_USER_ID, limit)
@@ -62,9 +50,7 @@ export const getRecentActivityAction = async (
 const SettingsSchema = z.record(z.string(), z.boolean())
 
 /** Persists the full toggle state map to the database. */
-export const saveKidAccessSettingsAction = async (
-  settings: unknown
-): Promise<{ success: boolean; error?: string }> => {
+export const saveKidAccessSettingsAction = async (settings: unknown): Promise<ActionVoidResult> => {
   try {
     await requireParentSession()
     const parsed = SettingsSchema.safeParse(settings)

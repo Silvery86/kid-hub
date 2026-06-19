@@ -1,8 +1,7 @@
 'use server'
 
 import { z } from 'zod'
-import { cookies } from 'next/headers'
-import { verifySessionToken, SESSION_COOKIE } from '@/server/services/auth.service'
+import { requireParentSession } from '@/server/lib/auth-guard'
 import {
   addScreenTime,
   getScreenTimeToday,
@@ -10,19 +9,10 @@ import {
   setScreenTimeLimit,
 } from '@/server/repositories/screen-time.repository'
 import { DEFAULT_USER_ID } from '@/lib/constants'
-
-const requireParentSession = async (): Promise<void> => {
-  const cookieStore = await cookies()
-  const token = cookieStore.get(SESSION_COOKIE)?.value
-  if (!token) throw new Error('Unauthorized')
-  const session = await verifySessionToken(token)
-  if (!session) throw new Error('Unauthorized')
-}
+import type { ActionResult, ActionVoidResult } from '@/types'
 
 /** Kid-facing: increments today's screen time counter. Called from ScreenTimeTracker every 60s. */
-export const addScreenTimeAction = async (
-  secs: number
-): Promise<{ success: boolean; error?: string }> => {
+export const addScreenTimeAction = async (secs: number): Promise<ActionVoidResult> => {
   const parsed = z.number().int().min(1).max(120).safeParse(secs)
   if (!parsed.success) return { success: false, error: 'Invalid seconds value' }
   try {
@@ -39,11 +29,7 @@ export interface ScreenTimeData {
 }
 
 /** Parent-facing: returns today's total seconds used and the configured daily limit. */
-export const getScreenTimeAction = async (): Promise<{
-  success: boolean
-  data?: ScreenTimeData
-  error?: string
-}> => {
+export const getScreenTimeAction = async (): Promise<ActionResult<ScreenTimeData>> => {
   try {
     await requireParentSession()
     const [usedSecs, limitMins] = await Promise.all([
@@ -59,9 +45,7 @@ export const getScreenTimeAction = async (): Promise<{
 }
 
 /** Parent-facing: updates the daily screen time limit in minutes (30–480). */
-export const setScreenTimeLimitAction = async (
-  limitMins: number
-): Promise<{ success: boolean; error?: string }> => {
+export const setScreenTimeLimitAction = async (limitMins: number): Promise<ActionVoidResult> => {
   const parsed = z.number().int().min(30).max(480).safeParse(limitMins)
   if (!parsed.success) return { success: false, error: 'Limit must be between 30 and 480 minutes' }
   try {

@@ -5,6 +5,6 @@ import { HomeworkListView } from '@/components/homework/HomeworkListView'
 
 export default async function HomeworkPage() {
   const result = await getTodayHomeworkAction()
-  const items = result.data ?? []
+  const items = result.success ? result.data : []
   return <HomeworkListView initialItems={items} />
 }

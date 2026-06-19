@@ -12,13 +12,14 @@ import { saveMathSession, getTodayMathHomework } from '@/server/services/math.se
 import { todayDateKey, todayDayOfWeek } from '@/server/services/homework.service'
 import { recordActivity } from '@/server/services/activity.service'
 import { checkAndAwardGameWinBadge } from '@/server/services/rewards.service'
-import type { MathSessionResult, } from '@/server/services/math.service'
+import type { MathSessionResult } from '@/server/services/math.service'
+import type { MathGameType, ActionResult } from '@/types'
 
-const MATH_MINIGAME_LABELS: Record<string, string> = {
+const MATH_MINIGAME_LABELS = {
   counting: 'Đếm số',
   addition: 'Phép tính',
   shapes: 'Hình học',
-}
+} satisfies Record<MathGameType, string>
 
 const SaveMathProgressSchema = z.object({
   minigame: z.enum(['counting', 'addition', 'shapes']),
@@ -33,7 +34,7 @@ const SaveMathProgressSchema = z.object({
 /** Saves a completed math session to the database and optionally marks homework done. */
 export const saveMathProgressAction = async (
   input: unknown
-): Promise<{ success: boolean; data?: MathSessionResult; error?: string }> => {
+): Promise<ActionResult<MathSessionResult>> => {
   try {
     const parsed = SaveMathProgressSchema.safeParse(input)
     if (!parsed.success) {
@@ -66,11 +67,9 @@ export const saveMathProgressAction = async (
 }
 
 /** Fetches today's pending math homework period for the hub banner. */
-export const getTodayMathHomeworkAction = async (): Promise<{
-  success: boolean
-  data?: { periodId: string; homeworkNote: string } | null
-  error?: string
-}> => {
+export const getTodayMathHomeworkAction = async (): Promise<
+  ActionResult<{ periodId: string; homeworkNote: string } | null>
+> => {
   try {
     const day = todayDayOfWeek()
     const date = todayDateKey()

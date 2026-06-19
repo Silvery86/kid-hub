@@ -8,15 +8,14 @@
 
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
-import { cookies } from 'next/headers'
-import { verifySessionToken, SESSION_COOKIE } from '@/server/services/auth.service'
+import { requireParentSession } from '@/server/lib/auth-guard'
 import { validatePeriodOverlap, buildTodayView, jsDateToDayOfWeek } from '@/server/services/schedule.service'
 import * as scheduleRepo from '@/server/repositories/schedule.repository'
 import { addUserPoints, updateStreak } from '@/server/repositories/progress.repository'
 import { recordActivity } from '@/server/services/activity.service'
 import { checkAndAwardStreakBadges } from '@/server/services/rewards.service'
 import { getSubjectById } from '@/lib/data/subjects'
-import type { DayOfWeek, DailyHomework, DailySchedule, TodayView } from '@/types'
+import type { DayOfWeek, DailyHomework, DailySchedule, TodayView, ActionResult, ActionVoidResult } from '@/types'
 import { DEFAULT_USER_ID, MAX_EVENING_BLOCKS_PER_DAY } from '@/lib/constants'
 
 // ── Schemas ───────────────────────────────────────────────────
@@ -63,26 +62,12 @@ const AddDailyHomeworkSchema = z.object({
   points: z.number().int().min(1).max(50).optional(),
 })
 
-// ── Auth guard ────────────────────────────────────────────────
-
-const requireParentSession = async (): Promise<void> => {
-  const cookieStore = await cookies()
-  const token = cookieStore.get(SESSION_COOKIE)?.value
-  if (!token) throw new Error('Unauthorized')
-  const session = await verifySessionToken(token)
-  if (!session) throw new Error('Unauthorized')
-}
-
 const todayStr = (): string => new Date().toISOString().split('T')[0]!
 
 // ── Read actions ──────────────────────────────────────────────
 
 /** Retrieves all EXTRA_CLASS (evening) blocks for every day, grouped by day. */
-export const getAllEveningBlocksAction = async (): Promise<{
-  success: boolean
-  data?: DailySchedule[]
-  error?: string
-}> => {
+export const getAllEveningBlocksAction = async (): Promise<ActionResult<DailySchedule[]>> => {
   try {
     const data = await scheduleRepo.getAllEveningBlocks(DEFAULT_USER_ID)
     return { success: true, data }
@@ -94,7 +79,7 @@ export const getAllEveningBlocksAction = async (): Promise<{
 /** Retrieves the weekly SCHOOL_PERIOD schedule, optionally filtered to a specific day. */
 export const getScheduleAction = async (
   day?: DayOfWeek
-): Promise<{ success: boolean; data?: DailySchedule[]; error?: string }> => {
+): Promise<ActionResult<DailySchedule[]>> => {
   try {
     if (day) {
       const result = await scheduleRepo.getDaySchedule(DEFAULT_USER_ID, day)
@@ -108,11 +93,7 @@ export const getScheduleAction = async (
 }
 
 /** Builds a complete TodayView: school periods + evening blocks + overrides + homework. */
-export const getTodayViewAction = async (): Promise<{
-  success: boolean
-  data?: TodayView
-  error?: string
-}> => {
+export const getTodayViewAction = async (): Promise<ActionResult<TodayView>> => {
   try {
     const today = new Date()
     const date = todayStr()
@@ -141,7 +122,7 @@ export const getTodayViewAction = async (): Promise<{
 /** Retrieves homework items for a specific date (parent action). */
 export const getDailyHomeworkByDateAction = async (
   date: string
-): Promise<{ success: boolean; data?: DailyHomework[]; error?: string }> => {
+): Promise<ActionResult<DailyHomework[]>> => {
   try {
     await requireParentSession()
     const parsed = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).safeParse(date)
@@ -158,9 +139,7 @@ export const getDailyHomeworkByDateAction = async (
 // ── School period mutations ───────────────────────────────────
 
 /** Creates a new SCHOOL_PERIOD. Validates overlap and revalidates affected paths. */
-export const createPeriodAction = async (
-  input: unknown
-): Promise<{ success: boolean; error?: string }> => {
+export const createPeriodAction = async (input: unknown): Promise<ActionVoidResult> => {
   try {
     await requireParentSession()
     const parsed = CreatePeriodSchema.safeParse(input)
@@ -195,9 +174,7 @@ export const createPeriodAction = async (
 }
 
 /** Updates an existing class period by ID. */
-export const updatePeriodAction = async (
-  input: unknown
-): Promise<{ success: boolean; error?: string }> => {
+export const updatePeriodAction = async (input: unknown): Promise<ActionVoidResult> => {
   try {
     await requireParentSession()
     const parsed = UpdatePeriodSchema.safeParse(input)
@@ -216,9 +193,7 @@ export const updatePeriodAction = async (
 }
 
 /** Deletes a class period by ID. */
-export const deletePeriodAction = async (
-  id: string
-): Promise<{ success: boolean; error?: string }> => {
+export const deletePeriodAction = async (id: string): Promise<ActionVoidResult> => {
   try {
     await requireParentSession()
     const parsed = z.string().min(1).safeParse(id)
@@ -239,7 +214,7 @@ export const deletePeriodAction = async (
 /** Creates a recurring EXTRA_CLASS entry. Enforces the 3-block-per-day cap. */
 export const createExtraClassAction = async (
   input: unknown
-): Promise<{ success: boolean; id?: string; error?: string }> => {
+): Promise<ActionResult<{ id: string }>> => {
   try {
     await requireParentSession()
     const parsed = CreateExtraClassSchema.safeParse(input)
@@ -270,7 +245,7 @@ export const createExtraClassAction = async (
       eventType: 'EXTRA_CLASS',
     })
     revalidatePath('/schedule')
-    return { success: true, id }
+    return { success: true, data: { id } }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to create extra class'
     if (msg === 'Unauthorized') return { success: false, error: 'Unauthorized' }
@@ -283,7 +258,7 @@ export const cancelExtraClassAction = async (
   periodId: string,
   date: string,
   reason?: string
-): Promise<{ success: boolean; error?: string }> => {
+): Promise<ActionVoidResult> => {
   try {
     await requireParentSession()
     const idParsed = z.string().min(1).safeParse(periodId)
@@ -305,7 +280,7 @@ export const cancelExtraClassAction = async (
 export const restoreExtraClassAction = async (
   periodId: string,
   date: string
-): Promise<{ success: boolean; error?: string }> => {
+): Promise<ActionVoidResult> => {
   try {
     await requireParentSession()
     await scheduleRepo.deleteOverride(periodId, date)
@@ -323,7 +298,7 @@ export const restoreExtraClassAction = async (
 /** Creates a one-off daily homework item (parent action). */
 export const addDailyHomeworkAction = async (
   input: unknown
-): Promise<{ success: boolean; id?: string; error?: string }> => {
+): Promise<ActionResult<{ id: string }>> => {
   try {
     await requireParentSession()
     const parsed = AddDailyHomeworkSchema.safeParse(input)
@@ -335,7 +310,7 @@ export const addDailyHomeworkAction = async (
       userId: DEFAULT_USER_ID,
     })
     revalidatePath('/schedule')
-    return { success: true, id }
+    return { success: true, data: { id } }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to add homework'
     if (msg === 'Unauthorized') return { success: false, error: 'Unauthorized' }
@@ -347,7 +322,7 @@ export const addDailyHomeworkAction = async (
 export const toggleHomeworkDoneAction = async (
   id: string,
   isDone: boolean
-): Promise<{ success: boolean; points?: number; error?: string }> => {
+): Promise<ActionResult<{ points: number }>> => {
   try {
     const parsed = z.object({ id: z.string().min(1), isDone: z.boolean() }).safeParse({ id, isDone })
     if (!parsed.success) return { success: false, error: 'Invalid input' }
@@ -367,16 +342,14 @@ export const toggleHomeworkDoneAction = async (
       void checkAndAwardStreakBadges(DEFAULT_USER_ID, newStreak)
     }
 
-    return { success: true, points: isDone ? updated.points : 0 }
+    return { success: true, data: { points: isDone ? updated.points : 0 } }
   } catch {
     return { success: false, error: 'Failed to update homework' }
   }
 }
 
 /** Deletes a daily homework item (parent action). */
-export const deleteDailyHomeworkAction = async (
-  id: string
-): Promise<{ success: boolean; error?: string }> => {
+export const deleteDailyHomeworkAction = async (id: string): Promise<ActionVoidResult> => {
   try {
     await requireParentSession()
     const parsed = z.string().min(1).safeParse(id)

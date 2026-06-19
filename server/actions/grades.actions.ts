@@ -7,13 +7,12 @@
 
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
-import { cookies } from 'next/headers'
-import { verifySessionToken, SESSION_COOKIE } from '@/server/services/auth.service'
+import { requireParentSession } from '@/server/lib/auth-guard'
 import { calculateBadge } from '@/server/services/grades.service'
 import * as gradesRepo from '@/server/repositories/grades.repository'
 import * as userRepo from '@/server/repositories/user.repository'
 import { buildReportCard } from '@/server/services/grades.service'
-import type { ReportCard } from '@/types'
+import type { ReportCard, ActionResult, ActionVoidResult } from '@/types'
 import { DEFAULT_USER_ID } from '@/lib/constants'
 
 const UpsertGradeSchema = z.object({
@@ -23,21 +22,8 @@ const UpsertGradeSchema = z.object({
   academicYear: z.string().regex(/^\d{4}-\d{4}$/),
 })
 
-/** Ensures the request comes from an authenticated parent session. */
-const requireParentSession = async (): Promise<void> => {
-  const cookieStore = await cookies()
-  const token = cookieStore.get(SESSION_COOKIE)?.value
-  if (!token) throw new Error('Unauthorized')
-  const session = await verifySessionToken(token)
-  if (!session) throw new Error('Unauthorized')
-}
-
 /** Retrieves the full report card for the default user. */
-export const getReportCardAction = async (): Promise<{
-  success: boolean
-  data?: ReportCard
-  error?: string
-}> => {
+export const getReportCardAction = async (): Promise<ActionResult<ReportCard>> => {
   try {
     const userId = DEFAULT_USER_ID
     const user = await userRepo.getUserById(userId)
@@ -50,9 +36,7 @@ export const getReportCardAction = async (): Promise<{
 }
 
 /** Creates or updates a subject grade entry. Revalidates grades and dashboard paths. */
-export const upsertGradeAction = async (
-  input: unknown
-): Promise<{ success: boolean; error?: string }> => {
+export const upsertGradeAction = async (input: unknown): Promise<ActionVoidResult> => {
   try {
     await requireParentSession()
     const parsed = UpsertGradeSchema.safeParse(input)

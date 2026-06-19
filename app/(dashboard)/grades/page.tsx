@@ -7,6 +7,6 @@ import { getReportCardAction } from '@/server/actions/grades.actions'
 
 export default async function GradesPage() {
   const result = await getReportCardAction()
-  const grades = result.data?.grades ?? []
+  const grades = result.success ? result.data.grades : []
   return <GradesView grades={grades} />
 }

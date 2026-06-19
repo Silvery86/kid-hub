@@ -13,24 +13,12 @@ import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { saveMathProgressAction } from '@/server/actions/math.actions'
 import { STORAGE_KEYS } from '@/lib/constants'
 import { todayDateKey } from '@/lib/clientDateUtils'
-import type { DifficultyLevel, GameBestScore, MathGameType } from '@/types'
+import type { DifficultyLevel, GameBestScore, MathGameType, UseGameSessionHookResult } from '@/types'
 
 interface UseMathSessionOptions {
   minigame: MathGameType
   secondsPerQuestion: number
   homeworkPeriodId?: string
-}
-
-interface UseMathSessionResult {
-  state: ReturnType<typeof useGameSession>['state']
-  starsEarned: 1 | 2 | 3
-  pointsEarned: number
-  isProcessing: React.MutableRefObject<boolean>
-  start: (level: DifficultyLevel) => void
-  answerCorrect: () => void
-  answerWrong: () => void
-  bestScore: GameBestScore | null
-  saveError: string | null
 }
 
 /**
@@ -42,7 +30,7 @@ export const useMathSession = ({
   minigame,
   secondsPerQuestion,
   homeworkPeriodId,
-}: UseMathSessionOptions): UseMathSessionResult => {
+}: UseMathSessionOptions): UseGameSessionHookResult => {
   const { state, startGame, answerCorrect: rawCorrect, answerWrong: rawWrong } = useGameSession()
   const { initialise, play } = useAudio()
   const { addPoints } = useUserProgress()
