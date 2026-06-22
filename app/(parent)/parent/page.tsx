@@ -16,9 +16,9 @@ export default async function ParentDashboardPage() {
     getTodayViewAction(),
   ])
 
-  const schedule = scheduleResult.data ?? []
-  const grades = gradesResult.data?.grades ?? []
-  const todayView = todayResult.data ?? null
+  const schedule = scheduleResult.success ? scheduleResult.data : []
+  const grades = gradesResult.success ? (gradesResult.data?.grades ?? []) : []
+  const todayView = todayResult.success ? todayResult.data : null
 
   return (
     <ParentDashboardView

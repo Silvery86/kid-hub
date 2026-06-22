@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { DEFAULT_USER_ID } from '@/lib/constants'
 import * as homeworkRepo from '@/server/repositories/homework.repository'
-import { todayDateKey, todayDayOfWeek } from '@/server/services/homework.service'
+import { todayDateKey } from '@/server/services/homework.service'
 import type { HomeworkItem, ActionResult, ActionVoidResult } from '@/types'
 import { addUserPoints, updateStreak } from '@/server/repositories/progress.repository'
 import { recordActivity } from '@/server/services/activity.service'

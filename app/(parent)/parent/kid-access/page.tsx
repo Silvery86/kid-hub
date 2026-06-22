@@ -15,10 +15,10 @@ export default async function KidAccessPage() {
   ])
   return (
     <KidAccessView
-      kidProgress={progressResult.data ?? null}
-      initialToggles={settingsResult.data ?? DEFAULT_KID_ACCESS_TOGGLES}
-      screenTime={screenTimeResult.data ?? { usedSecs: 0, limitMins: 120 }}
-      recentActivity={activityResult.data ?? []}
+      kidProgress={progressResult.success ? progressResult.data : null}
+      initialToggles={settingsResult.success ? (settingsResult.data ?? DEFAULT_KID_ACCESS_TOGGLES) : DEFAULT_KID_ACCESS_TOGGLES}
+      screenTime={screenTimeResult.success ? (screenTimeResult.data ?? { usedSecs: 0, limitMins: 120 }) : { usedSecs: 0, limitMins: 120 }}
+      recentActivity={activityResult.success ? activityResult.data : []}
     />
   )
 }

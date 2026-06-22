@@ -14,7 +14,6 @@ import { DAY_LABELS } from '@/lib/constants'
 import { getSubjectById } from '@/lib/data/subjects'
 import {
   computeWeekStats,
-  dayShortLabel,
   formatDayTimeRange,
   formatPeriodDuration,
   formatWeekSubtitleForOffset,

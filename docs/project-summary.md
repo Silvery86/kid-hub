@@ -1,9 +1,9 @@
 # Project Summary — Kid Hub
 
-**Last updated:** 2026-06-01
+**Last updated:** 2026-06-21
 **Version:** 0.1.0
 
-This document lists every feature that has been successfully developed and is present in the codebase as of this date.
+This document lists every feature that has been successfully developed and is present in the codebase as of this date. Reconciled against source during production-readiness audit v1 (`docs/report/project-review-v1.md`).
 
 ---
 
@@ -39,6 +39,9 @@ This document lists every feature that has been successfully developed and is pr
 - Edge middleware (`middleware.ts`) verifies JWT for all protected routes
 - Separate session types: `kid-session`, `parent-access`, `parent-refresh`
 - `signOutParentAction` and `signOutKidAction` clear respective cookies
+- **Secret enforcement:** `getSecret()` throws if `SESSION_SECRET` is absent or `< 32` chars (no dev fallback)
+- **HTTP-layer rate limiting:** login + PIN `POST`s throttled by IP via Upstash (10 / 60 s sliding window), returns `429` with `Retry-After`
+- **Security headers:** `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy` (CSP/HSTS not yet added)
 
 ---
 
@@ -175,7 +178,7 @@ All three English mini-games implemented with 3 difficulty levels:
 - Service worker registered via `ServiceWorkerRegistrar` component
 - Docker + docker-compose setup for local PostgreSQL dev
 - Standalone Next.js build output (Docker-deployable)
-- Prisma 7 ORM with migration history (5 migrations from April–May 2026)
+- Prisma 7 ORM with migration history (7 migrations from April–May 2026, 14 models)
 - Seed script (`prisma/seed.ts`) creates default user + sample data
 - Upstash Redis rate limiting on all auth endpoints
 - `AppSidebar` — fixed navigation sidebar for kid shell
@@ -185,3 +188,18 @@ All three English mini-games implemented with 3 difficulty levels:
 - Design token system: 25+ tokens in `app/globals.css @theme {}`
 - Orientation variants: `portrait:` / `landscape:` custom Tailwind variants
 - Nunito font via Google Fonts (loaded in root layout)
+- Route-level `error.tsx` (all three groups) + `loading.tsx` skeletons (dashboard, schedule, homework, grades)
+
+---
+
+## 9. Production-Readiness Snapshot (audit v1)
+
+**Built and verified:** the full feature set above plus the security hardening noted in §1.
+**Not yet present** (tracked in `docs/report/project-review-v1.md`):
+
+- CI pipeline (no workflow in `.github/`) and no deployed staging/production environment
+- Structured logging, error tracking, metrics, and a health-check endpoint
+- CSP + HSTS headers; transactional PIN lockout
+- DB-first `UserProgress` (still localStorage-authoritative); unified homework completion flow
+- Bounded `pg` pool; unit tests for pure service functions (only 3 Playwright E2E specs exist)
+- Removal of dead `firebase` / `firebase-admin` dependencies

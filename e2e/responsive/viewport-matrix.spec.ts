@@ -14,7 +14,7 @@
  *   - h-dvh: game container uses dynamic viewport, not static h-screen
  */
 
-import { test, expect } from '@playwright/test'
+import { test, expect, type BrowserContext } from '@playwright/test'
 import { createSessionToken, SESSION_COOKIE } from '../fixtures/auth'
 
 const VIEWPORTS = {
@@ -30,7 +30,7 @@ const P5_LARGE_TABLET_PORTRAIT = { width: 1024, height: 1366 } as const
 const COOKIE_DOMAIN = 'localhost'
 
 /** Add an authenticated session cookie so protected routes are accessible. */
-async function injectSession(context: Parameters<Parameters<typeof test>[1]>[0]['context']) {
+async function injectSession(context: BrowserContext) {
   const token = await createSessionToken('khoi-default-user')
   await context.addCookies([
     {
