@@ -7,7 +7,7 @@ import {
   getScreenTimeToday,
   getScreenTimeLimit,
   setScreenTimeLimit,
-} from '@/server/repositories/screen-time.repository'
+} from '@/server/services/screen-time.service'
 import { DEFAULT_USER_ID } from '@/lib/constants'
 import type { ActionResult, ActionVoidResult } from '@/types'
 

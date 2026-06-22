@@ -174,25 +174,27 @@ Grouped by production concern, with the residual (post-fix) state as of this aud
 > Effort (Công Sức): S ≤ ½ day (≤ ½ ngày) · M ≈ 1–2 days (1–2 ngày) · L ≈ 3–5 days (3–5 ngày).
 > Priorities assume the goal is a safe staging deploy first, then production. (Ưu tiên giả định mục tiêu là triển khai staging an toàn trước, sau đó production.)
 
-### Phase 0 — Make Deployable (Giai Đoạn 0 — Làm Cho Có Thể Triển Khai) · P0 · target: staging up
+### Phase 0 — Make Deployable (Giai Đoạn 0 — Làm Cho Có Thể Triển Khai) · ✅ COMPLETE (2026-06-22) · commit `fac7939`
 
-| # | Item (Mục) | Effort (Công Sức) | Why now (Tại Sao Ngay Bây Giờ) |
-|---|---|---|---|
-| 0.1 | Add `.github/workflows/ci.yml` (lint, tsc, build, Playwright) | M | Gate every merge; PR #1's work isn't on `main` (Kiểm soát mỗi merge; công việc của PR #1 không có trên `main`) |
-| 0.2 | Provision Neon (staging branch) + Vercel project; pull env via `vercel env` | M | Nothing is deployed (Chưa có gì được triển khai) |
-| 0.3 | Add `/api/health` + connect uptime ping | S | Need a deploy signal (Cần tín hiệu triển khai) |
-| 0.4 | Remove `firebase`/`firebase-admin`; verify build | S | Cheap risk + bundle reduction (Rủi ro thấp + giảm bundle) |
-| 0.5 | Add `import 'server-only'` to auth/schedule/grades services | S | Build-time client-leak guard on auth (Bảo vệ rò rỉ client lúc build cho auth) |
+| # | Item (Mục) | Status |
+|---|---|---|
+| 0.1 | Add `.github/workflows/ci.yml` (lint, tsc, build, Playwright) | ✅ Done |
+| 0.2 | Provision Neon staging branch (`br-steep-rice-ao82x1km`) + Vercel-conditional `output` in `next.config.ts` | ✅ Done |
+| 0.3 | Add `/api/health` + DB connectivity check | ✅ Done |
+| 0.4 | Remove `firebase`/`firebase-admin`; build verified | ✅ Done |
+| 0.5 | Add `import 'server-only'` to auth/schedule/grades services | ✅ Done |
 
-### Phase 1 — Production Security & Resilience (Giai Đoạn 1 — Bảo Mật & Khả Năng Phục Hồi Sản Xuất) · P1
+### Phase 1 — Production Security & Resilience (Giai Đoạn 1 — Bảo Mật & Khả Năng Phục Hồi Sản Xuất) · ✅ COMPLETE (2026-06-22)
 
-| # | Item (Mục) | Effort (Công Sức) | Why (Tại Sao) |
-|---|---|---|---|
-| 1.1 | CSP + HSTS headers | M | Injection + transport hardening for a child PWA (Gia cố chèn + truyền tải cho PWA trẻ em) |
-| 1.2 | Transactional PIN lockout (close TOCTOU) (Khóa PIN giao dịch — đóng TOCTOU) | S | Defense beyond IP rate limit (Phòng thủ ngoài giới hạn tốc độ IP) |
-| 1.3 | Structured logger + correlation IDs (Log có cấu trúc + correlation ID) | M | Can't operate blind in prod (Không thể vận hành mù trong prod) |
-| 1.4 | Error tracking — Sentry with PII scrubbing (Theo dõi lỗi — Sentry với scrubbing PII) | M | Catch prod faults; child-data care (Bắt lỗi prod; bảo vệ dữ liệu trẻ em) |
-| 1.5 | `not-found.tsx` + harden `ErrorBoundary` reset | S | Close resilience gaps (Đóng khoảng trống khả năng phục hồi) |
+| # | Item (Mục) | Status |
+|---|---|---|
+| 1.1 | CSP + HSTS headers | ✅ Done — added to `next.config.ts` |
+| 1.2 | Transactional PIN lockout (close TOCTOU) (Khóa PIN giao dịch — đóng TOCTOU) | ✅ Done — `atomicFailedPinAttempt` in `user.repository.ts` |
+| 1.3 | Structured logger + correlation IDs (Log có cấu trúc + correlation ID) | ✅ Done — `lib/logger.ts` (pino) + `X-Request-Id` in middleware |
+| 1.4 | Error tracking — Sentry with PII scrubbing (Theo dõi lỗi — Sentry với scrubbing PII) | ✅ Done — `sentry.client.config.ts` + `instrumentation.ts`; dormant until `NEXT_PUBLIC_SENTRY_DSN` is set |
+| 1.5 | `not-found.tsx` + harden `ErrorBoundary` reset | ✅ Done — `app/not-found.tsx`, `app/error.tsx`, `resetCount` in ErrorBoundary |
+
+**Architecture bonus:** All 10 action files now route through service layer — zero direct repository imports in actions.
 
 ### Phase 2 — Correctness & Performance (Giai Đoạn 2 — Tính Chính Xác & Hiệu Năng) · P2
 

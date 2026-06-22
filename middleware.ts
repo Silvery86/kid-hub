@@ -68,6 +68,13 @@ const createParentAccessToken = async (userId: string): Promise<string> =>
     .sign(getSecret())
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
+  const requestId = crypto.randomUUID()
+  const response = await _handle(request)
+  response.headers.set('X-Request-Id', requestId)
+  return response
+}
+
+async function _handle(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl
 
   // ── Child app protection: require kid unlock session ────────────────────

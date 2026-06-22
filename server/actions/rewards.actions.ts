@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod'
-import { addUserPoints } from '@/server/repositories/progress.repository'
+import { addUserPoints } from '@/server/services/progress.service'
 import { DEFAULT_USER_ID } from '@/lib/constants'
 import type { ActionResult } from '@/types'
 

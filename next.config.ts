@@ -1,4 +1,17 @@
 import type { NextConfig } from 'next'
+import { withSentryConfig } from '@sentry/nextjs'
+
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self'",
+  "connect-src 'self'",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join('; ')
 
 const nextConfig: NextConfig = {
   // 'standalone' bundles a self-contained Node.js server (needed for Docker).
@@ -13,6 +26,8 @@ const nextConfig: NextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
+          { key: 'Content-Security-Policy', value: CSP },
         ],
       },
       {
@@ -27,4 +42,9 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default nextConfig
+export default withSentryConfig(nextConfig, {
+  // Sentry is a no-op when NEXT_PUBLIC_SENTRY_DSN is not set.
+  silent: true,
+  // Tunnel Sentry events through /monitoring so they pass CSP connect-src 'self'.
+  tunnelRoute: '/monitoring',
+})

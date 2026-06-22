@@ -1,9 +1,10 @@
 // Server-only module — do NOT import from client components or hooks.
-// Pure functions only — no DB calls; receives data as arguments.
 import 'server-only'
 
 import type { BadgeTier, SubjectGrade, ReportCard } from '@/types'
 import { GRADE_SCALE } from '@/lib/constants'
+import * as gradesRepo from '@/server/repositories/grades.repository'
+export type { GradeRecord } from '@/server/repositories/grades.repository'
 
 /** Derive a BadgeTier from a numeric score (0–10). */
 export const calculateBadge = (score: number): BadgeTier => {
@@ -29,3 +30,8 @@ export const buildReportCard = (userId: string, grades: SubjectGrade[]): ReportC
   grades,
   averageScore: calculateAverage(grades),
 })
+
+export const getReportCard = (userId: string) => gradesRepo.getReportCard(userId)
+
+export const upsertGrade = (userId: string, data: gradesRepo.GradeRecord): Promise<void> =>
+  gradesRepo.upsertGrade(userId, data)

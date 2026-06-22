@@ -2,9 +2,9 @@
 
 import { z } from 'zod'
 import { requireParentSession } from '@/server/lib/auth-guard'
-import { getKidAccessSettings, saveKidAccessSettings } from '@/server/repositories/user.repository'
+import { getKidAccessSettings, saveKidAccessSettings } from '@/server/services/user.service'
 import { fetchRecentActivity } from '@/server/services/activity.service'
-import type { ActivityEventRow } from '@/server/repositories/activity.repository'
+import type { ActivityEventRow } from '@/server/services/activity.service'
 import { DEFAULT_USER_ID } from '@/lib/constants'
 import type { ActionResult, ActionVoidResult } from '@/types'
 

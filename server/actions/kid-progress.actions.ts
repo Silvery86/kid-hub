@@ -1,7 +1,7 @@
 'use server'
 
 import { requireParentSession } from '@/server/lib/auth-guard'
-import { getUserProgress } from '@/server/repositories/user.repository'
+import { getUserProgress } from '@/server/services/user.service'
 import { DEFAULT_USER_ID } from '@/lib/constants'
 import type { ActionResult } from '@/types'
 

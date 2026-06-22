@@ -3,45 +3,38 @@
 /**
  * Server actions for parent account authentication and kid unlock flow.
  * All mutations are guarded by Zod validation.
+ * Business logic lives in auth.service — this layer only handles Zod, cookies, and orchestration.
  */
 
 import { z } from 'zod'
 import { cookies } from 'next/headers'
 import {
-  calcLockoutExpiry,
-  compareKidPattern,
-  comparePassword,
-  comparePin,
-  compareStoredTokenHash,
+  createParentSession,
   createKidSessionToken,
-  createParentAccessToken,
-  createParentRefreshToken,
-  hashKidPattern,
-  hashPassword,
-  hashPin,
-  hashTokenForStorage,
-  isLockedOut,
-  getLockoutSecondsRemaining,
+  getParentStatus,
+  getPinRecord,
+  loginWithParentPassword,
+  registerParent,
+  revokeRefreshToken,
+  savePin,
+  saveKidPattern,
+  validateRefreshToken,
+  verifyKidSessionToken,
+  verifyKidUnlockPattern,
+  verifyParentAccessToken,
+  verifyParentRefreshToken,
+  verifyPin,
   KID_SESSION_COOKIE,
   PARENT_ACCESS_COOKIE,
   PARENT_REFRESH_COOKIE,
-  verifyKidSessionToken,
-  verifyParentAccessToken,
-  verifyParentRefreshToken,
 } from '@/server/services/auth.service'
-import * as userRepo from '@/server/repositories/user.repository'
 import type { ActionVoidResult, AuthActionResult } from '@/types'
 import {
   DEFAULT_USER_ID,
   KID_PATTERN_LENGTH,
-  KID_PATTERN_LOCKOUT_SECONDS,
   KID_SESSION_TTL_SECONDS,
-  MAX_KID_PATTERN_ATTEMPTS,
-  MAX_PIN_ATTEMPTS,
-  MAX_PARENT_LOGIN_ATTEMPTS,
   PIN_LENGTH,
   PARENT_ACCESS_TTL_SECONDS,
-  PARENT_LOGIN_LOCKOUT_SECONDS,
   PARENT_REFRESH_TTL_SECONDS,
 } from '@/lib/constants'
 
@@ -78,20 +71,8 @@ const KID_SESSION_COOKIE_OPTIONS = {
   path: '/',
 }
 
-const calcParentLoginLockoutExpiry = (): Date =>
-  new Date(Date.now() + PARENT_LOGIN_LOCKOUT_SECONDS * 1000)
-
-const calcKidLockoutExpiry = (): Date =>
-  new Date(Date.now() + KID_PATTERN_LOCKOUT_SECONDS * 1000)
-
 const issueParentSessionCookies = async (userId: string): Promise<void> => {
-  const accessToken = await createParentAccessToken(userId)
-  const refreshToken = await createParentRefreshToken(userId)
-  const refreshHash = await hashTokenForStorage(refreshToken)
-  const refreshExpiresAt = new Date(Date.now() + PARENT_REFRESH_TTL_SECONDS * 1000)
-
-  await userRepo.saveRefreshToken(userId, refreshHash, refreshExpiresAt)
-
+  const { accessToken, refreshToken } = await createParentSession(userId)
   const cookieStore = await cookies()
   cookieStore.set(PARENT_ACCESS_COOKIE, accessToken, PARENT_ACCESS_COOKIE_OPTIONS)
   cookieStore.set(PARENT_REFRESH_COOKIE, refreshToken, PARENT_REFRESH_COOKIE_OPTIONS)
@@ -109,18 +90,11 @@ const ensureParentSession = async (): Promise<{ ok: boolean; userId?: string }> 
   const refreshToken = cookieStore.get(PARENT_REFRESH_COOKIE)?.value
   if (!refreshToken) return { ok: false }
 
-  const refreshSession = await verifyParentRefreshToken(refreshToken)
-  if (!refreshSession) return { ok: false }
+  const userId = await validateRefreshToken(refreshToken)
+  if (!userId) return { ok: false }
 
-  const record = await userRepo.getParentAuthRecord(refreshSession.userId)
-  if (!record?.refreshTokenHash || !record.refreshTokenExpiresAt) return { ok: false }
-  if (record.refreshTokenExpiresAt.getTime() <= Date.now()) return { ok: false }
-
-  const validRefresh = await compareStoredTokenHash(refreshToken, record.refreshTokenHash)
-  if (!validRefresh) return { ok: false }
-
-  await issueParentSessionCookies(refreshSession.userId)
-  return { ok: true, userId: refreshSession.userId }
+  await issueParentSessionCookies(userId)
+  return { ok: true, userId }
 }
 
 /** Registers parent account credentials for first-time setup. */
@@ -132,30 +106,21 @@ export const registerParentAccountAction = async (
   if (!parsedEmail.success) {
     return { success: false, error: parsedEmail.error.issues[0]?.message ?? 'Validation error' }
   }
-
   const parsedPassword = ParentPasswordSchema.safeParse(password)
   if (!parsedPassword.success) {
-    return {
-      success: false,
-      error: parsedPassword.error.issues[0]?.message ?? 'Validation error',
-    }
+    return { success: false, error: parsedPassword.error.issues[0]?.message ?? 'Validation error' }
   }
 
   try {
-    const current = await userRepo.getParentAuthRecord(DEFAULT_USER_ID)
-    if (!current) {
-      return { success: false, error: 'User not found' }
-    }
-    if (current.parentEmail && current.parentPasswordHash) {
-      return { success: false, error: 'Parent account is already configured' }
-    }
-
-    const passwordHash = await hashPassword(parsedPassword.data)
-    await userRepo.upsertParentCredentials(DEFAULT_USER_ID, parsedEmail.data, passwordHash)
+    await registerParent(DEFAULT_USER_ID, parsedEmail.data, parsedPassword.data)
     await issueParentSessionCookies(DEFAULT_USER_ID)
-
     return { success: true }
-  } catch {
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : ''
+    if (msg === 'Parent account is already configured') {
+      return { success: false, error: msg }
+    }
+    if (msg === 'User not found') return { success: false, error: msg }
     return { success: false, error: 'Failed to register parent account' }
   }
 }
@@ -172,49 +137,28 @@ export const parentLoginAction = async (
   if (!parsedEmail.success) {
     return { success: false, error: parsedEmail.error.issues[0]?.message ?? 'Validation error' }
   }
-
   const parsedPassword = ParentPasswordSchema.safeParse(password)
   if (!parsedPassword.success) {
     return { success: false, error: parsedPassword.error.issues[0]?.message ?? 'Validation error' }
   }
 
   try {
-    const record = await userRepo.getByParentEmail(parsedEmail.data)
-    if (!record?.parentPasswordHash) {
+    const result = await loginWithParentPassword(parsedEmail.data, parsedPassword.data)
+    if (result.status === 'no-account') {
       return { success: false, error: 'Invalid credentials' }
     }
-
-    if (isLockedOut(record.parentLoginAttempts, record.parentLoginLockedUntil)) {
+    if (result.status === 'wrong-password') {
+      return { success: false, error: 'Invalid credentials' }
+    }
+    if (result.status === 'locked') {
       return {
         success: false,
         error: 'Tài khoản bị khóa tạm thời',
         isLocked: true,
-        lockoutSeconds: getLockoutSecondsRemaining(record.parentLoginLockedUntil),
+        lockoutSeconds: result.lockoutSeconds,
       }
     }
-
-    const valid = await comparePassword(parsedPassword.data, record.parentPasswordHash)
-    if (!valid) {
-      const newAttempts = record.parentLoginAttempts + 1
-      const shouldLock = newAttempts >= MAX_PARENT_LOGIN_ATTEMPTS
-      const lockoutUntil = shouldLock ? calcParentLoginLockoutExpiry() : undefined
-      await userRepo.recordFailedParentLogin(
-        record.id,
-        lockoutUntil
-      )
-      if (shouldLock) {
-        return {
-          success: false,
-          error: 'Tài khoản bị khóa tạm thời',
-          isLocked: true,
-          lockoutSeconds: getLockoutSecondsRemaining(lockoutUntil ?? null),
-        }
-      }
-      return { success: false, error: 'Invalid credentials' }
-    }
-
-    await userRepo.resetParentLoginAttempts(record.id)
-    await issueParentSessionCookies(record.id)
+    await issueParentSessionCookies(result.userId)
     return { success: true }
   } catch {
     return { success: false, error: 'Login failed' }
@@ -224,9 +168,7 @@ export const parentLoginAction = async (
 /** Refreshes parent session using refresh cookie when possible. */
 export const refreshParentSessionAction = async (): Promise<ActionVoidResult> => {
   const result = await ensureParentSession()
-  if (!result.ok) {
-    return { success: false, error: 'Session refresh failed' }
-  }
+  if (!result.ok) return { success: false, error: 'Session refresh failed' }
   return { success: true }
 }
 
@@ -237,8 +179,7 @@ export const checkParentSessionAction = async (): Promise<{
 }> => {
   try {
     const session = await ensureParentSession()
-    const record = await userRepo.getParentAuthRecord(DEFAULT_USER_ID)
-    const hasParentAccount = Boolean(record?.parentEmail && record.parentPasswordHash)
+    const { hasParentAccount } = await getParentStatus(DEFAULT_USER_ID)
     return { hasSession: session.ok, hasParentAccount }
   } catch {
     return { hasSession: false, hasParentAccount: false }
@@ -251,15 +192,11 @@ export const setKidPatternAction = async (pattern: string): Promise<ActionVoidRe
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
   }
-
   const session = await ensureParentSession()
-  if (!session.ok) {
-    return { success: false, error: 'Unauthorized' }
-  }
+  if (!session.ok) return { success: false, error: 'Unauthorized' }
 
   try {
-    const hash = await hashKidPattern(parsed.data)
-    await userRepo.saveKidPattern(DEFAULT_USER_ID, hash)
+    await saveKidPattern(DEFAULT_USER_ID, parsed.data)
     return { success: true }
   } catch {
     return { success: false, error: 'Failed to save kid unlock pattern' }
@@ -274,39 +211,21 @@ export const verifyKidPatternAction = async (pattern: string): Promise<AuthActio
   }
 
   try {
-    const record = await userRepo.getParentAuthRecord(DEFAULT_USER_ID)
-    if (!record?.kidPatternHash) {
+    const result = await verifyKidUnlockPattern(DEFAULT_USER_ID, parsed.data)
+    if (result.status === 'not-configured') {
       return { success: false, error: 'Kid unlock is not configured yet' }
     }
-
-    if (isLockedOut(record.kidPatternAttempts, record.kidPatternLockedUntil)) {
+    if (result.status === 'locked') {
       return {
         success: false,
         error: 'Đã nhập sai quá nhiều lần',
         isLocked: true,
-        lockoutSeconds: getLockoutSecondsRemaining(record.kidPatternLockedUntil),
+        lockoutSeconds: result.lockoutSeconds,
       }
     }
-
-    const valid = await compareKidPattern(parsed.data, record.kidPatternHash)
-    if (!valid) {
-      const attempts = record.kidPatternAttempts + 1
-      const shouldLock = attempts >= MAX_KID_PATTERN_ATTEMPTS
-      const lockUntil = shouldLock ? calcKidLockoutExpiry() : undefined
-      await userRepo.recordFailedKidPatternAttempt(DEFAULT_USER_ID, lockUntil)
-
-      if (shouldLock) {
-        return {
-          success: false,
-          error: 'Đã nhập sai quá nhiều lần',
-          isLocked: true,
-          lockoutSeconds: getLockoutSecondsRemaining(lockUntil ?? null),
-        }
-      }
+    if (result.status === 'wrong') {
       return { success: false, error: 'Incorrect unlock pattern' }
     }
-
-    await userRepo.resetKidPatternAttempts(DEFAULT_USER_ID)
     const kidToken = await createKidSessionToken(DEFAULT_USER_ID)
     const cookieStore = await cookies()
     cookieStore.set(KID_SESSION_COOKIE, kidToken, KID_SESSION_COOKIE_OPTIONS)
@@ -325,8 +244,8 @@ export const checkKidSessionAction = async (): Promise<{
     const cookieStore = await cookies()
     const token = cookieStore.get(KID_SESSION_COOKIE)?.value
     const hasSession = token ? (await verifyKidSessionToken(token)) !== null : false
-    const record = await userRepo.getParentAuthRecord(DEFAULT_USER_ID)
-    return { hasSession, hasKidPatternSet: Boolean(record?.kidPatternHash) }
+    const { hasKidPatternSet } = await getParentStatus(DEFAULT_USER_ID)
+    return { hasSession, hasKidPatternSet }
   } catch {
     return { hasSession: false, hasKidPatternSet: false }
   }
@@ -337,13 +256,7 @@ export const signOutParentAction = async (): Promise<ActionVoidResult> => {
   try {
     const cookieStore = await cookies()
     const refresh = cookieStore.get(PARENT_REFRESH_COOKIE)?.value
-    if (refresh) {
-      const session = await verifyParentRefreshToken(refresh)
-      if (session) {
-        await userRepo.clearRefreshToken(session.userId)
-      }
-    }
-
+    if (refresh) await revokeRefreshToken(refresh)
     cookieStore.delete(PARENT_ACCESS_COOKIE)
     cookieStore.delete(PARENT_REFRESH_COOKIE)
     return { success: true }
@@ -370,8 +283,8 @@ const ParentPinSchema = z
 /** Whether the household has a parent PIN configured. */
 export const checkParentPinAction = async (): Promise<{ hasPin: boolean }> => {
   try {
-    const pin = await userRepo.getPin(DEFAULT_USER_ID)
-    return { hasPin: Boolean(pin?.hash) }
+    const record = await getPinRecord(DEFAULT_USER_ID)
+    return { hasPin: record?.hasPin ?? false }
   } catch {
     return { hasPin: false }
   }
@@ -394,15 +307,11 @@ export const setPinAction = async (pin: string): Promise<ActionVoidResult> => {
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Invalid PIN' }
   }
-
   const session = await ensureParentSession()
-  if (!session.ok) {
-    return { success: false, error: 'Unauthorized' }
-  }
+  if (!session.ok) return { success: false, error: 'Unauthorized' }
 
   try {
-    const hash = await hashPin(parsed.data)
-    await userRepo.savePin(DEFAULT_USER_ID, hash)
+    await savePin(DEFAULT_USER_ID, parsed.data)
     return { success: true }
   } catch {
     return { success: false, error: 'Failed to save PIN' }
@@ -420,42 +329,27 @@ export const verifyPinAction = async (pin: string): Promise<AuthActionResult> =>
   }
 
   try {
-    const pinRecord = await userRepo.getPin(DEFAULT_USER_ID)
-    if (!pinRecord?.hash) {
+    const result = await verifyPin(DEFAULT_USER_ID, parsed.data)
+    if (result.status === 'not-configured') {
       return { success: false, error: 'PIN is not configured yet' }
     }
-
-    if (isLockedOut(pinRecord.attempts, pinRecord.lockedUntil)) {
+    if (result.status === 'locked') {
       return {
         success: false,
         error: 'PIN bị khóa tạm thời',
         isLocked: true,
-        lockoutSeconds: getLockoutSecondsRemaining(pinRecord.lockedUntil),
+        lockoutSeconds: result.lockoutSeconds,
       }
     }
-
-    const valid = await comparePin(parsed.data, pinRecord.hash)
-    if (!valid) {
-      const newAttempts = pinRecord.attempts + 1
-      const shouldLock = newAttempts >= MAX_PIN_ATTEMPTS
-      const lockUntil = shouldLock ? calcLockoutExpiry() : undefined
-      await userRepo.recordFailedPinAttempt(DEFAULT_USER_ID, lockUntil)
-
-      if (shouldLock) {
-        return {
-          success: false,
-          error: 'PIN bị khóa tạm thời',
-          isLocked: true,
-          lockoutSeconds: getLockoutSecondsRemaining(lockUntil ?? null),
-        }
-      }
+    if (result.status === 'wrong') {
       return { success: false, error: 'Incorrect PIN', isWrong: true }
     }
-
-    await userRepo.resetPinAttempts(DEFAULT_USER_ID)
     await issueParentSessionCookies(DEFAULT_USER_ID)
     return { success: true }
   } catch {
     return { success: false, error: 'PIN verification failed' }
   }
 }
+
+// ── Unused but exported for auth-guard compatibility ─────────────────────────
+export { verifyParentRefreshToken }

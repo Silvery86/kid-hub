@@ -10,8 +10,8 @@ import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { requireParentSession } from '@/server/lib/auth-guard'
 import { validatePeriodOverlap, buildTodayView, jsDateToDayOfWeek } from '@/server/services/schedule.service'
-import * as scheduleRepo from '@/server/repositories/schedule.repository'
-import { addUserPoints, updateStreak } from '@/server/repositories/progress.repository'
+import * as scheduleService from '@/server/services/schedule.service'
+import { addUserPoints, updateStreak } from '@/server/services/progress.service'
 import { recordActivity } from '@/server/services/activity.service'
 import { checkAndAwardStreakBadges } from '@/server/services/rewards.service'
 import { getSubjectById } from '@/lib/data/subjects'
@@ -69,7 +69,7 @@ const todayStr = (): string => new Date().toISOString().split('T')[0]!
 /** Retrieves all EXTRA_CLASS (evening) blocks for every day, grouped by day. */
 export const getAllEveningBlocksAction = async (): Promise<ActionResult<DailySchedule[]>> => {
   try {
-    const data = await scheduleRepo.getAllEveningBlocks(DEFAULT_USER_ID)
+    const data = await scheduleService.getAllEveningBlocks(DEFAULT_USER_ID)
     return { success: true, data }
   } catch {
     return { success: false, error: 'Failed to fetch evening blocks' }
@@ -82,10 +82,10 @@ export const getScheduleAction = async (
 ): Promise<ActionResult<DailySchedule[]>> => {
   try {
     if (day) {
-      const result = await scheduleRepo.getDaySchedule(DEFAULT_USER_ID, day)
+      const result = await scheduleService.getDaySchedule(DEFAULT_USER_ID, day)
       return { success: true, data: result ? [result] : [] }
     }
-    const data = await scheduleRepo.getWeeklySchedule(DEFAULT_USER_ID)
+    const data = await scheduleService.getWeeklySchedule(DEFAULT_USER_ID)
     return { success: true, data }
   } catch {
     return { success: false, error: 'Failed to fetch schedule' }
@@ -100,10 +100,10 @@ export const getTodayViewAction = async (): Promise<ActionResult<TodayView>> => 
     const dow = jsDateToDayOfWeek(today)
 
     const [schoolResult, eveningBlocks, cancelledIds, homework] = await Promise.all([
-      dow ? scheduleRepo.getDaySchedule(DEFAULT_USER_ID, dow) : Promise.resolve(null),
-      dow ? scheduleRepo.getEveningBlocks(DEFAULT_USER_ID, dow) : Promise.resolve([]),
-      scheduleRepo.getOverridesForDate(DEFAULT_USER_ID, date),
-      scheduleRepo.getDailyHomework(DEFAULT_USER_ID, date),
+      dow ? scheduleService.getDaySchedule(DEFAULT_USER_ID, dow) : Promise.resolve(null),
+      dow ? scheduleService.getEveningBlocks(DEFAULT_USER_ID, dow) : Promise.resolve([]),
+      scheduleService.getOverridesForDate(DEFAULT_USER_ID, date),
+      scheduleService.getDailyHomework(DEFAULT_USER_ID, date),
     ])
 
     const todayView = buildTodayView(
@@ -127,7 +127,7 @@ export const getDailyHomeworkByDateAction = async (
     await requireParentSession()
     const parsed = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).safeParse(date)
     if (!parsed.success) return { success: false, error: 'Invalid date' }
-    const data = await scheduleRepo.getDailyHomework(DEFAULT_USER_ID, parsed.data)
+    const data = await scheduleService.getDailyHomework(DEFAULT_USER_ID, parsed.data)
     return { success: true, data }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to fetch daily homework'
@@ -147,7 +147,7 @@ export const createPeriodAction = async (input: unknown): Promise<ActionVoidResu
       return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
     }
     const data = parsed.data
-    const existing = await scheduleRepo.getDaySchedule(DEFAULT_USER_ID, data.day as DayOfWeek)
+    const existing = await scheduleService.getDaySchedule(DEFAULT_USER_ID, data.day as DayOfWeek)
     const newPeriod = {
       periodNumber: data.periodNumber,
       subjectId: data.subjectId,
@@ -157,7 +157,7 @@ export const createPeriodAction = async (input: unknown): Promise<ActionVoidResu
     if (existing && validatePeriodOverlap(newPeriod, existing.periods)) {
       return { success: false, error: 'This time slot overlaps with an existing period' }
     }
-    await scheduleRepo.createPeriod({
+    await scheduleService.createPeriod({
       ...data,
       userId: DEFAULT_USER_ID,
       day: data.day as DayOfWeek,
@@ -181,7 +181,7 @@ export const updatePeriodAction = async (input: unknown): Promise<ActionVoidResu
     if (!parsed.success) {
       return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
     }
-    await scheduleRepo.updatePeriod({ ...parsed.data, userId: DEFAULT_USER_ID })
+    await scheduleService.updatePeriod({ ...parsed.data, userId: DEFAULT_USER_ID })
     revalidatePath('/dashboard')
     revalidatePath('/schedule')
     return { success: true }
@@ -198,7 +198,7 @@ export const deletePeriodAction = async (id: string): Promise<ActionVoidResult> 
     await requireParentSession()
     const parsed = z.string().min(1).safeParse(id)
     if (!parsed.success) return { success: false, error: 'Invalid period ID' }
-    await scheduleRepo.deletePeriod(parsed.data, DEFAULT_USER_ID)
+    await scheduleService.deletePeriod(parsed.data, DEFAULT_USER_ID)
     revalidatePath('/dashboard')
     revalidatePath('/schedule')
     return { success: true }
@@ -222,11 +222,11 @@ export const createExtraClassAction = async (
       return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
     }
     const data = parsed.data
-    const count = await scheduleRepo.countEveningBlocks(DEFAULT_USER_ID, data.day as DayOfWeek)
+    const count = await scheduleService.countEveningBlocks(DEFAULT_USER_ID, data.day as DayOfWeek)
     if (count >= MAX_EVENING_BLOCKS_PER_DAY) {
       return { success: false, error: `Tối đa ${MAX_EVENING_BLOCKS_PER_DAY} buổi học thêm mỗi ngày` }
     }
-    const existing = await scheduleRepo.getEveningBlocks(DEFAULT_USER_ID, data.day as DayOfWeek)
+    const existing = await scheduleService.getEveningBlocks(DEFAULT_USER_ID, data.day as DayOfWeek)
     const overlaps = validatePeriodOverlap(
       {
         subjectId: data.subjectId,
@@ -238,7 +238,7 @@ export const createExtraClassAction = async (
     if (overlaps) {
       return { success: false, error: 'Khung giờ bị trùng với buổi học tối đã có' }
     }
-    const id = await scheduleRepo.createPeriod({
+    const id = await scheduleService.createPeriod({
       ...data,
       userId: DEFAULT_USER_ID,
       day: data.day as DayOfWeek,
@@ -266,7 +266,7 @@ export const cancelExtraClassAction = async (
     if (!idParsed.success || !dateParsed.success) {
       return { success: false, error: 'Invalid input' }
     }
-    await scheduleRepo.createOverride(periodId, DEFAULT_USER_ID, date, reason)
+    await scheduleService.createOverride(periodId, DEFAULT_USER_ID, date, reason)
     revalidatePath('/schedule')
     return { success: true }
   } catch (err) {
@@ -283,7 +283,7 @@ export const restoreExtraClassAction = async (
 ): Promise<ActionVoidResult> => {
   try {
     await requireParentSession()
-    await scheduleRepo.deleteOverride(periodId, date)
+    await scheduleService.deleteOverride(periodId, date)
     revalidatePath('/schedule')
     return { success: true }
   } catch (err) {
@@ -305,7 +305,7 @@ export const addDailyHomeworkAction = async (
     if (!parsed.success) {
       return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
     }
-    const id = await scheduleRepo.createDailyHomework({
+    const id = await scheduleService.createDailyHomework({
       ...parsed.data,
       userId: DEFAULT_USER_ID,
     })
@@ -326,7 +326,7 @@ export const toggleHomeworkDoneAction = async (
   try {
     const parsed = z.object({ id: z.string().min(1), isDone: z.boolean() }).safeParse({ id, isDone })
     if (!parsed.success) return { success: false, error: 'Invalid input' }
-    const updated = await scheduleRepo.toggleDailyHomeworkDone(
+    const updated = await scheduleService.toggleDailyHomeworkDone(
       parsed.data.id,
       DEFAULT_USER_ID,
       parsed.data.isDone
@@ -354,7 +354,7 @@ export const deleteDailyHomeworkAction = async (id: string): Promise<ActionVoidR
     await requireParentSession()
     const parsed = z.string().min(1).safeParse(id)
     if (!parsed.success) return { success: false, error: 'Invalid ID' }
-    await scheduleRepo.deleteDailyHomework(parsed.data, DEFAULT_USER_ID)
+    await scheduleService.deleteDailyHomework(parsed.data, DEFAULT_USER_ID)
     revalidatePath('/schedule')
     return { success: true }
   } catch (err) {

@@ -5,6 +5,7 @@ import {
   getRecentActivity,
   type ActivityEventRow,
 } from '@/server/repositories/activity.repository'
+export type { ActivityEventRow }
 
 /** Records a kid-side event. Fire-and-forget safe — call with void. */
 export const recordActivity = async (

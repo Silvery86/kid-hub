@@ -3,6 +3,7 @@
 /** ErrorBoundary — React class boundary that catches render errors and shows a fallback UI. */
 
 import { Component, type ReactNode, type ErrorInfo } from 'react'
+import * as Sentry from '@sentry/nextjs'
 
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -17,6 +18,7 @@ interface ErrorBoundaryProps {
 
 interface ErrorBoundaryState {
   hasError: boolean
+  resetCount: number
 }
 
 /**
@@ -30,22 +32,25 @@ interface ErrorBoundaryState {
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props)
-    this.state = { hasError: false }
+    this.state = { hasError: false, resetCount: 0 }
   }
 
   // Note: no `override` — React's Component base declares this as an optional static,
   // so TypeScript does not recognise it as an overrideable member (noImplicitOverride does
   // not apply to optional statics in the base class type).
-  static getDerivedStateFromError(): ErrorBoundaryState {
+  static getDerivedStateFromError(): Partial<ErrorBoundaryState> {
     return { hasError: true }
   }
 
   override componentDidCatch(error: Error, info: ErrorInfo): void {
+    Sentry.captureException(error, {
+      extra: { componentStack: info.componentStack, section: this.props.section },
+    })
     console.error(`[ErrorBoundary:${this.props.section ?? 'app'}]`, error, info.componentStack)
   }
 
   private handleReset = (): void => {
-    this.setState({ hasError: false })
+    this.setState((s) => ({ hasError: false, resetCount: s.resetCount + 1 }))
   }
 
   override render(): ReactNode {
@@ -63,19 +68,36 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         </span>
         <h2 className="mb-2 text-2xl font-extrabold text-slate-700">Ối! Có lỗi rồi</h2>
         <p className="mb-6 text-lg text-slate-500">Khôi thử nhấn nút bên dưới nhé!</p>
-        <button
-          type="button"
-          onClick={this.handleReset}
-          style={{ minHeight: '3.5rem', minWidth: '10rem' }}
-          className={[
-            'rounded-2xl bg-blue-500 px-6 py-3 text-white',
-            'border-4 border-blue-700 text-xl font-bold',
-            'transition-transform duration-100 active:scale-95',
-            'touch-manipulation select-none',
-          ].join(' ')}
-        >
-          Thử lại 🔄
-        </button>
+        <div className="flex flex-col items-center gap-3">
+          <button
+            type="button"
+            onClick={this.handleReset}
+            style={{ minHeight: '3.5rem', minWidth: '10rem' }}
+            className={[
+              'rounded-2xl bg-blue-500 px-6 py-3 text-white',
+              'border-4 border-blue-700 text-xl font-bold',
+              'transition-transform duration-100 active:scale-95',
+              'touch-manipulation select-none',
+            ].join(' ')}
+          >
+            Thử lại 🔄
+          </button>
+          {this.state.resetCount >= 2 && (
+            <button
+              type="button"
+              onClick={() => { window.location.href = '/' }}
+              style={{ minHeight: '3rem', minWidth: '10rem' }}
+              className={[
+                'rounded-2xl bg-slate-100 px-6 py-3 text-slate-700',
+                'border-2 border-slate-300 text-base font-bold',
+                'transition-transform duration-100 active:scale-95',
+                'touch-manipulation select-none',
+              ].join(' ')}
+            >
+              Về trang chủ 🏠
+            </button>
+          )}
+        </div>
       </div>
     )
   }

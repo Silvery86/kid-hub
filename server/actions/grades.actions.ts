@@ -8,10 +8,8 @@
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { requireParentSession } from '@/server/lib/auth-guard'
-import { calculateBadge } from '@/server/services/grades.service'
-import * as gradesRepo from '@/server/repositories/grades.repository'
-import * as userRepo from '@/server/repositories/user.repository'
-import { buildReportCard } from '@/server/services/grades.service'
+import { calculateBadge, buildReportCard, getReportCard, upsertGrade } from '@/server/services/grades.service'
+import { getUserById } from '@/server/services/user.service'
 import type { ReportCard, ActionResult, ActionVoidResult } from '@/types'
 import { DEFAULT_USER_ID } from '@/lib/constants'
 
@@ -26,9 +24,9 @@ const UpsertGradeSchema = z.object({
 export const getReportCardAction = async (): Promise<ActionResult<ReportCard>> => {
   try {
     const userId = DEFAULT_USER_ID
-    const user = await userRepo.getUserById(userId)
+    const user = await getUserById(userId)
     if (!user) return { success: true, data: { userId, grades: [], averageScore: 0 } }
-    const grades = await gradesRepo.getReportCard(userId)
+    const grades = await getReportCard(userId)
     return { success: true, data: buildReportCard(userId, grades) }
   } catch {
     return { success: false, error: 'Failed to fetch report card' }
@@ -45,7 +43,7 @@ export const upsertGradeAction = async (input: unknown): Promise<ActionVoidResul
     }
     const data = parsed.data
     const badge = calculateBadge(data.score)
-    await gradesRepo.upsertGrade(DEFAULT_USER_ID, { ...data, badge })
+    await upsertGrade(DEFAULT_USER_ID, { ...data, badge })
     revalidatePath('/grades')
     revalidatePath('/dashboard')
     return { success: true }
