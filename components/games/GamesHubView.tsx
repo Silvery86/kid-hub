@@ -141,7 +141,7 @@ function GamesHeader({
             ? 'text-2xl font-black tracking-tight text-text-primary'
             : large
               ? 'text-4xl font-black tracking-tight text-text-primary'
-              : 'text-[32px] font-black tracking-tight text-text-primary'
+              : 'text-3xl font-black tracking-tight text-text-primary'
         }
       >
         Trò chơi 🎮

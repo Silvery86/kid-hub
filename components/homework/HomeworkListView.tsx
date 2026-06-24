@@ -53,8 +53,8 @@ export function HomeworkListView({ initialItems }: { initialItems: HomeworkItem[
         <div className="text-8xl" aria-hidden="true">
           🎉
         </div>
-        <h1 className="text-3xl font-extrabold text-slate-800">Không có bài tập!</h1>
-        <p className="font-bold text-slate-500">Hôm nay rảnh rỗi, chơi game nào.</p>
+        <h1 className="text-3xl font-extrabold text-text-primary">Không có bài tập!</h1>
+        <p className="font-bold text-text-secondary">Hôm nay rảnh rỗi, chơi game nào.</p>
       </div>
     )
   }
@@ -75,7 +75,7 @@ export function HomeworkListView({ initialItems }: { initialItems: HomeworkItem[
       {/* Phone portrait */}
       <div className="hidden min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3.5 pb-4 pt-3.5 portrait:max-md:flex">
         <div className="flex items-center justify-between gap-2">
-          <h1 className="text-[22px] font-black text-slate-800">Bài tập 📚</h1>
+          <h1 className="text-2xl font-black text-text-primary">Bài tập 📚</h1>
           {pending.length > 0 ? (
             <StatusPill tone="amber">{pending.length} chưa làm</StatusPill>
           ) : (
@@ -90,8 +90,8 @@ export function HomeworkListView({ initialItems }: { initialItems: HomeworkItem[
       <div className="hidden min-h-0 flex-1 flex-col gap-4 overflow-hidden p-5 md:flex md:gap-5 md:p-6 lg:p-7">
         <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-[30px] font-black text-slate-800 lg:text-[34px]">Bài tập 📚</h1>
-            <p className="mt-1 text-sm font-bold text-slate-500 lg:text-[15px]">
+            <h1 className="text-3xl font-black text-text-primary lg:text-4xl">Bài tập 📚</h1>
+            <p className="mt-1 text-sm font-bold text-text-secondary lg:text-base">
               Hôm nay · {doneCount}/{total} hoàn thành
             </p>
           </div>
@@ -104,7 +104,7 @@ export function HomeworkListView({ initialItems }: { initialItems: HomeworkItem[
         <HomeworkHeader total={total} done={doneCount} />
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-hidden lg:grid-cols-2 lg:gap-5">
           <div className="flex min-h-0 flex-col gap-2.5">
-            <div className="text-xs font-extrabold tracking-wide text-slate-400 uppercase">
+            <div className="text-xs font-extrabold tracking-wide text-text-muted uppercase">
               Chưa làm ({pending.length})
             </div>
             <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
@@ -112,7 +112,7 @@ export function HomeworkListView({ initialItems }: { initialItems: HomeworkItem[
             </div>
           </div>
           <div className="flex min-h-0 flex-col gap-2.5">
-            <div className="text-xs font-extrabold tracking-wide text-slate-400 uppercase">
+            <div className="text-xs font-extrabold tracking-wide text-text-muted uppercase">
               Đã hoàn thành ({finished.length})
             </div>
             <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
@@ -124,12 +124,12 @@ export function HomeworkListView({ initialItems }: { initialItems: HomeworkItem[
 
       {showCelebration ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/90">
-          <div className="text-center">
+          <div className="animate-pop-in text-center">
             <div className="mb-4 text-8xl" aria-hidden="true">
               🎉
             </div>
-            <h2 className="text-4xl font-extrabold text-slate-800">Xong hết rồi!</h2>
-            <p className="mt-2 text-xl text-slate-500">Giỏi lắm Khôi! ⭐</p>
+            <h2 className="text-4xl font-extrabold text-text-primary">Xong hết rồi!</h2>
+            <p className="mt-2 text-xl text-text-secondary">Giỏi lắm Khôi! ⭐</p>
           </div>
         </div>
       ) : null}

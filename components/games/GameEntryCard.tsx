@@ -28,7 +28,7 @@ export const GameEntryCard = ({
     className={cn(
       'flex flex-col gap-3 rounded-3xl p-5 shadow-lg',
       'min-h-tap-lg',
-      'transition-transform duration-150 active:scale-[0.97]',
+      'transition-[transform,box-shadow] duration-200 active:scale-[0.97] hover:scale-[1.02] hover:shadow-xl',
       'touch-manipulation select-none',
       colorClass
     )}
