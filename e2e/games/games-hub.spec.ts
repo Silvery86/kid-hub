@@ -2,12 +2,12 @@
  * Games hub — /games launcher navigation and layout smoke tests.
  */
 
-import { test, expect } from '@playwright/test'
+import { test, expect, type BrowserContext } from '@playwright/test'
 import { createSessionToken, SESSION_COOKIE } from '../fixtures/auth'
 
 const COOKIE_DOMAIN = 'localhost'
 
-async function injectSession(context: Parameters<Parameters<typeof test>[1]>[0]['context']) {
+async function injectSession(context: BrowserContext) {
   const token = await createSessionToken('khoi-default-user')
   await context.addCookies([
     {

@@ -1,8 +1,12 @@
 # Project Overview — Kid Hub
 
-**Last updated:** 2026-06-01
+**Last updated:** 2026-06-21
 **Version:** 0.1.0
-**Status:** Active development
+**Status:** Active development — app layer near-staging-ready; operational layer (CI, deploy, observability) outstanding
+
+> Production-readiness is tracked in `docs/report/project-review-v1.md` and `docs/project-status.md`.
+> App-layer security blockers (secret enforcement, rate limiting, headers, ownership guards) are
+> resolved; the remaining blockers are operational (no CI, no deployed environment, no observability).
 
 ---
 

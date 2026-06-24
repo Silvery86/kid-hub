@@ -3,6 +3,7 @@
  * Auth business logic: password/pattern hashing with bcrypt, JWT access/refresh
  * and kid session tokens using jose, plus lockout state calculation.
  */
+import 'server-only'
 
 import bcrypt from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'

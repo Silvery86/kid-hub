@@ -115,25 +115,20 @@ function RewardCard({
   )
 }
 
-function DifficultyCaps({
+function DifficultyCapRow({
+  emoji,
+  label,
+  value,
+  onChange,
   compact = false,
 }: {
+  emoji: string
+  label: string
+  value: number
+  onChange: (next: number) => void
   compact?: boolean
 }) {
-  const [mathLevel, setMathLevel] = useState(2)
-  const [englishLevel, setEnglishLevel] = useState(3)
-
-  const Row = ({
-    emoji,
-    label,
-    value,
-    onChange,
-  }: {
-    emoji: string
-    label: string
-    value: number
-    onChange: (next: number) => void
-  }) => (
+  return (
     <div className="flex items-center gap-2.5">
       <span className={cn(compact ? 'text-base' : 'text-lg')} aria-hidden="true">{emoji}</span>
       <span className="min-w-0 flex-1 text-sm font-extrabold text-slate-700">{label}</span>
@@ -154,13 +149,22 @@ function DifficultyCaps({
       </div>
     </div>
   )
+}
+
+function DifficultyCaps({
+  compact = false,
+}: {
+  compact?: boolean
+}) {
+  const [mathLevel, setMathLevel] = useState(2)
+  const [englishLevel, setEnglishLevel] = useState(3)
 
   return (
     <div className={cn('rounded-[22px] bg-white shadow-sm', compact ? 'p-3.5' : 'p-4')}>
       <p className="mb-3 text-xs font-extrabold tracking-wide text-slate-400 uppercase">Giới hạn độ khó</p>
       <div className="flex flex-col gap-3">
-        <Row emoji="🧮" label="Toán" value={mathLevel} onChange={setMathLevel} />
-        <Row emoji="🔤" label="Tiếng Anh" value={englishLevel} onChange={setEnglishLevel} />
+        <DifficultyCapRow emoji="🧮" label="Toán" value={mathLevel} onChange={setMathLevel} compact={compact} />
+        <DifficultyCapRow emoji="🔤" label="Tiếng Anh" value={englishLevel} onChange={setEnglishLevel} compact={compact} />
       </div>
     </div>
   )

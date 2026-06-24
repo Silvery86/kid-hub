@@ -15,12 +15,6 @@ import { useUserProgress } from '@/hooks/useUserProgress'
 
 type ManagerTab = 'overview' | 'schedule' | 'grades'
 
-const TABS = [
-  { id: 'overview' as const, label: '🏠 Tổng quan' },
-  { id: 'schedule' as const, label: '📅 Lịch học' },
-  { id: 'grades' as const, label: '🌟 Điểm số' },
-]
-
 export function ParentDashboardView({
   initialSchedule,
   initialGrades,
@@ -30,7 +24,7 @@ export function ParentDashboardView({
   initialGrades: SubjectGrade[]
   todayView: TodayView | null
 }) {
-  const [scheduleSave, setScheduleSave] = useState<ParentSaveState | null>(null)
+  const [, setScheduleSave] = useState<ParentSaveState | null>(null)
   const [gradesSave, setGradesSave] = useState<ParentSaveState | null>(null)
   const [weekOffset, setWeekOffset] = useState(0)
   const { progress } = useUserProgress()

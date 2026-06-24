@@ -1,6 +1,7 @@
 // Server-only module — do NOT import from client components or hooks.
 // Business logic only — pure functions that receive data as arguments.
 // No direct DB calls here; repositories are called by Server Actions.
+import 'server-only'
 
 import type {
   ClassPeriod,

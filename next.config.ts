@@ -1,7 +1,9 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
+  // 'standalone' bundles a self-contained Node.js server (needed for Docker).
+  // Vercel builds its own optimised bundle, so standalone must be absent there.
+  output: process.env.VERCEL ? undefined : 'standalone',
   async headers() {
     return [
       {

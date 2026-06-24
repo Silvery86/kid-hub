@@ -1,5 +1,6 @@
 // Server-only module — do NOT import from client components or hooks.
 // Pure functions only — no DB calls; receives data as arguments.
+import 'server-only'
 
 import type { BadgeTier, SubjectGrade, ReportCard } from '@/types'
 import { GRADE_SCALE } from '@/lib/constants'
