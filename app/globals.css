@@ -24,10 +24,14 @@
   --color-schedule-deep: #1d4ed8;
   --color-schedule-soft: #eff6ff;
 
-  /* ── App shell backgrounds → bg-shell-dark, bg-shell-light, bg-shell-kid */
+  /* ── App shell backgrounds → bg-shell-dark, bg-shell-light, bg-shell-kid, bg-shell-parent */
   --color-shell-dark: #0f172a;
   --color-shell-light: #f8fafc;
   --color-shell-kid: #f0f9ff;
+  --color-shell-parent: #f3f2ec;
+
+  /* ── Gradient accents ────────────────────────────────────────────────── */
+  --color-gradient-indigo: #4338ca;
 
   /* ── Text hierarchy → text-text-primary, text-text-secondary, etc. ───── */
   --color-text-primary: #1e293b;
