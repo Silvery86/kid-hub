@@ -12,8 +12,8 @@ export default async function SchedulePage() {
     getScheduleAction(),
     getAllEveningBlocksAction(),
   ])
-  const schedule = scheduleResult.data ?? []
-  const allEveningBlocks = eveningResult.data ?? []
+  const schedule = scheduleResult.success ? scheduleResult.data : []
+  const allEveningBlocks = eveningResult.success ? eveningResult.data : []
 
   return (
     <Suspense fallback={<ScheduleLoading />}>
