@@ -92,7 +92,7 @@ export const COUNTING_IMAGE: Record<string, string> = {
 }
 
 /** Emoji character → English flashcard image path (Word Safari, Sound Hunt, EnglishGame). */
-export const EMOJI_IMAGE: Record<string, string> = {
+export const EMOJI_IMAGE: Record<string, string | undefined> = {
   '🐱': WORD_IMAGE.cat,
   '🐶': WORD_IMAGE.dog,
   '🐟': WORD_IMAGE.fish,
