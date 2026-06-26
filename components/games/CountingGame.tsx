@@ -8,6 +8,8 @@ import { generateCountingQuestions } from '@/lib/data/countingLevels'
 import { GameHud } from '@/components/games/GameHud'
 import { GameResultScreen } from '@/components/games/GameResultScreen'
 import { KidButton } from '@/components/ui/KidButton'
+import { FlashcardImage } from '@/components/ui/FlashcardImage'
+import { COUNTING_IMAGE } from '@/lib/data/gameImages'
 import { COUNTING_SECONDS_PER_QUESTION, INPUT_THROTTLE_MS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import type { CountingQuestion, DifficultyLevel } from '@/types'
@@ -24,7 +26,7 @@ interface CountingGameProps {
   onHomeworkSubmit?: () => void
 }
 
-/** Renders N emoji objects in a responsive wrap grid for the child to count. */
+/** Renders N flashcard images (or emoji fallback) in a responsive wrap grid for the child to count. */
 const ObjectGrid = ({ emoji, count }: { emoji: string; count: number }) => (
   <div
     className="flex max-w-xs flex-wrap justify-center gap-2 portrait:gap-3"
@@ -32,14 +34,14 @@ const ObjectGrid = ({ emoji, count }: { emoji: string; count: number }) => (
     data-testid="object-grid"
   >
     {Array.from({ length: count }).map((_, i) => (
-      <span
+      <FlashcardImage
         key={i}
-        className="animate-in zoom-in-95 select-none text-3xl portrait:text-5xl"
+        src={COUNTING_IMAGE[emoji]}
+        alt=""
+        fallback={emoji}
+        className="animate-in zoom-in-95 h-12 w-12 select-none object-contain portrait:h-16 portrait:w-16"
         style={{ animationDelay: `${i * 80}ms` }}
-        aria-hidden="true"
-      >
-        {emoji}
-      </span>
+      />
     ))}
   </div>
 )

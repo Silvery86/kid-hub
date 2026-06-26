@@ -15,6 +15,8 @@ import {
 import { GameHud } from '@/components/games/GameHud'
 import { GameResultScreen } from '@/components/games/GameResultScreen'
 import { KidButton } from '@/components/ui/KidButton'
+import { FlashcardImage } from '@/components/ui/FlashcardImage'
+import { EMOJI_IMAGE } from '@/lib/data/gameImages'
 import { STORAGE_KEYS, INPUT_THROTTLE_MS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import type { DifficultyLevel, GameBestScore, EnglishQuestion } from '@/types'
@@ -178,18 +180,30 @@ export const EnglishGame = ({ initialLevel = 1 }: EnglishGameProps) => {
           feedbackState === 'wrong' && 'bg-red-900/40'
         )}
       >
-        {/* Emoji / image */}
-        {currentQuestion.imageUrl && (
-          <div className="text-4xl leading-none select-none portrait:text-6xl lg:text-[8rem]" aria-hidden="true">
-            {currentQuestion.imageUrl}
-          </div>
+        {/* Flashcard image — letter-match shows it above the prompt card */}
+        {currentQuestion.imageUrl && isLetterMatch && (
+          <FlashcardImage
+            src={EMOJI_IMAGE[currentQuestion.imageUrl]}
+            alt=""
+            fallback={currentQuestion.imageUrl}
+            className="h-20 w-20 select-none object-contain portrait:h-28 portrait:w-28 lg:h-36 lg:w-36"
+          />
         )}
 
-        {/* Prompt */}
+        {/* Prompt card — picture-word shows the flashcard image here instead */}
         <div className="animate-in fade-in anim-duration-200 rounded-2xl bg-slate-700 px-3 py-2 shadow-2xl portrait:rounded-3xl portrait:px-8 portrait:py-4 lg:px-10 lg:py-6">
-          <p className="text-center text-xl font-extrabold tracking-widest text-white select-none portrait:text-3xl lg:text-6xl">
-            {currentQuestion.prompt}
-          </p>
+          {isLetterMatch ? (
+            <p className="text-center text-xl font-extrabold tracking-widest text-white select-none portrait:text-3xl lg:text-6xl">
+              {currentQuestion.prompt}
+            </p>
+          ) : (
+            <FlashcardImage
+              src={EMOJI_IMAGE[currentQuestion.prompt]}
+              alt={currentQuestion.correctAnswer}
+              fallback={currentQuestion.prompt}
+              className="h-24 w-24 object-contain portrait:h-36 portrait:w-36 lg:h-44 lg:w-44"
+            />
+          )}
           {isLetterMatch && (
             <p className="mt-1 text-center text-xs font-semibold text-slate-400 portrait:mt-2 portrait:text-sm lg:text-lg">
               Chọn chữ cái còn thiếu

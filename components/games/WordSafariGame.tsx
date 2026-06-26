@@ -8,6 +8,8 @@ import { generateWordSafariQuestions } from '@/lib/data/englishLevels'
 import { GameHud } from '@/components/games/GameHud'
 import { GameResultScreen } from '@/components/games/GameResultScreen'
 import { KidButton } from '@/components/ui/KidButton'
+import { FlashcardImage } from '@/components/ui/FlashcardImage'
+import { EMOJI_IMAGE } from '@/lib/data/gameImages'
 import { ENGLISH_WORD_SECONDS_PER_QUESTION, INPUT_THROTTLE_MS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import type { WordSafariQuestion, DifficultyLevel } from '@/types'
@@ -151,10 +153,18 @@ export const WordSafariGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: W
           className="animate-in fade-in anim-duration-200 rounded-3xl bg-slate-700 px-10 py-6 shadow-2xl"
           data-testid="safari-prompt"
         >
-          <p className="text-center font-extrabold text-white select-none"
-            style={{ fontSize: isWordToImage ? '3rem' : '7rem', lineHeight: 1.2 }}>
-            {currentQuestion.prompt}
-          </p>
+          {!isWordToImage ? (
+            <FlashcardImage
+              src={EMOJI_IMAGE[currentQuestion.prompt]}
+              alt={currentQuestion.correctAnswer}
+              fallback={currentQuestion.prompt}
+              className="h-32 w-32 object-contain portrait:h-44 portrait:w-44"
+            />
+          ) : (
+            <p className="text-center text-[3rem] leading-none font-extrabold text-white select-none">
+              {currentQuestion.prompt}
+            </p>
+          )}
         </div>
 
         {/* Answer buttons */}
@@ -171,14 +181,21 @@ export const WordSafariGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: W
                 className={cn(
                   'transition-colors duration-200 rounded-pill font-extrabold',
                   isWordToImage
-                    ? 'min-h-[4rem] min-w-[4rem] text-5xl'
-                    : 'min-h-[3rem] min-w-[8rem] text-2xl',
+                    ? 'min-h-20 min-w-20'
+                    : 'min-h-[3rem] min-w-32 text-2xl',
                   isSelected && isCorrectOption && 'border-emerald-700 bg-emerald-500',
                   isSelected && !isCorrectOption && 'border-red-700 bg-red-500'
                 )}
                 data-testid={`choice-${choice}`}
               >
-                {choice}
+                {isWordToImage ? (
+                  <FlashcardImage
+                    src={EMOJI_IMAGE[choice]}
+                    alt={choice}
+                    fallback={choice}
+                    className="h-12 w-12 object-contain"
+                  />
+                ) : choice}
               </KidButton>
             )
           })}

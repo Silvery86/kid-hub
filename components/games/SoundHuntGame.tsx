@@ -8,6 +8,8 @@ import { generateSoundHuntQuestions } from '@/lib/data/englishLevels'
 import { GameHud } from '@/components/games/GameHud'
 import { GameResultScreen } from '@/components/games/GameResultScreen'
 import { KidButton } from '@/components/ui/KidButton'
+import { FlashcardImage } from '@/components/ui/FlashcardImage'
+import { EMOJI_IMAGE } from '@/lib/data/gameImages'
 import { ENGLISH_WORD_SECONDS_PER_QUESTION, INPUT_THROTTLE_MS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import type { SoundHuntQuestion, DifficultyLevel } from '@/types'
@@ -157,7 +159,7 @@ export const SoundHuntGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: So
           </p>
         </div>
 
-        {/* Answer buttons (emoji choices) */}
+        {/* Answer buttons (flashcard image choices) */}
         <div className="flex flex-wrap justify-center gap-6 max-w-md">
           {currentQuestion.choices.map((choice) => {
             const isSelected = selectedAnswer === choice
@@ -169,13 +171,18 @@ export const SoundHuntGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: So
                 onClick={() => handleAnswer(choice)}
                 isDisabled={isProcessing.current}
                 className={cn(
-                  'min-h-[4rem] min-w-[4rem] text-5xl rounded-pill transition-colors duration-200',
+                  'min-h-20 min-w-20 rounded-pill transition-colors duration-200',
                   isSelected && isCorrectOption && 'border-emerald-700 bg-emerald-500',
                   isSelected && !isCorrectOption && 'border-red-700 bg-red-500'
                 )}
                 data-testid={`choice-${choice}`}
               >
-                {choice}
+                <FlashcardImage
+                  src={EMOJI_IMAGE[choice]}
+                  alt={choice}
+                  fallback={choice}
+                  className="h-12 w-12 object-contain"
+                />
               </KidButton>
             )
           })}
