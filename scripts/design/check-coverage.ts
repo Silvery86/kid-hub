@@ -5,7 +5,7 @@
  *   Every app page.tsx has a corresponding design file entry (unless explicitly skipped).
  *
  * Check 2: Design File Inventory
- *   Every .jsx in design/components/ is documented in DESIGN_TO_CODE.html
+ *   Every .jsx in design/components/ is documented in design-to-code-sync.md
  *   (Design File Inventory table),
  *   and every documented file still exists on disk.
  *
@@ -62,7 +62,7 @@ function runCoverageChecks(): boolean {
     allPassed = false
     err(`${routesMissingDesign.length} route(s) have no design entry:`)
     for (const route of routesMissingDesign) {
-      hint(`${route}  — add a row to DESIGN_TO_CODE.html route table or mark as code-only`)
+      hint(`${route}  — add a row to design-to-code-sync.md route table or mark as code-only`)
     }
   }
 
@@ -73,13 +73,13 @@ function runCoverageChecks(): boolean {
   const totalDesignFiles = manifest.designFiles.filter((d: any) => !d.isUtility).length
 
   if (undocumentedDesignFiles.length === 0 && missingOnDisk.length === 0) {
-    ok(`${totalDesignFiles} design component files · all documented in DESIGN_TO_CODE.html`)
+    ok(`${totalDesignFiles} design component files · all documented in design-to-code-sync.md`)
   } else {
     if (undocumentedDesignFiles.length > 0) {
       allPassed = false
       err(`${undocumentedDesignFiles.length} undocumented design file(s) found:`)
       for (const file of undocumentedDesignFiles) {
-        hint(`${file}  — not in DESIGN_TO_CODE.html inventory table`)
+        hint(`${file}  — not in design-to-code-sync.md inventory table`)
         hint(`Add an inventory row or mark it as utility in design-check.config.ts`)
       }
     }

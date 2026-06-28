@@ -6,11 +6,13 @@
  *   - Navigation requests (HTML pages): Network-first with cache fallback.
  *   - All other GET requests: Network-first.
  *
- * The cache version is intentionally a constant string. Bump it manually when
- * deploying a breaking change that requires all caches to be cleared.
+ * CACHE_VERSION is derived from the ?v= query param injected by ServiceWorkerRegistrar at
+ * registration time. The param equals NEXT_PUBLIC_BUILD_ID (git SHA slice / timestamp),
+ * so the version changes automatically on every Vercel deploy without manual bumps.
  */
 
-const CACHE_VERSION = 'kid-hub-v1';
+const _buildId = new URLSearchParams(self.location.search).get('v') ?? '1';
+const CACHE_VERSION = `kid-hub-v${_buildId}`;
 
 /** Assets to pre-cache on install (app shell). */
 const PRECACHE_URLS = ['/', '/dashboard', '/schedule', '/grades', '/manifest.json'];

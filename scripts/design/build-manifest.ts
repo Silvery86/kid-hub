@@ -1,8 +1,8 @@
 /**
  * build-manifest.ts
  *
- * Parses docs/features/design/DESIGN_TO_CODE.html tables
- * (Design File Inventory + Route & Design Status),
+ * Parses docs/design-system/design-to-code-sync.md tables
+ * (Design File Inventory + Route Coverage Map),
  * scans the filesystem for actual page.tsx routes and design/*.jsx files,
  * and outputs design/manifest.json — the single machine-readable source of
  * truth consumed by all other check scripts.
@@ -15,7 +15,7 @@ import path from 'path'
 import { config } from './design-check.config'
 
 const ROOT = path.resolve(process.cwd())
-const DESIGN_TO_CODE_HTML = path.join(ROOT, 'docs/features/design/DESIGN_TO_CODE.html')
+const DESIGN_TO_CODE_MD = path.join(ROOT, 'docs/design-system/design-to-code-sync.md')
 const DESIGN_COMPONENTS_DIR = path.join(ROOT, 'design/components')
 const APP_DIR = path.join(ROOT, 'app')
 const MANIFEST_PATH = path.join(ROOT, 'design/manifest.json')
@@ -52,63 +52,50 @@ interface Manifest {
   }
 }
 
-// ─── HTML table parser helpers ────────────────────────────────────────────────
+// ─── Markdown table parser helpers ────────────────────────────────────────────
 
-function decodeHtml(text: string): string {
-  return text
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, ' ')
-}
+/**
+ * Returns the data rows of the first GitHub-flavoured markdown table appearing
+ * under the given section heading. The header and separator rows are dropped;
+ * each data row is an array of trimmed cell strings.
+ */
+function extractMarkdownTableBySection(md: string, headingText: string): string[][] {
+  const lines = md.split('\n')
+  const escaped = headingText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const headingRe = new RegExp(`^#{1,6}\\s+${escaped}\\s*$`)
 
-function stripTags(text: string): string {
-  return decodeHtml(text.replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim()
-}
+  let i = lines.findIndex((l) => headingRe.test(l.trim()))
+  if (i === -1) return []
 
-function extractCardTableByHeading(html: string, headingText: string): string {
-  const cards = html.matchAll(/<section class="card">([\s\S]*?)<\/section>/g)
-  for (const cardMatch of cards) {
-    const cardHtml = cardMatch[1] ?? ''
-    if (!cardHtml) continue
-    const heading = cardHtml.match(/<h2>([\s\S]*?)<\/h2>/)
-    if (!heading) continue
-    const headingValue = stripTags(heading[1] ?? '')
-    if (headingValue !== headingText) continue
-    const tableMatch = cardHtml.match(/<table>([\s\S]*?)<\/table>/)
-    if (tableMatch?.[1]) return tableMatch[1]
+  // Advance to the first table row, bailing if a new heading arrives first.
+  for (i++; i < lines.length; i++) {
+    const trimmed = lines[i]!.trim()
+    if (trimmed.startsWith('|')) break
+    if (/^#{1,6}\s/.test(trimmed)) return []
   }
-  return ''
-}
 
-function parseHtmlTableRows(tableHtml: string): string[][] {
   const rows: string[][] = []
-  for (const rowMatch of tableHtml.matchAll(/<tr>([\s\S]*?)<\/tr>/g)) {
-    const rowHtml = rowMatch[1] ?? ''
-    if (!rowHtml) continue
-    const cells: string[] = []
-    for (const cellMatch of rowHtml.matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/g)) {
-      cells.push(stripTags(cellMatch[1] ?? ''))
-    }
-    if (cells.length > 0) rows.push(cells)
+  for (; i < lines.length; i++) {
+    const trimmed = lines[i]!.trim()
+    if (!trimmed.startsWith('|')) break
+    if (/^\|[\s:|-]+\|?$/.test(trimmed)) continue // separator row
+    const cells = trimmed.replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim())
+    rows.push(cells)
   }
-  return rows
+
+  return rows.slice(1) // drop the header row
 }
 
 // ─── Inventory parser ─────────────────────────────────────────────────────────
 
 /**
- * Parses "Design File Inventory" table from DESIGN_TO_CODE.html.
+ * Parses the "Design File Inventory" table from design-to-code-sync.md.
  * Returns a map of basename → { covers, viewports }
  */
-function parseDesignInventory(html: string): Map<string, { covers: string[]; viewports: string[] }> {
+function parseDesignInventory(md: string): Map<string, { covers: string[]; viewports: string[] }> {
   const result = new Map<string, { covers: string[]; viewports: string[] }>()
-  const tableHtml = extractCardTableByHeading(html, 'Design File Inventory')
-  if (!tableHtml) return result
+  const rows = extractMarkdownTableBySection(md, 'Design File Inventory')
 
-  const rows = parseHtmlTableRows(tableHtml)
   for (const cells of rows) {
     if (cells.length < 3) continue
     const fileCell = cells[0] ?? ''
@@ -149,28 +136,27 @@ function parseViewportVariants(text: string): string[] {
 // ─── Route table parser ───────────────────────────────────────────────────────
 
 /**
- * Parses "Route & Design Status" table from DESIGN_TO_CODE.html.
+ * Parses the "Route Coverage Map" table from design-to-code-sync.md.
+ * Columns: Route · Covered By · Status. (pagePath is resolved from the
+ * filesystem scan, not this table.)
  * Returns a map of route → { pagePath, designFile, status }
  */
-function parseRouteTable(html: string): Map<string, { pagePath: string; designFile: string; status: string }> {
+function parseRouteTable(md: string): Map<string, { pagePath: string; designFile: string; status: string }> {
   const result = new Map<string, { pagePath: string; designFile: string; status: string }>()
-  const tableHtml = extractCardTableByHeading(html, 'Route & Design Status')
-  if (!tableHtml) return result
+  const rows = extractMarkdownTableBySection(md, 'Route Coverage Map')
 
-  const rows = parseHtmlTableRows(tableHtml)
   for (const cells of rows) {
-    if (cells.length < 4) continue
-    const route = (cells[0] ?? '').trim()
-    const pagePath = (cells[1] ?? '').trim()
-    const designSrc = cells[2] ?? ''
-    const status = cells[3] ?? ''
+    if (cells.length < 3) continue
+    const route = (cells[0] ?? '').replace(/`/g, '').trim()
+    const designSrc = cells[1] ?? ''
+    const status = cells[2] ?? ''
 
     if (!route.startsWith('/')) continue
 
     const designFileMatch = designSrc.match(/([a-z0-9-]+\.jsx)/i)
     const designFile = designFileMatch?.[1] ?? ''
 
-    result.set(route, { pagePath, designFile, status: normaliseStatus(status) })
+    result.set(route, { pagePath: '', designFile, status: normaliseStatus(status) })
   }
 
   return result
@@ -285,10 +271,10 @@ function extractExportedViewports(filePath: string): string[] {
  * Builds and writes design/manifest.json from all parsed data.
  */
 function buildManifest(): Manifest {
-  const html = fs.readFileSync(DESIGN_TO_CODE_HTML, 'utf-8')
+  const md = fs.readFileSync(DESIGN_TO_CODE_MD, 'utf-8')
 
-  const inventoryMap = parseDesignInventory(html)
-  const routeTableMap = parseRouteTable(html)
+  const inventoryMap = parseDesignInventory(md)
+  const routeTableMap = parseRouteTable(md)
   const fsRoutes = scanAppRoutes()
   const fsDesignFiles = scanDesignFiles()
 

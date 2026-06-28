@@ -22,16 +22,16 @@ This document details what must be added, fixed, or optimized within each **exis
 | 9 | `app/(dashboard)/dashboard/loading.tsx` | FE | P1 | ✅ Done |
 | 10 | `app/(dashboard)/grades/loading.tsx` | FE | P1 | ✅ Done |
 | 11 | `app/(dashboard)/homework/loading.tsx` | FE | P1 | ✅ Done |
-| 12 | PWA icon PNG files (192, 512, apple-touch-icon) | Designer | P0 | ⏳ Needs design assets |
-| 13 | Layering violations — 10 action files calling repositories directly | BE/TechLead | P1 | ⏳ Pending bulk refactor |
-| 14 | `UserProgress` source-of-truth migration to DB | BE | P1 | ⏳ Pending |
-| 15 | Badge trigger wiring (`game-win`, `streak-3/7`, `all-green`, `first-login`) | BE | P1 | ⏳ Pending |
-| 16 | Refresh token rotation on middleware refresh | SA/BE | P1 | ⏳ Pending |
-| 17 | Lockout timer UI on `/kid-unlock` | FE | P1 | ⏳ Pending |
-| 18 | Grade badge awards on `upsertGradeAction` | BE | P2 | ⏳ Pending |
-| 19 | Zod schemas extracted to `server/lib/schemas.ts` | TechLead | P2 | ⏳ Pending |
-| 20 | `getRecentActivityAction` default limit + date grouping | BE | P2 | ⏳ Pending |
-| 21 | `KidAccessSettings` typed interface + Zod | BE | P2 | ⏳ Pending |
+| 12 | PWA icon PNG files (192, 512, apple-touch-icon) | Designer | P0 | ✅ Done — generated via `scripts/gen-icons.js` |
+| 13 | Layering violations — action files calling repositories directly | BE/TechLead | P1 | ✅ Done — 7 action files fixed; 3 new services (progress, screen-time, user); 2 extended (grades, homework); auth.actions retains userRepo (auth domain exception) |
+| 14 | `UserProgress` source-of-truth migration to DB | BE | P1 | ✅ Done — `getProgressAction` syncs on mount; `addPoints`/`updateStreak` optimistically update localStorage then reconcile with DB-authoritative totals via `syncPointsAction`/`syncStreakAction` |
+| 15 | Badge trigger wiring (`game-win`, `streak-3/7`, `all-green`, `first-login`) | BE | P1 | ✅ Done — `first-login` wired in `verifyKidPatternAction`; `all-green`, `math-ace`, `reading-star`, `perfect-10` added to `rewards.service.ts`; `game-win`/`streak-3/7` were already wired |
+| 16 | Refresh token rotation on middleware refresh | SA/BE | P1 | ✅ Done — middleware now rotates both access and refresh JWTs on every token refresh; DB hash update deferred to next full login (Edge runtime constraint) |
+| 17 | Lockout timer UI on `/kid-unlock` | FE | P1 | ✅ Already implemented — `KidUnlockScreen.tsx` renders countdown correctly |
+| 18 | Grade badge awards on `upsertGradeAction` | BE | P2 | ✅ Done — `checkAndAwardGradeBadges` called after every `upsertGradeAction` |
+| 19 | Zod schemas extracted to `server/lib/schemas.ts` | TechLead | P2 | ✅ Done — 17 schemas centralised; `z` import removed from 7 action files; `schedule.actions.ts` also migrated to `requireParentSession` from auth-guard |
+| 20 | `getRecentActivityAction` default limit + date grouping | BE | P2 | ✅ Done — `getGroupedActivityAction` added to `kid-access.actions.ts`; groups by date, newest first |
+| 21 | `KidAccessSettings` typed interface + Zod | BE | P2 | ✅ Already done — `SettingsSchema = z.record(z.string(), z.boolean())` validates; `requireParentSession` now from `auth-guard.ts` |
 
 ---
 
@@ -402,12 +402,12 @@ If `CACHE_VERSION` is not bumped on deploy, users may receive stale cached HTML 
 
 | Item | Priority | Status |
 |---|---|---|
-| Create `public/icons/icon-192.png` (192 × 192) | P0 | ⏳ Needs designer |
-| Create `public/icons/icon-512.png` (512 × 512, maskable) | P0 | ⏳ Needs designer |
-| Create `public/icons/apple-touch-icon.png` (180 × 180) | P1 | ⏳ Needs designer |
+| Create `public/icons/icon-192.png` (192 × 192) | P0 | ✅ Done — `scripts/gen-icons.js` |
+| Create `public/icons/icon-512.png` (512 × 512, maskable) | P0 | ✅ Done |
+| Create `public/icons/apple-touch-icon.png` (180 × 180) | P1 | ✅ Done |
 | Fix `manifest.json` `orientation` → `"any"` | P1 | ✅ Done |
 | Add `metadata.icons.apple` in `app/layout.tsx` | P1 | ✅ Done |
 | Add `id`, `scope`, `lang`, `dir`, `categories` to `manifest.json` | P1 | ✅ Done |
 | ~~Remove `output: 'standalone'` from `next.config.ts`~~ — N/A, Vercel supports it | ~~P1~~ | ⚠️ Not needed |
 | Add `screenshots` to `manifest.json` | P2 | ⏳ Needs designer |
-| Tie `CACHE_VERSION` to build hash | P2 | ⏳ Pending |
+| Tie `CACHE_VERSION` to build hash | P2 | ✅ Done — `?v=NEXT_PUBLIC_BUILD_ID` param on SW registration; SW reads via `URLSearchParams(self.location.search)` |

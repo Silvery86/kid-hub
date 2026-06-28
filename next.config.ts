@@ -14,9 +14,7 @@ const CSP = [
 ].join('; ')
 
 const nextConfig: NextConfig = {
-  // 'standalone' bundles a self-contained Node.js server (needed for Docker).
-  // Vercel builds its own optimised bundle, so standalone must be absent there.
-  output: process.env.VERCEL ? undefined : 'standalone',
+  output: 'standalone',
   async headers() {
     return [
       {

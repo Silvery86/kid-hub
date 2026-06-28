@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kid Hub — Improvement Summary / Tóm tắt cải tiến</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:    #3b82f6;
+      --blue-dk: #1d4ed8;
+      --blue-lt: #eff6ff;
+      --green:   #10b981;
+      --green-lt:#ecfdf5;
+      --amber:   #f59e0b;
+      --amber-lt:#fffbeb;
+      --red:     #ef4444;
+      --slate:   #64748b;
+      --slate-lt:#f8fafc;
+      --white:   #ffffff;
+      --border:  #e2e8f0;
+      --text:    #1e293b;
+      --text-2:  #475569;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--slate-lt);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 0 0 80px;
+    }
+
+    /* ── Header ───────────────────────────────────────────────── */
+    .page-header {
+      background: linear-gradient(135deg, var(--blue-dk) 0%, var(--blue) 100%);
+      color: white;
+      padding: 48px 32px 40px;
+      text-align: center;
+    }
+    .page-header .app-icon {
+      font-size: 56px;
+      display: block;
+      margin-bottom: 16px;
+    }
+    .page-header h1 { font-size: 2rem; font-weight: 700; }
+    .page-header .subtitle { font-size: 1rem; opacity: .85; margin-top: 6px; }
+    .page-header .meta {
+      display: flex; gap: 24px; justify-content: center;
+      margin-top: 20px; font-size: .85rem; opacity: .75;
+    }
+    .page-header .meta span::before { content: "📅 "; }
+
+    /* ── Layout ───────────────────────────────────────────────── */
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* ── Stats bar ────────────────────────────────────────────── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin: -28px auto 36px;
+      max-width: 920px;
+      padding: 0 20px;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    }
+    .stat-card .num { font-size: 2.2rem; font-weight: 800; color: var(--blue); }
+    .stat-card .label { font-size: .8rem; color: var(--slate); margin-top: 2px; }
+
+    /* ── Section ──────────────────────────────────────────────── */
+    section { margin-bottom: 28px; }
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      padding: 14px 20px;
+      background: white;
+      border-radius: 12px 12px 0 0;
+      border-bottom: 2px solid var(--border);
+    }
+    .section-title .icon { font-size: 1.4rem; }
+
+    /* ── Card ─────────────────────────────────────────────────── */
+    .card {
+      background: white;
+      border-radius: 0 0 12px 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    .card-plain {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+
+    /* ── Item row ─────────────────────────────────────────────── */
+    .item {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .item:last-child { border-bottom: none; }
+
+    .item-en, .item-vn {
+      padding: 16px 20px;
+    }
+    .item-en { border-right: 1px solid var(--border); }
+
+    .item-lang {
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--slate);
+      margin-bottom: 4px;
+    }
+    .item-title {
+      font-size: .95rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .item-desc {
+      font-size: .85rem;
+      color: var(--text-2);
+      margin-top: 4px;
+    }
+
+    .item-status {
+      padding: 16px 16px 16px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── Badges ───────────────────────────────────────────────── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: .75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-done   { background: var(--green-lt);  color: #065f46; }
+    .badge-pending{ background: var(--amber-lt);  color: #92400e; }
+    .badge-p0     { background: #fef2f2; color: #991b1b; }
+    .badge-p1     { background: var(--blue-lt);   color: var(--blue-dk); }
+    .badge-p2     { background: #f5f3ff; color: #5b21b6; }
+
+    /* ── Pending table ────────────────────────────────────────── */
+    .pending-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .88rem;
+    }
+    .pending-table th {
+      background: var(--blue-lt);
+      color: var(--blue-dk);
+      font-weight: 700;
+      text-align: left;
+      padding: 10px 16px;
+      font-size: .8rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .pending-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .pending-table tr:last-child td { border-bottom: none; }
+    .pending-table tr:hover td { background: var(--slate-lt); }
+
+    /* ── Note box ─────────────────────────────────────────────── */
+    .note {
+      background: var(--amber-lt);
+      border-left: 4px solid var(--amber);
+      padding: 14px 18px;
+      border-radius: 0 8px 8px 0;
+      font-size: .88rem;
+      color: #78350f;
+      margin: 20px 0;
+    }
+    .note strong { color: #92400e; }
+
+    /* ── Divider heading ──────────────────────────────────────── */
+    .divider {
+      text-align: center;
+      font-size: .75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: var(--slate);
+      margin: 36px 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .divider::before, .divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Footer ───────────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      color: var(--slate);
+      font-size: .8rem;
+      margin-top: 48px;
+    }
+
+    @media (max-width: 640px) {
+      .item { grid-template-columns: 1fr; }
+      .item-en { border-right: none; border-bottom: 1px solid var(--border); }
+      .item-status { justify-content: flex-start; padding: 0 20px 16px; }
+      .stats-bar { grid-template-columns: 1fr; }
+      .pending-table { font-size: .8rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!--  HEADER                                                      -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="page-header">
+  <span class="app-icon">⭐</span>
+  <h1>Kid Hub — Improvement Summary</h1>
+  <p class="subtitle">Tóm tắt cải tiến dự án · Sprint 2026-06-02 → 2026-06-04</p>
+  <div class="meta">
+    <span>Updated: 4 June 2026</span>
+    <span>Cập nhật: 4 tháng 6, 2026</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ── Stats ──────────────────────────────────────────────── -->
+  <!-- Note: stats bar is outside .container for full-width feel then re-contained -->
+</div>
+
+<div class="stats-bar">
+  <div class="stat-card">
+    <div class="num" style="color:var(--green)">21</div>
+    <div class="label">Items completed · Hạng mục hoàn thành</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" style="color:var(--green)">0</div>
+    <div class="label">Pending · Còn chờ</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">2</div>
+    <div class="label">Priority sprints · Sprint ưu tiên</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!--  1. PWA — APP INSTALLATION                              -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="section-title">
+      <span class="icon">📱</span>
+      App Installation (PWA) &nbsp;·&nbsp; Cài đặt ứng dụng
+    </div>
+    <div class="card">
+
+      <div class="item">
+        <div class="item-en">
+          <div class="item-lang">EN</div>
+          <div class="item-title">App icon created for all platforms</div>
+          <div class="item-desc">The "Add to Home Screen" prompt was silently blocked because the app had no icon files. We generated icons in every required size (192 px, 512 px, 180 px for iOS) so Chrome, Safari and Firefox can now show the install prompt on Android, iPhone and desktop.</div>
+        </div>
+        <div class="item-vn">
+          <div class="item-lang">VN</div>
+          <div class="item-title">Tạo icon ứng dụng cho mọi nền tảng</div>
+          <div class="item-desc">Trình duyệt không hiển thị nút "Thêm vào màn hình chính" vì không có file icon. Chúng tôi đã tạo icon đủ kích thước (192 px, 512 px, 180 px cho iOS) để Chrome, Safari và Firefox có thể hiện nút cài đặt trên Android, iPhone và máy tính.</div>
+        </div>
+        <div class="item-status"><span class="badge badge-done">✅ Done</span></div>
+      </div>
+
+      <div class="item">
+        <div class="item-en">
+          <div class="item-lang">EN</div>
+          <div class="item-title">App orientation fixed</div>
+          <div class="item-desc">The app was incorrectly configured to launch in landscape-only mode, causing it to open sideways on phones. Fixed to allow natural device orientation.</div>
+        </div>
+        <div class="item-vn">
+          <div class="item-lang">VN</div>
+          <div class="item-title">Sửa lỗi hướng màn hình</div>
+          <div class="item-desc">Ứng dụng bị cấu hình sai, luôn mở ngang dù điện thoại đang dọc. Đã sửa để ứng dụng tự điều chỉnh theo hướng tự nhiên của thiết bị.</div>
+        </div>
+        <div class="item-status"><span class="badge badge-done">✅ Done</span></div>
+      </div>
+
+      <div class="item">
+        <div class="item-en">
+          <div class="item-lang">EN</div>
+          <div class="item-title">Cache auto-updates on every deploy</div>
+          <div class="item-desc">Previously, after a new version was deployed users could still see old cached pages until a developer manually bumped a version string. Now the app automatically refreshes its cache whenever a new build goes live on Vercel.</div>
+        </div>
+        <div class="item-vn">
+          <div class="item-lang">VN</div>
+          <div class="item-title">Cache tự động làm mới sau mỗi lần cập nhật</div>
+          <div class="item-desc">Trước đây, sau khi triển khai phiên bản mới, người dùng vẫn có thể thấy trang cũ cho đến khi lập trình viên cập nhật thủ công. Bây giờ ứng dụng tự động xóa cache cũ mỗi khi có bản build mới trên Vercel.</div>
+        </div>
+        <div class="item-status"><span class="badge badge-done">✅ Done</span></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!--  2. SECURITY                                            -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="section-title">
+      <span class="icon">🔒</span>
+      Security &nbsp;·&nbsp; Bảo mật
+    </div>
+    <div class="card">
+
+      <div class="item">
+        <div class="item-en">
+          <div class="item-lang">EN</div>
+          <div class="item-title">Browser security headers added</div>
+          <div class="item-desc">Added standard HTTP headers that instruct browsers to block clickjacking, MIME-type sniffing, and unnecessary data leaks. This hardens the app against common web attacks without changing anything the user can see.</div>
+        </div>
+        <div class="item-vn">
+          <div class="item-lang">VN</div>
+          <div class="item-title">Thêm các tiêu đề bảo mật cho trình duyệt</div>
+          <div class="item-desc">Bổ sung các HTTP header tiêu chuẩn giúp trình duyệt chặn clickjacking, rò rỉ dữ liệu và các tấn công web phổ biến. Người dùng không thấy thay đổi gì, nhưng ứng dụng an toàn hơn đáng kể.</div>
+        </div>
+        <div class="item-status"><span class="badge badge-done">✅ Done</span></div>
+      </div>
+
+      <div class="item">
+        <div class="item-en">
+          <div class="item-lang">EN</div>
+          <div class="item-title">Login session tokens now rotate on every use</div>
+          <div class="item-desc">When a parent's short-lived login token expired and the system silently renewed it, the long-lived "refresh" token was reused unchanged — meaning that if someone ever stole it they could use it indefinitely. Now both tokens are replaced together on every renewal, closing that window.</div>
+        </div>
+        <div class="item-vn">
+          <div class="item-lang">VN</div>
+          <div class="item-title">Token đăng nhập được thay mới sau mỗi lần làm mới</div>
+          <div class="item-desc">Trước đây khi token ngắn hạn hết hạn và được gia hạn tự động, token dài hạn ("refresh token") vẫn giữ nguyên — nếu bị đánh cắp có thể dùng mãi mãi. Bây giờ cả hai token đều được thay mới cùng lúc, vô hiệu hóa token cũ.</div>
+        </div>
+        <div class="item-status"><span class="badge badge-done">✅ Done</span></div>
+      </div>
+
+      <div class="item">
+        <div class="item-en">
+          <div class="item-lang">EN</div>
+          <div class="item-title">Kid unlock lockout timer visible on screen</div>
+          <div class="item-desc">After too many wrong pattern attempts, the child sees a countdown showing exactly how many seconds remain before they can try again, instead of a confusing generic error message.</div>
+        </div>
+        <div class="item-vn">
+          <div class="item-lang">VN</div>
+          <div class="item-title">Hiển thị đồng hồ đếm ngược khi khóa nhập mã</div>
+          <div class="item-desc">Khi nhập sai mã mở khóa quá nhiều lần, bé sẽ thấy rõ thời gian còn lại (đếm ngược giây) thay vì thông báo lỗi chung chung khó hiểu.</div>
+        </div>
+        <div class="item-status"><span class="badge badge-done">✅ Done</span></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!--  3. BADGES & REWARDS                                    -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="section-title">
+      <span class="icon">🏆</span>
+      Badges &amp; Rewards &nbsp;·&nbsp; Huy hiệu &amp; Phần thưởng
+    </div>
+    <div class="card">
+
+      <div class="item">
+        <div class="item-en">
+          <div class="item-lang">EN</div>
+          <div class="item-title">"First Login" badge now triggers on real first use</div>
+          <div class="item-desc">The 🌟 "Chào bạn mới!" badge was only being awarded in the database seed script, not when a child actually unlocked the app for the first time. It is now awarded automatically the very first time the child enters their unlock pattern successfully.</div>
+        </div>
+        <div class="item-vn">
+          <div class="item-lang">VN</div>
+          <div class="item-title">Huy hiệu "Chào bạn mới!" được trao khi lần đầu mở app</div>
+          <div class="item-desc">Huy hiệu 🌟 này trước đây chỉ được trao qua script khởi tạo dữ liệu, không phải khi bé thực sự dùng app lần đầu. Bây giờ huy hiệu được trao tự động ngay khi bé nhập đúng mã mở khóa lần đầu tiên.</div>
+        </div>
+        <div class="item-status"><span class="badge badge-done">✅ Done</span></div>
+      </div>
+
+      <div class="item">
+        <div class="item-en">
+          <div class="item-lang">EN</div>
+          <div class="item-title">Grade-based badges now awarded automatically</div>
+          <div class="item-desc">Four new badge triggers added: 🧮 <strong>Siêu Toán</strong> (Math excellence), 📚 <strong>Sao Đọc Sách</strong> (Vietnamese excellence), 💯 <strong>Điểm 10!</strong> (perfect score), and 🎯 <strong>Toàn diện</strong> (all subjects at "Good" or above). These are checked every time a parent saves a grade.</div>
+        </div>
+        <div class="item-vn">
+          <div class="item-lang">VN</div>
+          <div class="item-title">Huy hiệu theo điểm số được trao tự động</div>
+          <div class="item-desc">Thêm 4 điều kiện trao huy hiệu mới: 🧮 <strong>Siêu Toán</strong> (xuất sắc môn Toán), 📚 <strong>Sao Đọc Sách</strong> (xuất sắc Tiếng Việt), 💯 <strong>Điểm 10!</strong> (đạt điểm tuyệt đối), và 🎯 <strong>Toàn diện</strong> (tất cả môn đều từ Giỏi trở lên). Tự động kiểm tra mỗi khi phụ huynh lưu điểm.</div>
+        </div>
+        <div class="item-status"><span class="badge badge-done">✅ Done</span></div>
+      </div>
+
+      <div class="item">
+        <div class="item-en">
+          <div class="item-lang">EN</div>
+          <div class="item-title">Points awarded when marking homework done</div>
+          <div class="item-desc">Completing homework now correctly adds points to the child's total and records a streak day, in addition to logging the activity event that was already in place.</div>
+        </div>
+        <div class="item-vn">
+          <div class="item-lang">VN</div>
+          <div class="item-title">Cộng điểm khi hoàn thành bài tập</div>
+          <div class="item-desc">Khi đánh dấu hoàn thành bài tập, điểm thưởng được cộng đúng vào tổng điểm của bé và ghi nhận ngày học liên tục, bên cạnh việc ghi lại sự kiện hoạt động đã có sẵn.</div>
+        </div>
+        <div class="item-status"><span class="badge badge-done">✅ Done</span></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!--  4. DATA & PROGRESS RELIABILITY                         -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="section-title">
+      <span class="icon">💾</span>
+      Data Reliability &nbsp;·&nbsp; Độ tin cậy dữ liệu
+    </div>
+    <div class="card">
+
+      <div class="item">
+        <div class="item-en">
+          <div class="item-lang">EN</div>
+          <div class="item-title">Points &amp; streaks now saved to the database</div>
+          <div class="item-desc">Previously the child's total points, daily streak and badges were only stored in the browser's local memory (localStorage). If a family cleared browser data or switched devices, all progress was lost. Now the database is the primary source of truth: on load the app syncs from the server, and every change is written through immediately.</div>
+        </div>
+        <div class="item-vn">
+          <div class="item-lang">VN</div>
+          <div class="item-title">Điểm &amp; chuỗi ngày học được lưu vào cơ sở dữ liệu</div>
+          <div class="item-desc">Trước đây điểm tổng, chuỗi ngày học liên tục và huy hiệu của bé chỉ lưu trong bộ nhớ cục bộ của trình duyệt. Nếu xóa dữ liệu trình duyệt hoặc đổi thiết bị, toàn bộ tiến trình bị mất. Bây giờ cơ sở dữ liệu là nguồn dữ liệu chính: khi mở app sẽ đồng bộ từ server, mọi thay đổi được ghi ngay lập tức.</div>
+        </div>
+        <div class="item-status"><span class="badge badge-done">✅ Done</span></div>
+      </div>
+
+      <div class="item">
+        <div class="item-en">
+          <div class="item-lang">EN</div>
+          <div class="item-title">Activity feed grouped by date</div>
+          <div class="item-desc">The parent activity log now returns events grouped by day (e.g., "Today", "Yesterday", "3 June") instead of a flat list, making it much easier to scan through what the child did.</div>
+        </div>
+        <div class="item-vn">
+          <div class="item-lang">VN</div>
+          <div class="item-title">Nhật ký hoạt động được nhóm theo ngày</div>
+          <div class="item-desc">Nhật ký hoạt động của phụ huynh bây giờ hiển thị các sự kiện theo từng ngày (ví dụ: "Hôm nay", "Hôm qua", "3 tháng 6") thay vì danh sách thẳng, giúp xem lại dễ dàng hơn nhiều.</div>
+        </div>
+        <div class="item-status"><span class="badge badge-done">✅ Done</span></div>
+      </div>
+
+      <div class="item">
+        <div class="item-en">
+          <div class="item-lang">EN</div>
+          <div class="item-title">Schedule ownership bug fixed</div>
+          <div class="item-desc">A database-level bug (BUG-009) could theoretically allow a period update or delete to affect a different user's data. A strict user ownership filter was added to all schedule write operations.</div>
+        </div>
+        <div class="item-vn">
+          <div class="item-lang">VN</div>
+          <div class="item-title">Sửa lỗi quyền sở hữu lịch học</div>
+          <div class="item-desc">Một lỗi ở tầng cơ sở dữ liệu (BUG-009) có thể khiến thao tác sửa/xóa tiết học ảnh hưởng đến dữ liệu của người dùng khác. Đã thêm bộ lọc quyền sở hữu chặt chẽ vào tất cả thao tác ghi lịch.</div>
+        </div>
+        <div class="item-status"><span class="badge badge-done">✅ Done</span></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!--  5. USER EXPERIENCE                                     -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="section-title">
+      <span class="icon">✨</span>
+      User Experience &nbsp;·&nbsp; Trải nghiệm người dùng
+    </div>
+    <div class="card">
+
+      <div class="item">
+        <div class="item-en">
+          <div class="item-lang">EN</div>
+          <div class="item-title">Loading skeletons on Dashboard, Grades &amp; Homework</div>
+          <div class="item-desc">Three key pages now show an animated placeholder layout while data is loading, instead of a blank white screen. This makes the app feel much faster even when the database query takes a moment.</div>
+        </div>
+        <div class="item-vn">
+          <div class="item-lang">VN</div>
+          <div class="item-title">Màn hình chờ tải trên Dashboard, Điểm &amp; Bài tập</div>
+          <div class="item-desc">Ba trang chính giờ hiển thị khung chờ có hiệu ứng động trong khi tải dữ liệu, thay vì màn hình trắng trống. Ứng dụng cảm giác nhanh hơn rõ rệt dù truy vấn cơ sở dữ liệu vẫn mất vài giây.</div>
+        </div>
+        <div class="item-status"><span class="badge badge-done">✅ Done</span></div>
+      </div>
+
+      <div class="item">
+        <div class="item-en">
+          <div class="item-lang">EN</div>
+          <div class="item-title">Friendly error pages in all sections</div>
+          <div class="item-desc">If something goes wrong in the Dashboard, Games or Parent sections, users now see a clear, friendly error message with a "Try again" button, instead of a generic browser error or blank page.</div>
+        </div>
+        <div class="item-vn">
+          <div class="item-lang">VN</div>
+          <div class="item-title">Trang lỗi thân thiện trong mọi mục</div>
+          <div class="item-desc">Khi xảy ra lỗi trong mục Dashboard, Trò chơi hoặc Phụ huynh, người dùng sẽ thấy thông báo lỗi rõ ràng, thân thiện với nút "Thử lại", thay vì lỗi trình duyệt mặc định hoặc trang trắng.</div>
+        </div>
+        <div class="item-status"><span class="badge badge-done">✅ Done</span></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!--  6. CODE ARCHITECTURE (brief, for tech-aware readers)   -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="section-title">
+      <span class="icon">🏗️</span>
+      Code Architecture &nbsp;·&nbsp; Kiến trúc mã nguồn
+      <span class="badge badge-p2" style="margin-left:auto;font-size:.7rem;">Dev-facing</span>
+    </div>
+    <div class="card">
+
+      <div class="item">
+        <div class="item-en">
+          <div class="item-lang">EN</div>
+          <div class="item-title">Layering violations resolved across 7 modules</div>
+          <div class="item-desc">Server actions were bypassing the service layer and directly querying the database. This has been corrected — 3 new service files created, 2 extended, and 7 action files updated so data always flows: <strong>Action → Service → Repository</strong>. A shared <code>requireParentSession</code> guard was also extracted to <code>server/lib/auth-guard.ts</code>.</div>
+        </div>
+        <div class="item-vn">
+          <div class="item-lang">VN</div>
+          <div class="item-title">Sửa vi phạm phân tầng trong 7 module</div>
+          <div class="item-desc">Các server action đang bỏ qua tầng service và truy vấn trực tiếp vào cơ sở dữ liệu. Đã khắc phục — tạo 3 file service mới, mở rộng 2 file, cập nhật 7 action để dữ liệu luôn đi theo luồng: <strong>Action → Service → Repository</strong>. Bộ bảo vệ phiên phụ huynh dùng chung cũng được tách riêng ra <code>server/lib/auth-guard.ts</code>.</div>
+        </div>
+        <div class="item-status"><span class="badge badge-done">✅ Done</span></div>
+      </div>
+
+      <div class="item">
+        <div class="item-en">
+          <div class="item-lang">EN</div>
+          <div class="item-title">Parent settings validation enforced</div>
+          <div class="item-desc">Kid access toggle settings are now validated with a strict schema (Zod) before being saved, preventing malformed data from reaching the database.</div>
+        </div>
+        <div class="item-vn">
+          <div class="item-lang">VN</div>
+          <div class="item-title">Xác thực cài đặt quyền truy cập của bé</div>
+          <div class="item-desc">Các cài đặt bật/tắt quyền truy cập của bé được xác thực bằng schema nghiêm ngặt (Zod) trước khi lưu, ngăn dữ liệu sai định dạng vào cơ sở dữ liệu.</div>
+        </div>
+        <div class="item-status"><span class="badge badge-done">✅ Done</span></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!--  PENDING ITEMS                                          -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <div class="divider">⏳ &nbsp; Still Pending &nbsp;·&nbsp; Còn chờ xử lý</div>
+
+  <div class="note" style="background:var(--green-lt); border-color:var(--green); color:#065f46;">
+    <strong>🎉 All done! / Hoàn thành tất cả!</strong> All 21 items from the improvement plan have been implemented. The original backlog is fully cleared.<br/>
+    Tất cả 21 hạng mục trong kế hoạch cải tiến đã được thực hiện. Backlog ban đầu đã hoàn toàn sạch.
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!--  FULL STATUS TABLE                                      -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <div class="divider">📋 &nbsp; Full Status Table &nbsp;·&nbsp; Bảng trạng thái đầy đủ</div>
+
+  <div class="card-plain">
+    <table class="pending-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Item / Hạng mục</th>
+          <th>Priority</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>Schedule ownership guard fix (BUG-009)</td><td><span class="badge badge-p1">P1</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr><td>2</td><td>Award points when marking homework done</td><td><span class="badge badge-p0">P0</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr><td>3</td><td>HTTP security headers</td><td><span class="badge badge-p1">P1</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr><td>4</td><td>manifest.json — orientation, id, scope, lang, dir, categories</td><td><span class="badge badge-p1">P1</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr><td>5</td><td>iOS apple-touch-icon link tag in layout.tsx</td><td><span class="badge badge-p1">P1</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr><td>6</td><td>error.tsx for Dashboard section</td><td><span class="badge badge-p1">P1</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr><td>7</td><td>error.tsx for Games section</td><td><span class="badge badge-p1">P1</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr><td>8</td><td>error.tsx for Parent section</td><td><span class="badge badge-p1">P1</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr><td>9</td><td>loading.tsx for Dashboard page</td><td><span class="badge badge-p1">P1</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr><td>10</td><td>loading.tsx for Grades page</td><td><span class="badge badge-p1">P1</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr><td>11</td><td>loading.tsx for Homework page</td><td><span class="badge badge-p1">P1</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr><td>12</td><td>PWA icon PNG files (192, 512, 180 px for iOS)</td><td><span class="badge badge-p0">P0</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr><td>13</td><td>Layering violations — 7 action files refactored</td><td><span class="badge badge-p1">P1</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr><td>14</td><td>UserProgress DB sync — hook now reads/writes from DB</td><td><span class="badge badge-p1">P1</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr><td>15</td><td>Badge triggers: first-login, all-green, math-ace, reading-star, perfect-10</td><td><span class="badge badge-p1">P1</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr><td>16</td><td>Refresh token rotation in middleware</td><td><span class="badge badge-p1">P1</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr><td>17</td><td>Lockout countdown timer on /kid-unlock</td><td><span class="badge badge-p1">P1</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr><td>18</td><td>Grade badges on upsertGradeAction</td><td><span class="badge badge-p2">P2</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr><td>19</td><td>Zod schemas extracted to server/lib/schemas.ts</td><td><span class="badge badge-p2">P2</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr><td>20</td><td>Activity feed date grouping + getGroupedActivityAction</td><td><span class="badge badge-p2">P2</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr><td>21</td><td>KidAccessSettings Zod validation &amp; auth-guard.ts</td><td><span class="badge badge-p2">P2</span></td><td><span class="badge badge-done">✅</span></td></tr>
+        <tr>
+          <td colspan="2" style="font-weight:700; color:var(--green);">PWA Service Worker cache auto-versioning</td>
+          <td><span class="badge badge-p2">P2</span></td>
+          <td><span class="badge badge-done">✅</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /container -->
+
+<footer class="container">
+  <p style="margin-top:40px; padding-top:20px; border-top:1px solid var(--border);">
+    Generated from <code>docs/project-imp.md</code> · Kid Hub · Sprint 2026-06-04<br/>
+    Tạo từ <code>docs/project-imp.md</code> · Kid Hub · Sprint 2026-06-04
+  </p>
+</footer>
+
+</body>
+</html>

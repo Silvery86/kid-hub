@@ -54,6 +54,19 @@ Do not run `git commit` (or `git push`) after any change — not even a one-line
 Stop after editing files, report what changed, and wait for the PM to say "commit" or
 "commit to git" before creating the commit. This rule overrides all other defaults.
 
+### 9. Conventional Commits format (enforced)
+Every commit message must follow: `<type>(<scope>): <subject>`
+
+Allowed types: `feat` · `fix` · `docs` · `style` · `refactor` · `perf` · `test` · `chore`
+
+Rules:
+- Lowercase type and subject
+- Subject in imperative mood — "add feature", not "added" or "adds"
+- No period at the end of the subject
+- Always include a scope — e.g. `feat(homework): ...`, `fix(ci): ...`, `chore(deps): ...`
+- Breaking changes: append `!` after type/scope or add `BREAKING CHANGE:` footer
+- Never add a `Co-Authored-By:` trailer or any AI signature to commit messages
+
 ---
 
 ## Architecture — Quick Reference

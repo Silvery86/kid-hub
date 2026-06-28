@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kid Hub — Development Roadmap / Lộ trình phát triển</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:      #3b82f6;
+      --blue-dk:   #1d4ed8;
+      --blue-lt:   #eff6ff;
+      --green:     #10b981;
+      --green-lt:  #ecfdf5;
+      --green-dk:  #065f46;
+      --amber:     #f59e0b;
+      --amber-lt:  #fffbeb;
+      --red:       #ef4444;
+      --red-lt:    #fef2f2;
+      --violet:    #8b5cf6;
+      --violet-lt: #f5f3ff;
+      --slate:     #64748b;
+      --slate-lt:  #f8fafc;
+      --white:     #ffffff;
+      --border:    #e2e8f0;
+      --text:      #1e293b;
+      --text-2:    #475569;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--slate-lt);
+      color: var(--text);
+      line-height: 1.65;
+      padding-bottom: 80px;
+    }
+
+    /* ── Header ───────────────────────────────────────────────── */
+    .page-header {
+      background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 60%, #3b82f6 100%);
+      color: white;
+      padding: 52px 32px 44px;
+      text-align: center;
+    }
+    .page-header .app-icon { font-size: 60px; display: block; margin-bottom: 16px; }
+    .page-header h1 { font-size: 2rem; font-weight: 800; letter-spacing: -.02em; }
+    .page-header .subtitle { font-size: 1rem; opacity: .8; margin-top: 8px; }
+    .page-header .meta {
+      display: flex; gap: 28px; justify-content: center; flex-wrap: wrap;
+      margin-top: 20px; font-size: .82rem; opacity: .65;
+    }
+
+    /* ── Stats bar ────────────────────────────────────────────── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      max-width: 960px;
+      margin: -28px auto 40px;
+      padding: 0 20px;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 18px 16px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    }
+    .stat-card .num { font-size: 2rem; font-weight: 800; }
+    .stat-card .label { font-size: .75rem; color: var(--slate); margin-top: 3px; line-height: 1.3; }
+
+    /* ── Container ────────────────────────────────────────────── */
+    .container { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+
+    /* ── Priority band ────────────────────────────────────────── */
+    .priority-band {
+      border-radius: 14px;
+      padding: 10px 18px 10px 16px;
+      font-size: .8rem;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      margin-top: 36px;
+    }
+    .band-p0 { background: var(--red-lt); color: #991b1b; border-left: 4px solid var(--red); }
+    .band-p1 { background: var(--blue-lt); color: var(--blue-dk); border-left: 4px solid var(--blue); }
+    .band-p2 { background: var(--violet-lt); color: #5b21b6; border-left: 4px solid var(--violet); }
+    .band-arch { background: #f0fdf4; color: #166534; border-left: 4px solid var(--green); }
+
+    /* ── Feature card ─────────────────────────────────────────── */
+    .feature-card {
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.07);
+      margin-bottom: 22px;
+      overflow: hidden;
+    }
+
+    .feature-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 20px 22px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .feature-id {
+      flex-shrink: 0;
+      background: var(--slate-lt);
+      color: var(--slate);
+      font-size: .7rem;
+      font-weight: 800;
+      letter-spacing: .06em;
+      padding: 4px 9px;
+      border-radius: 6px;
+      margin-top: 2px;
+    }
+    .feature-title-block { flex: 1; }
+    .feature-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.3;
+    }
+    .feature-title-vn {
+      font-size: .9rem;
+      color: var(--text-2);
+      margin-top: 2px;
+      font-style: italic;
+    }
+    .feature-status { flex-shrink: 0; }
+
+    /* ── Body grid (EN | VN) ──────────────────────────────────── */
+    .feature-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .col-en, .col-vn {
+      padding: 18px 22px;
+    }
+    .col-en { border-right: 1px solid var(--border); }
+
+    .col-label {
+      font-size: .65rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--slate);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .col-label::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+    .why-block {
+      background: var(--amber-lt);
+      border-left: 3px solid var(--amber);
+      border-radius: 0 6px 6px 0;
+      padding: 10px 12px;
+      font-size: .85rem;
+      color: #78350f;
+      margin-bottom: 12px;
+    }
+    .why-block strong { color: #92400e; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; display: block; margin-bottom: 4px; }
+
+    .what-block { font-size: .88rem; color: var(--text-2); margin-bottom: 14px; }
+    .what-block p { margin-bottom: 6px; }
+    .what-block ul { padding-left: 18px; }
+    .what-block li { margin-bottom: 5px; }
+
+    /* ── Acceptance criteria ──────────────────────────────────── */
+    .criteria-section {
+      border-top: 1px solid var(--border);
+      padding: 14px 22px;
+      background: var(--slate-lt);
+    }
+    .criteria-label {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--slate);
+      margin-bottom: 10px;
+    }
+    .criteria-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .criterion {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: .83rem;
+    }
+    .criterion .check { color: var(--green); font-size: 1rem; line-height: 1.3; flex-shrink: 0; }
+    .criterion .text { color: var(--text-2); line-height: 1.4; }
+
+    /* ── Done overlay ─────────────────────────────────────────── */
+    .feature-card.done .feature-header { background: var(--green-lt); }
+    .feature-card.done .feature-id { background: var(--green-lt); color: var(--green-dk); }
+
+    /* ── Partial overlay ──────────────────────────────────────── */
+    .feature-card.partial .feature-header { background: var(--amber-lt); }
+
+    /* ── Badge ────────────────────────────────────────────────── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: .75rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .badge-done    { background: var(--green-lt);  color: var(--green-dk); }
+    .badge-partial { background: var(--amber-lt);  color: #92400e; }
+    .badge-pending { background: #f1f5f9;          color: var(--slate); }
+    .badge-p0      { background: var(--red-lt);    color: #991b1b; }
+    .badge-p1      { background: var(--blue-lt);   color: var(--blue-dk); }
+    .badge-p2      { background: var(--violet-lt); color: #5b21b6; }
+
+    /* ── Badge table ──────────────────────────────────────────── */
+    .badge-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .83rem;
+      margin-top: 10px;
+    }
+    .badge-table th {
+      background: var(--blue-lt);
+      color: var(--blue-dk);
+      font-weight: 700;
+      padding: 8px 12px;
+      text-align: left;
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .badge-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .badge-table tr:last-child td { border-bottom: none; }
+    .badge-table tr:hover td { background: var(--slate-lt); }
+
+    /* ── Architecture table ───────────────────────────────────── */
+    .arch-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .85rem;
+    }
+    .arch-table th {
+      background: #f0fdf4;
+      color: #166534;
+      font-weight: 700;
+      padding: 10px 16px;
+      text-align: left;
+      font-size: .78rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .arch-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .arch-table tr:last-child td { border-bottom: none; }
+    .arch-table .decision-cell { font-weight: 600; color: var(--text); }
+    .arch-table .rec-cell {
+      background: #f0fdf4;
+      color: #166534;
+      font-size: .82rem;
+    }
+
+    /* ── Divider ──────────────────────────────────────────────── */
+    .divider {
+      text-align: center;
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: var(--slate);
+      margin: 40px 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .divider::before, .divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Note ─────────────────────────────────────────────────── */
+    .note {
+      border-radius: 0 8px 8px 0;
+      padding: 13px 16px;
+      font-size: .85rem;
+      margin: 16px 0;
+    }
+    .note-done { background: var(--green-lt); border-left: 4px solid var(--green); color: var(--green-dk); }
+    .note-info { background: var(--blue-lt);  border-left: 4px solid var(--blue);  color: var(--blue-dk); }
+
+    /* ── Footer ───────────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      color: var(--slate);
+      font-size: .78rem;
+      margin-top: 60px;
+    }
+
+    @media (max-width: 680px) {
+      .feature-body { grid-template-columns: 1fr; }
+      .col-en { border-right: none; border-bottom: 1px solid var(--border); }
+      .criteria-grid { grid-template-columns: 1fr; }
+      .stats-bar { grid-template-columns: repeat(2, 1fr); }
+      .badge-table, .arch-table { font-size: .76rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  HEADER                                                     -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="page-header">
+  <span class="app-icon">🚀</span>
+  <h1>Kid Hub — Development Roadmap</h1>
+  <p class="subtitle">Lộ trình phát triển tính năng mới · Updated 4 June 2026</p>
+  <div class="meta">
+    <span>📋 12 features planned · 12 tính năng</span>
+    <span>✅ 5 already shipped · 5 đã hoàn thành</span>
+    <span>🔨 7 to build · 7 cần xây dựng</span>
+  </div>
+</div>
+
+<!-- stats -->
+<div class="stats-bar">
+  <div class="stat-card">
+    <div class="num" style="color:var(--red)">2</div>
+    <div class="label">P0 · Blocking<br/>Phải có ngay</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" style="color:var(--blue)">2</div>
+    <div class="label">P1 · Required<br/>Cần cho đủ giá trị</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" style="color:var(--violet)">5</div>
+    <div class="label">P2 · Quality-of-life<br/>Nâng cao trải nghiệm</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" style="color:var(--green)">5</div>
+    <div class="label">Already done<br/>Đã hoàn thành</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="note note-done">
+    <strong>Sprint note / Ghi chú sprint:</strong>
+    Features F-003, F-004, F-005, F-006, and part of F-007 were completed ahead of schedule during the project-imp sprint (2 June – 4 June 2026). They are marked ✅ below with implementation notes.<br/>
+    Các tính năng F-003, F-004, F-005, F-006 và một phần F-007 đã được hoàn thành sớm trong sprint project-imp (2–4 tháng 6, 2026). Được đánh dấu ✅ bên dưới kèm ghi chú triển khai.
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!--  P0 — MUST SHIP FIRST                                  -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="priority-band band-p0">
+    🚨 &nbsp; P0 — Must Ship First &nbsp;·&nbsp; Phải hoàn thành đầu tiên
+    <span style="margin-left:auto;font-weight:400;font-size:.85em;text-transform:none;">
+      Blocking daily household use · Chặn việc dùng hàng ngày
+    </span>
+  </div>
+
+  <!-- F-001 -->
+  <div class="feature-card">
+    <div class="feature-header">
+      <div class="feature-id">F-001</div>
+      <div class="feature-title-block">
+        <div class="feature-title">CI/CD Pipeline — Automated quality gate</div>
+        <div class="feature-title-vn">Quy trình CI/CD — Cổng kiểm tra chất lượng tự động</div>
+      </div>
+      <div class="feature-status"><span class="badge badge-pending">⏳ Pending</span></div>
+    </div>
+    <div class="feature-body">
+      <div class="col-en">
+        <div class="col-label">EN — Why &amp; What</div>
+        <div class="why-block">
+          <strong>Why it matters</strong>
+          Right now there is no automated check before code goes live. A developer could accidentally push broken TypeScript or a failed build to the production app, breaking the experience for the entire family with no warning.
+        </div>
+        <div class="what-block">
+          <p><strong>What gets built:</strong></p>
+          <ul>
+            <li>A GitHub Actions workflow file that runs automatically on every code push and every pull request.</li>
+            <li>It checks three things: code style (ESLint), TypeScript types, and that the app actually builds successfully.</li>
+            <li>Pull requests to the <code>main</code> branch are <em>blocked</em> from merging if any check fails.</li>
+            <li>Optionally: one automated browser test to confirm the kid dashboard loads.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-vn">
+        <div class="col-label">VN — Lý do &amp; Nội dung</div>
+        <div class="why-block">
+          <strong>Tại sao quan trọng</strong>
+          Hiện tại không có kiểm tra tự động trước khi code lên môi trường production. Lập trình viên có thể vô tình đẩy code lỗi TypeScript hoặc build thất bại lên app, làm hỏng trải nghiệm của cả gia đình mà không có cảnh báo.
+        </div>
+        <div class="what-block">
+          <p><strong>Những gì cần xây dựng:</strong></p>
+          <ul>
+            <li>File workflow GitHub Actions tự động chạy mỗi khi có code mới và mỗi pull request.</li>
+            <li>Kiểm tra 3 điều: phong cách code (ESLint), kiểu TypeScript, và app build thành công.</li>
+            <li>Pull request vào nhánh <code>main</code> bị <em>chặn merge</em> nếu bất kỳ kiểm tra nào thất bại.</li>
+            <li>Tùy chọn: một bài kiểm tra trình duyệt tự động để xác nhận dashboard của bé tải được.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="criteria-section">
+      <div class="criteria-label">✔ Acceptance criteria — Tiêu chí hoàn thành</div>
+      <div class="criteria-grid">
+        <div class="criterion"><span class="check">✓</span><span class="text">Pull requests to main are blocked automatically if CI fails · PR vào main bị chặn tự động nếu CI thất bại</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">Build completes in under 5 minutes · Build hoàn thành trong dưới 5 phút</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">Zero manual steps required to trigger checks · Không cần thao tác thủ công nào để kích hoạt kiểm tra</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">Failed check shows clear error message pointing to the problem · Lỗi hiển thị thông báo rõ ràng chỉ ra vấn đề</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- F-002 -->
+  <div class="feature-card">
+    <div class="feature-header">
+      <div class="feature-id">F-002</div>
+      <div class="feature-title-block">
+        <div class="feature-title">Unified Homework Reward Loop — One action, consistent points</div>
+        <div class="feature-title-vn">Vòng phần thưởng bài tập thống nhất — Một hành động, điểm nhất quán</div>
+      </div>
+      <div class="feature-status"><span class="badge badge-pending">⏳ Pending</span></div>
+    </div>
+    <div class="feature-body">
+      <div class="col-en">
+        <div class="col-label">EN — Why &amp; What</div>
+        <div class="why-block">
+          <strong>Why it matters</strong>
+          There are currently two separate flows for marking homework done — one from the schedule (period-linked) and one from the homework list (daily). They award points inconsistently: one path gives 10 points, the other gives zero. The child's progress cannot be trusted.
+        </div>
+        <div class="what-block">
+          <p><strong>What gets built:</strong></p>
+          <ul>
+            <li>A single <code>completeHomeworkAction</code> that handles both types of homework (period-linked and daily list items).</li>
+            <li>Every completion always awards exactly 10 points, logs the activity event, and updates the daily streak — regardless of where it came from.</li>
+            <li>The action is idempotent: tapping the checkbox twice does not double-award points.</li>
+            <li>The two old overlapping actions are retired and removed.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-vn">
+        <div class="col-label">VN — Lý do &amp; Nội dung</div>
+        <div class="why-block">
+          <strong>Tại sao quan trọng</strong>
+          Hiện có hai luồng riêng biệt để đánh dấu hoàn thành bài tập — một từ lịch học (theo tiết) và một từ danh sách bài tập (hàng ngày). Chúng trao điểm không nhất quán: một đường cho 10 điểm, đường kia không cho điểm. Dữ liệu tiến trình của bé không đáng tin cậy.
+        </div>
+        <div class="what-block">
+          <p><strong>Những gì cần xây dựng:</strong></p>
+          <ul>
+            <li>Một <code>completeHomeworkAction</code> duy nhất xử lý cả hai loại bài tập (theo tiết và danh sách hàng ngày).</li>
+            <li>Mỗi lần hoàn thành luôn trao đúng 10 điểm, ghi sự kiện hoạt động và cập nhật chuỗi ngày học — bất kể nguồn gốc.</li>
+            <li>Hành động idempotent: bấm checkbox hai lần không được tính điểm đôi.</li>
+            <li>Hai hành động cũ bị loại bỏ.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="criteria-section">
+      <div class="criteria-label">✔ Acceptance criteria — Tiêu chí hoàn thành</div>
+      <div class="criteria-grid">
+        <div class="criterion"><span class="check">✓</span><span class="text">Every homework completion awards exactly 10 points · Mỗi lần hoàn thành bài tập trao đúng 10 điểm</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">Activity feed always shows homework completions · Nhật ký luôn ghi lại việc hoàn thành bài tập</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">Tapping done twice does not double-award · Bấm xong hai lần không được tính điểm đôi</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">Both homework types (schedule &amp; daily list) use the same flow · Cả hai loại bài tập dùng cùng một luồng</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!--  P0 — DONE                                             -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <!-- F-003 (DONE) -->
+  <div class="feature-card done">
+    <div class="feature-header">
+      <div class="feature-id">F-003</div>
+      <div class="feature-title-block">
+        <div class="feature-title">Progress Persistence — Database as source of truth</div>
+        <div class="feature-title-vn">Lưu trữ tiến trình — Cơ sở dữ liệu là nguồn dữ liệu chính</div>
+      </div>
+      <div class="feature-status"><span class="badge badge-done">✅ Done</span></div>
+    </div>
+    <div class="feature-body">
+      <div class="col-en">
+        <div class="col-label">EN — Why &amp; What</div>
+        <div class="why-block">
+          <strong>Why it matters</strong>
+          Points, streaks and badges were only stored in the browser's local memory. Clearing browser data or switching devices reset all the child's progress back to zero.
+        </div>
+        <div class="what-block">
+          <p><strong>What was built (project-imp sprint):</strong></p>
+          <ul>
+            <li><code>getProgressAction()</code> — reads the full progress record from the database.</li>
+            <li><code>syncPointsAction(amount)</code> — atomically adds points in the DB and returns the authoritative new total.</li>
+            <li><code>syncStreakAction()</code> — updates the daily streak in the DB and returns the real streak count.</li>
+            <li><code>useUserProgress</code> hook now syncs from DB on mount; every <code>addPoints</code> / <code>updateStreak</code> call persists to DB with an optimistic local update.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-vn">
+        <div class="col-label">VN — Lý do &amp; Nội dung</div>
+        <div class="why-block">
+          <strong>Tại sao quan trọng</strong>
+          Điểm, chuỗi ngày học và huy hiệu chỉ được lưu trong bộ nhớ cục bộ của trình duyệt. Xóa dữ liệu trình duyệt hoặc đổi thiết bị sẽ đặt lại toàn bộ tiến trình của bé về không.
+        </div>
+        <div class="what-block">
+          <p><strong>Những gì đã xây dựng (sprint project-imp):</strong></p>
+          <ul>
+            <li><code>getProgressAction()</code> — đọc bản ghi tiến trình đầy đủ từ cơ sở dữ liệu.</li>
+            <li><code>syncPointsAction(amount)</code> — cộng điểm nguyên tử trong DB và trả về tổng điểm thực tế.</li>
+            <li><code>syncStreakAction()</code> — cập nhật chuỗi ngày học hàng ngày trong DB.</li>
+            <li>Hook <code>useUserProgress</code> đồng bộ từ DB khi tải; mỗi lệnh gọi <code>addPoints</code> / <code>updateStreak</code> lưu vào DB với cập nhật cục bộ lạc quan.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="criteria-section">
+      <div class="criteria-label">✔ Acceptance criteria — Tiêu chí hoàn thành</div>
+      <div class="criteria-grid">
+        <div class="criterion"><span class="check">✅</span><span class="text">Clearing localStorage does not lose progress · Xóa localStorage không mất tiến trình</span></div>
+        <div class="criterion"><span class="check">✅</span><span class="text">Reload shows correct values from DB · Tải lại hiển thị giá trị đúng từ DB</span></div>
+        <div class="criterion"><span class="check">✅</span><span class="text">Optimistic updates feel instant · Cập nhật lạc quan cảm giác tức thì</span></div>
+        <div class="criterion"><span class="check">✅</span><span class="text">DB wins on conflict (DB total &gt; localStorage) · DB thắng khi mâu thuẫn</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!--  P1 — REQUIRED                                         -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="priority-band band-p1">
+    🔷 &nbsp; P1 — Required for Full Product Value &nbsp;·&nbsp; Cần cho đủ giá trị sản phẩm
+  </div>
+
+  <!-- F-004 (DONE) -->
+  <div class="feature-card done">
+    <div class="feature-header">
+      <div class="feature-id">F-004</div>
+      <div class="feature-title-block">
+        <div class="feature-title">Route-Level Error Boundaries — No more blank screens</div>
+        <div class="feature-title-vn">Trang lỗi theo từng khu vực — Không còn màn hình trắng</div>
+      </div>
+      <div class="feature-status"><span class="badge badge-done">✅ Done</span></div>
+    </div>
+    <div class="feature-body">
+      <div class="col-en">
+        <div class="col-label">EN — Why &amp; What</div>
+        <div class="why-block">
+          <strong>Why it matters</strong>
+          Any database timeout or unexpected error showed the child (or parent) a completely blank white page. There was no message, no retry button — just a broken experience with no explanation.
+        </div>
+        <div class="what-block">
+          <p><strong>What was built (project-imp sprint):</strong></p>
+          <ul>
+            <li>Three friendly error pages: one for the kid dashboard, one for the games section, one for the parent area.</li>
+            <li>Each error page shows a clear message with a "Try again" button and a way to navigate home.</li>
+            <li>Loading skeleton screens on Dashboard, Grades and Homework pages — animated placeholder layouts appear instantly while data loads, removing the blank-white flash.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-vn">
+        <div class="col-label">VN — Lý do &amp; Nội dung</div>
+        <div class="why-block">
+          <strong>Tại sao quan trọng</strong>
+          Bất kỳ lỗi cơ sở dữ liệu hoặc lỗi không mong muốn nào đều hiển thị trang trắng hoàn toàn cho bé (hoặc phụ huynh). Không có thông báo, không có nút thử lại — chỉ là trải nghiệm bị hỏng không giải thích.
+        </div>
+        <div class="what-block">
+          <p><strong>Những gì đã xây dựng (sprint project-imp):</strong></p>
+          <ul>
+            <li>Ba trang lỗi thân thiện: một cho dashboard của bé, một cho khu vực trò chơi, một cho khu phụ huynh.</li>
+            <li>Mỗi trang lỗi hiển thị thông báo rõ ràng với nút "Thử lại" và cách điều hướng về trang chủ.</li>
+            <li>Màn hình skeleton trên Dashboard, Điểm và Bài tập — khung chờ có hiệu ứng động xuất hiện ngay lập tức khi dữ liệu đang tải.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="criteria-section">
+      <div class="criteria-label">✔ Acceptance criteria — Tiêu chí hoàn thành</div>
+      <div class="criteria-grid">
+        <div class="criterion"><span class="check">✅</span><span class="text">DB error shows friendly error screen, not blank · Lỗi DB hiển thị trang lỗi thân thiện, không trống</span></div>
+        <div class="criterion"><span class="check">✅</span><span class="text">Retry button works · Nút thử lại hoạt động</span></div>
+        <div class="criterion"><span class="check">✅</span><span class="text">Skeleton screens on all 3 key routes · Skeleton screen trên 3 tuyến đường chính</span></div>
+        <div class="criterion"><span class="check">✅</span><span class="text">No layout shift on load · Không bị dịch chuyển bố cục khi tải</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- F-005 (DONE) -->
+  <div class="feature-card done">
+    <div class="feature-header">
+      <div class="feature-id">F-005</div>
+      <div class="feature-title-block">
+        <div class="feature-title">Badge System Completion — All 10 badges now earnable</div>
+        <div class="feature-title-vn">Hoàn thiện hệ thống huy hiệu — Tất cả 10 huy hiệu có thể đạt được</div>
+      </div>
+      <div class="feature-status"><span class="badge badge-partial">⚠️ Mostly done</span></div>
+    </div>
+    <div class="feature-body">
+      <div class="col-en">
+        <div class="col-label">EN — Why &amp; What</div>
+        <div class="why-block">
+          <strong>Why it matters</strong>
+          10 badges were defined but most could never actually be earned — the triggers were wired nowhere. The entire badge reward loop (the child's main motivation) was broken.
+        </div>
+        <div class="what-block">
+          <p><strong>What was built (project-imp sprint):</strong></p>
+          <ul>
+            <li>8 of 10 badges now trigger automatically at the right moment.</li>
+            <li>Still missing: <strong>english-hero</strong> (first English game) and <strong>top-score</strong> (new personal best in a game).</li>
+          </ul>
+          <table class="badge-table">
+            <thead><tr><th>Badge</th><th>Trigger</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>🌟 First Login</td><td>First pattern unlock</td><td><span class="badge badge-done" style="font-size:.7rem">✅ Done</span></td></tr>
+              <tr><td>🎮 Game Win</td><td>First game completed</td><td><span class="badge badge-done" style="font-size:.7rem">✅ Done</span></td></tr>
+              <tr><td>🧮 Math Ace</td><td>Math grade ≥ 9</td><td><span class="badge badge-done" style="font-size:.7rem">✅ Done</span></td></tr>
+              <tr><td>📚 Reading Star</td><td>Vietnamese grade ≥ 9</td><td><span class="badge badge-done" style="font-size:.7rem">✅ Done</span></td></tr>
+              <tr><td>💯 Perfect 10</td><td>Any subject scores 10</td><td><span class="badge badge-done" style="font-size:.7rem">✅ Done</span></td></tr>
+              <tr><td>🔥 Streak 3</td><td>3 days in a row</td><td><span class="badge badge-done" style="font-size:.7rem">✅ Done</span></td></tr>
+              <tr><td>⚡ Streak 7</td><td>7 days in a row</td><td><span class="badge badge-done" style="font-size:.7rem">✅ Done</span></td></tr>
+              <tr><td>🎯 All Green</td><td>All subjects ≥ Good (7)</td><td><span class="badge badge-done" style="font-size:.7rem">✅ Done</span></td></tr>
+              <tr><td>🌍 English Hero</td><td>First English game</td><td><span class="badge badge-pending" style="font-size:.7rem">⏳ Pending</span></td></tr>
+              <tr><td>🏆 Top Score</td><td>New personal best</td><td><span class="badge badge-pending" style="font-size:.7rem">⏳ Pending</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="col-vn">
+        <div class="col-label">VN — Lý do &amp; Nội dung</div>
+        <div class="why-block">
+          <strong>Tại sao quan trọng</strong>
+          10 huy hiệu được định nghĩa nhưng hầu hết không thể đạt được — các điều kiện kích hoạt chưa được kết nối. Toàn bộ vòng phần thưởng huy hiệu (động lực chính của bé) bị hỏng.
+        </div>
+        <div class="what-block">
+          <p><strong>Những gì đã xây dựng (sprint project-imp):</strong></p>
+          <ul>
+            <li>8 trong 10 huy hiệu hiện được kích hoạt tự động đúng lúc.</li>
+            <li>Còn thiếu: <strong>english-hero</strong> (trò chơi Tiếng Anh đầu tiên) và <strong>top-score</strong> (điểm cao nhất cá nhân).</li>
+          </ul>
+          <table class="badge-table">
+            <thead><tr><th>Huy hiệu</th><th>Điều kiện</th><th>Trạng thái</th></tr></thead>
+            <tbody>
+              <tr><td>🌟 Chào bạn mới</td><td>Mở khóa lần đầu</td><td><span class="badge badge-done" style="font-size:.7rem">✅ Xong</span></td></tr>
+              <tr><td>🎮 Chiến thắng!</td><td>Hoàn thành game đầu tiên</td><td><span class="badge badge-done" style="font-size:.7rem">✅ Xong</span></td></tr>
+              <tr><td>🧮 Siêu Toán</td><td>Điểm Toán ≥ 9</td><td><span class="badge badge-done" style="font-size:.7rem">✅ Xong</span></td></tr>
+              <tr><td>📚 Sao Đọc Sách</td><td>Điểm Tiếng Việt ≥ 9</td><td><span class="badge badge-done" style="font-size:.7rem">✅ Xong</span></td></tr>
+              <tr><td>💯 Điểm 10!</td><td>Bất kỳ môn nào đạt 10</td><td><span class="badge badge-done" style="font-size:.7rem">✅ Xong</span></td></tr>
+              <tr><td>🔥 Kiên trì 3 ngày</td><td>Học 3 ngày liên tiếp</td><td><span class="badge badge-done" style="font-size:.7rem">✅ Xong</span></td></tr>
+              <tr><td>⚡ Kiên trì 7 ngày</td><td>Học 7 ngày liên tiếp</td><td><span class="badge badge-done" style="font-size:.7rem">✅ Xong</span></td></tr>
+              <tr><td>🎯 Toàn diện</td><td>Tất cả môn ≥ Giỏi (7)</td><td><span class="badge badge-done" style="font-size:.7rem">✅ Xong</span></td></tr>
+              <tr><td>🌍 Anh hùng Tiếng Anh</td><td>Game Tiếng Anh đầu tiên</td><td><span class="badge badge-pending" style="font-size:.7rem">⏳ Chờ</span></td></tr>
+              <tr><td>🏆 Điểm cao nhất</td><td>Kỷ lục cá nhân mới</td><td><span class="badge badge-pending" style="font-size:.7rem">⏳ Chờ</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- F-006 (DONE) -->
+  <div class="feature-card done">
+    <div class="feature-header">
+      <div class="feature-id">F-006</div>
+      <div class="feature-title-block">
+        <div class="feature-title">Security Headers — Browser-level protections enabled</div>
+        <div class="feature-title-vn">Tiêu đề bảo mật — Bật các bảo vệ ở cấp trình duyệt</div>
+      </div>
+      <div class="feature-status"><span class="badge badge-done">✅ Done</span></div>
+    </div>
+    <div class="feature-body">
+      <div class="col-en">
+        <div class="col-label">EN — Why &amp; What</div>
+        <div class="why-block">
+          <strong>Why it matters</strong>
+          Without security headers, the app was exposed to common web attacks like clickjacking (embedding the app inside another site) and MIME-type sniffing (tricking the browser into executing files as code).
+        </div>
+        <div class="what-block">
+          <p><strong>What was built (project-imp sprint):</strong></p>
+          <ul>
+            <li><strong>X-Frame-Options: DENY</strong> — prevents the app from being embedded inside another website (anti-clickjacking).</li>
+            <li><strong>X-Content-Type-Options: nosniff</strong> — browser will not try to guess file types, blocking certain injection attacks.</li>
+            <li><strong>Referrer-Policy</strong> — limits what URL information is shared when navigating to external links.</li>
+            <li><strong>Permissions-Policy</strong> — explicitly blocks access to camera, microphone, and geolocation.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-vn">
+        <div class="col-label">VN — Lý do &amp; Nội dung</div>
+        <div class="why-block">
+          <strong>Tại sao quan trọng</strong>
+          Không có tiêu đề bảo mật, ứng dụng bị lộ với các tấn công web phổ biến như clickjacking (nhúng app vào trang khác) và MIME-type sniffing (đánh lừa trình duyệt thực thi file như code).
+        </div>
+        <div class="what-block">
+          <p><strong>Những gì đã xây dựng (sprint project-imp):</strong></p>
+          <ul>
+            <li><strong>X-Frame-Options: DENY</strong> — ngăn app bị nhúng trong trang web khác (chống clickjacking).</li>
+            <li><strong>X-Content-Type-Options: nosniff</strong> — trình duyệt không đoán loại file, chặn một số tấn công tiêm nhiễm.</li>
+            <li><strong>Referrer-Policy</strong> — giới hạn thông tin URL được chia sẻ khi điều hướng đến liên kết ngoài.</li>
+            <li><strong>Permissions-Policy</strong> — chặn rõ ràng quyền truy cập vào camera, microphone và vị trí địa lý.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="criteria-section">
+      <div class="criteria-label">✔ Acceptance criteria — Tiêu chí hoàn thành</div>
+      <div class="criteria-grid">
+        <div class="criterion"><span class="check">✅</span><span class="text">Security headers visible in DevTools · Tiêu đề bảo mật hiển thị trong DevTools</span></div>
+        <div class="criterion"><span class="check">✅</span><span class="text">No CSP violations in browser console · Không có vi phạm CSP trong console trình duyệt</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- F-007 -->
+  <div class="feature-card">
+    <div class="feature-header">
+      <div class="feature-id">F-007</div>
+      <div class="feature-title-block">
+        <div class="feature-title">Full Activity Feed View — Complete history for parents</div>
+        <div class="feature-title-vn">Trang nhật ký hoạt động đầy đủ — Lịch sử đầy đủ cho phụ huynh</div>
+      </div>
+      <div class="feature-status"><span class="badge badge-partial">⚠️ Partially done</span></div>
+    </div>
+    <div class="feature-body">
+      <div class="col-en">
+        <div class="col-label">EN — Why &amp; What</div>
+        <div class="why-block">
+          <strong>Why it matters</strong>
+          Right now parents only see the last 3–5 events in a small sidebar widget. There is no way to scroll back through the week's history, filter by type, or get a full picture of the child's learning activity.
+        </div>
+        <div class="what-block">
+          <p><strong>Already done:</strong> The backend <code>getGroupedActivityAction</code> now returns events grouped by day (Today / Yesterday / date). This was shipped in the project-imp sprint.</p>
+          <p style="margin-top:10px"><strong>Still to build:</strong></p>
+          <ul>
+            <li>A dedicated page at <code>/parent/activity</code> showing the full event history.</li>
+            <li>Events displayed in date groups — "Today", "Yesterday", then older dates.</li>
+            <li>Filter buttons: All / Games only / Homework only.</li>
+            <li>Pagination: 20 events per page with a "Load more" button.</li>
+            <li>Empty state when no events match the filter.</li>
+            <li>A "View all activity →" link added to the existing small sidebar widget.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-vn">
+        <div class="col-label">VN — Lý do &amp; Nội dung</div>
+        <div class="why-block">
+          <strong>Tại sao quan trọng</strong>
+          Hiện tại phụ huynh chỉ thấy 3–5 sự kiện gần nhất trong widget nhỏ ở sidebar. Không có cách nào cuộn lại lịch sử cả tuần, lọc theo loại hay có cái nhìn tổng quan về hoạt động học của bé.
+        </div>
+        <div class="what-block">
+          <p><strong>Đã hoàn thành:</strong> Backend <code>getGroupedActivityAction</code> đã trả về sự kiện được nhóm theo ngày (Hôm nay / Hôm qua / ngày cụ thể). Đã được triển khai trong sprint project-imp.</p>
+          <p style="margin-top:10px"><strong>Vẫn cần xây dựng:</strong></p>
+          <ul>
+            <li>Trang chuyên dụng tại <code>/parent/activity</code> hiển thị toàn bộ lịch sử sự kiện.</li>
+            <li>Sự kiện hiển thị theo nhóm ngày — "Hôm nay", "Hôm qua", rồi các ngày cũ hơn.</li>
+            <li>Nút lọc: Tất cả / Chỉ trò chơi / Chỉ bài tập.</li>
+            <li>Phân trang: 20 sự kiện mỗi trang với nút "Tải thêm".</li>
+            <li>Trạng thái rỗng khi không có sự kiện khớp bộ lọc.</li>
+            <li>Thêm liên kết "Xem tất cả hoạt động →" vào widget sidebar hiện có.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="criteria-section">
+      <div class="criteria-label">✔ Acceptance criteria — Tiêu chí hoàn thành</div>
+      <div class="criteria-grid">
+        <div class="criterion"><span class="check">✓</span><span class="text">Parent can scroll through full history · Phụ huynh có thể cuộn xem toàn bộ lịch sử</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">Date grouping makes week readable at a glance · Nhóm ngày giúp đọc nhanh cả tuần</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">Filter by game or homework events · Lọc theo sự kiện game hoặc bài tập</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">"View all" link from the sidebar widget · Liên kết "Xem tất cả" từ widget sidebar</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!--  P2 — QUALITY OF LIFE                                  -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="priority-band band-p2">
+    💜 &nbsp; P2 — Quality of Life &nbsp;·&nbsp; Nâng cao trải nghiệm người dùng
+    <span style="margin-left:auto;font-weight:400;font-size:.85em;text-transform:none;">
+      Good to ship before v1.0 · Nên hoàn thành trước v1.0
+    </span>
+  </div>
+
+  <!-- F-008 -->
+  <div class="feature-card">
+    <div class="feature-header">
+      <div class="feature-id">F-008</div>
+      <div class="feature-title-block">
+        <div class="feature-title">Schedule Copy Week / Templates — Fast weekly setup</div>
+        <div class="feature-title-vn">Sao chép lịch tuần / Mẫu lịch — Cài đặt nhanh lịch hàng tuần</div>
+      </div>
+      <div class="feature-status"><span class="badge badge-pending">⏳ Pending</span></div>
+    </div>
+    <div class="feature-body">
+      <div class="col-en">
+        <div class="col-label">EN — Why &amp; What</div>
+        <div class="why-block">
+          <strong>Why it matters</strong>
+          Setting up a school week manually means entering 30–40 individual periods one by one. That is a 30-minute chore for the parent. Most weeks repeat the same pattern — a copy function turns setup into a 1-click task.
+        </div>
+        <div class="what-block">
+          <p><strong>What gets built:</strong></p>
+          <ul>
+            <li>A "Copy this week to next week" button in the Schedule Manager — one click duplicates all periods to the following week.</li>
+            <li>Optional: a template picker (e.g. "Standard Grade 1 Vietnam") that pre-fills the whole week's timetable based on typical school patterns.</li>
+            <li>A server action <code>copyWeekAction</code> that safely copies periods without creating duplicates.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-vn">
+        <div class="col-label">VN — Lý do &amp; Nội dung</div>
+        <div class="why-block">
+          <strong>Tại sao quan trọng</strong>
+          Cài đặt lịch tuần thủ công có nghĩa là nhập 30–40 tiết học riêng lẻ từng cái một. Đó là 30 phút công việc cho phụ huynh. Hầu hết các tuần lặp lại cùng một mẫu — chức năng sao chép biến việc cài đặt thành tác vụ 1 cú nhấp.
+        </div>
+        <div class="what-block">
+          <p><strong>Những gì cần xây dựng:</strong></p>
+          <ul>
+            <li>Nút "Sao chép tuần này sang tuần tới" trong Quản lý lịch — một cú nhấp nhân đôi tất cả tiết học sang tuần sau.</li>
+            <li>Tùy chọn: bộ chọn mẫu (ví dụ "Lịch tiêu chuẩn Lớp 1 Việt Nam") tự điền toàn bộ thời khóa biểu dựa trên mẫu trường phổ biến.</li>
+            <li>Server action <code>copyWeekAction</code> sao chép tiết học an toàn mà không tạo bản trùng.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="criteria-section">
+      <div class="criteria-label">✔ Acceptance criteria — Tiêu chí hoàn thành</div>
+      <div class="criteria-grid">
+        <div class="criterion"><span class="check">✓</span><span class="text">"Copy week" completes in one tap · "Sao chép tuần" hoàn thành trong một lần nhấn</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">No duplicate periods created · Không tạo tiết học trùng</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">Template applies a full week · Mẫu áp dụng cả một tuần</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- F-009 -->
+  <div class="feature-card">
+    <div class="feature-header">
+      <div class="feature-id">F-009</div>
+      <div class="feature-title-block">
+        <div class="feature-title">Adaptive Practice Recommendations — Personalised next step</div>
+        <div class="feature-title-vn">Gợi ý luyện tập thích nghi — Bước tiếp theo được cá nhân hóa</div>
+      </div>
+      <div class="feature-status"><span class="badge badge-pending">⏳ Pending</span></div>
+    </div>
+    <div class="feature-body">
+      <div class="col-en">
+        <div class="col-label">EN — Why &amp; What</div>
+        <div class="why-block">
+          <strong>Why it matters</strong>
+          Grade scores and game history are recorded but never used to guide the child. The dashboard shows a static menu — every child sees the same options regardless of their performance. This misses the core personalization opportunity of the platform.
+        </div>
+        <div class="what-block">
+          <p><strong>What gets built:</strong></p>
+          <ul>
+            <li>A recommendation engine: compares weak subjects (grade score below 7) against available games, and checks when those games were last played.</li>
+            <li>A "You should practice: [Subject]" card on the kid's dashboard with a direct link to the relevant game.</li>
+            <li>Shows up to 2 suggestions at a time. Disappears when the child plays the suggested game or the grade improves.</li>
+            <li>Example rule: if Math grade &lt; 7 AND last Math game was more than 3 days ago → suggest Math game.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-vn">
+        <div class="col-label">VN — Lý do &amp; Nội dung</div>
+        <div class="why-block">
+          <strong>Tại sao quan trọng</strong>
+          Điểm số và lịch sử game được ghi lại nhưng không bao giờ được sử dụng để hướng dẫn bé. Dashboard hiển thị menu tĩnh — mọi bé đều thấy các tùy chọn giống nhau bất kể kết quả học tập. Đây là cơ hội cá nhân hóa cốt lõi của nền tảng bị bỏ lỡ.
+        </div>
+        <div class="what-block">
+          <p><strong>Những gì cần xây dựng:</strong></p>
+          <ul>
+            <li>Engine gợi ý: so sánh các môn yếu (điểm dưới 7) với các game có sẵn, và kiểm tra khi nào game đó được chơi lần cuối.</li>
+            <li>Thẻ "Bạn nên luyện tập: [Môn học]" trên dashboard của bé với liên kết trực tiếp đến game liên quan.</li>
+            <li>Hiển thị tối đa 2 gợi ý cùng lúc. Biến mất khi bé chơi game được gợi ý hoặc điểm cải thiện.</li>
+            <li>Ví dụ: nếu điểm Toán &lt; 7 VÀ game Toán chưa được chơi trong hơn 3 ngày → gợi ý game Toán.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="criteria-section">
+      <div class="criteria-label">✔ Acceptance criteria — Tiêu chí hoàn thành</div>
+      <div class="criteria-grid">
+        <div class="criterion"><span class="check">✓</span><span class="text">Card appears when a weak subject is identified · Thẻ xuất hiện khi phát hiện môn yếu</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">Card links directly to the right game · Thẻ liên kết trực tiếp đến game phù hợp</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">Card hides after the game is played · Thẻ ẩn sau khi game được chơi</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">Max 2 suggestions shown at once · Tối đa 2 gợi ý hiển thị cùng lúc</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- F-010 -->
+  <div class="feature-card">
+    <div class="feature-header">
+      <div class="feature-id">F-010</div>
+      <div class="feature-title-block">
+        <div class="feature-title">Offline Homework Sync Queue — Works on slow connections</div>
+        <div class="feature-title-vn">Hàng chờ đồng bộ bài tập ngoại tuyến — Hoạt động khi mạng chậm</div>
+      </div>
+      <div class="feature-status"><span class="badge badge-pending">⏳ Pending</span></div>
+    </div>
+    <div class="feature-body">
+      <div class="col-en">
+        <div class="col-label">EN — Why &amp; What</div>
+        <div class="why-block">
+          <strong>Why it matters</strong>
+          On a slow or dropped connection, tapping the homework checkbox fails silently. The child sees no feedback, the checkbox reverts, and the completion is permanently lost. This is especially frustrating for young users who don't understand network errors.
+        </div>
+        <div class="what-block">
+          <p><strong>What gets built:</strong></p>
+          <ul>
+            <li>A local queue (stored in IndexedDB) that captures failed homework completions.</li>
+            <li>The service worker intercepts failed requests and saves them to the queue automatically.</li>
+            <li>When connectivity returns, the queue replays saved completions in order.</li>
+            <li>Visual indicator on the checkbox: <em>"Saving…"</em> → <em>"Saved ✓"</em> → <em>"⚠ Saved offline — will sync"</em>.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-vn">
+        <div class="col-label">VN — Lý do &amp; Nội dung</div>
+        <div class="why-block">
+          <strong>Tại sao quan trọng</strong>
+          Khi kết nối chậm hoặc bị ngắt, bấm checkbox bài tập thất bại âm thầm. Bé không thấy phản hồi, checkbox trở về trạng thái cũ và việc hoàn thành bị mất vĩnh viễn. Điều này đặc biệt bực bội với trẻ nhỏ không hiểu lỗi mạng.
+        </div>
+        <div class="what-block">
+          <p><strong>Những gì cần xây dựng:</strong></p>
+          <ul>
+            <li>Hàng chờ cục bộ (lưu trong IndexedDB) lưu các lần hoàn thành bài tập bị lỗi.</li>
+            <li>Service worker chặn các request thất bại và lưu vào hàng chờ tự động.</li>
+            <li>Khi kết nối trở lại, hàng chờ phát lại các lần hoàn thành đã lưu theo thứ tự.</li>
+            <li>Chỉ báo hình ảnh trên checkbox: <em>"Đang lưu…"</em> → <em>"Đã lưu ✓"</em> → <em>"⚠ Đã lưu ngoại tuyến — sẽ đồng bộ"</em>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="criteria-section">
+      <div class="criteria-label">✔ Acceptance criteria — Tiêu chí hoàn thành</div>
+      <div class="criteria-grid">
+        <div class="criterion"><span class="check">✓</span><span class="text">Offline completion saved and replayed on reconnect · Hoàn thành ngoại tuyến được lưu và phát lại khi kết nối lại</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">Visual feedback at every state · Phản hồi hình ảnh ở mỗi trạng thái</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">No completions lost even with intermittent connection · Không mất lần hoàn thành nào dù kết nối gián đoạn</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- F-011 -->
+  <div class="feature-card">
+    <div class="feature-header">
+      <div class="feature-id">F-011</div>
+      <div class="feature-title-block">
+        <div class="feature-title">Parent Notification Center — Stay informed without opening the app</div>
+        <div class="feature-title-vn">Trung tâm thông báo phụ huynh — Cập nhật mà không cần mở app</div>
+      </div>
+      <div class="feature-status"><span class="badge badge-pending">⏳ Pending</span></div>
+    </div>
+    <div class="feature-body">
+      <div class="col-en">
+        <div class="col-label">EN — Why &amp; What</div>
+        <div class="why-block">
+          <strong>Why it matters</strong>
+          Parents have no way to know the child earned a badge or finished homework without actively opening the app and scrolling to the activity widget. An unread-count badge on the nav gives instant awareness.
+        </div>
+        <div class="what-block">
+          <p><strong>What gets built:</strong></p>
+          <ul>
+            <li>A small red dot / unread count on the "Kid Access" navigation item whenever there are new events since the parent last visited.</li>
+            <li>A <code>lastParentVisitAt</code> timestamp stored in the database — updated every time the parent opens the activity section.</li>
+            <li>The notification count resets to zero when the parent opens the activity feed.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-vn">
+        <div class="col-label">VN — Lý do &amp; Nội dung</div>
+        <div class="why-block">
+          <strong>Tại sao quan trọng</strong>
+          Phụ huynh không có cách nào biết bé đã đạt huy hiệu hay hoàn thành bài tập mà không chủ động mở app và cuộn đến widget hoạt động. Huy hiệu số chưa đọc trên thanh điều hướng cho phép nhận biết ngay lập tức.
+        </div>
+        <div class="what-block">
+          <p><strong>Những gì cần xây dựng:</strong></p>
+          <ul>
+            <li>Chấm đỏ nhỏ / số chưa đọc trên mục điều hướng "Quyền truy cập bé" khi có sự kiện mới từ lần cuối phụ huynh truy cập.</li>
+            <li>Dấu thời gian <code>lastParentVisitAt</code> lưu trong cơ sở dữ liệu — cập nhật mỗi khi phụ huynh mở phần hoạt động.</li>
+            <li>Số thông báo đặt lại về không khi phụ huynh mở feed hoạt động.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="criteria-section">
+      <div class="criteria-label">✔ Acceptance criteria — Tiêu chí hoàn thành</div>
+      <div class="criteria-grid">
+        <div class="criterion"><span class="check">✓</span><span class="text">Unread dot appears after new kid activity · Chấm chưa đọc xuất hiện sau hoạt động mới của bé</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">Count resets when parent opens activity section · Số đặt lại khi phụ huynh mở phần hoạt động</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">Persists across sessions (not lost on reload) · Lưu qua các phiên (không mất khi tải lại)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- F-012 -->
+  <div class="feature-card">
+    <div class="feature-header">
+      <div class="feature-id">F-012</div>
+      <div class="feature-title-block">
+        <div class="feature-title">Science / Art / Music Games — Next content expansion</div>
+        <div class="feature-title-vn">Game Khoa học / Mỹ thuật / Âm nhạc — Mở rộng nội dung tiếp theo</div>
+      </div>
+      <div class="feature-status"><span class="badge badge-pending">⏳ Pending</span></div>
+    </div>
+    <div class="feature-body">
+      <div class="col-en">
+        <div class="col-label">EN — Why &amp; What</div>
+        <div class="why-block">
+          <strong>Why it matters</strong>
+          Three "Coming Soon" placeholders exist on the games hub today. Children see them every session, creating a sense of unfinished product. Filling these slots expands the learning loop to cover more curriculum subjects.
+        </div>
+        <div class="what-block">
+          <p><strong>What gets built (one per subject, suggested order):</strong></p>
+          <ul>
+            <li><strong>Science</strong> (highest curriculum priority) — nature &amp; society questions, true/false format or image matching.</li>
+            <li><strong>Art</strong> — color recognition, shape identification, or drag-and-drop pattern completion.</li>
+            <li><strong>Music</strong> — rhythm patterns, note names, or listen-and-identify simple melodies.</li>
+          </ul>
+          <p>Each game follows the same structure as the existing Math/English games: level data file, game component, server action, database repository.</p>
+        </div>
+      </div>
+      <div class="col-vn">
+        <div class="col-label">VN — Lý do &amp; Nội dung</div>
+        <div class="why-block">
+          <strong>Tại sao quan trọng</strong>
+          Ba ô "Sắp ra mắt" tồn tại trên hub game hôm nay. Bé nhìn thấy chúng mỗi phiên, tạo cảm giác sản phẩm chưa hoàn thiện. Lấp đầy các ô này mở rộng vòng học tập để bao gồm nhiều môn học hơn trong chương trình.
+        </div>
+        <div class="what-block">
+          <p><strong>Những gì cần xây dựng (một game mỗi môn, thứ tự đề xuất):</strong></p>
+          <ul>
+            <li><strong>Khoa học Tự nhiên &amp; XH</strong> (ưu tiên chương trình cao nhất) — câu hỏi tự nhiên &amp; xã hội, định dạng đúng/sai hoặc ghép ảnh.</li>
+            <li><strong>Mỹ thuật</strong> — nhận biết màu sắc, nhận dạng hình dạng, hoặc hoàn thành mẫu kéo thả.</li>
+            <li><strong>Âm nhạc</strong> — nhận biết nhịp điệu, tên nốt nhạc, hoặc nghe và nhận dạng giai điệu đơn giản.</li>
+          </ul>
+          <p>Mỗi game theo cùng cấu trúc với các game Toán/Tiếng Anh hiện có: file dữ liệu cấp độ, component game, server action, repository cơ sở dữ liệu.</p>
+        </div>
+      </div>
+    </div>
+    <div class="criteria-section">
+      <div class="criteria-label">✔ Acceptance criteria — Tiêu chí hoàn thành</div>
+      <div class="criteria-grid">
+        <div class="criterion"><span class="check">✓</span><span class="text">Coming Soon placeholder replaced with working game · Ô Sắp ra mắt được thay bằng game hoạt động</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">Progress saved to DB following existing game pattern · Tiến trình lưu vào DB theo mẫu game hiện có</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">Badge triggers wired (english-hero pattern applied) · Điều kiện huy hiệu được kết nối</span></div>
+        <div class="criterion"><span class="check">✓</span><span class="text">3 levels minimum per game · Tối thiểu 3 cấp độ mỗi game</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!--  ARCHITECTURE DECISIONS                                -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="divider">🏗️ &nbsp; Architecture Decisions &nbsp;·&nbsp; Quyết định kiến trúc</div>
+
+  <div class="note note-info" style="margin-bottom:16px">
+    These are design choices that must be agreed before building begins. They affect how features connect to each other.<br/>
+    Đây là các lựa chọn thiết kế phải được thống nhất trước khi bắt đầu xây dựng. Chúng ảnh hưởng đến cách các tính năng kết nối với nhau.
+  </div>
+
+  <div class="feature-card" style="border-radius:12px; margin-bottom:0">
+    <table class="arch-table">
+      <thead>
+        <tr>
+          <th>Decision / Quyết định</th>
+          <th>Context / Bối cảnh</th>
+          <th>Recommendation / Khuyến nghị</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="decision-cell">UserProgress: DB vs localStorage</td>
+          <td>F-003 — where should points/streak be authoritative?</td>
+          <td class="rec-cell">✅ Decided: DB is authoritative; localStorage is a cache only. Implemented in project-imp sprint.</td>
+          <td><span class="badge badge-done" style="font-size:.72rem">✅ Done</span></td>
+        </tr>
+        <tr>
+          <td class="decision-cell">Badge award timing: immediate vs deferred</td>
+          <td>F-005 — should badge modal show instantly or on next page load?</td>
+          <td class="rec-cell">⏳ Pending: Award immediately in the server action. Queue a <code>BadgeModal</code> via a DB flag so it shows in the current session. Requires a <code>pendingBadgeId</code> field in the UserProgress table.</td>
+          <td><span class="badge badge-pending" style="font-size:.72rem">⏳ Pending</span></td>
+        </tr>
+        <tr>
+          <td class="decision-cell">Offline strategy</td>
+          <td>F-010 — how to handle actions when offline?</td>
+          <td class="rec-cell">⏳ Pending: IndexedDB queue for homework completions (high-value, must not be lost). Optimistic-only for game progress (acceptable to lose on extreme connectivity failure).</td>
+          <td><span class="badge badge-pending" style="font-size:.72rem">⏳ Pending</span></td>
+        </tr>
+        <tr>
+          <td class="decision-cell">Activity feed pagination strategy</td>
+          <td>F-007 — how to page through activity history?</td>
+          <td class="rec-cell">⏳ Pending: Cursor-based pagination (by <code>createdAt</code> timestamp) rather than offset pagination. Prevents duplicate events when new items are added while the parent is browsing.</td>
+          <td><span class="badge badge-pending" style="font-size:.72rem">⏳ Pending</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /container -->
+
+<footer class="container">
+  <p style="margin-top:48px; padding-top:20px; border-top:1px solid var(--border);">
+    Generated from <code>docs/project-develop.md</code> · Kid Hub · Updated 4 June 2026<br/>
+    Tạo từ <code>docs/project-develop.md</code> · Kid Hub · Cập nhật 4 tháng 6, 2026
+  </p>
+</footer>
+
+</body>
+</html>
