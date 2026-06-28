@@ -1,22 +1,5 @@
 'use server'
 
-<<<<<<< HEAD
-import { requireParentSession } from '@/server/lib/auth-guard'
-import { ScreenTimeSecsSchema, ScreenTimeLimitSchema } from '@/server/lib/schemas'
-import {
-  recordScreenTime,
-  getTodayScreenTime,
-  getDailyLimit,
-  setDailyLimit,
-} from '@/server/services/screen-time.service'
-import { DEFAULT_USER_ID } from '@/lib/constants'
-
-/** Kid-facing: increments today's screen time counter. Called from ScreenTimeTracker every 60s. */
-export const addScreenTimeAction = async (
-  secs: number
-): Promise<{ success: boolean; error?: string }> => {
-  const parsed = ScreenTimeSecsSchema.safeParse(secs)
-=======
 import { z } from 'zod'
 import { requireParentSession } from '@/server/lib/auth-guard'
 import {
@@ -31,10 +14,9 @@ import type { ActionResult, ActionVoidResult } from '@/types'
 /** Kid-facing: increments today's screen time counter. Called from ScreenTimeTracker every 60s. */
 export const addScreenTimeAction = async (secs: number): Promise<ActionVoidResult> => {
   const parsed = z.number().int().min(1).max(120).safeParse(secs)
->>>>>>> main
   if (!parsed.success) return { success: false, error: 'Invalid seconds value' }
   try {
-    await recordScreenTime(DEFAULT_USER_ID, parsed.data)
+    await addScreenTime(DEFAULT_USER_ID, parsed.data)
     return { success: true }
   } catch {
     return { success: false, error: 'Failed to record screen time' }
@@ -51,8 +33,8 @@ export const getScreenTimeAction = async (): Promise<ActionResult<ScreenTimeData
   try {
     await requireParentSession()
     const [usedSecs, limitMins] = await Promise.all([
-      getTodayScreenTime(DEFAULT_USER_ID),
-      getDailyLimit(DEFAULT_USER_ID),
+      getScreenTimeToday(DEFAULT_USER_ID),
+      getScreenTimeLimit(DEFAULT_USER_ID),
     ])
     return { success: true, data: { usedSecs, limitMins } }
   } catch (err) {
@@ -63,19 +45,12 @@ export const getScreenTimeAction = async (): Promise<ActionResult<ScreenTimeData
 }
 
 /** Parent-facing: updates the daily screen time limit in minutes (30–480). */
-<<<<<<< HEAD
-export const setScreenTimeLimitAction = async (
-  limitMins: number
-): Promise<{ success: boolean; error?: string }> => {
-  const parsed = ScreenTimeLimitSchema.safeParse(limitMins)
-=======
 export const setScreenTimeLimitAction = async (limitMins: number): Promise<ActionVoidResult> => {
   const parsed = z.number().int().min(30).max(480).safeParse(limitMins)
->>>>>>> main
   if (!parsed.success) return { success: false, error: 'Limit must be between 30 and 480 minutes' }
   try {
     await requireParentSession()
-    await setDailyLimit(DEFAULT_USER_ID, parsed.data)
+    await setScreenTimeLimit(DEFAULT_USER_ID, parsed.data)
     return { success: true }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to update limit'

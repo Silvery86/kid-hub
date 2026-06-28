@@ -6,36 +6,15 @@
  * All mutations are validated with Zod and guarded by parent session check.
  */
 
+import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
-<<<<<<< HEAD
-import { validatePeriodOverlap, buildTodayView, jsDateToDayOfWeek } from '@/server/services/schedule.service'
-import * as scheduleRepo from '@/server/repositories/schedule.repository'
-import { addPoints, incrementStreak } from '@/server/services/progress.service'
-=======
 import { requireParentSession } from '@/server/lib/auth-guard'
 import { validatePeriodOverlap, buildTodayView, jsDateToDayOfWeek } from '@/server/services/schedule.service'
 import * as scheduleService from '@/server/services/schedule.service'
 import { addUserPoints, updateStreak } from '@/server/services/progress.service'
->>>>>>> main
 import { recordActivity } from '@/server/services/activity.service'
 import { checkAndAwardStreakBadges } from '@/server/services/rewards.service'
-import { requireParentSession } from '@/server/lib/auth-guard'
 import { getSubjectById } from '@/lib/data/subjects'
-<<<<<<< HEAD
-import {
-  IdSchema,
-  DateStringSchema,
-  DayOfWeekSchema,
-  CreatePeriodSchema,
-  CreateExtraClassSchema,
-  UpdatePeriodSchema,
-  AddDailyHomeworkSchema,
-  ToggleHomeworkDoneSchema,
-} from '@/server/lib/schemas'
-import type { DayOfWeek, DailyHomework, DailySchedule, TodayView } from '@/types'
-import { DEFAULT_USER_ID, MAX_EVENING_BLOCKS_PER_DAY } from '@/lib/constants'
-
-=======
 import type { DayOfWeek, DailyHomework, DailySchedule, TodayView, ActionResult, ActionVoidResult } from '@/types'
 import { DEFAULT_USER_ID, MAX_EVENING_BLOCKS_PER_DAY } from '@/lib/constants'
 
@@ -83,7 +62,6 @@ const AddDailyHomeworkSchema = z.object({
   points: z.number().int().min(1).max(50).optional(),
 })
 
->>>>>>> main
 const todayStr = (): string => new Date().toISOString().split('T')[0]!
 
 // ── Read actions ──────────────────────────────────────────────
@@ -147,7 +125,7 @@ export const getDailyHomeworkByDateAction = async (
 ): Promise<ActionResult<DailyHomework[]>> => {
   try {
     await requireParentSession()
-    const parsed = DateStringSchema.safeParse(date)
+    const parsed = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).safeParse(date)
     if (!parsed.success) return { success: false, error: 'Invalid date' }
     const data = await scheduleService.getDailyHomework(DEFAULT_USER_ID, parsed.data)
     return { success: true, data }
@@ -218,7 +196,7 @@ export const updatePeriodAction = async (input: unknown): Promise<ActionVoidResu
 export const deletePeriodAction = async (id: string): Promise<ActionVoidResult> => {
   try {
     await requireParentSession()
-    const parsed = IdSchema.safeParse(id)
+    const parsed = z.string().min(1).safeParse(id)
     if (!parsed.success) return { success: false, error: 'Invalid period ID' }
     await scheduleService.deletePeriod(parsed.data, DEFAULT_USER_ID)
     revalidatePath('/dashboard')
@@ -283,8 +261,8 @@ export const cancelExtraClassAction = async (
 ): Promise<ActionVoidResult> => {
   try {
     await requireParentSession()
-    const idParsed = IdSchema.safeParse(periodId)
-    const dateParsed = DateStringSchema.safeParse(date)
+    const idParsed = z.string().min(1).safeParse(periodId)
+    const dateParsed = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).safeParse(date)
     if (!idParsed.success || !dateParsed.success) {
       return { success: false, error: 'Invalid input' }
     }
@@ -346,7 +324,7 @@ export const toggleHomeworkDoneAction = async (
   isDone: boolean
 ): Promise<ActionResult<{ points: number }>> => {
   try {
-    const parsed = ToggleHomeworkDoneSchema.safeParse({ id, isDone })
+    const parsed = z.object({ id: z.string().min(1), isDone: z.boolean() }).safeParse({ id, isDone })
     if (!parsed.success) return { success: false, error: 'Invalid input' }
     const updated = await scheduleService.toggleDailyHomeworkDone(
       parsed.data.id,
@@ -359,8 +337,8 @@ export const toggleHomeworkDoneAction = async (
       const subj = getSubjectById(updated.subjectId)
       const icon = subj?.icon ?? '📝'
       void recordActivity(DEFAULT_USER_ID, 'HOMEWORK_DONE', updated.label, icon)
-      const newStreak = await incrementStreak(DEFAULT_USER_ID)
-      await addPoints(DEFAULT_USER_ID, updated.points)
+      const newStreak = await updateStreak(DEFAULT_USER_ID)
+      await addUserPoints(DEFAULT_USER_ID, updated.points)
       void checkAndAwardStreakBadges(DEFAULT_USER_ID, newStreak)
     }
 
@@ -374,7 +352,7 @@ export const toggleHomeworkDoneAction = async (
 export const deleteDailyHomeworkAction = async (id: string): Promise<ActionVoidResult> => {
   try {
     await requireParentSession()
-    const parsed = IdSchema.safeParse(id)
+    const parsed = z.string().min(1).safeParse(id)
     if (!parsed.success) return { success: false, error: 'Invalid ID' }
     await scheduleService.deleteDailyHomework(parsed.data, DEFAULT_USER_ID)
     revalidatePath('/schedule')

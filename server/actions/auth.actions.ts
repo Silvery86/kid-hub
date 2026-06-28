@@ -6,23 +6,10 @@
  * Business logic lives in auth.service — this layer only handles Zod, cookies, and orchestration.
  */
 
+import { z } from 'zod'
 import { cookies } from 'next/headers'
 import {
-<<<<<<< HEAD
-  ParentEmailSchema,
-  ParentPasswordSchema,
-  ParentPinSchema,
-  KidPatternSchema,
-} from '@/server/lib/schemas'
-import {
-  calcLockoutExpiry,
-  compareKidPattern,
-  comparePassword,
-  comparePin,
-  compareStoredTokenHash,
-=======
   createParentSession,
->>>>>>> main
   createKidSessionToken,
   getParentStatus,
   getPinRecord,
@@ -41,27 +28,24 @@ import {
   PARENT_ACCESS_COOKIE,
   PARENT_REFRESH_COOKIE,
 } from '@/server/services/auth.service'
-<<<<<<< HEAD
-import { checkAndAwardFirstLoginBadge } from '@/server/services/rewards.service'
-import * as userRepo from '@/server/repositories/user.repository'
-import {
-  DEFAULT_USER_ID,
-  KID_PATTERN_LOCKOUT_SECONDS,
-  KID_SESSION_TTL_SECONDS,
-  MAX_KID_PATTERN_ATTEMPTS,
-  MAX_PIN_ATTEMPTS,
-  MAX_PARENT_LOGIN_ATTEMPTS,
-=======
 import type { ActionVoidResult, AuthActionResult } from '@/types'
 import {
   DEFAULT_USER_ID,
   KID_PATTERN_LENGTH,
   KID_SESSION_TTL_SECONDS,
   PIN_LENGTH,
->>>>>>> main
   PARENT_ACCESS_TTL_SECONDS,
   PARENT_REFRESH_TTL_SECONDS,
 } from '@/lib/constants'
+
+const ParentEmailSchema = z.string().trim().toLowerCase().email('Invalid email format')
+const ParentPasswordSchema = z
+  .string()
+  .min(8, 'Password must be at least 8 characters')
+  .max(128, 'Password is too long')
+const KidPatternSchema = z
+  .string()
+  .regex(new RegExp(`^[1-6]{${KID_PATTERN_LENGTH}}$`), 'Invalid unlock pattern format')
 
 const PARENT_ACCESS_COOKIE_OPTIONS = {
   httpOnly: true,
@@ -242,12 +226,6 @@ export const verifyKidPatternAction = async (pattern: string): Promise<AuthActio
     if (result.status === 'wrong') {
       return { success: false, error: 'Incorrect unlock pattern' }
     }
-<<<<<<< HEAD
-
-    await userRepo.resetKidPatternAttempts(DEFAULT_USER_ID)
-    void checkAndAwardFirstLoginBadge(DEFAULT_USER_ID)
-=======
->>>>>>> main
     const kidToken = await createKidSessionToken(DEFAULT_USER_ID)
     const cookieStore = await cookies()
     cookieStore.set(KID_SESSION_COOKIE, kidToken, KID_SESSION_COOKIE_OPTIONS)
@@ -298,7 +276,9 @@ export const signOutKidAction = async (): Promise<ActionVoidResult> => {
   }
 }
 
-
+const ParentPinSchema = z
+  .string()
+  .regex(/^\d{4}$/, `PIN must be exactly ${PIN_LENGTH} digits`)
 
 /** Whether the household has a parent PIN configured. */
 export const checkParentPinAction = async (): Promise<{ hasPin: boolean }> => {

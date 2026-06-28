@@ -3,7 +3,7 @@
 import { useTransition } from 'react'
 import { cn } from '@/lib/utils'
 import { getSubjectById } from '@/lib/data/subjects'
-import { completeHomeworkAction } from '@/server/actions/homework.actions'
+import { markHomeworkDoneAction } from '@/server/actions/homework.actions'
 import type { HomeworkItem } from '@/types'
 
 export function HomeworkItemRow({
@@ -24,7 +24,7 @@ export function HomeworkItemRow({
   const handleToggle = () => {
     if (item.isDone || isPending) return
     startTransition(async () => {
-      const result = await completeHomeworkAction(item.periodId)
+      const result = await markHomeworkDoneAction(item.periodId)
       if (result.success) onDone?.()
     })
   }

@@ -1,15 +1,12 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
-<<<<<<< HEAD
-import { calculateBadge, fetchReportCard, saveGrade } from '@/server/services/grades.service'
-import { checkAndAwardGradeBadges } from '@/server/services/rewards.service'
-import { requireParentSession } from '@/server/lib/auth-guard'
-import { UpsertGradeSchema } from '@/server/lib/schemas'
-import type { ReportCard } from '@/types'
-import { DEFAULT_USER_ID } from '@/lib/constants'
+/**
+ * Server Actions for subject grades: fetch report card and upsert individual grades.
+ * All mutations are validated with Zod and guarded by parent session check.
+ */
 
-=======
+import { z } from 'zod'
+import { revalidatePath } from 'next/cache'
 import { requireParentSession } from '@/server/lib/auth-guard'
 import { calculateBadge, buildReportCard, getReportCard, upsertGrade } from '@/server/services/grades.service'
 import { getUserById } from '@/server/services/user.service'
@@ -23,19 +20,14 @@ const UpsertGradeSchema = z.object({
   academicYear: z.string().regex(/^\d{4}-\d{4}$/),
 })
 
->>>>>>> main
 /** Retrieves the full report card for the default user. */
 export const getReportCardAction = async (): Promise<ActionResult<ReportCard>> => {
   try {
-<<<<<<< HEAD
-    return { success: true, data: await fetchReportCard(DEFAULT_USER_ID) }
-=======
     const userId = DEFAULT_USER_ID
     const user = await getUserById(userId)
     if (!user) return { success: true, data: { userId, grades: [], averageScore: 0 } }
     const grades = await getReportCard(userId)
     return { success: true, data: buildReportCard(userId, grades) }
->>>>>>> main
   } catch {
     return { success: false, error: 'Failed to fetch report card' }
   }
@@ -51,12 +43,7 @@ export const upsertGradeAction = async (input: unknown): Promise<ActionVoidResul
     }
     const data = parsed.data
     const badge = calculateBadge(data.score)
-<<<<<<< HEAD
-    await saveGrade(DEFAULT_USER_ID, { ...data, badge })
-    void checkAndAwardGradeBadges(DEFAULT_USER_ID, data.subjectId, data.score)
-=======
     await upsertGrade(DEFAULT_USER_ID, { ...data, badge })
->>>>>>> main
     revalidatePath('/grades')
     revalidatePath('/dashboard')
     return { success: true }

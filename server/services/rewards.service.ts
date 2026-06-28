@@ -5,8 +5,6 @@ import {
   awardBadge,
   getTotalGameCount,
 } from '@/server/repositories/progress.repository'
-import { getReportCard } from '@/server/repositories/grades.repository'
-import { GRADE_SCALE } from '@/lib/constants'
 
 /**
  * Awards the 'game-win' badge on the first ever completed game session.
@@ -27,39 +25,6 @@ export const checkAndAwardFirstLoginBadge = async (userId: string): Promise<void
   const earned = await getEarnedBadgeIds(userId)
   if (!earned.includes('first-login')) {
     await awardBadge(userId, 'first-login')
-  }
-}
-
-/**
- * Checks grade-related badges after a grade is saved.
- * Awards perfect-10, subject-specific excellence (math-ace, reading-star), and all-green.
- * Safe to call after every grade upsert — no-ops if already earned.
- */
-export const checkAndAwardGradeBadges = async (
-  userId: string,
-  subjectId: string,
-  score: number
-): Promise<void> => {
-  const earned = await getEarnedBadgeIds(userId)
-
-  if (score >= 10 && !earned.includes('perfect-10')) {
-    await awardBadge(userId, 'perfect-10')
-  }
-
-  if (score >= GRADE_SCALE.EXCELLENT) {
-    if (subjectId === 'math' && !earned.includes('math-ace')) {
-      await awardBadge(userId, 'math-ace')
-    }
-    if (subjectId === 'vietnamese' && !earned.includes('reading-star')) {
-      await awardBadge(userId, 'reading-star')
-    }
-  }
-
-  if (!earned.includes('all-green')) {
-    const allGrades = await getReportCard(userId)
-    if (allGrades.length > 0 && allGrades.every((g) => g.score >= GRADE_SCALE.GOOD)) {
-      await awardBadge(userId, 'all-green')
-    }
   }
 }
 

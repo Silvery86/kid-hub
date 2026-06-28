@@ -6,7 +6,7 @@
 import 'server-only'
 
 import * as mathRepo from '@/server/repositories/math.repository'
-import { completeHomework } from '@/server/services/homework.service'
+import * as homeworkRepo from '@/server/repositories/homework.repository'
 import { calculateStars, calculatePointsEarned } from '@/hooks/useGameSession'
 import { GAME_QUESTIONS_PER_SESSION } from '@/lib/constants'
 import type { SaveMathProgressInput } from '@/types'
@@ -55,8 +55,8 @@ export const saveMathSession = async (
 
   await mathRepo.addUserPoints(userId, pointsEarned)
 
-  if (input.homeworkPeriodId) {
-    await completeHomework(userId, input.homeworkPeriodId)
+  if (input.homeworkPeriodId && input.homeworkDate) {
+    await homeworkRepo.markDone(input.homeworkPeriodId, userId, input.homeworkDate)
   }
 
   return { starsEarned: stars, score, pointsEarned, isNewBest }

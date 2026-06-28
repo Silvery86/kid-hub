@@ -1,20 +1,5 @@
 'use server'
 
-<<<<<<< HEAD
-import { requireParentSession } from '@/server/lib/auth-guard'
-import { KidAccessSettingsSchema } from '@/server/lib/schemas'
-import {
-  fetchKidAccessSettings,
-  persistKidAccessSettings,
-} from '@/server/services/user.service'
-import {
-  fetchRecentActivity,
-  fetchRecentActivityGrouped,
-  type ActivityGroup as ServiceActivityGroup,
-} from '@/server/services/activity.service'
-import type { ActivityEventRow } from '@/server/repositories/activity.repository'
-import { DEFAULT_USER_ID } from '@/lib/constants'
-=======
 import { z } from 'zod'
 import { requireParentSession } from '@/server/lib/auth-guard'
 import { getKidAccessSettings, saveKidAccessSettings } from '@/server/services/user.service'
@@ -22,13 +7,12 @@ import { fetchRecentActivity } from '@/server/services/activity.service'
 import type { ActivityEventRow } from '@/server/services/activity.service'
 import { DEFAULT_USER_ID } from '@/lib/constants'
 import type { ActionResult, ActionVoidResult } from '@/types'
->>>>>>> main
 
 /** Returns saved feature toggle state. Null means the parent hasn't customised yet — use defaults. */
 export const getKidAccessSettingsAction = async (): Promise<ActionResult<Record<string, boolean> | null>> => {
   try {
     await requireParentSession()
-    const settings = await fetchKidAccessSettings(DEFAULT_USER_ID)
+    const settings = await getKidAccessSettings(DEFAULT_USER_ID)
     return { success: true, data: settings }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to load settings'
@@ -43,11 +27,6 @@ export interface ActivityItem {
   label: string
   iconKey: string | null
   createdAt: string // ISO string — serialisable across server/client boundary
-}
-
-export interface ActivityGroup {
-  date: string
-  items: ActivityItem[]
 }
 
 /** Parent-facing: returns the last N kid activity events, newest first. */
@@ -68,34 +47,15 @@ export const getRecentActivityAction = async (
   }
 }
 
-/** Parent-facing: returns activity events grouped by calendar date, newest date first. */
-export const getGroupedActivityAction = async (
-  limit = 20
-): Promise<{ success: boolean; data?: ActivityGroup[]; error?: string }> => {
-  try {
-    await requireParentSession()
-    const groups: ServiceActivityGroup[] = await fetchRecentActivityGrouped(DEFAULT_USER_ID, limit)
-    return {
-      success: true,
-      data: groups.map(({ date, items }) => ({
-        date,
-        items: items.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() })),
-      })),
-    }
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Failed to fetch activity'
-    if (msg === 'Unauthorized') return { success: false, error: 'Unauthorized' }
-    return { success: false, error: msg }
-  }
-}
+const SettingsSchema = z.record(z.string(), z.boolean())
 
 /** Persists the full toggle state map to the database. */
 export const saveKidAccessSettingsAction = async (settings: unknown): Promise<ActionVoidResult> => {
   try {
     await requireParentSession()
-    const parsed = KidAccessSettingsSchema.safeParse(settings)
+    const parsed = SettingsSchema.safeParse(settings)
     if (!parsed.success) return { success: false, error: 'Invalid settings format' }
-    await persistKidAccessSettings(DEFAULT_USER_ID, parsed.data)
+    await saveKidAccessSettings(DEFAULT_USER_ID, parsed.data)
     return { success: true }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to save settings'

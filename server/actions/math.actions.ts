@@ -5,19 +5,15 @@
  * Kid-facing (no parent auth required) — saving progress and marking homework done.
  */
 
+import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { DEFAULT_USER_ID } from '@/lib/constants'
 import { saveMathSession, getTodayMathHomework } from '@/server/services/math.service'
 import { todayDateKey, todayDayOfWeek } from '@/server/services/homework.service'
 import { recordActivity } from '@/server/services/activity.service'
 import { checkAndAwardGameWinBadge } from '@/server/services/rewards.service'
-<<<<<<< HEAD
-import { SaveMathProgressSchema } from '@/server/lib/schemas'
-import type { MathSessionResult } from '@/server/services/math.service'
-=======
 import type { MathSessionResult } from '@/server/services/math.service'
 import type { MathGameType, ActionResult } from '@/types'
->>>>>>> main
 
 const MATH_MINIGAME_LABELS = {
   counting: 'Đếm số',
@@ -25,6 +21,15 @@ const MATH_MINIGAME_LABELS = {
   shapes: 'Hình học',
 } satisfies Record<MathGameType, string>
 
+const SaveMathProgressSchema = z.object({
+  minigame: z.enum(['counting', 'addition', 'shapes']),
+  level: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  correctCount: z.number().int().min(0).max(10),
+  incorrectCount: z.number().int().min(0).max(10),
+  timeSpentSecs: z.number().int().min(1).max(600),
+  homeworkPeriodId: z.string().optional(),
+  homeworkDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+})
 
 /** Saves a completed math session to the database and optionally marks homework done. */
 export const saveMathProgressAction = async (
