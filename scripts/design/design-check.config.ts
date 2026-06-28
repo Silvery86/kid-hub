@@ -42,7 +42,7 @@ export const config: Config = {
     'tweaks-panel.jsx',
   ],
 
-  skipRoutes: ['/', '/kid-unlock'],
+  skipRoutes: ['/', '/kid-unlock', '/sentry-example-page'],
 
   semanticViolations: [
     {

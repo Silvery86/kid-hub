@@ -15,7 +15,7 @@ export default function ParentError({
         <button
           type="button"
           onClick={reset}
-          className="rounded-xl bg-blue-500 px-6 py-3 font-semibold text-white hover:bg-blue-600 transition-colors"
+          className="rounded-xl bg-btn-primary px-6 py-3 font-semibold text-white hover:bg-btn-primary-hover transition-colors"
         >
           Thử lại
         </button>

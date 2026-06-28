@@ -9,7 +9,7 @@ export default function NotFound() {
         <p className="mb-6 text-lg text-slate-500">Khôi quay về trang chủ nhé!</p>
         <Link
           href="/"
-          className="inline-block min-h-tap-lg min-w-40 rounded-2xl border-4 border-blue-700 bg-blue-500 px-6 py-3 text-center text-xl font-bold text-white transition-transform duration-100 active:scale-95 touch-manipulation"
+          className="inline-block min-h-tap-lg min-w-40 rounded-2xl border-4 border-blue-700 bg-btn-primary px-6 py-3 text-center text-xl font-bold text-white transition-transform duration-100 active:scale-95 touch-manipulation"
         >
           Về trang chủ 🏠
         </Link>

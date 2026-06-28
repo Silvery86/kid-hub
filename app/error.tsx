@@ -15,7 +15,7 @@ export default function RootError({
         <button
           type="button"
           onClick={reset}
-          className="min-h-tap-lg min-w-40 rounded-2xl border-4 border-blue-700 bg-blue-500 px-6 py-3 text-xl font-bold text-white transition-transform duration-100 active:scale-95 touch-manipulation"
+          className="min-h-tap-lg min-w-40 rounded-2xl border-4 border-blue-700 bg-btn-primary px-6 py-3 text-xl font-bold text-white transition-transform duration-100 active:scale-95 touch-manipulation"
         >
           Thử lại 🔄
         </button>
