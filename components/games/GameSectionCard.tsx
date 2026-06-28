@@ -47,8 +47,8 @@ export const GameSectionCard = ({
       data-testid={`game-section-${href.replace('/', '')}`}
       className={cn(
         'relative flex w-full touch-manipulation flex-col overflow-hidden text-left text-white',
-        'transition-transform duration-100 active:scale-[0.98]',
-        compact ? 'gap-2 rounded-[22px] p-4' : 'gap-3 rounded-[28px] p-5 sm:p-6'
+        'transition-transform duration-200 active:scale-[0.97] hover:scale-[1.02]',
+        compact ? 'gap-2 rounded-card p-4' : 'gap-3 rounded-4xl p-5 sm:p-6'
       )}
       style={{
         background: gradient,

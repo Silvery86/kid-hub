@@ -10,6 +10,7 @@ import { formatDayTimeRange, getTodayDDMM, schoolPeriodsOnly } from '@/lib/sched
 import { DayRail } from '@/components/dashboard/DayRail'
 import { BadgeModal } from '@/components/dashboard/BadgeModal'
 import { GameEntryCard } from '@/components/games/GameEntryCard'
+import { ProgressRing } from '@/components/ui/ProgressRing'
 import type { DailySchedule, WeeklySchedule, HomeworkItem, ClassPeriod } from '@/types'
 
 interface DashboardViewProps {
@@ -61,7 +62,7 @@ export const DashboardView = ({ initialSchedule, initialHomework, eveningBlocks 
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <div className="inline-flex items-center gap-1.5 rounded-pill bg-amber-100 px-3 py-1.5 text-sm font-extrabold text-amber-800">
+            <div className="inline-flex items-center gap-1.5 rounded-pill bg-amber-100 px-4 py-1.5 text-base font-extrabold text-amber-800">
               <span aria-hidden="true">🪙</span>
               <span suppressHydrationWarning>{progress.totalPoints} điểm</span>
             </div>
@@ -83,11 +84,15 @@ export const DashboardView = ({ initialSchedule, initialHomework, eveningBlocks 
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[1.45fr_1fr] lg:grid-rows-[auto_auto_1fr] lg:gap-4">
           {/* Hero card */}
           <section
-            className="relative overflow-hidden rounded-4xl p-5 text-white shadow-xl lg:col-span-2"
+            className="animate-fade-slide-up relative overflow-hidden rounded-4xl p-5 text-white shadow-xl lg:col-span-2"
             style={{
               background: currentSubject ? `var(--color-${currentSubject.id})` : 'var(--color-btn-primary)',
             }}
           >
+            <div
+              className="pointer-events-none absolute inset-0 rounded-4xl"
+              style={{ background: 'radial-gradient(ellipse at 20% 20%, rgba(255,255,255,0.14) 0%, transparent 60%)' }}
+            />
             {currentPeriod && currentSubject ? (
               <>
                 <div className="flex items-center gap-2">
@@ -120,7 +125,7 @@ export const DashboardView = ({ initialSchedule, initialHomework, eveningBlocks 
                     <p className="text-xs font-bold text-white/85">{nextPeriod.startTime}</p>
                   </div>
                 ) : null}
-                <span className="pointer-events-none absolute -right-4 -bottom-6 text-8xl opacity-20" aria-hidden="true">
+                <span className="pointer-events-none absolute -right-4 -bottom-6 text-9xl opacity-15" aria-hidden="true">
                   {currentSubject.id === 'math' ? '🔢' : currentSubject.id === 'english' ? '🔤' : '📘'}
                 </span>
               </>
@@ -151,14 +156,25 @@ export const DashboardView = ({ initialSchedule, initialHomework, eveningBlocks 
           </section>
 
           {/* Day rail — matches design DayRail (subject icon, progress, done check) */}
-          <section className="rounded-card bg-white p-3 shadow-sm lg:col-span-2" data-testid="dashboard-day-rail">
+          <section
+            className="animate-fade-slide-up rounded-card bg-white p-3 shadow-sm lg:col-span-2"
+            style={{ animationDelay: '0.08s' }}
+            data-testid="dashboard-day-rail"
+          >
             <div className="mb-3 flex items-baseline justify-between px-0.5">
               <h3 className="text-lg font-black text-text-primary">Hôm nay</h3>
-              <span className="text-xs font-bold text-text-muted">
-                {schoolPeriods.length > 0
-                  ? `${schoolPeriods.length} tiết · ${formatDayTimeRange(periods)}`
-                  : eveningBlocks.length > 0 ? `${eveningBlocks.length} buổi tối` : 'Không có tiết học'}
-              </span>
+              {schoolPeriods.length > 0 ? (
+                <div className="flex items-center gap-2">
+                  <span className="rounded-pill bg-shell-light px-2.5 py-0.5 text-xs font-extrabold text-text-muted">
+                    {schoolPeriods.length} tiết
+                  </span>
+                  <span className="text-xs font-bold text-text-muted">{formatDayTimeRange(periods)}</span>
+                </div>
+              ) : (
+                <span className="text-xs font-bold text-text-muted">
+                  {eveningBlocks.length > 0 ? `${eveningBlocks.length} buổi tối` : 'Không có tiết học'}
+                </span>
+              )}
             </div>
             {schoolPeriods.length > 0 ? (
               <DayRail
@@ -191,10 +207,10 @@ export const DashboardView = ({ initialSchedule, initialHomework, eveningBlocks 
           </section>
 
           {/* Left-bottom column */}
-          <section className="flex min-h-0 flex-col gap-4">
+          <section className="animate-fade-slide-up flex min-h-0 flex-col gap-4" style={{ animationDelay: '0.14s' }}>
             <div className="rounded-card bg-white p-3 shadow-sm">
               <h3 className="mb-3 text-lg font-black text-text-primary">Trò chơi 🎮</h3>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-[3fr_2fr] gap-3 portrait:grid-cols-1">
                 <GameEntryCard
                   gameType="math"
                   title="Number Ninja"
@@ -218,13 +234,22 @@ export const DashboardView = ({ initialSchedule, initialHomework, eveningBlocks 
           </section>
 
           {/* Right-bottom column — homework only (no duplicate schedule list) */}
-          <section className="flex min-h-0 flex-col">
+          <section className="animate-fade-slide-up flex min-h-0 flex-col" style={{ animationDelay: '0.18s' }}>
             <div className="rounded-card bg-white p-3 shadow-sm lg:flex lg:h-full lg:flex-col">
               <div className="mb-2 flex items-center justify-between">
                 <h3 className="text-lg font-black text-text-primary">Bài tập</h3>
-                <span className="rounded-pill bg-amber-100 px-2.5 py-1 text-xs font-extrabold text-amber-700">
-                  {pendingHomeworkCount} chưa làm
-                </span>
+                <div className="flex items-center gap-2">
+                  {initialHomework.length > 0 && (
+                    <ProgressRing
+                      value={initialHomework.length - pendingHomeworkCount}
+                      max={initialHomework.length}
+                      size={22}
+                    />
+                  )}
+                  <span className={`text-xs font-extrabold ${pendingHomeworkCount === 0 ? 'text-emerald-600' : 'text-amber-700'}`}>
+                    {pendingHomeworkCount === 0 ? 'Xong!' : `${pendingHomeworkCount} chưa làm`}
+                  </span>
+                </div>
               </div>
               <div className="flex flex-col gap-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
                 {initialHomework.length === 0 ? (

@@ -35,9 +35,9 @@ export const DayRail = ({ periods, currentPeriodNumber, progress, onPick }: DayR
             key={period.periodNumber ?? period.startTime}
             type="button"
             onClick={() => onPick?.(period)}
-            className={`min-w-[140px] shrink-0 rounded-2xl border-2 bg-white p-3 text-left transition-transform active:scale-[0.98] ${
-              isDone ? 'opacity-55' : ''
-            }`}
+            className={`shrink-0 rounded-2xl border-2 bg-white p-3 text-left transition-transform active:scale-[0.98] ${
+              isNow ? 'min-w-50' : 'min-w-35'
+            } ${isDone ? 'opacity-55' : ''}`}
             style={{
               borderColor: isNow ? color : '#e2e8f0',
               boxShadow: isNow ? `0 8px 20px -12px ${color}` : undefined,
@@ -49,11 +49,16 @@ export const DayRail = ({ periods, currentPeriodNumber, progress, onPick }: DayR
               </span>
               {isDone ? <span className="text-sm text-emerald-500">✓</span> : null}
               {isNow ? (
-                <span
-                  className="size-2 rounded-full"
-                  style={{ background: color }}
-                  aria-label="Đang học"
-                />
+                <span className="relative inline-flex size-2" aria-label="Đang học">
+                  <span
+                    className="animate-ping-ring absolute inline-flex size-full rounded-full opacity-75"
+                    style={{ background: color }}
+                  />
+                  <span
+                    className="relative inline-flex size-2 rounded-full"
+                    style={{ background: color }}
+                  />
+                </span>
               ) : null}
             </div>
             <div className="flex items-center gap-2">
@@ -68,8 +73,8 @@ export const DayRail = ({ periods, currentPeriodNumber, progress, onPick }: DayR
             {isNow && progress != null ? (
               <div className="mt-2 h-1 overflow-hidden rounded-full bg-slate-100">
                 <div
-                  className="h-full rounded-full transition-all"
-                  style={{ width: `${Math.round(progress * 100)}%`, background: color }}
+                  className="animate-grow-width h-full rounded-full"
+                  style={{ '--bar-pct': `${Math.round(progress * 100)}%`, background: color } as React.CSSProperties}
                 />
               </div>
             ) : null}

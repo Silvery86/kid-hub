@@ -59,7 +59,7 @@ function NavLink({
         data-testid={href === '/games' ? 'nav-link-games' : undefined}
         aria-current={isActive ? 'page' : undefined}
         className={cn(
-          'flex w-full touch-manipulation select-none transition-[transform,background-color,color] duration-150 active:scale-[0.97]',
+          'flex w-full touch-manipulation select-none transition-[transform,background-color,color] duration-200 ease-out active:scale-[0.97] hover:scale-[1.01]',
           'flex-col items-center justify-center gap-1 rounded-2xl py-2 min-h-16',
           'lg:min-h-0 lg:flex-row lg:justify-start lg:gap-3 lg:px-4 lg:py-2.5',
           isActive

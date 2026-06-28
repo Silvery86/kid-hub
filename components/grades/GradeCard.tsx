@@ -26,14 +26,17 @@ export function GradeCard({
   return (
     <div
       className={cn(
-        'flex items-center gap-3 rounded-[20px] bg-white shadow-sm',
+        'flex items-center rounded-card shadow-sm',
         compact ? 'gap-2.5 p-3' : 'gap-3.5 p-4'
       )}
+      style={{
+        background: score >= 9 ? `color-mix(in oklab, ${subject.color} 8%, white)` : 'white',
+      }}
     >
       <div
         className={cn(
-          'grid shrink-0 place-items-center rounded-[13px] text-2xl',
-          compact ? 'h-9 w-9 text-lg rounded-[10px]' : 'h-12 w-12'
+          'grid shrink-0 place-items-center rounded-xl text-2xl',
+          compact ? 'h-9 w-9 text-lg' : 'h-12 w-12'
         )}
         style={{ background: `color-mix(in oklab, ${subject.color} 15%, white)` }}
         aria-hidden="true"
@@ -43,7 +46,7 @@ export function GradeCard({
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex items-center justify-between gap-2">
           <span
-            className={cn('truncate font-black text-slate-800', compact ? 'text-sm' : 'text-base')}
+            className={cn('truncate font-black text-text-primary', compact ? 'text-sm' : 'text-base')}
           >
             {subject.name}
           </span>
@@ -51,8 +54,8 @@ export function GradeCard({
             <GradeTierBadge tier={badge} compact={compact} />
             <span
               className={cn(
-                'min-w-9 text-right font-black text-slate-800',
-                compact ? 'text-lg' : 'text-[22px]'
+                'min-w-9 text-right font-black text-text-primary',
+                compact ? 'text-lg' : 'text-2xl'
               )}
             >
               {score}
@@ -63,8 +66,8 @@ export function GradeCard({
           className={cn('overflow-hidden rounded-full bg-slate-100', compact ? 'h-1.5' : 'h-1.5')}
         >
           <div
-            className={cn('h-full rounded-full', barColor)}
-            style={{ width: `${pct}%` }}
+            className={cn('animate-grow-width h-full rounded-full', barColor)}
+            style={{ '--bar-pct': `${pct}%` } as React.CSSProperties}
             role="progressbar"
             aria-valuenow={score}
             aria-valuemin={0}

@@ -47,7 +47,7 @@ export function GradesView({ grades }: { grades: SubjectGrade[] }) {
       {/* Phone portrait */}
       <div className="hidden min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3.5 pb-4 pt-3.5 portrait:max-md:flex">
         <div className="flex items-center justify-between gap-2">
-          <h1 className="text-[22px] font-black text-slate-800">Điểm số ⭐</h1>
+          <h1 className="text-2xl font-black text-text-primary">Điểm số ⭐</h1>
           <SemesterTabs active={semester} onChange={setSemester} compact />
         </div>
         <GradesSummaryBar average={average} topSubjectId={topSubjectId} compact />
@@ -58,8 +58,8 @@ export function GradesView({ grades }: { grades: SubjectGrade[] }) {
       <div className="hidden min-h-0 flex-1 flex-col gap-4 overflow-hidden p-5 md:flex md:gap-5 md:p-6 lg:gap-6 lg:p-7">
         <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-[30px] font-black text-slate-800 lg:text-[34px]">Điểm số ⭐</h1>
-            <p className="mt-1 text-sm font-bold text-slate-500 lg:text-[15px]">
+            <h1 className="text-3xl font-black text-text-primary lg:text-4xl">Điểm số ⭐</h1>
+            <p className="mt-1 text-sm font-bold text-text-secondary lg:text-base">
               Năm học {academicYear} · Lớp 1A
               <span className="hidden lg:inline"> · Học kỳ {semester}</span>
             </p>
