@@ -1,9 +1,17 @@
+<<<<<<< HEAD
+=======
+// Server-only module — do NOT import from client components or hooks.
+>>>>>>> main
 import 'server-only'
 
 import type { BadgeTier, SubjectGrade, ReportCard } from '@/types'
 import { GRADE_SCALE } from '@/lib/constants'
 import * as gradesRepo from '@/server/repositories/grades.repository'
+<<<<<<< HEAD
 import { getUserById } from '@/server/repositories/user.repository'
+=======
+export type { GradeRecord } from '@/server/repositories/grades.repository'
+>>>>>>> main
 
 /** Derive a BadgeTier from a numeric score (0–10). */
 export const calculateBadge = (score: number): BadgeTier => {
@@ -30,6 +38,7 @@ export const buildReportCard = (userId: string, grades: SubjectGrade[]): ReportC
   averageScore: calculateAverage(grades),
 })
 
+<<<<<<< HEAD
 /** Fetches the full report card for a user; returns empty card if user doesn't exist. */
 export const fetchReportCard = async (userId: string): Promise<ReportCard> => {
   const user = await getUserById(userId)
@@ -43,3 +52,9 @@ export const saveGrade = async (
   userId: string,
   data: { subjectId: string; score: number; semester: 1 | 2; academicYear: string; badge: BadgeTier }
 ): Promise<void> => gradesRepo.upsertGrade(userId, data)
+=======
+export const getReportCard = (userId: string) => gradesRepo.getReportCard(userId)
+
+export const upsertGrade = (userId: string, data: gradesRepo.GradeRecord): Promise<void> =>
+  gradesRepo.upsertGrade(userId, data)
+>>>>>>> main

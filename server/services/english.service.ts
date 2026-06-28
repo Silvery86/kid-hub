@@ -9,7 +9,7 @@ import * as englishRepo from '@/server/repositories/english.repository'
 import { completeHomework } from '@/server/services/homework.service'
 import { calculateStars, calculatePointsEarned } from '@/hooks/useGameSession'
 import { GAME_QUESTIONS_PER_SESSION } from '@/lib/constants'
-import type { EnglishGameType, DifficultyLevel, SaveEnglishProgressInput } from '@/types'
+import type { SaveEnglishProgressInput } from '@/types'
 
 export interface EnglishSessionResult {
   starsEarned: 1 | 2 | 3

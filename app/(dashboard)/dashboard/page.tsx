@@ -13,9 +13,9 @@ export default async function DashboardPage() {
     getTodayHomeworkAction(),
     getTodayViewAction(),
   ])
-  const schedule = scheduleResult.data ?? []
-  const homework = homeworkResult.data ?? []
-  const eveningBlocks = todayResult.data?.eveningBlocks ?? []
+  const schedule = scheduleResult.success ? scheduleResult.data : []
+  const homework = homeworkResult.success ? homeworkResult.data : []
+  const eveningBlocks = todayResult.success ? (todayResult.data?.eveningBlocks ?? []) : []
 
   return (
     <TabletPageContainer>

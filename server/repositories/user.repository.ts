@@ -64,6 +64,33 @@ export const resetPinAttempts = async (userId: string): Promise<void> => {
   })
 }
 
+/**
+ * Atomically increments the PIN attempt counter and conditionally sets a lockout expiry
+ * in a single SQL statement, eliminating the read-then-increment TOCTOU race condition.
+ * Returns the post-update attempts count and lockedUntil value.
+ */
+export const atomicFailedPinAttempt = async (
+  userId: string,
+  maxAttempts: number,
+  lockoutSecs: number
+): Promise<{ attempts: number; lockedUntil: Date | null }> => {
+  const rows = await db.$queryRaw<[{ attempts: number; lockedUntil: Date | null }]>`
+    UPDATE parent_pins
+    SET
+      attempts = attempts + 1,
+      "lockedUntil" = CASE
+        WHEN attempts + 1 >= ${maxAttempts}
+        THEN NOW() + (${lockoutSecs}::int * INTERVAL '1 second')
+        ELSE "lockedUntil"
+      END
+    WHERE "userId" = ${userId}
+    RETURNING attempts, "lockedUntil"
+  `
+  const row = rows[0]
+  if (!row) throw new Error('PIN record not found during atomic update')
+  return { attempts: row.attempts, lockedUntil: row.lockedUntil }
+}
+
 export type ParentEmailAuthRecord = {
   id: string
   parentEmail: string | null

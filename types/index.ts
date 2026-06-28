@@ -4,6 +4,9 @@
 // Do NOT redefine these locally in components or hooks.
 // ============================================================
 
+import type { MutableRefObject } from 'react'
+import type { GameSessionState } from '@/hooks/useGameSession'
+
 // ── User & Profile ───────────────────────────────────────────
 
 export interface UserProfile {
@@ -203,8 +206,7 @@ export interface GameBestScore {
   subType?: string   // "counting" | "addition" | "shapes" for math; "alphabet" | "vocabulary" | "phonics" for english
 }
 
-export interface SaveMathProgressInput {
-  minigame: MathGameType
+interface SaveProgressInputBase {
   level: DifficultyLevel
   correctCount: number
   incorrectCount: number
@@ -213,14 +215,12 @@ export interface SaveMathProgressInput {
   homeworkDate?: string
 }
 
-export interface SaveEnglishProgressInput {
+export interface SaveMathProgressInput extends SaveProgressInputBase {
+  minigame: MathGameType
+}
+
+export interface SaveEnglishProgressInput extends SaveProgressInputBase {
   minigame: EnglishGameType
-  level: DifficultyLevel
-  correctCount: number
-  incorrectCount: number
-  timeSpentSecs: number
-  homeworkPeriodId?: string
-  homeworkDate?: string
 }
 
 // ── Gamification ─────────────────────────────────────────────
@@ -263,4 +263,36 @@ export interface ParentRefreshSession {
 export interface KidSession {
   userId: string
   expiresAt: number // Unix timestamp ms
+}
+
+// ── Server Action Result Types ────────────────────────────────
+
+/** For actions that return no payload on success. */
+export type ActionVoidResult =
+  | { success: true }
+  | { success: false; error: string; fieldErrors?: Record<string, string[]> }
+
+/** Discriminated union for actions that return typed data on success. */
+export type ActionResult<T> =
+  | { success: true; data: T }
+  | { success: false; error: string; fieldErrors?: Record<string, string[]> }
+
+/** For auth actions that may be locked out (login, PIN, kid pattern). */
+export type AuthActionResult =
+  | { success: true }
+  | { success: false; error: string; isLocked?: boolean; lockoutSeconds?: number; isWrong?: boolean }
+
+// ── Shared Hook Result Types ──────────────────────────────────
+
+/** Shared return type for useMathSession and useEnglishSession. */
+export interface UseGameSessionHookResult {
+  state: GameSessionState
+  starsEarned: 1 | 2 | 3
+  pointsEarned: number
+  isProcessing: MutableRefObject<boolean>
+  start: (level: DifficultyLevel) => void
+  answerCorrect: () => void
+  answerWrong: () => void
+  bestScore: GameBestScore | null
+  saveError: string | null
 }

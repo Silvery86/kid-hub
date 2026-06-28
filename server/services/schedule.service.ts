@@ -1,6 +1,5 @@
 // Server-only module — do NOT import from client components or hooks.
-// Business logic only — pure functions that receive data as arguments.
-// No direct DB calls here; repositories are called by Server Actions.
+import 'server-only'
 
 import type {
   ClassPeriod,
@@ -12,6 +11,8 @@ import type {
   TimeBand,
 } from '@/types'
 import { DAYS_OF_WEEK } from '@/lib/constants'
+import * as scheduleRepo from '@/server/repositories/schedule.repository'
+export type { CreatePeriodInput, UpdatePeriodInput, CreateDailyHomeworkInput } from '@/server/repositories/schedule.repository'
 
 /** Map JS Date.getDay() (0=Sun … 6=Sat) to DayOfWeek. */
 export const jsDateToDayOfWeek = (date: Date): DayOfWeek | null => {
@@ -95,3 +96,26 @@ export const buildTodayView = (
   cancelledIds,
   homework,
 })
+
+// ── DB-backed schedule operations ────────────────────────────────────────────
+
+export const getWeeklySchedule = (userId: string) => scheduleRepo.getWeeklySchedule(userId)
+export const getDaySchedule = (userId: string, day: DayOfWeek) => scheduleRepo.getDaySchedule(userId, day)
+export const getAllEveningBlocks = (userId: string) => scheduleRepo.getAllEveningBlocks(userId)
+export const getEveningBlocks = (userId: string, day: DayOfWeek) => scheduleRepo.getEveningBlocks(userId, day)
+export const getOverridesForDate = (userId: string, date: string) => scheduleRepo.getOverridesForDate(userId, date)
+export const getDailyHomework = (userId: string, date: string) => scheduleRepo.getDailyHomework(userId, date)
+export const countEveningBlocks = (userId: string, day: DayOfWeek) => scheduleRepo.countEveningBlocks(userId, day)
+export const createPeriod = (data: scheduleRepo.CreatePeriodInput) => scheduleRepo.createPeriod(data)
+export const updatePeriod = (data: scheduleRepo.UpdatePeriodInput) => scheduleRepo.updatePeriod(data)
+export const deletePeriod = (id: string, userId: string) => scheduleRepo.deletePeriod(id, userId)
+export const createOverride = (periodId: string, userId: string, date: string, reason?: string) =>
+  scheduleRepo.createOverride(periodId, userId, date, reason)
+export const deleteOverride = (periodId: string, date: string) => scheduleRepo.deleteOverride(periodId, date)
+export const getDailyHomeworkForDate = (userId: string, date: string) => scheduleRepo.getDailyHomework(userId, date)
+export const createDailyHomework = (data: scheduleRepo.CreateDailyHomeworkInput) =>
+  scheduleRepo.createDailyHomework(data)
+export const toggleDailyHomeworkDone = (id: string, userId: string, isDone: boolean) =>
+  scheduleRepo.toggleDailyHomeworkDone(id, userId, isDone)
+export const deleteDailyHomework = (id: string, userId: string) =>
+  scheduleRepo.deleteDailyHomework(id, userId)

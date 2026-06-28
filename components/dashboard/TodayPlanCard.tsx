@@ -7,7 +7,6 @@
  */
 
 import { useState } from 'react'
-import { cn } from '@/lib/utils'
 import { EveningBlockChip } from '@/components/dashboard/EveningBlockChip'
 import { HomeworkCheckbox } from '@/components/dashboard/HomeworkCheckbox'
 import { cancelExtraClassAction } from '@/server/actions/schedule.actions'

@@ -5,6 +5,7 @@ import {
   getRecentActivity,
   type ActivityEventRow,
 } from '@/server/repositories/activity.repository'
+export type { ActivityEventRow }
 
 export interface ActivityGroup {
   date: string // 'YYYY-MM-DD'

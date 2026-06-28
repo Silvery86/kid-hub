@@ -1,8 +1,14 @@
 'use server'
 
 import { requireParentSession } from '@/server/lib/auth-guard'
+<<<<<<< HEAD
 import { fetchUserProgress } from '@/server/services/user.service'
 import { DEFAULT_USER_ID } from '@/lib/constants'
+=======
+import { getUserProgress } from '@/server/services/user.service'
+import { DEFAULT_USER_ID } from '@/lib/constants'
+import type { ActionResult } from '@/types'
+>>>>>>> main
 
 export interface KidProgressData {
   totalPoints: number
@@ -13,11 +19,7 @@ export interface KidProgressData {
   englishBestStars: number // highest starsEarned across all english games/levels
 }
 
-export const getKidProgressAction = async (): Promise<{
-  success: boolean
-  data?: KidProgressData | null
-  error?: string
-}> => {
+export const getKidProgressAction = async (): Promise<ActionResult<KidProgressData | null>> => {
   try {
     await requireParentSession()
     const progress = await fetchUserProgress(DEFAULT_USER_ID)
