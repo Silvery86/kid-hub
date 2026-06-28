@@ -48,3 +48,6 @@ next-env.d.ts
 /design/manifest.json
 /design/drift-report.html
 .study/*
+
+# Sentry Config File
+.env.sentry-build-plugin
