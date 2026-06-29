@@ -420,9 +420,10 @@ Each step is independent and **does not break the running Web** (Web keeps using
 8. ~~Write one Playwright smoke test per route.~~ — `e2e/api/v1-smoke.spec.ts` covers all 8 routes (4 read routes assert 200/`{success:true}`, `homework/[id]/done` asserts a safe 500 on an unknown id, auth routes cover 400/401 negative paths plus a full login→refresh→logout happy path). 12 tests, all passing.
 
 ### Phase 3 — Bootstrap Mobile, no backend changes (Khởi tạo Mobile)
-9. (Optional but recommended) stand up the Turborepo monorepo: `apps/web` (move the current repo), `apps/mobile`, `packages/shared`.
-10. `create-expo-app` + NativeWind + TanStack Query + Axios (section 3).
-11. Set `EXPO_PUBLIC_API_URL` to the Next.js dev server (LAN IP, not `localhost`, so a real device can reach it).
+9. ~~Stand up the Turborepo monorepo: `apps/web` (move the current repo), `packages/shared`.~~ ✅ DONE (2026-06-29) — entire Next.js app moved to `apps/web` (336 git renames); root now holds `package.json` (turbo scripts), `turbo.json`, `pnpm-workspace.yaml` (`apps/*` + `packages/*`). `packages/shared` (`@kid-hub/shared`) scaffolded with the pure API result envelope + `DayOfWeek` (full type migration is Phase 5 §16). `pnpm install`, `pnpm type-check`, `pnpm build`, and the Phase 2 e2e smoke suite all pass from the new layout. **`apps/mobile` not yet created** (steps 10–11 below).
+   - ⚠️ **Before the next Vercel deploy:** set Project Settings → **Root Directory = `apps/web`** (see §5.2), otherwise the build goes red. Ship this as its own deploy, separate from the API deploy (§5.3).
+10. `create-expo-app` + NativeWind + TanStack Query + Axios (section 3). — **pending**
+11. Set `EXPO_PUBLIC_API_URL` to the Next.js dev server (LAN IP, not `localhost`, so a real device can reach it). — **pending**
 
 ### Phase 4 — Wire Mobile to the API (Nối Mobile vào API)
 12. Login screen → `/api/v1/auth/login` → store tokens in SecureStore.

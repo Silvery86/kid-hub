@@ -71,6 +71,14 @@ Rules:
 
 ## Architecture — Quick Reference
 
+> **Monorepo layout (since 2026-06-29, Phase 3):** the Next.js app now lives under
+> `apps/web/`. All directory paths in the table below are **relative to `apps/web/`**
+> (e.g. `server/services/` → `apps/web/server/services/`). Cross-platform contract
+> types/schemas/tokens live in `packages/shared/` (`@kid-hub/shared`). Run scripts
+> from the repo root via turbo (`pnpm dev|build|type-check|test`) or per-app with
+> `pnpm -C apps/web <script>`. The repo root holds only `package.json`, `turbo.json`,
+> `pnpm-workspace.yaml`, and shared meta (`CLAUDE.md`, `agents/`, `docs/`).
+
 Full layering rules and anti-patterns: `docs/guides/team-workflow.md`
 Stability risks and priority fix list: `docs/architecture/stability-plan.md`
 

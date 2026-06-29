@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -11,14 +11,19 @@
 !.yarn/versions
 
 # testing
-/coverage
+coverage/
+test-results/
+playwright-report/
+
+# turborepo
+.turbo/
 
 # next.js
-/.next/
-/out/
+.next/
+out/
 
 # production
-/build
+build/
 
 # misc
 .DS_Store
@@ -42,11 +47,11 @@ next-env.d.ts
 
 #docs
 .github/skills/*
-/lib/generated/prisma
+**/lib/generated/prisma
 
 # design automation — generated outputs
-/design/manifest.json
-/design/drift-report.html
+**/design/manifest.json
+**/design/drift-report.html
 .study/*
 
 # Sentry Config File
