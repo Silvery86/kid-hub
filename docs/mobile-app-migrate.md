@@ -417,7 +417,7 @@ Each step is independent and **does not break the running Web** (Web keeps using
 ### Phase 2 — REST for kid-facing domains, read first then write (REST cho domain kid-facing) ✅ DONE (2026-06-29)
 6. ~~Add **read** routes first~~ — `app/api/v1/homework/today`, `app/api/v1/schedule`, `app/api/v1/grades`, `app/api/v1/progress` all created; reuse services, no auth. Build verified.
 7. ~~Add **write** routes~~ — `app/api/v1/homework/[id]/done` created; calls `markDone` + `updateStreak` + `addUserPoints` + `void recordActivity` matching action. Committed in `feat(api): add phase 2 kid-facing rest routes...`
-8. Write one Playwright/`curl` smoke test per route. (Follow `e2e/<domain>/` per CLAUDE.md.) — **pending**
+8. ~~Write one Playwright smoke test per route.~~ — `e2e/api/v1-smoke.spec.ts` covers all 8 routes (4 read routes assert 200/`{success:true}`, `homework/[id]/done` asserts a safe 500 on an unknown id, auth routes cover 400/401 negative paths plus a full login→refresh→logout happy path). 12 tests, all passing.
 
 ### Phase 3 — Bootstrap Mobile, no backend changes (Khởi tạo Mobile)
 9. (Optional but recommended) stand up the Turborepo monorepo: `apps/web` (move the current repo), `apps/mobile`, `packages/shared`.
