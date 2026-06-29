@@ -15,7 +15,9 @@ import path from 'path'
 import { config } from './design-check.config'
 
 const ROOT = path.resolve(process.cwd())
-const DESIGN_TO_CODE_MD = path.join(ROOT, 'docs/design-system/design-to-code-sync.md')
+// docs/ lives at the monorepo root (one level above apps/web), not inside the app.
+const REPO_ROOT = path.resolve(ROOT, '../..')
+const DESIGN_TO_CODE_MD = path.join(REPO_ROOT, 'docs/design-system/design-to-code-sync.md')
 const DESIGN_COMPONENTS_DIR = path.join(ROOT, 'design/components')
 const APP_DIR = path.join(ROOT, 'app')
 const MANIFEST_PATH = path.join(ROOT, 'design/manifest.json')
