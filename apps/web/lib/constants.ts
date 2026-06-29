@@ -1,0 +1,99 @@
+/** Application-wide constants — schedule, grades, auth, game, and UI configuration values. */
+
+import type { DayOfWeek } from '@/types'
+
+// ── App User ──────────────────────────────────────────────────
+
+/** Fixed ID for the single app user (Khôi). Created via prisma/seed.ts. */
+export const DEFAULT_USER_ID = 'khoi-default-user'
+
+// ── Schedule ─────────────────────────────────────────────────
+
+export const DAYS_OF_WEEK: readonly DayOfWeek[] = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday',
+] as const
+
+export const SCHOOL_DAYS: readonly DayOfWeek[] = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+] as const
+
+export const DAY_LABELS: Record<DayOfWeek, string> = {
+  monday: 'Thứ Hai',
+  tuesday: 'Thứ Ba',
+  wednesday: 'Thứ Tư',
+  thursday: 'Thứ Năm',
+  friday: 'Thứ Sáu',
+  saturday: 'Thứ Bảy',
+  sunday: 'Chủ Nhật',
+} as const
+
+/** Maximum number of EXTRA_CLASS slots per day (enforced at action + UI layer). */
+export const MAX_EVENING_BLOCKS_PER_DAY = 3
+
+// ── Grades ───────────────────────────────────────────────────
+
+export const GRADE_SCALE = {
+  EXCELLENT: 9,
+  GOOD: 7,
+} as const
+
+// ── Parent Mode / Auth ────────────────────────────────────────
+
+export const MAX_PIN_ATTEMPTS = 5
+export const PIN_LOCKOUT_SECONDS = 60
+export const PIN_LENGTH = 4
+export const MAX_PARENT_LOGIN_ATTEMPTS = 5
+export const PARENT_LOGIN_LOCKOUT_SECONDS = 60
+
+export const PARENT_ACCESS_COOKIE = 'parent_access'
+export const PARENT_REFRESH_COOKIE = 'parent_refresh'
+export const KID_SESSION_COOKIE = 'kid_session'
+
+export const PARENT_ACCESS_TTL_SECONDS = 15 * 60
+export const PARENT_REFRESH_TTL_SECONDS = 30 * 24 * 60 * 60
+export const KID_SESSION_TTL_SECONDS = 12 * 60 * 60
+
+export const KID_PATTERN_LENGTH = 2
+export const KID_PATTERN_SYMBOLS = ['1', '2', '3', '4', '5', '6'] as const
+export const MAX_KID_PATTERN_ATTEMPTS = 5
+export const KID_PATTERN_LOCKOUT_SECONDS = 30
+
+// ── Games ────────────────────────────────────────────────────
+
+export const GAME_QUESTIONS_PER_SESSION = 10
+export const GAME_SECONDS_PER_QUESTION = 10
+export const COUNTING_SECONDS_PER_QUESTION = 15
+export const SHAPE_SECONDS_PER_QUESTION = 12
+export const ENGLISH_ALPHABET_SECONDS_PER_QUESTION = 12
+export const ENGLISH_WORD_SECONDS_PER_QUESTION = 15
+export const MAX_STARS = 3
+
+// ── UI / Interaction ──────────────────────────────────────────
+
+/** Minimum duration (ms) to disable inputs during feedback animations — also the
+ *  pause before advancing to the next question so the correct/wrong sound and
+ *  visual feedback are fully seen and heard. */
+export const INPUT_THROTTLE_MS = 1000
+
+/** Duration (ms) of the PIN shake error animation. */
+export const PIN_SHAKE_DURATION_MS = 500
+
+// ── localStorage Keys ─────────────────────────────────────────
+
+export const STORAGE_KEYS = {
+  SCHEDULE: 'kid-hub:weekly-schedule',
+  GRADES: 'kid-hub:grades',
+  USER_PROGRESS: 'kid-hub:user-progress',
+  PIN_DATA: 'kid-hub:pin-data',
+  KID_ACCESS_TOGGLES: 'kid-hub:kid-access-toggles',
+} as const

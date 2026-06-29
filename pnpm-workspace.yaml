@@ -1,9 +1,11 @@
 packages:
-  - .
+  - apps/*
+  - packages/*
 
 allowBuilds:
   '@firebase/util': false
   '@prisma/engines': false
+  '@sentry/cli': true
   esbuild: false
   prisma: false
   protobufjs: false
