@@ -102,7 +102,7 @@ const NameAnswerButton = ({
 )
 
 export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeGameProps) => {
-  const { state, starsEarned, pointsEarned, isProcessing: isProcessingRef, start, answerCorrect, answerWrong, bestScore } =
+  const { state, starsEarned, pointsEarned, isProcessing: isProcessingRef, start, answerCorrect, answerWrong, play, bestScore } =
     useMathSession({ minigame: 'shapes', secondsPerQuestion: SHAPE_SECONDS_PER_QUESTION, homeworkPeriodId })
 
   const [questions, setQuestions] = useState<ShapeQuestion[]>([])
@@ -133,6 +133,7 @@ export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeG
       const isCorrect = choiceIndex === currentQuestion.correctIndex
       setSelectedIndex(choiceIndex)
       setFeedbackState(isCorrect ? 'correct' : 'wrong')
+      play(isCorrect ? 'correct' : 'wrong')
 
       setTimeout(() => {
         setSelectedIndex(null)
@@ -143,7 +144,7 @@ export const ShapeGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: ShapeG
         setIsProcessing(false)
       }, INPUT_THROTTLE_MS)
     },
-    [state.status, currentQuestion, answerCorrect, answerWrong, isProcessingRef]
+    [state.status, currentQuestion, answerCorrect, answerWrong, play, isProcessingRef]
   )
 
   const handleHomeworkSubmit = () => {

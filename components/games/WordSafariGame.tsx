@@ -27,7 +27,7 @@ interface WordSafariGameProps {
 }
 
 export const WordSafariGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: WordSafariGameProps) => {
-  const { state, starsEarned, pointsEarned, isProcessing, start, answerCorrect, answerWrong, bestScore, saveError } =
+  const { state, starsEarned, pointsEarned, isProcessing, start, answerCorrect, answerWrong, play, bestScore, saveError } =
     useEnglishSession({
       minigame: 'vocabulary',
       secondsPerQuestion: ENGLISH_WORD_SECONDS_PER_QUESTION,
@@ -61,6 +61,7 @@ export const WordSafariGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: W
       const isCorrect = answer === currentQuestion.correctAnswer
       setSelectedAnswer(answer)
       setFeedbackState(isCorrect ? 'correct' : 'wrong')
+      play(isCorrect ? 'correct' : 'wrong')
 
       setTimeout(() => {
         setSelectedAnswer(null)
@@ -70,7 +71,7 @@ export const WordSafariGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: W
         isProcessing.current = false
       }, INPUT_THROTTLE_MS)
     },
-    [state.status, currentQuestion, answerCorrect, answerWrong, isProcessing]
+    [state.status, currentQuestion, answerCorrect, answerWrong, play, isProcessing]
   )
 
   const handleHomeworkSubmit = () => {

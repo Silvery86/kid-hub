@@ -80,8 +80,10 @@ export const MAX_STARS = 3
 
 // ── UI / Interaction ──────────────────────────────────────────
 
-/** Minimum duration (ms) to disable inputs during feedback animations. */
-export const INPUT_THROTTLE_MS = 600
+/** Minimum duration (ms) to disable inputs during feedback animations — also the
+ *  pause before advancing to the next question so the correct/wrong sound and
+ *  visual feedback are fully seen and heard. */
+export const INPUT_THROTTLE_MS = 1000
 
 /** Duration (ms) of the PIN shake error animation. */
 export const PIN_SHAKE_DURATION_MS = 500

@@ -114,6 +114,7 @@ export const useEnglishSession = ({
     start,
     answerCorrect,
     answerWrong,
+    play,
     bestScore,
     saveError: saveErrorRef.current,
   }

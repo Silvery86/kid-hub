@@ -47,7 +47,7 @@ const ObjectGrid = ({ emoji, count }: { emoji: string; count: number }) => (
 )
 
 export const CountingGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: CountingGameProps) => {
-  const { state, starsEarned, pointsEarned, isProcessing: isProcessingRef, start, answerCorrect, answerWrong, bestScore } =
+  const { state, starsEarned, pointsEarned, isProcessing: isProcessingRef, start, answerCorrect, answerWrong, play, bestScore } =
     useMathSession({ minigame: 'counting', secondsPerQuestion: COUNTING_SECONDS_PER_QUESTION, homeworkPeriodId })
 
   const [questions, setQuestions] = useState<CountingQuestion[]>([])
@@ -78,6 +78,7 @@ export const CountingGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: Cou
       const isCorrect = choiceIndex === currentQuestion.correctIndex
       setSelectedIndex(choiceIndex)
       setFeedbackState(isCorrect ? 'correct' : 'wrong')
+      play(isCorrect ? 'correct' : 'wrong')
 
       setTimeout(() => {
         setSelectedIndex(null)
@@ -88,7 +89,7 @@ export const CountingGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: Cou
         setIsProcessing(false)
       }, INPUT_THROTTLE_MS)
     },
-    [state.status, currentQuestion, answerCorrect, answerWrong, isProcessingRef]
+    [state.status, currentQuestion, answerCorrect, answerWrong, play, isProcessingRef]
   )
 
   const handleHomeworkSubmit = () => {

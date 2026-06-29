@@ -111,6 +111,7 @@ export const useMathSession = ({
     start,
     answerCorrect,
     answerWrong,
+    play,
     bestScore,
     saveError: saveErrorRef.current,
   }

@@ -293,6 +293,7 @@ export interface UseGameSessionHookResult {
   start: (level: DifficultyLevel) => void
   answerCorrect: () => void
   answerWrong: () => void
+  play: (key: 'correct' | 'wrong' | 'complete' | 'tap') => void
   bestScore: GameBestScore | null
   saveError: string | null
 }

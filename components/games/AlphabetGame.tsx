@@ -25,7 +25,7 @@ interface AlphabetGameProps {
 }
 
 export const AlphabetGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: AlphabetGameProps) => {
-  const { state, starsEarned, pointsEarned, isProcessing, start, answerCorrect, answerWrong, bestScore, saveError } =
+  const { state, starsEarned, pointsEarned, isProcessing, start, answerCorrect, answerWrong, play, bestScore, saveError } =
     useEnglishSession({
       minigame: 'alphabet',
       secondsPerQuestion: ENGLISH_ALPHABET_SECONDS_PER_QUESTION,
@@ -59,6 +59,7 @@ export const AlphabetGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: Alp
       const isCorrect = answer === currentQuestion.correctAnswer
       setSelectedAnswer(answer)
       setFeedbackState(isCorrect ? 'correct' : 'wrong')
+      play(isCorrect ? 'correct' : 'wrong')
 
       setTimeout(() => {
         setSelectedAnswer(null)
@@ -68,7 +69,7 @@ export const AlphabetGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: Alp
         isProcessing.current = false
       }, INPUT_THROTTLE_MS)
     },
-    [state.status, currentQuestion, answerCorrect, answerWrong, isProcessing]
+    [state.status, currentQuestion, answerCorrect, answerWrong, play, isProcessing]
   )
 
   const handleHomeworkSubmit = () => {
