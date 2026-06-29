@@ -405,13 +405,13 @@ export const useMarkHomeworkDone = () => {
 
 Each step is independent and **does not break the running Web** (Web keeps using Server Actions + cookies throughout).
 
-### Phase 0 — Preparation, no risk (Chuẩn bị, không rủi ro)
-1. Settle `SESSION_SECRET` (currently a **P0 blocker** in `docker-compose.yml`) — must be set for real before any API exists, since Bearer JWTs are exposed outside the cookie.
-2. Decide API versioning: use the `/api/v1` prefix.
+### Phase 0 — Preparation, no risk (Chuẩn bị, không rủi ro) ✅ DONE
+1. ~~Settle `SESSION_SECRET` (currently a **P0 blocker** in `docker-compose.yml`)~~ — loaded via `env_file: .env.local`; service layer throws on missing/short secret (safe). `pnpm-workspace.yaml` `allowBuilds` fixed for `@sentry/cli`.
+2. ~~Decide API versioning: use the `/api/v1` prefix.~~ — confirmed, `/api/v1` adopted.
 
-### Phase 1 — Transport-agnostic auth, Web behavior unchanged (Auth độc lập transport)
-3. Create `server/lib/api-auth.ts` (`requireParentApi`).
-4. Create `app/api/v1/auth/{login,refresh,logout}/route.ts` — new files only, no changes to `auth.actions.ts`.
+### Phase 1 — Transport-agnostic auth, Web behavior unchanged (Auth độc lập transport) ✅ DONE (2026-06-29)
+3. ~~Create `server/lib/api-auth.ts` (`requireParentApi`).~~ — committed in `feat(api): add bearer auth guard and api v1 auth routes for phase 1`
+4. ~~Create `app/api/v1/auth/{login,refresh,logout}/route.ts`~~ — new files only, no changes to `auth.actions.ts`. Build verified (`next build` passes).
 5. Test with `curl`/Postman: login → get tokens → call a guarded endpoint. Web runs as before.
 
 ### Phase 2 — REST for kid-facing domains, read first then write (REST cho domain kid-facing)
