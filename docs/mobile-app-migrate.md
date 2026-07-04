@@ -436,9 +436,21 @@ Each step is independent and **does not break the running Web** (Web keeps using
     per-machine value goes in `.env.local` (gitignored). **Not** added to Vercel.
 
 ### Phase 4 — Wire Mobile to the API (Nối Mobile vào API)
-12. Login screen → `/api/v1/auth/login` → store tokens in SecureStore.
-13. Homework/Schedule/Grades tabs → TanStack Query calls REST.
-14. Test the refresh-token flow (the interceptor) by temporarily shortening `PARENT_ACCESS_TTL_SECONDS`.
+12. ~~Login screen → `/api/v1/auth/login` → store tokens in SecureStore.~~ ✅ DONE (2026-07-04) —
+    `src/app/login.tsx` (email/password, `429` lockout message) → `src/api/auth.api.ts` `login()`
+    persists tokens via `secure-store`. App-wide gate: `src/hooks/use-auth.ts` (`AuthProvider`
+    bootstraps from SecureStore), root `_layout.tsx` switched to a `Stack` (login vs `(tabs)`),
+    `index.tsx` redirects by session, `(tabs)/_layout.tsx` bounces to `/login` on sign-out.
+13. ~~Homework/Schedule/Grades tabs → TanStack Query calls REST.~~ ✅ DONE (2026-07-04) —
+    file-based `(tabs)` group (dashboard/homework/schedule/grades) styled with NativeWind.
+    `api/{homework,schedule,grades}.api.ts` + `hooks/use-{homework,schedule,grades}.ts` (TanStack
+    Query); homework tab also POSTs `/homework/[id]/done` via `useMarkHomeworkDone` (invalidates on
+    success). Shared `components/query-boundary.tsx` handles loading/error/retry. Demo screens
+    (`explore.tsx`, `app-tabs.tsx`) removed. Both mobile + web `type-check` pass. Local contract
+    types live in `src/api/types.ts` until Phase 5 §16 moves them into `@kid-hub/shared`.
+14. ⏳ Test the refresh-token flow (the interceptor) by temporarily shortening `PARENT_ACCESS_TTL_SECONDS`.
+    Wiring is in place (`src/api/client.ts` single-flight refresh from Phase 3); needs a live
+    device/emulator run against the dev server — not exercisable in the current sandbox.
 
 ### Phase 5 — Hardening, after Mobile is stable (Củng cố)
 15. Add rate limiting to `/api/v1/auth/login` (reuse Upstash `lib/rate-limit.ts`) — fixes the P0 blocker "no rate limiting on verifyPin/login".
