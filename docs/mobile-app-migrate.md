@@ -422,8 +422,18 @@ Each step is independent and **does not break the running Web** (Web keeps using
 ### Phase 3 — Bootstrap Mobile, no backend changes (Khởi tạo Mobile)
 9. ~~Stand up the Turborepo monorepo: `apps/web` (move the current repo), `packages/shared`.~~ ✅ DONE (2026-06-29) — entire Next.js app moved to `apps/web` (336 git renames); root now holds `package.json` (turbo scripts), `turbo.json`, `pnpm-workspace.yaml` (`apps/*` + `packages/*`). `packages/shared` (`@kid-hub/shared`) scaffolded with the pure API result envelope + `DayOfWeek` (full type migration is Phase 5 §16). `pnpm install`, `pnpm type-check`, `pnpm build`, and the Phase 2 e2e smoke suite all pass from the new layout. **`apps/mobile` not yet created** (steps 10–11 below).
    - ⚠️ **Before the next Vercel deploy:** set Project Settings → **Root Directory = `apps/web`** (see §5.2), otherwise the build goes red. Ship this as its own deploy, separate from the API deploy (§5.3).
-10. `create-expo-app` + NativeWind + TanStack Query + Axios (section 3). — **pending**
-11. Set `EXPO_PUBLIC_API_URL` to the Next.js dev server (LAN IP, not `localhost`, so a real device can reach it). — **pending**
+10. ~~`create-expo-app` + NativeWind + TanStack Query + Axios (section 3).~~ ✅ DONE (2026-06-30) —
+    `apps/mobile` scaffolded (Expo SDK 56 · Expo Router · React 19.2.3 matching web · `src/` layout).
+    Wired into the pnpm workspace as `@kid-hub/mobile` (with a `workspace:*` link to `@kid-hub/shared`),
+    `metro.config.js` made monorepo-aware (`watchFolders` = repo root) and wrapped with `withNativeWind`.
+    NativeWind v4 (`tailwindcss` 3.4) configured (`babel.config.js`, `tailwind.config.js`, `global.css`
+    directives, `nativewind-env.d.ts`). TanStack Query (`QueryClientProvider` in `app/_layout.tsx`),
+    Axios client with Bearer + single-flight refresh interceptor (`src/api/client.ts`), and an
+    `expo-secure-store` token wrapper (`src/lib/secure-store.ts`) added. `pnpm install` + both
+    `pnpm -C apps/web type-check` and `pnpm -C apps/mobile type-check` pass.
+11. ~~Set `EXPO_PUBLIC_API_URL` to the Next.js dev server.~~ ✅ DONE (2026-06-30) — committed
+    `apps/mobile/.env` documents the LAN-IP requirement (a real device cannot reach `localhost`);
+    per-machine value goes in `.env.local` (gitignored). **Not** added to Vercel.
 
 ### Phase 4 — Wire Mobile to the API (Nối Mobile vào API)
 12. Login screen → `/api/v1/auth/login` → store tokens in SecureStore.
