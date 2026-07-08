@@ -116,7 +116,7 @@ When acting as a specific role, read your role file before starting any task.
 
 1. `docker-compose.yml` line 31 — `SESSION_SECRET` not set; JWTs forgeable in dev
 2. ~~`middleware.ts` silent secret fallback~~ — **FIXED** (2026-05-02, TASK-001)
-3. No HTTP-layer rate limiting on `verifyPinAction` — lockout bypassable by concurrent requests
+3. ~~No HTTP-layer rate limiting on `verifyPinAction`~~ — **FIXED** (2026-07-05, Phase 5 §15). Web PIN/login Server Action POSTs are limited in `middleware.ts` (`getPinRateLimiter`, 10/60 s); the mobile REST path `/api/v1/auth/login` (outside the middleware matcher) is limited by `getLoginRateLimiter` (5/60 s) in `lib/rate-limit.ts`.
 
 ---
 

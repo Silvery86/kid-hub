@@ -453,7 +453,12 @@ Each step is independent and **does not break the running Web** (Web keeps using
     device/emulator run against the dev server — not exercisable in the current sandbox.
 
 ### Phase 5 — Hardening, after Mobile is stable (Củng cố)
-15. Add rate limiting to `/api/v1/auth/login` (reuse Upstash `lib/rate-limit.ts`) — fixes the P0 blocker "no rate limiting on verifyPin/login".
+15. ~~Add rate limiting to `/api/v1/auth/login` (reuse Upstash `lib/rate-limit.ts`).~~ ✅ DONE (2026-07-05) —
+    `getLoginRateLimiter()` (5 attempts / 60 s, prefix `kid-hub:api-login`) added to `lib/rate-limit.ts`;
+    the login route rejects with `429 + Retry-After` (by `x-forwarded-for` IP) before touching the service.
+    The middleware matcher excludes `/api/*`, so this is the API path's own guard (web PIN/login Server
+    Actions stay covered by the existing `getPinRateLimiter`). Closes CLAUDE.md P0 blocker #3. Degrades
+    gracefully (no-op) when Upstash env vars are absent, matching the PIN limiter.
 16. Gradually move `types/index.ts` (the API contract part) into `packages/shared/src/types.ts`; Web and Mobile import the same.
 17. Consolidate design tokens into `packages/shared/tailwind-preset.js`.
 
