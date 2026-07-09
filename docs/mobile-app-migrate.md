@@ -448,9 +448,15 @@ Each step is independent and **does not break the running Web** (Web keeps using
     success). Shared `components/query-boundary.tsx` handles loading/error/retry. Demo screens
     (`explore.tsx`, `app-tabs.tsx`) removed. Both mobile + web `type-check` pass. Local contract
     types live in `src/api/types.ts` until Phase 5 §16 moves them into `@kid-hub/shared`.
-14. ⏳ Test the refresh-token flow (the interceptor) by temporarily shortening `PARENT_ACCESS_TTL_SECONDS`.
-    Wiring is in place (`src/api/client.ts` single-flight refresh from Phase 3); needs a live
-    device/emulator run against the dev server — not exercisable in the current sandbox.
+14. ⏳ Test the refresh-token flow (the interceptor) by temporarily shortening `PARENT_ACCESS_TTL_SECONDS`
+    (a constant in `apps/web/lib/constants.ts`, not an env var). Wiring is in place (`src/api/client.ts`
+    single-flight refresh from Phase 3); needs a live device run against the dev server.
+    **Runs via an EAS development build, not Expo Go** — SDK 56 (RN 0.85 / Reanimated 4) is ahead of the
+    public Expo Go app, and a dev build is the same infrastructure a production release needs. Setup:
+    `expo-dev-client` added, `apps/mobile/eas.json` (development/preview/production profiles) committed;
+    run `npx eas-cli login && npx eas-cli init && npx eas-cli build --profile development --platform android`,
+    install the APK, then `pnpm -C apps/mobile start --dev-client`. Full device + WSL2-networking guide in
+    `apps/mobile/README.md`.
 
 ### Phase 5 — Hardening, after Mobile is stable (Củng cố)
 15. ~~Add rate limiting to `/api/v1/auth/login` (reuse Upstash `lib/rate-limit.ts`).~~ ✅ DONE (2026-07-05) —
