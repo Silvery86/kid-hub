@@ -12,3 +12,9 @@ export const PIN_LENGTH = 4
 
 /** Kid unlock-pattern length (taps). */
 export const KID_PATTERN_LENGTH = 2
+
+/** Number of questions in one game session. */
+export const GAME_QUESTIONS_PER_SESSION = 10
+
+/** Countdown seconds allotted per question. */
+export const GAME_SECONDS_PER_QUESTION = 10
