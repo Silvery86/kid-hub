@@ -108,3 +108,11 @@ export interface SaveMathProgressInput extends SaveProgressInputBase {
 export interface SaveEnglishProgressInput extends SaveProgressInputBase {
   minigame: EnglishGameType
 }
+
+/** Result returned when a completed game session is persisted (POST /api/v1/{math,english}). */
+export interface GameSaveResult {
+  starsEarned: 1 | 2 | 3
+  score: number
+  pointsEarned: number
+  isNewBest: boolean
+}
