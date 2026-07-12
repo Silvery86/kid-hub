@@ -8,7 +8,11 @@
   },
   "types": "./src/index.ts",
   "scripts": {
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "lint": "node scripts/check-purity.mjs"
+  },
+  "dependencies": {
+    "zod": "catalog:"
   },
   "devDependencies": {
     "typescript": "^5"
