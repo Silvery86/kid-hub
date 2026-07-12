@@ -1,120 +1,27 @@
 'use client'
 
-/** Game session state machine — manages question flow, timer, scoring, and session lifecycle. */
+/**
+ * Game session React hook — a thin wrapper over the shared pure reducer.
+ * The state machine (reducer, initial state, actions) and scoring live in
+ * @kid-hub/shared (Phase 3); this file adds the React timer + transition lock.
+ */
 
 import { useReducer, useCallback, useEffect, useRef, useState } from 'react'
-import type { GameStatus, GameType, DifficultyLevel } from '@/types'
-import { GAME_QUESTIONS_PER_SESSION, GAME_SECONDS_PER_QUESTION } from '@/lib/constants'
-import { clamp, calculateScore } from '@/lib/utils'
+import type { GameType, DifficultyLevel } from '@/types'
+import type { GameSessionState } from '@kid-hub/shared'
+import {
+  gameReducer,
+  initialGameSessionState,
+  calculateStars,
+  calculatePointsEarned,
+  GAME_SECONDS_PER_QUESTION,
+} from '@kid-hub/shared'
+import { calculateScore } from '@/lib/utils'
 
-// ── State ─────────────────────────────────────────────────────
-
-export interface GameSessionState {
-  status: GameStatus
-  gameType: GameType
-  level: DifficultyLevel
-  currentQuestionIndex: number
-  correctCount: number
-  totalQuestions: number
-  secondsLeft: number
-  startedAt: number
-}
-
-// ── Actions ───────────────────────────────────────────────────
-
-type GameAction =
-  | { type: 'START'; gameType: GameType; level: DifficultyLevel; secondsPerQuestion: number }
-  | { type: 'ANSWER_CORRECT'; secondsPerQuestion: number }
-  | { type: 'ANSWER_WRONG'; secondsPerQuestion: number }
-  | { type: 'TICK'; secondsPerQuestion: number }
-  | { type: 'FINISH' }
-  | { type: 'RESET' }
-
-// ── Reducer ───────────────────────────────────────────────────
-
-const initialState: GameSessionState = {
-  status: 'idle',
-  gameType: 'math',
-  level: 1,
-  currentQuestionIndex: 0,
-  correctCount: 0,
-  totalQuestions: GAME_QUESTIONS_PER_SESSION,
-  secondsLeft: GAME_SECONDS_PER_QUESTION,
-  startedAt: 0,
-}
-
-const gameReducer = (state: GameSessionState, action: GameAction): GameSessionState => {
-  switch (action.type) {
-    case 'START':
-      return {
-        ...initialState,
-        status: 'playing',
-        gameType: action.gameType,
-        level: action.level,
-        secondsLeft: action.secondsPerQuestion,
-        startedAt: Date.now(),
-      }
-
-    case 'ANSWER_CORRECT': {
-      const nextIndex = state.currentQuestionIndex + 1
-      const isLast = nextIndex >= state.totalQuestions
-      return {
-        ...state,
-        correctCount: state.correctCount + 1,
-        currentQuestionIndex: nextIndex,
-        secondsLeft: action.secondsPerQuestion,
-        status: isLast ? 'result' : 'playing',
-      }
-    }
-
-    case 'ANSWER_WRONG': {
-      const nextIndex = state.currentQuestionIndex + 1
-      const isLast = nextIndex >= state.totalQuestions
-      return {
-        ...state,
-        currentQuestionIndex: nextIndex,
-        secondsLeft: action.secondsPerQuestion,
-        status: isLast ? 'result' : 'playing',
-      }
-    }
-
-    case 'TICK': {
-      if (state.secondsLeft <= 1) {
-        // Time ran out for this question — treat as wrong
-        const nextIndex = state.currentQuestionIndex + 1
-        const isLast = nextIndex >= state.totalQuestions
-        return {
-          ...state,
-          currentQuestionIndex: nextIndex,
-          secondsLeft: action.secondsPerQuestion,
-          status: isLast ? 'result' : 'playing',
-        }
-      }
-      return { ...state, secondsLeft: state.secondsLeft - 1 }
-    }
-
-    case 'FINISH':
-      return { ...state, status: 'result' }
-
-    case 'RESET':
-      return initialState
-
-    default:
-      return state
-  }
-}
-
-// ── Derived helpers ───────────────────────────────────────────
-
-export const calculateStars = (correctCount: number, total: number): 1 | 2 | 3 => {
-  const pct = calculateScore(correctCount, total)
-  if (pct >= 90) return 3
-  if (pct >= 60) return 2
-  return 1
-}
-
-export const calculatePointsEarned = (correctCount: number, stars: 1 | 2 | 3): number =>
-  clamp(correctCount * 10 * stars, 0, 300)
+// Re-export the shared session type + scoring helpers so existing consumers
+// (types/index.ts, useMathSession, useEnglishSession) keep importing from here.
+export type { GameSessionState } from '@kid-hub/shared'
+export { calculateStars, calculatePointsEarned } from '@kid-hub/shared'
 
 // ── Hook ──────────────────────────────────────────────────────
 
@@ -131,7 +38,7 @@ export interface UseGameSessionResult {
 }
 
 export const useGameSession = (): UseGameSessionResult => {
-  const [state, dispatch] = useReducer(gameReducer, initialState)
+  const [state, dispatch] = useReducer(gameReducer, initialGameSessionState)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const isTransitioningRef = useRef(false)
   // Timer

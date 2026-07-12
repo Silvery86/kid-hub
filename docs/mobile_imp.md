@@ -738,7 +738,23 @@ document.**
   `server-only`/`@prisma` imports under `packages/shared`.
 - **Risk:** Medium — purity discipline; caught by mobile bundling + lint guard.
 
-### Phase 3 — Shared game core (generators + scoring + session reducer)
+### Phase 3 — Shared game core (generators + scoring + session reducer) — ✅ **DONE (2026-07-12)**
+
+> Implemented. **Shared `game/`:** a single `rng.ts` (mulberry32 — was triplicated
+> across math/counting/shape), `math-levels.ts`, `counting-levels.ts`, `shape-levels.ts`,
+> `english-levels.ts` (5 generators), and `session.ts` (pure `gameReducer` +
+> `initialGameSessionState` + `GameSessionState`/`GameAction`, no React). **Shared
+> `domain/scoring.ts`:** `calculateStars`/`calculatePointsEarned`. Game constants
+> (`GAME_QUESTIONS_PER_SESSION`, `GAME_SECONDS_PER_QUESTION`) moved to shared `constants.ts`.
+> **Web repointed:** the 4 `lib/data/*Levels.ts` files and `lib/constants.ts` re-export
+> from shared (7 game components unchanged); `hooks/useGameSession.ts` is now a thin
+> `useReducer` wrapper over the shared reducer + timer, re-exporting the session type and
+> scoring; `useMathSession`/`useEnglishSession` and `math.service`/`english.service` import
+> scoring from shared. **Bonus fix:** the two `server-only` services previously imported
+> `calculateStars`/`calculatePointsEarned` from the `'use client'` hook — now from shared.
+> **Tests:** Vitest added to `packages/shared` (golden-seed snapshots + determinism for all
+> generators, reducer transitions, scoring) — 21 tests pass. Workspace `pnpm type-check`
+> green; shared purity + web eslint (0 errors).
 
 - **Goal:** identical question generation + scoring + session state machine on both platforms.
 - **Files:** create `packages/shared/src/game/{math-levels,english-levels,session,rng}.ts`

@@ -6,7 +6,8 @@
  */
 
 import { useCallback, useEffect, useRef } from 'react'
-import { useGameSession, calculateStars, calculatePointsEarned } from '@/hooks/useGameSession'
+import { useGameSession } from '@/hooks/useGameSession'
+import { calculateStars, calculatePointsEarned } from '@kid-hub/shared'
 import { useAudio } from '@/hooks/useAudio'
 import { useUserProgress } from '@/hooks/useUserProgress'
 import { useLocalStorage } from '@/hooks/useLocalStorage'

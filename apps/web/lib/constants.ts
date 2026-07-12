@@ -67,8 +67,9 @@ export const KID_PATTERN_LOCKOUT_SECONDS = 30
 
 // ── Games ────────────────────────────────────────────────────
 
-export const GAME_QUESTIONS_PER_SESSION = 10
-export const GAME_SECONDS_PER_QUESTION = 10
+// GAME_QUESTIONS_PER_SESSION and GAME_SECONDS_PER_QUESTION are owned by
+// @kid-hub/shared (Phase 3 — mobile_imp.md §10) and re-exported for web imports.
+export { GAME_QUESTIONS_PER_SESSION, GAME_SECONDS_PER_QUESTION } from '@kid-hub/shared'
 export const COUNTING_SECONDS_PER_QUESTION = 15
 export const SHAPE_SECONDS_PER_QUESTION = 12
 export const ENGLISH_ALPHABET_SECONDS_PER_QUESTION = 12

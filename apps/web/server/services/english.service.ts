@@ -7,7 +7,7 @@ import 'server-only'
 
 import * as englishRepo from '@/server/repositories/english.repository'
 import * as homeworkRepo from '@/server/repositories/homework.repository'
-import { calculateStars, calculatePointsEarned } from '@/hooks/useGameSession'
+import { calculateStars, calculatePointsEarned } from '@kid-hub/shared'
 import { GAME_QUESTIONS_PER_SESSION } from '@/lib/constants'
 import type { SaveEnglishProgressInput } from '@/types'
 
