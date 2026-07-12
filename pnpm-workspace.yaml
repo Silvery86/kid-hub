@@ -2,6 +2,11 @@ packages:
   - apps/*
   - packages/*
 
+# Single pinned version of cross-cutting deps, shared by apps/web and
+# packages/shared (Phase 0 — mobile_imp.md §10). Reference with `catalog:`.
+catalog:
+  zod: ^4.3.6
+
 allowBuilds:
   '@firebase/util': false
   '@prisma/engines': false

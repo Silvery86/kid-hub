@@ -4,6 +4,12 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    zod:
+      specifier: ^4.3.6
+      version: 4.3.6
+
 importers:
 
   .:
@@ -117,6 +123,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@kid-hub/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@prisma/adapter-pg':
         specifier: ^7.7.0
         version: 7.7.0
@@ -166,7 +175,7 @@ importers:
         specifier: ^3.5.0
         version: 3.5.0
       zod:
-        specifier: ^4.3.6
+        specifier: 'catalog:'
         version: 4.3.6
       zustand:
         specifier: ^5.0.12
