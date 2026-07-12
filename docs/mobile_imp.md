@@ -705,7 +705,24 @@ document.**
   green; a deliberate type change in shared breaks *both* apps' type-check (drift = compile error).
 - **Risk:** Low — types only.
 
-### Phase 2 — Zod schemas + pure domain into shared
+### Phase 2 — Zod schemas + pure domain into shared — ✅ **DONE (2026-07-12)**
+
+> Implemented. **Shared now owns:** `constants.ts` (`GRADE_SCALE`, `PIN_LENGTH`,
+> `KID_PATTERN_LENGTH`); `domain/{time,grading,schedule}.ts` (`parseTimeToMinutes`,
+> `calculateBadge`, `validatePeriodOverlap`, `deriveTimeBand`, `filterCancelledSlots`,
+> `buildTodayView`); `schemas/{schedule,game,auth}.schema.ts` (`CreatePeriodSchema`,
+> `CreateExtraClassSchema`, `UpdatePeriodSchema`, `AddDailyHomeworkSchema`,
+> `SaveMathProgressSchema`, `SaveEnglishProgressSchema`, `Parent*`/`KidPatternSchema`).
+> `zod` added to `packages/shared` (via the Phase 0 catalog). **Web repointed:**
+> `lib/constants.ts`, `lib/utils.ts`, `lib/schedule-display.ts`, `grades.service.ts`,
+> `schedule.service.ts` re-export/import from shared; the 4 actions (schedule, auth,
+> math, english) import their schemas from shared (unused `z` imports removed).
+> **Purity guard:** `packages/shared/scripts/check-purity.mjs` wired as the package
+> `lint` script — fails on any `server-only`/Prisma/Next/React/Node import; runs under
+> `turbo run lint`. Workspace `pnpm type-check` green; shared purity + web eslint (0 errors).
+> **Scope note:** `calculateStars`/`calculatePointsEarned` (inside the React hook
+> `useGameSession.ts`) are deferred to Phase 3, where the reducer is extracted — avoids
+> editing that file twice.
 
 - **Goal:** validation + pure business rules shared; web actions/services import them.
 - **Files:** create `packages/shared/src/schemas/*` and `src/domain/*`; edit

@@ -17,50 +17,16 @@ import { checkAndAwardStreakBadges } from '@/server/services/rewards.service'
 import { getSubjectById } from '@/lib/data/subjects'
 import type { DayOfWeek, DailyHomework, DailySchedule, TodayView, ActionResult, ActionVoidResult } from '@/types'
 import { DEFAULT_USER_ID, MAX_EVENING_BLOCKS_PER_DAY } from '@/lib/constants'
+import {
+  CreatePeriodSchema,
+  CreateExtraClassSchema,
+  UpdatePeriodSchema,
+  AddDailyHomeworkSchema,
+} from '@kid-hub/shared'
 
-// ── Schemas ───────────────────────────────────────────────────
-
-const DaySchema = z.enum([
-  'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
-])
-
-const TimeSchema = z.string().regex(/^\d{2}:\d{2}$/)
-
-const CreatePeriodSchema = z.object({
-  day: DaySchema,
-  periodNumber: z.number().int().min(1).max(10),
-  subjectId: z.string().min(1),
-  startTime: TimeSchema,
-  endTime: TimeSchema,
-  roomNumber: z.string().optional(),
-})
-
-const CreateExtraClassSchema = z.object({
-  day: DaySchema,
-  subjectId: z.string().min(1),
-  startTime: TimeSchema,
-  endTime: TimeSchema,
-  iconKey: z.string().max(30).optional(),
-  sortOrder: z.number().int().min(0).optional(),
-})
-
-const UpdatePeriodSchema = z.object({
-  id: z.string().min(1),
-  subjectId: z.string().min(1).optional(),
-  startTime: TimeSchema.optional(),
-  endTime: TimeSchema.optional(),
-  roomNumber: z.string().optional(),
-  iconKey: z.string().max(30).optional(),
-  sortOrder: z.number().int().min(0).optional(),
-})
-
-const AddDailyHomeworkSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  subjectId: z.string().min(1),
-  label: z.string().min(1).max(150),
-  iconKey: z.string().max(30).optional(),
-  points: z.number().int().min(1).max(50).optional(),
-})
+// Named schemas (CreatePeriodSchema, CreateExtraClassSchema, UpdatePeriodSchema,
+// AddDailyHomeworkSchema) are owned by @kid-hub/shared (Phase 2) and imported above.
+// Inline ad-hoc validations below still use `z` directly.
 
 const todayStr = (): string => new Date().toISOString().split('T')[0]!
 

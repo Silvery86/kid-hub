@@ -1,17 +1,14 @@
 // Server-only module — do NOT import from client components or hooks.
 import 'server-only'
 
-import type { BadgeTier, SubjectGrade, ReportCard } from '@/types'
-import { GRADE_SCALE } from '@/lib/constants'
+import type { SubjectGrade, ReportCard } from '@/types'
+import { calculateBadge } from '@kid-hub/shared'
 import * as gradesRepo from '@/server/repositories/grades.repository'
 export type { GradeRecord } from '@/server/repositories/grades.repository'
 
-/** Derive a BadgeTier from a numeric score (0–10). */
-export const calculateBadge = (score: number): BadgeTier => {
-  if (score >= GRADE_SCALE.EXCELLENT) return 'excellent'
-  if (score >= GRADE_SCALE.GOOD) return 'good'
-  return 'needs-practice'
-}
+// calculateBadge is owned by @kid-hub/shared (Phase 2); re-exported for callers
+// that import it from this service (e.g. grades.actions.ts).
+export { calculateBadge }
 
 /** Compute the arithmetic average of all grades in a ReportCard. */
 export const calculateAverage = (grades: SubjectGrade[]): number => {

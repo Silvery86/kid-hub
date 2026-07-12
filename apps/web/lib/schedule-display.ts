@@ -1,5 +1,6 @@
 /** Pure helpers for schedule UI — week labels, period slots, stats. */
 
+import { parseTimeToMinutes } from '@kid-hub/shared'
 import { DAY_LABELS, SCHOOL_DAYS } from '@/lib/constants'
 import type { ClassPeriod, DailySchedule, DayOfWeek } from '@/types'
 
@@ -7,11 +8,6 @@ export interface PeriodSlotLabel {
   periodNumber: number
   startTime: string
   endTime: string
-}
-
-const parseTimeToMinutes = (time: string): number => {
-  const [h, m] = time.split(':')
-  return parseInt(h ?? '0', 10) * 60 + parseInt(m ?? '0', 10)
 }
 
 /** School period rows only (excludes evening extra-class blocks). */

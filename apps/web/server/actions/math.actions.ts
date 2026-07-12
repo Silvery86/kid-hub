@@ -5,7 +5,7 @@
  * Kid-facing (no parent auth required) — saving progress and marking homework done.
  */
 
-import { z } from 'zod'
+import { SaveMathProgressSchema } from '@kid-hub/shared'
 import { revalidatePath } from 'next/cache'
 import { DEFAULT_USER_ID } from '@/lib/constants'
 import { saveMathSession, getTodayMathHomework } from '@/server/services/math.service'
@@ -20,16 +20,6 @@ const MATH_MINIGAME_LABELS = {
   addition: 'Phép tính',
   shapes: 'Hình học',
 } satisfies Record<MathGameType, string>
-
-const SaveMathProgressSchema = z.object({
-  minigame: z.enum(['counting', 'addition', 'shapes']),
-  level: z.union([z.literal(1), z.literal(2), z.literal(3)]),
-  correctCount: z.number().int().min(0).max(10),
-  incorrectCount: z.number().int().min(0).max(10),
-  timeSpentSecs: z.number().int().min(1).max(600),
-  homeworkPeriodId: z.string().optional(),
-  homeworkDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-})
 
 /** Saves a completed math session to the database and optionally marks homework done. */
 export const saveMathProgressAction = async (

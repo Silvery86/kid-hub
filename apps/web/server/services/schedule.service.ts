@@ -6,9 +6,6 @@ import type {
   DailySchedule,
   WeeklySchedule,
   DayOfWeek,
-  DailyHomework,
-  TodayView,
-  TimeBand,
 } from '@/types'
 import { DAYS_OF_WEEK } from '@/lib/constants'
 import * as scheduleRepo from '@/server/repositories/schedule.repository'
@@ -42,60 +39,19 @@ export const findNextClass = (daily: DailySchedule): ClassPeriod | null => {
   return daily.periods.find((p) => p.startTime > currentTime) ?? null
 }
 
-/**
- * Returns true if the proposed period overlaps any existing period on the same day.
- * Overlap: newStart < existingEnd AND newEnd > existingStart.
- * Skips entries without a periodNumber (extra class blocks use startTime comparison instead).
- */
-export const validatePeriodOverlap = (proposed: ClassPeriod, existing: ClassPeriod[]): boolean =>
-  existing.some(
-    (p) =>
-      (p.periodNumber == null || p.periodNumber !== proposed.periodNumber) &&
-      proposed.startTime < p.endTime &&
-      proposed.endTime > p.startTime
-  )
+// validatePeriodOverlap, deriveTimeBand, filterCancelledSlots and buildTodayView
+// are owned by @kid-hub/shared (Phase 2 — mobile_imp.md §10). Re-exported so
+// existing callers (e.g. schedule.actions.ts) keep importing them from here.
+export {
+  validatePeriodOverlap,
+  deriveTimeBand,
+  filterCancelledSlots,
+  buildTodayView,
+} from '@kid-hub/shared'
 
 /** Return all days in order as defined by DAYS_OF_WEEK constant. */
 export const sortDays = (days: DailySchedule[]): DailySchedule[] =>
   [...days].sort((a, b) => DAYS_OF_WEEK.indexOf(a.day) - DAYS_OF_WEEK.indexOf(b.day))
-
-/** Derives the time band ("morning" | "afternoon" | "evening") from an "HH:MM" string. */
-export const deriveTimeBand = (startTime: string): TimeBand => {
-  const minutes = parseInt(startTime.slice(0, 2), 10) * 60 + parseInt(startTime.slice(3, 5), 10)
-  if (minutes < 12 * 60) return 'morning'
-  if (minutes < 17 * 60) return 'afternoon'
-  return 'evening'
-}
-
-/** Removes extra class entries whose periodId appears in the cancelled set. */
-export const filterCancelledSlots = (
-  blocks: ClassPeriod[],
-  cancelledIds: string[]
-): ClassPeriod[] => {
-  if (cancelledIds.length === 0) return blocks
-  const cancelled = new Set(cancelledIds)
-  return blocks.filter((b) => !b.id || !cancelled.has(b.id))
-}
-
-/**
- * Merges school periods, evening blocks, overrides, and daily homework into a single
- * TodayView for the kid schedule page.
- */
-export const buildTodayView = (
-  date: string,
-  schoolPeriods: ClassPeriod[],
-  eveningBlocks: ClassPeriod[],
-  cancelledIds: string[],
-  homework: DailyHomework[]
-): TodayView => ({
-  date,
-  schoolPeriods: [...schoolPeriods].sort(
-    (a, b) => (a.periodNumber ?? 99) - (b.periodNumber ?? 99)
-  ),
-  eveningBlocks: filterCancelledSlots(eveningBlocks, cancelledIds),
-  cancelledIds,
-  homework,
-})
 
 // ── DB-backed schedule operations ────────────────────────────────────────────
 

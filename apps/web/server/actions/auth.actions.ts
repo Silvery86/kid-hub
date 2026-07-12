@@ -6,7 +6,12 @@
  * Business logic lives in auth.service — this layer only handles Zod, cookies, and orchestration.
  */
 
-import { z } from 'zod'
+import {
+  ParentEmailSchema,
+  ParentPasswordSchema,
+  KidPatternSchema,
+  ParentPinSchema,
+} from '@kid-hub/shared'
 import { cookies } from 'next/headers'
 import {
   createParentSession,
@@ -31,21 +36,13 @@ import {
 import type { ActionVoidResult, AuthActionResult } from '@/types'
 import {
   DEFAULT_USER_ID,
-  KID_PATTERN_LENGTH,
   KID_SESSION_TTL_SECONDS,
-  PIN_LENGTH,
   PARENT_ACCESS_TTL_SECONDS,
   PARENT_REFRESH_TTL_SECONDS,
 } from '@/lib/constants'
 
-const ParentEmailSchema = z.string().trim().toLowerCase().email('Invalid email format')
-const ParentPasswordSchema = z
-  .string()
-  .min(8, 'Password must be at least 8 characters')
-  .max(128, 'Password is too long')
-const KidPatternSchema = z
-  .string()
-  .regex(new RegExp(`^[1-6]{${KID_PATTERN_LENGTH}}$`), 'Invalid unlock pattern format')
+// ParentEmailSchema, ParentPasswordSchema, KidPatternSchema and ParentPinSchema
+// are owned by @kid-hub/shared (Phase 2 — mobile_imp.md §10) and imported above.
 
 const PARENT_ACCESS_COOKIE_OPTIONS = {
   httpOnly: true,
@@ -275,10 +272,6 @@ export const signOutKidAction = async (): Promise<ActionVoidResult> => {
     return { success: false, error: 'Kid sign out failed' }
   }
 }
-
-const ParentPinSchema = z
-  .string()
-  .regex(/^\d{4}$/, `PIN must be exactly ${PIN_LENGTH} digits`)
 
 /** Whether the household has a parent PIN configured. */
 export const checkParentPinAction = async (): Promise<{ hasPin: boolean }> => {
