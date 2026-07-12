@@ -1,12 +1,9 @@
-// homework.api.ts — GET today's homework, POST mark-done.
-import { api } from './client'
+// homework.api.ts — GET today's homework, POST mark-done (via @kid-hub/api-client).
 import type { HomeworkItem } from '@kid-hub/shared'
 
-export async function getTodayHomework(): Promise<HomeworkItem[]> {
-  const { data } = await api.get('/homework/today')
-  return data.data as HomeworkItem[]
-}
+import { apiClient } from './http'
 
-export async function markHomeworkDone(periodId: string): Promise<void> {
-  await api.post(`/homework/${periodId}/done`)
-}
+export const getTodayHomework = (): Promise<HomeworkItem[]> => apiClient.getTodayHomework()
+
+export const markHomeworkDone = (periodId: string): Promise<void> =>
+  apiClient.markHomeworkDone(periodId)

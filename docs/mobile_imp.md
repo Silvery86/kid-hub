@@ -769,7 +769,23 @@ document.**
 - **Risk:** Medium — the session-reducer extraction is the trickiest refactor; guard with
   golden-seed unit tests (same seed must yield the same question sequence pre/post).
 
-### Phase 4 — Shared API client + new game-progress REST endpoints
+### Phase 4 — Shared API client + new game-progress REST endpoints — ✅ **DONE (2026-07-12)**
+
+> Implemented. **New `@kid-hub/api-client` package:** an `HttpTransport` interface +
+> `createFetchTransport` (isomorphic), thin endpoint modules (schedule, homework, grades,
+> math, english), and `createApiClient(transport)`. Contract types come from `@kid-hub/shared`
+> (added `GameSaveResult`). **New web routes** `app/api/v1/math/route.ts` and `english/route.ts`:
+> `POST` validates with the shared `Save{Math,English}ProgressSchema` and delegates to the
+> existing `save{Math,English}Session` services; `GET` returns `GameBestScore[]` filtered from
+> `getUserProgress().bestScores`. Kid-facing (`DEFAULT_USER_ID`, no Bearer — matching the other
+> v1 reads) but IP rate-limited by a new `getGameSaveRateLimiter` (30/60 s, parity with the
+> login route). **Mobile** injects its existing axios client as the transport
+> (`src/api/http.ts` → `apiClient`); `schedule/grades/homework.api.ts` now delegate to the
+> client, and new `math.api.ts`/`english.api.ts` expose the game fetchers (consumed in Phase 6).
+> **Scope:** `auth` (SecureStore-coupled) and `progress` (bespoke non-shared shape) stay
+> app-specific for now; web keeps using server actions/services (the fetch transport is
+> available but unwired). Workspace `pnpm type-check` green (4 packages); shared purity + 21
+> tests; web eslint 0 errors.
 
 - **Goal:** mobile persists game results and reads progress through typed fetchers; add the
   REST endpoints mobile needs (web currently exposes schedule/homework/grades/progress but
