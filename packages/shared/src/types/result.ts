@@ -1,18 +1,5 @@
-// Core API contract types shared by Web (Server Actions + /api/v1) and Mobile.
-// Kept in sync with apps/web/types/index.ts until Phase 5 makes this the
-// single source and the web app re-exports from here.
-
-// ── Day of week ──────────────────────────────────────────────
-export type DayOfWeek =
-  | 'monday'
-  | 'tuesday'
-  | 'wednesday'
-  | 'thursday'
-  | 'friday'
-  | 'saturday'
-  | 'sunday'
-
-// ── Result envelopes ─────────────────────────────────────────
+// Result envelopes returned by Server Actions and /api/v1 routes.
+// Owner: @kid-hub/shared — shared by Web and Mobile.
 
 /** For actions/routes that return no payload on success. */
 export type ActionVoidResult =

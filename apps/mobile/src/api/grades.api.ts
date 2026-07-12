@@ -1,6 +1,6 @@
 // grades.api.ts — GET the report card.
 import { api } from './client'
-import type { ReportCard } from './types'
+import type { ReportCard } from '@kid-hub/shared'
 
 export async function getGrades(): Promise<ReportCard> {
   const { data } = await api.get('/grades')

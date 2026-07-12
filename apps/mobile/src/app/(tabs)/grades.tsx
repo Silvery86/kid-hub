@@ -1,7 +1,7 @@
 import { FlatList, Text, View } from 'react-native';
 
 import { QueryBoundary } from '@/components/query-boundary';
-import type { BadgeTier } from '@/api/types';
+import type { BadgeTier } from '@kid-hub/shared';
 import { useGrades } from '@/hooks/use-grades';
 
 const BADGE_EMOJI: Record<BadgeTier, string> = {

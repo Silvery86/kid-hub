@@ -1,7 +1,7 @@
 import { FlatList, Text, View } from 'react-native';
 
 import { QueryBoundary } from '@/components/query-boundary';
-import type { ClassPeriod } from '@/api/types';
+import type { ClassPeriod } from '@kid-hub/shared';
 import { useSchedule } from '@/hooks/use-schedule';
 
 // Schedule tab: school periods then any evening extra-class blocks for today.
