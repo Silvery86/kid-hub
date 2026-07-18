@@ -802,7 +802,23 @@ document.**
   uses; best-scores GET returns typed `GameBestScore[]`; contract types come from shared.
 - **Risk:** Medium — new server surface; covered by service reuse (no new business logic).
 
-### Phase 5 — Orientation Engine (finalized to `LANDSCAPE`)
+### Phase 5 — Orientation Engine (finalized to `LANDSCAPE`) — ✅ **DONE (2026-07-12)** *(needs on-device build verification)*
+
+> Implemented (verified against the Expo **v56** `expo-screen-orientation` docs per
+> `apps/mobile/AGENTS.md`). Installed `expo-screen-orientation@~56.0.5` via `expo install`
+> (SDK-56 compatible). **`src/hooks/use-orientation-lock.ts`:** `useFocusEffect` locks on
+> focus and restores `PORTRAIT_UP` on blur (pairing survives gesture-back/tab-switch/deep-exit);
+> landscape uses `OrientationLock.LANDSCAPE` (both variants, all devices — no `expo-device`),
+> and re-asserts the lock on `AppState` `active`. **`src/components/orientation-lock.tsx`:**
+> the `<OrientationLock mode>` gate holds a `#208AEF` curtain over already-laid-out content
+> until `addOrientationChangeListener` reports landscape — no wrong-orientation frame.
+> **`app.json`:** added the `expo-screen-orientation` plugin (`initialOrientation: "PORTRAIT"`)
+> and `ios.requireFullScreen: true`, keeping `"orientation": "portrait"` as the baseline.
+> **`src/app/_layout.tsx`:** a root `OrientationGuardrail` (Path C safety net) forces portrait
+> whenever the focused path isn't a game route (`/math`, `/english`). Mobile `type-check` green;
+> app.json valid. **Note:** the native config change needs a fresh dev/EAS build, and the
+> flicker-free rotation + background/foreground behavior must be verified on a real device —
+> the game screens that mount `<OrientationLock mode="landscape">` arrive in Phase 6.
 
 - **Goal:** portrait baseline; all native game screens lock `LANDSCAPE`; clean transitions.
 - **Files:** create `apps/mobile/src/hooks/use-orientation-lock.ts`,
