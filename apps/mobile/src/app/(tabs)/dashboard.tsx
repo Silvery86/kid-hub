@@ -1,3 +1,4 @@
+import { Link } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { useAuth } from '@/hooks/use-auth';
@@ -33,6 +34,12 @@ export default function DashboardScreen() {
         />
       </View>
 
+      <Text className="mt-2 text-lg font-bold text-neutral-900 dark:text-white">Trò chơi</Text>
+      <View className="flex-row gap-3">
+        <GameEntry href="/math" emoji="🧮" title="Toán Học" accent="bg-blue-600" />
+        <GameEntry href="/english" emoji="🔤" title="Tiếng Anh" accent="bg-emerald-600" />
+      </View>
+
       <Pressable
         className="mt-2 items-center rounded-xl border border-neutral-300 py-3 dark:border-neutral-700"
         onPress={signOut}
@@ -40,6 +47,31 @@ export default function DashboardScreen() {
         <Text className="font-semibold text-red-500">Sign out</Text>
       </Pressable>
     </ScrollView>
+  );
+}
+
+// Games launch in landscape (OrientationLock); these are the entry points.
+function GameEntry({
+  href,
+  emoji,
+  title,
+  accent,
+}: {
+  href: '/math' | '/english';
+  emoji: string;
+  title: string;
+  accent: string;
+}) {
+  return (
+    <Link href={href} asChild>
+      <Pressable
+        testID={`game-entry-${title}`}
+        className={`flex-1 gap-2 rounded-2xl p-4 active:opacity-90 ${accent}`}>
+        <Text style={{ fontSize: 32 }}>{emoji}</Text>
+        <Text className="text-lg font-black text-white">{title}</Text>
+        <Text className="text-xs font-bold text-white/85">Chơi ngay →</Text>
+      </Pressable>
+    </Link>
   );
 }
 

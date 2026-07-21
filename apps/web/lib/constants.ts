@@ -69,19 +69,20 @@ export const KID_PATTERN_LOCKOUT_SECONDS = 30
 
 // GAME_QUESTIONS_PER_SESSION and GAME_SECONDS_PER_QUESTION are owned by
 // @kid-hub/shared (Phase 3 — mobile_imp.md §10) and re-exported for web imports.
-export { GAME_QUESTIONS_PER_SESSION, GAME_SECONDS_PER_QUESTION } from '@kid-hub/shared'
-export const COUNTING_SECONDS_PER_QUESTION = 15
-export const SHAPE_SECONDS_PER_QUESTION = 12
-export const ENGLISH_ALPHABET_SECONDS_PER_QUESTION = 12
-export const ENGLISH_WORD_SECONDS_PER_QUESTION = 15
+// Game timing (per-question seconds + input throttle) is owned by @kid-hub/shared
+// (Phase 6 — mobile_imp.md §10) and re-exported for web imports.
+export {
+  GAME_QUESTIONS_PER_SESSION,
+  GAME_SECONDS_PER_QUESTION,
+  COUNTING_SECONDS_PER_QUESTION,
+  SHAPE_SECONDS_PER_QUESTION,
+  ENGLISH_ALPHABET_SECONDS_PER_QUESTION,
+  ENGLISH_WORD_SECONDS_PER_QUESTION,
+  INPUT_THROTTLE_MS,
+} from '@kid-hub/shared'
 export const MAX_STARS = 3
 
 // ── UI / Interaction ──────────────────────────────────────────
-
-/** Minimum duration (ms) to disable inputs during feedback animations — also the
- *  pause before advancing to the next question so the correct/wrong sound and
- *  visual feedback are fully seen and heard. */
-export const INPUT_THROTTLE_MS = 1000
 
 /** Duration (ms) of the PIN shake error animation. */
 export const PIN_SHAKE_DURATION_MS = 500

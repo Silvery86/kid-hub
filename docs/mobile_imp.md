@@ -1,9 +1,20 @@
 # Mobile Implementation Plan — Orientation Engine & Cross-Platform Single Source of Truth
 
-> **Status:** Draft for PM review · **Owner:** Principal Mobile Architect
+> **Status:** In implementation (PM-approved, Part II) · **Owner:** Principal Mobile Architect
 > **Scope:** `apps/mobile` (Expo) + `apps/web` (Next.js 16) + `packages/*` (Turborepo)
-> **This is a blueprint document only.** No feature code, scripts, or file changes
-> are executed by this plan. Implementation begins only after PM sign-off.
+>
+> **Progress (updated 2026-07-21):**
+> - ✅ **Phase 0–6 DONE** — SSOT foundation (types/schemas/domain/game core in
+>   `@kid-hub/shared`), `@kid-hub/api-client` + game-progress REST, the orientation engine
+>   (Phase 5), and **full 6-minigame native games** (Phase 6). All type-check + shared tests green.
+> - ⏳ **NEXT: Phase 7 — Assets package + caching** (`packages/assets`, `iconKey→art` map,
+>   `expo-image`/`expo-file-system` caching). See §10 Phase 7.
+> - ⏳ **Then: Phase 8 — Visual parity re-skin** (shared design tokens → both apps; replaces
+>   the raw Tailwind palette currently used on mobile). See §10 Phase 8.
+> - 🔧 **Cross-cutting, unblocked-by-hardware:** on-device EAS build to verify Phase 5
+>   orientation + Phase 6 games + the refresh-token flow (`mobile-app-migrate.md` §14) —
+>   the native config (`app.json` plugins) cannot hot-reload, so one fresh dev/EAS build
+>   clears all three at once.
 
 ---
 
@@ -845,7 +856,40 @@ const toLock = async (mode: 'portrait' | 'landscape') =>
   Requires the fresh native build from Phase 0.
 - **Risk:** Medium — iOS orientation declaration (config plugin) + real-device verification.
 
-### Phase 6 — Native game screens
+### Phase 6 — Native game screens — ✅ **DONE (2026-07-21)** *(needs on-device build verification)*
+
+> Implemented full **6-minigame parity** (PM decision, 2026-07-21): math
+> `counting`/`addition`/`shapes` + english `alphabet`/`vocabulary`/`phonics`, each with
+> 3 levels, all consuming the shared generators + reducer + scoring (identical
+> questions/stars to web for the same seed). **Shared native chrome** (`src/components/games/`):
+> `game-hud`, `game-result`, `star-rating`, `shape-glyph`, and reusable `game-scaffold`
+> (`LevelSelect`/`GameStage`/`OptionButton`) + `game-hub`. **Six views**: `addition-game`,
+> `counting-game`, `shape-game`, `alphabet-game`, `word-safari-game`, `sound-hunt-game`.
+> **Hooks**: `use-game-session` (RN reducer + `setInterval` timer + transition lock,
+> mirroring web `useGameSession`), `use-minigame-session` (best-scores + completion save via
+> `@kid-hub/api-client`), thin `use-math-session`/`use-english-session`, `use-answer-flow`
+> (tap→feedback→advance), and `use-game-audio` (`expo-audio`, installed `~56.0.12`; 4 SFX
+> copied to `assets/sounds/`). **Routes**: `src/app/(games)/{math,english}.tsx`, each wrapped
+> in `<OrientationLock mode="landscape">` (Phase 5 engine) — hub → active game → back. Games
+> entry added to the dashboard. **SSOT:** per-game timing constants
+> (`COUNTING/SHAPE/ENGLISH_*_SECONDS_PER_QUESTION`, `INPUT_THROTTLE_MS`) lifted to
+> `@kid-hub/shared` and re-exported by web. Workspace `pnpm type-check` green (4 pkgs); shared
+> purity + 21 tests pass.
+>
+> **Deliberate divergences from the web (all noted for Phase 8 polish):**
+> - **Best-scores come from the server** (`/api/v1/{math,english}` GET via Phase 4), not
+>   SecureStore — mobile has no localStorage, the POST returns `isNewBest`, and the GET is the
+>   canonical store. Cleaner than the plan's SecureStore note; nothing sensitive is cached.
+> - **Shapes render as emoji glyphs**, not SVG (no `react-native-svg` dependency added). Visual
+>   fidelity is a Phase 8 concern.
+> - **No homework auto-detect on mobile** yet — the `homeworkPeriodId` plumbing exists through
+>   the hooks/result screen, but the hub doesn't fetch today's homework, so the "submit
+>   homework" button stays hidden. Can be wired later without touching the game core.
+> - Screens are **immersive full-bleed** (no safe-area insets) — notch handling is Phase 8.
+>
+> **Not verified on device:** requires the same fresh dev/EAS build Phase 5 needs. Type-check +
+> shared tests are the static gates; the landscape transitions, audio playback, and end-to-end
+> persistence must be confirmed on hardware.
 
 - **Goal:** playable native Math + English games reusing the shared core.
 - **Files:** create `apps/mobile/src/app/(games)/{math,english}.tsx` (each wrapped in

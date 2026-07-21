@@ -1,0 +1,105 @@
+// Word Safari — vocabulary matching: emoji→word (Mode A) or word→emoji (Mode B).
+import { useCallback, useState } from 'react'
+import { Text, View } from 'react-native'
+import {
+  ENGLISH_WORD_SECONDS_PER_QUESTION,
+  generateWordSafariQuestions,
+  type DifficultyLevel,
+  type WordSafariQuestion,
+} from '@kid-hub/shared'
+
+import { useEnglishSession } from '@/hooks/use-english-session'
+import { useAnswerFlow } from '@/hooks/use-answer-flow'
+import { GameResult } from './game-result'
+import { GameStage, LevelSelect, OptionButton } from './game-scaffold'
+
+const LEVEL_LABELS: Record<DifficultyLevel, string> = {
+  1: 'Động vật (Dễ)',
+  2: 'Động vật + Trái cây (Vừa)',
+  3: 'Tất cả từ vựng (Khó)',
+}
+
+export function WordSafariGame({ onExit }: { onExit: () => void }) {
+  const s = useEnglishSession({
+    minigame: 'vocabulary',
+    secondsPerQuestion: ENGLISH_WORD_SECONDS_PER_QUESTION,
+  })
+  const flow = useAnswerFlow(s)
+  const [questions, setQuestions] = useState<WordSafariQuestion[]>([])
+  const q = questions[s.state.currentQuestionIndex] ?? null
+
+  const handleStart = useCallback(
+    (level: DifficultyLevel) => {
+      setQuestions(generateWordSafariQuestions(level, 10, Date.now() + level))
+      flow.reset()
+      s.start(level)
+    },
+    [flow, s]
+  )
+
+  if (s.state.status === 'result') {
+    return (
+      <GameResult
+        correctCount={s.state.correctCount}
+        starsEarned={s.starsEarned}
+        pointsEarned={s.pointsEarned}
+        bestStars={s.bestScore?.starsEarned ?? null}
+        onReplay={() => handleStart(s.state.level)}
+        onExit={onExit}
+        saveError={s.saveError ?? undefined}
+      />
+    )
+  }
+
+  if (s.state.status === 'idle') {
+    return (
+      <LevelSelect
+        emoji="🦁"
+        title="Word Safari"
+        subtitle="Ghép hình ảnh và từ vựng tiếng Anh"
+        levelLabels={LEVEL_LABELS}
+        onStart={handleStart}
+        onExit={onExit}
+      />
+    )
+  }
+
+  if (!q) return null
+
+  const isWordToImage = q.type === 'word-to-image'
+
+  return (
+    <GameStage
+      correctCount={s.state.correctCount}
+      questionIndex={s.state.currentQuestionIndex}
+      secondsLeft={s.state.secondsLeft}
+      feedback={flow.feedback}
+      onExit={onExit}>
+      <Text className="text-lg font-bold text-slate-300">
+        {isWordToImage ? 'Chọn hình ảnh đúng' : 'Chọn từ đúng'}
+      </Text>
+      <View className="rounded-3xl bg-slate-700 px-10 py-6">
+        <Text style={{ fontSize: isWordToImage ? 44 : 56 }} className="font-extrabold text-white">
+          {q.prompt}
+        </Text>
+      </View>
+      <View className="flex-row flex-wrap justify-center gap-4">
+        {q.choices.map((choice) => (
+          <OptionButton
+            key={choice}
+            testID={`choice-${choice}`}
+            selected={flow.selected === choice}
+            isCorrect={choice === q.correctAnswer}
+            disabled={s.state.status !== 'playing'}
+            onPress={() => flow.submit(choice, choice === q.correctAnswer)}>
+            <Text
+              style={{ fontSize: isWordToImage ? 44 : 24 }}
+              className="font-extrabold text-white">
+              {choice}
+            </Text>
+          </OptionButton>
+        ))}
+      </View>
+    </GameStage>
+  )
+}

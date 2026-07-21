@@ -465,8 +465,8 @@ Each step is independent and **does not break the running Web** (Web keeps using
     The middleware matcher excludes `/api/*`, so this is the API path's own guard (web PIN/login Server
     Actions stay covered by the existing `getPinRateLimiter`). Closes CLAUDE.md P0 blocker #3. Degrades
     gracefully (no-op) when Upstash env vars are absent, matching the PIN limiter.
-16. Gradually move `types/index.ts` (the API contract part) into `packages/shared/src/types.ts`; Web and Mobile import the same.
-17. Consolidate design tokens into `packages/shared/tailwind-preset.js`.
+16. ~~Gradually move `types/index.ts` (the API contract part) into `packages/shared/src/types.ts`; Web and Mobile import the same.~~ ✅ DONE — completed by `mobile_imp.md` Phases 1–3: `@kid-hub/shared` now owns all contract types, Zod schemas, pure domain logic, and the game core; `apps/web` re-exports and `apps/mobile/src/api/types.ts` was deleted.
+17. Consolidate design tokens into `packages/shared/tailwind-preset.js`. → **superseded by `mobile_imp.md` Phase 8** (Visual parity re-skin), which is the active, more detailed plan for the shared token source. Not yet started.
 
 ### Cross-cutting safety rules (Quy tắc an toàn xuyên suốt)
 - **Add new files only** in Phases 1–2; do not edit Web Server Actions/UI → Web cannot regress.
