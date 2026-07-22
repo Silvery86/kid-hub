@@ -12,6 +12,7 @@ import { useEnglishSession } from '@/hooks/use-english-session'
 import { useAnswerFlow } from '@/hooks/use-answer-flow'
 import { GameResult } from './game-result'
 import { GameStage, LevelSelect, OptionButton } from './game-scaffold'
+import { RemoteFlashcard } from './remote-flashcard'
 
 const LEVEL_LABELS: Record<DifficultyLevel, string> = {
   1: 'Động vật (Dễ)',
@@ -79,9 +80,13 @@ export function WordSafariGame({ onExit }: { onExit: () => void }) {
         {isWordToImage ? 'Chọn hình ảnh đúng' : 'Chọn từ đúng'}
       </Text>
       <View className="rounded-3xl bg-slate-700 px-10 py-6">
-        <Text style={{ fontSize: isWordToImage ? 44 : 56 }} className="font-extrabold text-white">
-          {q.prompt}
-        </Text>
+        {isWordToImage ? (
+          <Text style={{ fontSize: 52 }} className="font-extrabold text-white">
+            {q.prompt}
+          </Text>
+        ) : (
+          <RemoteFlashcard emoji={q.prompt} size={112} />
+        )}
       </View>
       <View className="flex-row flex-wrap justify-center gap-4">
         {q.choices.map((choice) => (
@@ -92,11 +97,13 @@ export function WordSafariGame({ onExit }: { onExit: () => void }) {
             isCorrect={choice === q.correctAnswer}
             disabled={s.state.status !== 'playing'}
             onPress={() => flow.submit(choice, choice === q.correctAnswer)}>
-            <Text
-              style={{ fontSize: isWordToImage ? 44 : 24 }}
-              className="font-extrabold text-white">
-              {choice}
-            </Text>
+            {isWordToImage ? (
+              <RemoteFlashcard emoji={choice} size={52} />
+            ) : (
+              <Text style={{ fontSize: 24 }} className="font-extrabold text-white">
+                {choice}
+              </Text>
+            )}
           </OptionButton>
         ))}
       </View>

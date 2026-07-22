@@ -20,6 +20,7 @@
     "design:report": "tsx scripts/design/build-manifest.ts && tsx scripts/design/report.ts"
   },
   "dependencies": {
+    "@kid-hub/assets": "workspace:*",
     "@kid-hub/shared": "workspace:*",
     "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.5.0",

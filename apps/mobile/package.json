@@ -6,6 +6,7 @@
   "dependencies": {
     "@expo/ui": "~56.0.18",
     "@kid-hub/api-client": "workspace:*",
+    "@kid-hub/assets": "workspace:*",
     "@kid-hub/shared": "workspace:*",
     "@tanstack/react-query": "^5.101.2",
     "axios": "^1.18.1",

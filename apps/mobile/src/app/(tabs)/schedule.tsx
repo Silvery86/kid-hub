@@ -1,4 +1,5 @@
 import { FlatList, Text, View } from 'react-native';
+import { getIcon } from '@kid-hub/assets';
 
 import { QueryBoundary } from '@/components/query-boundary';
 import type { ClassPeriod } from '@kid-hub/shared';
@@ -29,6 +30,9 @@ export default function ScheduleScreen() {
           <View className="flex-row items-center gap-4 rounded-2xl bg-neutral-100 p-4 dark:bg-neutral-900">
             <Text className="w-24 text-sm font-medium text-blue-600 dark:text-blue-400">
               {item.startTime}–{item.endTime}
+            </Text>
+            <Text style={{ fontSize: 24 }} accessibilityLabel={getIcon(item.iconKey).label}>
+              {getIcon(item.iconKey).emoji}
             </Text>
             <Text className="flex-1 text-base text-neutral-900 dark:text-white">
               {item.subjectId}

@@ -12,6 +12,7 @@ import { useMathSession } from '@/hooks/use-math-session'
 import { useAnswerFlow } from '@/hooks/use-answer-flow'
 import { GameResult } from './game-result'
 import { GameStage, LevelSelect, OptionButton } from './game-scaffold'
+import { RemoteFlashcard } from './remote-flashcard'
 
 const LEVEL_LABELS: Record<DifficultyLevel, string> = {
   1: 'Dễ (1–5)',
@@ -73,9 +74,7 @@ export function CountingGame({ onExit }: { onExit: () => void }) {
       <Text className="text-xl font-bold text-white">Có bao nhiêu cái?</Text>
       <View className="max-w-[420px] flex-row flex-wrap justify-center gap-2 rounded-3xl bg-slate-700 p-5">
         {Array.from({ length: q.count }).map((_, i) => (
-          <Text key={i} style={{ fontSize: 40 }}>
-            {q.objectEmoji}
-          </Text>
+          <RemoteFlashcard key={i} emoji={q.objectEmoji} kind="counting" size={44} />
         ))}
       </View>
       <View className="flex-row flex-wrap justify-center gap-4">

@@ -4,13 +4,13 @@
 > **Scope:** `apps/mobile` (Expo) + `apps/web` (Next.js 16) + `packages/*` (Turborepo)
 >
 > **Progress (updated 2026-07-21):**
-> - ✅ **Phase 0–6 DONE** — SSOT foundation (types/schemas/domain/game core in
+> - ✅ **Phase 0–7 DONE** — SSOT foundation (types/schemas/domain/game core in
 >   `@kid-hub/shared`), `@kid-hub/api-client` + game-progress REST, the orientation engine
->   (Phase 5), and **full 6-minigame native games** (Phase 6). All type-check + shared tests green.
-> - ⏳ **NEXT: Phase 7 — Assets package + caching** (`packages/assets`, `iconKey→art` map,
->   `expo-image`/`expo-file-system` caching). See §10 Phase 7.
-> - ⏳ **Then: Phase 8 — Visual parity re-skin** (shared design tokens → both apps; replaces
->   the raw Tailwind palette currently used on mobile). See §10 Phase 8.
+>   (Phase 5), **full 6-minigame native games** (Phase 6), and the `@kid-hub/assets` package
+>   with cached flashcards + shared icon map (Phase 7). All type-check + shared tests green.
+> - ⏳ **NEXT: Phase 8 — Visual parity re-skin** — the last phase. Shared design tokens
+>   (`packages/shared/src/tokens/`) drive both apps; replaces the raw Tailwind palette currently
+>   used on mobile with semantic tokens, matching web mobile-width look (light + dark). See §10 Phase 8.
 > - 🔧 **Cross-cutting, unblocked-by-hardware:** on-device EAS build to verify Phase 5
 >   orientation + Phase 6 games + the refresh-token flow (`mobile-app-migrate.md` §14) —
 >   the native config (`app.json` plugins) cannot hot-reload, so one fresh dev/EAS build
@@ -904,7 +904,28 @@ const toLock = async (mode: 'portrait' | 'landscape') =>
   web for identical seeds; sessions persist via Phase 4 endpoints; best-scores survive relaunch.
 - **Risk:** Medium-High — most net-new UI work; de-risked because all logic is shared/tested.
 
-### Phase 7 — Assets package + caching (decision #3)
+### Phase 7 — Assets package + caching (decision #3) — ✅ **DONE (2026-07-21)**
+
+> Implemented. **New `@kid-hub/assets` package** (pure/isomorphic, zero imports — Metro-safe):
+> `icons.ts` (`ICON_MAP`/`DEFAULT_ICON`/`getIcon` — the `iconKey→{emoji,label}` contract),
+> `game-media.ts` (the `WORD_IMAGE`/`COUNTING_IMAGE`/`EMOJI_IMAGE` flashcard manifest +
+> `emojiImagePath`/`countingImagePath` resolvers), and `media-url.ts` (`assetUrl(base, path)`).
+> **Web re-exports** from it: `apps/web/lib/icons.ts` and `apps/web/lib/data/gameImages.ts` are
+> now thin re-exports (behavior identical, drift = compile error); `@kid-hub/assets` added to
+> `apps/web` + `apps/mobile` deps. **Mobile caching:** `src/lib/web-origin.ts` derives `WEB_ORIGIN`
+> from `EXPO_PUBLIC_API_URL` (strip `/api/v1`) with an `EXPO_PUBLIC_WEB_ORIGIN` override (the
+> single CDN-swap point); `src/components/games/remote-flashcard.tsx` renders the manifest image
+> via `expo-image` (`cachePolicy="memory-disk"`, the built-in memory+disk cache) with an emoji
+> fallback. **Wired** into `counting-game` (counting art), `word-safari-game` (emoji prompts +
+> word-to-image choices), and `sound-hunt-game` (emoji choices). **Icons on mobile:** the schedule
+> screen now shows each period's subject icon from the shared `getIcon(iconKey)`. Heavy webp media
+> (65 english + 8 counting) stays in web `/public`, fetched on demand and cached — **nothing bundled
+> into the binary**. Workspace `pnpm type-check` green (5 pkgs).
+>
+> **Scope note — `expo-file-system` audio caching NOT added:** all current audio is the 4 bundled
+> SFX (Phase 6); there is no *remote* voiceover/music to cache, so a hash-keyed download cache would
+> be unused speculative infra. Deferred until remote audio assets exist; the acceptance's "media
+> cached on device" is met for the real heavy media (images) via `expo-image`.
 
 - **Goal:** shared `iconKey→art` resolution; heavy media served from web `/public` and cached.
 - **Files:** create `packages/assets/src/index.ts` (icon/badge map + game media manifest

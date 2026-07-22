@@ -12,6 +12,7 @@ import { useEnglishSession } from '@/hooks/use-english-session'
 import { useAnswerFlow } from '@/hooks/use-answer-flow'
 import { GameResult } from './game-result'
 import { GameStage, LevelSelect, OptionButton } from './game-scaffold'
+import { RemoteFlashcard } from './remote-flashcard'
 
 const LEVEL_LABELS: Record<DifficultyLevel, string> = {
   1: 'Phụ âm rõ ràng (Dễ)',
@@ -87,7 +88,7 @@ export function SoundHuntGame({ onExit }: { onExit: () => void }) {
             isCorrect={choice === q.correctAnswer}
             disabled={s.state.status !== 'playing'}
             onPress={() => flow.submit(choice, choice === q.correctAnswer)}>
-            <Text style={{ fontSize: 44 }}>{choice}</Text>
+            <RemoteFlashcard emoji={choice} size={52} />
           </OptionButton>
         ))}
       </View>
