@@ -35,7 +35,7 @@ export default function EnglishScreen() {
         <GameHub
           title="Tiếng Anh 🔤"
           gameType="english"
-          accent="bg-emerald-600"
+          accent="bg-english"
           games={GAMES}
           fetchBestScores={getEnglishBestScores}
           onSelect={setActive}

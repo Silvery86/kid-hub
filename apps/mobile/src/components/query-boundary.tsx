@@ -16,7 +16,7 @@ export function QueryBoundary({
 }) {
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-neutral-950">
+      <View className="flex-1 items-center justify-center bg-shell-kid">
         <ActivityIndicator size="large" />
       </View>
     );
@@ -24,12 +24,12 @@ export function QueryBoundary({
 
   if (isError) {
     return (
-      <View className="flex-1 items-center justify-center gap-3 bg-white px-6 dark:bg-neutral-950">
-        <Text className="text-center text-base text-neutral-500 dark:text-neutral-400">
+      <View className="flex-1 items-center justify-center gap-3 bg-shell-kid px-6">
+        <Text className="text-center text-base text-text-secondary">
           Couldn&apos;t load this. Check that the app is on the same network as the dev server.
         </Text>
         {onRetry ? (
-          <Pressable className="rounded-lg bg-blue-600 px-4 py-2" onPress={onRetry}>
+          <Pressable className="rounded-pill bg-btn-primary px-4 py-2" onPress={onRetry}>
             <Text className="font-semibold text-white">Retry</Text>
           </Pressable>
         ) : null}

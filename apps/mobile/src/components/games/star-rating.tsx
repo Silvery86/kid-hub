@@ -8,7 +8,7 @@ export function StarRating({ value, size = 28 }: { value: number; size?: number 
         <Text
           key={i}
           style={{ fontSize: size, lineHeight: size * 1.1 }}
-          className={i <= value ? 'text-amber-400' : 'text-white/25'}>
+          className={i <= value ? 'text-star-filled' : 'text-star-empty'}>
           ★
         </Text>
       ))}

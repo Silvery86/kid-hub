@@ -3,14 +3,18 @@
 > **Status:** In implementation (PM-approved, Part II) · **Owner:** Principal Mobile Architect
 > **Scope:** `apps/mobile` (Expo) + `apps/web` (Next.js 16) + `packages/*` (Turborepo)
 >
-> **Progress (updated 2026-07-21):**
-> - ✅ **Phase 0–7 DONE** — SSOT foundation (types/schemas/domain/game core in
->   `@kid-hub/shared`), `@kid-hub/api-client` + game-progress REST, the orientation engine
->   (Phase 5), **full 6-minigame native games** (Phase 6), and the `@kid-hub/assets` package
->   with cached flashcards + shared icon map (Phase 7). All type-check + shared tests green.
-> - ⏳ **NEXT: Phase 8 — Visual parity re-skin** — the last phase. Shared design tokens
->   (`packages/shared/src/tokens/`) drive both apps; replaces the raw Tailwind palette currently
->   used on mobile with semantic tokens, matching web mobile-width look (light + dark). See §10 Phase 8.
+> **Progress (updated 2026-07-22):**
+> - ✅ **Phase 0–8 DONE — all implementation phases complete.** SSOT foundation
+>   (types/schemas/domain/game core in `@kid-hub/shared`), `@kid-hub/api-client` + game-progress
+>   REST, the orientation engine (Phase 5), full 6-minigame native games (Phase 6), the
+>   `@kid-hub/assets` package with cached flashcards + shared icon map (Phase 7), and the shared
+>   design-token SSOT + mobile re-skin (Phase 8). Web `next build` + workspace `type-check` + shared
+>   tests all green.
+> - 🔧 **Remaining: on-device verification only (no code left).** One fresh EAS/dev build confirms,
+>   on hardware: Phase 5 landscape orientation + no-flicker, Phase 6 games end-to-end + audio, Phase 7
+>   flashcards fetching from the web origin + caching, the Phase 5/6 native config, and the
+>   refresh-token flow (`mobile-app-migrate.md` §14). Optional follow-ups noted in Phase 8: bundle the
+>   Spline Sans `.ttf`, and tokenize the games' dark chrome jointly with web.
 > - 🔧 **Cross-cutting, unblocked-by-hardware:** on-device EAS build to verify Phase 5
 >   orientation + Phase 6 games + the refresh-token flow (`mobile-app-migrate.md` §14) —
 >   the native config (`app.json` plugins) cannot hot-reload, so one fresh dev/EAS build
@@ -937,7 +941,42 @@ const toLock = async (mode: 'portrait' | 'landscape') =>
   after first play; app binary size not inflated by game media.
 - **Risk:** Low.
 
-### Phase 8 — Visual parity: re-skin all mobile screens to match the web (mobile mode)
+### Phase 8 — Visual parity: re-skin all mobile screens to match the web (mobile mode) — ✅ **DONE (2026-07-22)** *(needs on-device build verification)*
+
+> Implemented with the **Full-SSOT** approach (PM decision, 2026-07-22): one token source
+> drives both apps. **`packages/shared/src/tokens/`**: `tokens.json` (the SSOT — colors, radii,
+> spacing, display font, values lifted verbatim from web's old `@theme`) + a typed `index.ts`
+> (`tokens`, exported from the shared barrel). **`scripts/generate-tokens.mjs`** (`pnpm -C
+> packages/shared tokens`) regenerates two committed artifacts from it:
+> `apps/web/app/tokens.generated.css` (the web `@theme` block) and
+> `packages/shared/tailwind-preset.cjs` (the mobile NativeWind `theme.extend`, exposed via the
+> `@kid-hub/shared/tailwind-preset` export). **Web**: `globals.css` now `@import`s the generated
+> CSS (inline `@theme` removed); `next build` passes and the tokens compile into the output CSS —
+> so a token change shifts **both** apps. **Mobile**: `tailwind.config.js` consumes the preset
+> (semantic classes `bg-shell-kid`, `text-text-primary`, `bg-math`, `rounded-card`, `min-h-tap`,
+> etc. now resolve). **Re-skinned to tokens**: `login`, `index`, `(tabs)/_layout` (tab tint from
+> `tokens.colors`), `dashboard`, `schedule`, `homework`, `grades`, `query-boundary`, and
+> `star-rating` (star tokens) — the app-shell screens that have web portrait counterparts. A grep
+> for raw numbered palette (`bg|text|border-{neutral,slate,blue,…}-N`) over these screens is
+> **clean**. **Removed** the dead Expo-template cluster (themed-text/view, hint-row, external-link,
+> web-badge, animated-icon, ui/collapsible, use-theme, use-color-scheme, constants/theme + orphan
+> css) — unreferenced by any screen, consistent with the earlier demo-screen cleanup. Workspace
+> `pnpm type-check` green (5 pkgs).
+>
+> **Deliberate boundaries (documented, not overclaimed):**
+> - **Game components keep the immersive dark slate/emerald/red chrome** (`game-hud`,
+>   `game-result`, `game-scaffold`, `game-hub`, the 6 views). This is *parity* — web's own games
+>   (`GameHud`, `GameResultScreen`) render that dark UI with raw Tailwind palette too. Inventing
+>   mobile-only "game" tokens would diverge from web and break the "shared owns web's token set"
+>   symmetry, so the raw dark chrome stays until web's games are tokenized as well (a joint step).
+>   Semantic tokens that *do* apply in-game are used (`star-filled`/`star-empty`, `bg-math`/`bg-english`).
+> - **Dark mode:** web's `@theme` is single-light (no dark token set), so the mobile re-skin renders
+>   the same light theme for parity; per-token dark values are deferred until web defines them.
+> - **Display font (Spline Sans):** the `font-display` token + fallback stack are wired into the
+>   preset, but the actual Spline Sans `.ttf` is not bundled (asset not in-repo), so text falls back
+>   to the system font until the font file is added under `assets/fonts/` + loaded via `expo-font`.
+
+
 
 - **Goal:** every mobile screen looks and feels like the web app viewed at mobile width —
   same colors, typography, radii, spacing, and component shapes — driven by **one shared

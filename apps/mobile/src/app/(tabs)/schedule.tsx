@@ -17,24 +17,24 @@ export default function ScheduleScreen() {
   return (
     <QueryBoundary isLoading={isLoading} isError={isError} onRetry={refetch}>
       <FlatList
-        className="flex-1 bg-white dark:bg-neutral-950"
+        className="flex-1 bg-shell-kid"
         contentContainerClassName="p-4 gap-3"
         data={periods}
         keyExtractor={(item, index) => item.id ?? `${item.subjectId}-${index}`}
         ListEmptyComponent={
-          <Text className="mt-10 text-center text-neutral-500 dark:text-neutral-400">
+          <Text className="mt-10 text-center text-text-secondary">
             No classes scheduled today.
           </Text>
         }
         renderItem={({ item }) => (
-          <View className="flex-row items-center gap-4 rounded-2xl bg-neutral-100 p-4 dark:bg-neutral-900">
-            <Text className="w-24 text-sm font-medium text-blue-600 dark:text-blue-400">
+          <View className="flex-row items-center gap-4 rounded-card bg-white p-4">
+            <Text className="w-24 text-sm font-medium text-schedule">
               {item.startTime}–{item.endTime}
             </Text>
             <Text style={{ fontSize: 24 }} accessibilityLabel={getIcon(item.iconKey).label}>
               {getIcon(item.iconKey).emoji}
             </Text>
-            <Text className="flex-1 text-base text-neutral-900 dark:text-white">
+            <Text className="flex-1 text-base text-text-primary">
               {item.subjectId}
               {item.roomNumber ? ` · Room ${item.roomNumber}` : ''}
             </Text>

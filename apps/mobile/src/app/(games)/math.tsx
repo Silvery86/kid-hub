@@ -35,7 +35,7 @@ export default function MathScreen() {
         <GameHub
           title="Toán Học 🧮"
           gameType="math"
-          accent="bg-blue-600"
+          accent="bg-math"
           games={GAMES}
           fetchBestScores={getMathBestScores}
           onSelect={setActive}

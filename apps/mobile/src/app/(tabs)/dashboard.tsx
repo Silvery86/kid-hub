@@ -20,10 +20,8 @@ export default function DashboardScreen() {
   const average = grades.data?.averageScore;
 
   return (
-    <ScrollView
-      className="flex-1 bg-white dark:bg-neutral-950"
-      contentContainerClassName="gap-4 p-5">
-      <Text className="text-2xl font-bold text-neutral-900 dark:text-white">Today</Text>
+    <ScrollView className="flex-1 bg-shell-kid" contentContainerClassName="gap-4 p-5">
+      <Text className="text-2xl font-bold text-text-primary">Today</Text>
 
       <View className="flex-row gap-3">
         <StatCard label="Homework" value={`${doneCount}/${totalHomework}`} />
@@ -34,17 +32,17 @@ export default function DashboardScreen() {
         />
       </View>
 
-      <Text className="mt-2 text-lg font-bold text-neutral-900 dark:text-white">Trò chơi</Text>
+      <Text className="mt-2 text-lg font-bold text-text-primary">Trò chơi</Text>
       <View className="flex-row gap-3">
-        <GameEntry href="/math" emoji="🧮" title="Toán Học" accent="bg-blue-600" />
-        <GameEntry href="/english" emoji="🔤" title="Tiếng Anh" accent="bg-emerald-600" />
+        <GameEntry href="/math" emoji="🧮" title="Toán Học" accent="bg-math" />
+        <GameEntry href="/english" emoji="🔤" title="Tiếng Anh" accent="bg-english" />
       </View>
 
       <Pressable
-        className="mt-2 items-center rounded-xl border border-neutral-300 py-3 dark:border-neutral-700"
+        className="mt-2 items-center rounded-pill border border-text-subtle py-3"
         onPress={signOut}
         testID="sign-out">
-        <Text className="font-semibold text-red-500">Sign out</Text>
+        <Text className="font-semibold text-vietnamese">Sign out</Text>
       </Pressable>
     </ScrollView>
   );
@@ -66,7 +64,7 @@ function GameEntry({
     <Link href={href} asChild>
       <Pressable
         testID={`game-entry-${title}`}
-        className={`flex-1 gap-2 rounded-2xl p-4 active:opacity-90 ${accent}`}>
+        className={`flex-1 gap-2 rounded-card p-4 active:opacity-90 ${accent}`}>
         <Text style={{ fontSize: 32 }}>{emoji}</Text>
         <Text className="text-lg font-black text-white">{title}</Text>
         <Text className="text-xs font-bold text-white/85">Chơi ngay →</Text>
@@ -77,9 +75,9 @@ function GameEntry({
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <View className="flex-1 gap-1 rounded-2xl bg-neutral-100 p-4 dark:bg-neutral-900">
-      <Text className="text-2xl font-bold text-neutral-900 dark:text-white">{value}</Text>
-      <Text className="text-xs text-neutral-500 dark:text-neutral-400">{label}</Text>
+    <View className="flex-1 gap-1 rounded-card bg-white p-4">
+      <Text className="text-2xl font-bold text-text-primary">{value}</Text>
+      <Text className="text-xs text-text-secondary">{label}</Text>
     </View>
   );
 }

@@ -41,23 +41,21 @@ export default function LoginScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-neutral-950">
+    <SafeAreaView className="flex-1 bg-shell-parent">
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View className="flex-1 justify-center gap-6 px-6">
           <View className="gap-1">
-            <Text className="text-3xl font-bold text-neutral-900 dark:text-white">Kid Hub</Text>
-            <Text className="text-base text-neutral-500 dark:text-neutral-400">
-              Parent sign in
-            </Text>
+            <Text className="text-3xl font-bold text-text-primary">Kid Hub</Text>
+            <Text className="text-base text-text-secondary">Parent sign in</Text>
           </View>
 
           <View className="gap-3">
             <TextInput
-              className="rounded-xl border border-neutral-300 px-4 py-3 text-base text-neutral-900 dark:border-neutral-700 dark:text-white"
+              className="rounded-card border border-text-subtle bg-white px-4 py-3 text-base text-text-primary"
               placeholder="Email"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor="#94a3b8"
               autoCapitalize="none"
               autoComplete="email"
               keyboardType="email-address"
@@ -66,9 +64,9 @@ export default function LoginScreen() {
               editable={!submitting}
             />
             <TextInput
-              className="rounded-xl border border-neutral-300 px-4 py-3 text-base text-neutral-900 dark:border-neutral-700 dark:text-white"
+              className="rounded-card border border-text-subtle bg-white px-4 py-3 text-base text-text-primary"
               placeholder="Password"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor="#94a3b8"
               secureTextEntry
               autoComplete="password"
               value={password}
@@ -78,13 +76,13 @@ export default function LoginScreen() {
           </View>
 
           {error ? (
-            <Text className="text-sm text-red-500" testID="login-error">
+            <Text className="text-sm text-vietnamese" testID="login-error">
               {error}
             </Text>
           ) : null}
 
           <Pressable
-            className={`items-center rounded-xl py-3.5 ${canSubmit ? 'bg-blue-600' : 'bg-blue-600/50'}`}
+            className={`items-center rounded-pill py-3.5 ${canSubmit ? 'bg-btn-primary' : 'bg-btn-primary/50'}`}
             disabled={!canSubmit}
             onPress={onSubmit}
             testID="login-submit">

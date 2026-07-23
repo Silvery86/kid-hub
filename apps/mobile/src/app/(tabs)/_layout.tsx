@@ -1,5 +1,6 @@
 import { Redirect, Tabs } from 'expo-router';
 import { Text } from 'react-native';
+import { tokens } from '@kid-hub/shared';
 
 import { useAuth } from '@/hooks/use-auth';
 
@@ -15,7 +16,13 @@ export default function TabsLayout() {
   if (status === 'unauthenticated') return <Redirect href="/login" />;
 
   return (
-    <Tabs screenOptions={{ headerShown: true }}>
+    <Tabs
+      screenOptions={{
+        headerShown: true,
+        tabBarActiveTintColor: tokens.colors.math,
+        tabBarInactiveTintColor: tokens.colors['text-muted'],
+        headerTitleStyle: { color: tokens.colors['text-primary'] },
+      }}>
       <Tabs.Screen
         name="dashboard"
         options={{ title: 'Home', tabBarIcon: () => <TabIcon emoji="🏠" /> }}

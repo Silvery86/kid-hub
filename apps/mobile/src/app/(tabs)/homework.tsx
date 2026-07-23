@@ -12,27 +12,23 @@ export default function HomeworkScreen() {
   return (
     <QueryBoundary isLoading={isLoading} isError={isError} onRetry={refetch}>
       <FlatList
-        className="flex-1 bg-white dark:bg-neutral-950"
+        className="flex-1 bg-shell-kid"
         contentContainerClassName="p-4 gap-3"
         data={data ?? []}
         keyExtractor={(item) => item.periodId}
         ListEmptyComponent={
-          <Text className="mt-10 text-center text-neutral-500 dark:text-neutral-400">
-            No homework today 🎉
-          </Text>
+          <Text className="mt-10 text-center text-text-secondary">No homework today 🎉</Text>
         }
         renderItem={({ item }) => (
           <Pressable
-            className="flex-row items-center justify-between rounded-2xl bg-neutral-100 p-4 dark:bg-neutral-900"
+            className="flex-row items-center justify-between rounded-card bg-white p-4"
             disabled={item.isDone || markDone.isPending}
             onPress={() => markDone.mutate(item.periodId)}>
             <View className="flex-1 gap-1">
-              <Text className="text-xs uppercase text-neutral-400">{item.subjectId}</Text>
+              <Text className="text-xs uppercase text-text-muted">{item.subjectId}</Text>
               <Text
                 className={`text-base ${
-                  item.isDone
-                    ? 'text-neutral-400 line-through'
-                    : 'text-neutral-900 dark:text-white'
+                  item.isDone ? 'text-text-muted line-through' : 'text-text-primary'
                 }`}>
                 {item.homeworkNote}
               </Text>

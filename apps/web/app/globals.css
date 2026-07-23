@@ -1,71 +1,13 @@
 @import 'tailwindcss';
+@import './tokens.generated.css';
 
 /* ============================================
    KID HUB — DESIGN TOKENS
+   The @theme block lives in tokens.generated.css, generated from
+   @kid-hub/shared/src/tokens/tokens.json (Phase 8 SSOT). To change a token,
+   edit tokens.json then run `pnpm -C packages/shared tokens` — this shifts
+   BOTH web and mobile. Never hand-edit the generated @theme.
    ============================================ */
-
-@theme {
-  --font-sans: var(--font-display);
-
-  --color-math: #3b82f6;
-  --color-math-deep: #1d4ed8;
-  --color-math-light: #60a5fa;
-  --color-english: #10b981;
-  --color-english-deep: #047857;
-  --color-english-light: #34d399;
-  --color-science: #8b5cf6;
-  --color-pe: #f59e0b;
-  --color-art: #ec4899;
-  --color-vietnamese: #ef4444;
-  --color-music: #f97316;
-
-  /* ── Schedule route accent → bg-schedule, text-schedule-deep, bg-schedule-soft */
-  --color-schedule: #3b82f6;
-  --color-schedule-deep: #1d4ed8;
-  --color-schedule-soft: #eff6ff;
-
-  /* ── App shell backgrounds → bg-shell-dark, bg-shell-light, bg-shell-kid, bg-shell-parent */
-  --color-shell-dark: #0f172a;
-  --color-shell-light: #f8fafc;
-  --color-shell-kid: #f0f9ff;
-  --color-shell-parent: #f3f2ec;
-
-  /* ── Gradient accents ────────────────────────────────────────────────── */
-  --color-gradient-indigo: #4338ca;
-
-  /* ── Text hierarchy → text-text-primary, text-text-secondary, etc. ───── */
-  --color-text-primary: #1e293b;
-  --color-text-secondary: #64748b;
-  --color-text-muted: #94a3b8;
-  --color-text-subtle: #cbd5e1;
-
-  /* ── Button variants ─────────────────────────────────────────────────── */
-  --color-btn-primary: #3b82f6;
-  --color-btn-primary-hover: #2563eb;
-  --color-btn-primary-border: #1d4ed8;
-  --color-btn-secondary: #34d399;
-  --color-btn-secondary-hover: #10b981;
-  --color-btn-secondary-border: #059669;
-  --color-btn-ghost-border: #cbd5e1;
-
-  /* ── Progress bar ────────────────────────────────────────────────────── */
-  --color-progress-high: #fbbf24;
-  --color-progress-low: #fb923c;
-  --color-progress-track: #e2e8f0;
-
-  /* ── Star rating ─────────────────────────────────────────────────────── */
-  --color-star-filled: #fbbf24;
-  --color-star-empty: #cbd5e1;
-
-  /* ── Border radii → rounded-card, rounded-pill ───────────────────────── */
-  --radius-card: 1.5rem;
-  --radius-pill: 9999px;
-
-  /* ── Tap targets → min-h-tap, w-tap-lg, etc. ────────────────────────── */
-  --spacing-tap: 3rem;
-  --spacing-tap-lg: 4rem;
-  --spacing-tap-xl: 5rem;
-}
 
 /* ============================================
    ORIENTATION VARIANTS (RESP-001)
