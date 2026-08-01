@@ -25,37 +25,109 @@ your laptop's `localhost`, so use your machine's LAN IP. Override per-machine in
 ```bash
 # apps/mobile/.env.local
 EXPO_PUBLIC_API_URL=http://<YOUR_LAN_IP>:<API_PORT>/api/v1   # e.g. http://192.168.1.29:3001/api/v1
+
+# Optional. Origin serving the game flashcard images from web /public.
+# Defaults to EXPO_PUBLIC_API_URL with the /api/v1 suffix stripped, so you only
+# set this to point at a CDN later.
+# EXPO_PUBLIC_WEB_ORIGIN=http://<YOUR_LAN_IP>:<API_PORT>
 ```
 
-`EXPO_PUBLIC_*` vars are inlined at bundle time — after editing `.env.local`,
+`EXPO_PUBLIC_*` vars are inlined **at bundle time** — after editing `.env.local`,
 restart Metro with `--clear`.
+
+> **Which env a build actually sees.** For the `development` profile the JS bundle
+> comes from *your local Metro* at runtime, so `.env.local` applies at `expo start`
+> time and the cloud build does not need it. For `preview`/`production` the bundle is
+> built **in the cloud**, where `.env.local` does not exist (gitignored) — EAS only
+> sees the committed `.env`, which currently pins a LAN IP. Before shipping a
+> standalone build, set the real API origin via `env` in `eas.json` or
+> `eas env:create`, or it will bake in `192.168.1.29`.
 
 ---
 
 ## Development build (EAS)
 
-One-time setup to get a dev client onto your device. After the client is installed,
-day-to-day work is just `start` — no rebuild unless native deps change.
+Get a dev client onto your device. Once installed, day-to-day work is just `start` —
+**rebuild only when native config or native deps change** (see below).
+
+### When you must rebuild the dev client
+
+Anything that changes the *native* project invalidates an installed dev client. JS-only
+changes do not. Current triggers already in `app.json`:
+
+| Change | Landed |
+|---|---|
+| `expo-screen-orientation` plugin + `ios.requireFullScreen` | Orientation engine |
+| `expo-audio` plugin (game SFX) | Native games |
+| any new `expo-*` module with native code | — |
+
+> If your installed dev client predates these, orientation locking and game audio will
+> fail at runtime — the native modules simply are not in the binary. Rebuild first.
+
+### Pre-flight (this is what makes the build "clean")
 
 ```bash
-# 1. Log in to EAS (first time only)
+# 1. Commit or stash everything — EAS uploads a GIT ARCHIVE, so uncommitted
+#    files are NOT included and a package.json/lockfile mismatch fails install.
+git status --short          # must be clean
+pnpm install                # lockfile consistent with package.json
+
+# 2. Sanity-gate locally before burning cloud build minutes
+pnpm type-check             # all workspace packages
+pnpm -C packages/shared test
+```
+
+### Build
+
+> **Run EAS from `apps/mobile`, never the repo root.** EAS resolves the project from
+> the current directory. At the root it finds the turbo workspace `package.json` — which
+> has no `expo` — and fails with *"The `expo` package was not found"* / *"you don't have
+> expo-dev-client installed"* (both are installed, just one level down). Worse, it writes
+> a stray generic `eas.json` at the root; delete it if that happens, the real config is
+> `apps/mobile/eas.json`.
+
+```bash
+cd apps/mobile          # ← required; everything below assumes this
+
+# Log in (first time only)
 npx eas-cli login
 
-# 2. Link this app to an EAS project (writes extra.eas.projectId into app.json)
-npx eas-cli init
-
-# 3. Build an installable dev client (Android APK, ~10–20 min in the cloud)
+# Build an installable dev client (Android APK, ~10–20 min in the cloud)
 npx eas-cli build --profile development --platform android
 #   → download the APK from the link/QR and install it on the phone
 #     (enable "install from unknown sources"). iOS: use --platform ios
 #     (requires an Apple account for device provisioning).
 
-# 4. Start Metro and open the dev client (NOT Expo Go)
+# Start Metro and open the dev client (NOT Expo Go) — from anywhere
 pnpm -C apps/mobile start --dev-client
 ```
 
+> `eas init` is **not** needed — this app is already linked
+> (`expo.extra.eas.projectId` in `app.json`). Re-running it can relink the project.
+
 Build profiles live in [`eas.json`](./eas.json): `development` (dev client, internal
 APK), `preview` (standalone internal APK), `production` (store build).
+`appVersionSource: "remote"` means EAS owns the version counter.
+
+**Monorepo notes.** `eas build` run from `apps/mobile` detects the pnpm workspace and
+installs from the repo root using the pinned `packageManager` (`pnpm@10.33.0`). The
+workspace packages (`@kid-hub/shared`, `@kid-hub/api-client`, `@kid-hub/assets`) are
+in-repo, so they ship with the archive automatically — no `.easignore` needed.
+
+### After installing: what to verify
+
+The build is the only way to exercise these — none are checkable in CI:
+
+- **Orientation** — open Math/English: rotates to landscape with no white flash;
+  back/gesture-exit restores portrait; background → foreground inside a game stays
+  landscape; other tabs stay portrait.
+- **Games** — all six minigames play end-to-end; timer counts down; correct/wrong SFX
+  play; the result screen persists (a second run shows the updated best stars).
+- **Flashcards** — counting / Word Safari / Sound Hunt show real images (not emoji
+  fallback), which means the device reached the web origin; they should render instantly
+  on a second run (disk cache).
+- **Auth** — token refresh: temporarily lower `PARENT_ACCESS_TTL_SECONDS` in
+  `apps/web/lib/constants.ts` and confirm a 401 silently refreshes and replays.
 
 ## Day-to-day scripts
 
@@ -101,9 +173,19 @@ Sanity check from the phone browser: `http://<LAN_IP>:<API_PORT>` loads the site
 
 ```
 src/
-├── api/          # axios client + typed api modules (auth/homework/schedule/grades)
-├── app/          # Expo Router: login, (tabs)/{dashboard,homework,schedule,grades}
-├── components/   # shared RN UI (query-boundary, ...)
-├── hooks/        # use-auth (AuthProvider) + TanStack Query hooks
-└── lib/          # secure-store token wrapper
+├── api/          # axios transport behind @kid-hub/api-client + typed api modules
+├── app/          # Expo Router
+│   ├── (tabs)/   #   dashboard, homework, schedule, grades (portrait)
+│   └── (games)/  #   math, english — landscape via <OrientationLock>
+├── components/
+│   ├── games/    #   hud, result, hub, scaffold, 6 minigame views, flashcard
+│   ├── orientation-lock.tsx
+│   └── query-boundary.tsx
+├── hooks/        # use-auth, TanStack Query hooks, game session/audio/orientation
+└── lib/          # secure-store tokens, web-origin (media base URL)
 ```
+
+Contract types, Zod schemas, pure domain logic, the game core and the design tokens all
+live in `@kid-hub/shared`; asset maps in `@kid-hub/assets`. Styling uses the shared
+token preset — semantic classes (`bg-shell-kid`, `text-text-primary`, `bg-math`,
+`rounded-card`), not raw Tailwind palette.

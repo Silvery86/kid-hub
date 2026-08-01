@@ -1,29 +1,73 @@
 // use-game-audio.ts — short game SFX via expo-audio (native counterpart of the
-// web useAudio hook). Players are created once per screen and auto-released on
-// unmount by useAudioPlayer. Every call is best-effort; failures are silenced.
-import { useCallback } from 'react'
-import { useAudioPlayer } from 'expo-audio'
+// web useAudio hook).
+//
+// Like expo-screen-orientation, expo-audio's native side only exists in a build
+// made after its config plugin was added, and importing it at module scope on an
+// older binary throws while the module is evaluating — taking the whole route
+// tree down with it. So the package is loaded defensively and every call no-ops
+// when it is missing: games stay playable, just silent, until the device takes a
+// new build. Every call is best-effort; failures are silenced.
+import { useCallback, useEffect, useRef } from 'react'
+
+type AudioModule = typeof import('expo-audio')
+type AudioPlayer = ReturnType<AudioModule['createAudioPlayer']>
+
+const native: AudioModule | null = (() => {
+  try {
+    return require('expo-audio') as AudioModule
+  } catch {
+    return null
+  }
+})()
 
 export type SoundKey = 'correct' | 'wrong' | 'complete' | 'tap'
 
-export function useGameAudio() {
-  const correct = useAudioPlayer(require('../../assets/sounds/correct.mp3'))
-  const wrong = useAudioPlayer(require('../../assets/sounds/wrong.mp3'))
-  const complete = useAudioPlayer(require('../../assets/sounds/complete.mp3'))
-  const tap = useAudioPlayer(require('../../assets/sounds/tap.mp3'))
+// Static requires: these are Metro assets, not native modules — always safe.
+const SOURCES: Record<SoundKey, number> = {
+  correct: require('../../assets/sounds/correct.mp3'),
+  wrong: require('../../assets/sounds/wrong.mp3'),
+  complete: require('../../assets/sounds/complete.mp3'),
+  tap: require('../../assets/sounds/tap.mp3'),
+}
 
-  const play = useCallback(
-    (key: SoundKey) => {
-      const player = { correct, wrong, complete, tap }[key]
+export function useGameAudio() {
+  const playersRef = useRef<Partial<Record<SoundKey, AudioPlayer>>>({})
+
+  useEffect(() => {
+    if (!native) return
+    const players: Partial<Record<SoundKey, AudioPlayer>> = {}
+    for (const key of Object.keys(SOURCES) as SoundKey[]) {
       try {
-        player.seekTo(0)
-        player.play()
+        players[key] = native.createAudioPlayer(SOURCES[key])
       } catch {
-        // Silently ignore — audio unavailable
+        // Silently ignore — this sound is unavailable.
       }
-    },
-    [correct, wrong, complete, tap]
-  )
+    }
+    playersRef.current = players
+
+    // createAudioPlayer is imperative, so release explicitly on unmount.
+    return () => {
+      for (const player of Object.values(players)) {
+        try {
+          player?.remove()
+        } catch {
+          // Ignore — already released.
+        }
+      }
+      playersRef.current = {}
+    }
+  }, [])
+
+  const play = useCallback((key: SoundKey) => {
+    const player = playersRef.current[key]
+    if (!player) return
+    try {
+      player.seekTo(0)
+      player.play()
+    } catch {
+      // Silently ignore — audio unavailable.
+    }
+  }, [])
 
   return { play }
 }

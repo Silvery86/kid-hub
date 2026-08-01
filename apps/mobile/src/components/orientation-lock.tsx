@@ -1,8 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { View } from 'react-native'
-import * as ScreenOrientation from 'expo-screen-orientation'
 
 import { useOrientationLock, type LockMode } from '@/hooks/use-orientation-lock'
+import { isOrientationControlAvailable, subscribeToLandscape } from '@/lib/screen-orientation'
 
 /**
  * Wrap a screen's content. It (1) locks orientation via the hook and (2) holds
@@ -21,20 +21,15 @@ export function OrientationLock({
   children: ReactNode
 }) {
   useOrientationLock(mode)
-  const [settled, setSettled] = useState(mode === 'portrait')
+
+  // Portrait needs no rotation. And without the native module no rotation ever
+  // happens (so no event ever fires) — start revealed rather than trapping the
+  // screen behind a curtain that could never lift.
+  const [settled, setSettled] = useState(mode === 'portrait' || !isOrientationControlAvailable)
 
   useEffect(() => {
-    if (mode === 'portrait') return
-    const sub = ScreenOrientation.addOrientationChangeListener((event) => {
-      const o = event.orientationInfo.orientation
-      if (
-        o === ScreenOrientation.Orientation.LANDSCAPE_LEFT ||
-        o === ScreenOrientation.Orientation.LANDSCAPE_RIGHT
-      ) {
-        setSettled(true)
-      }
-    })
-    return () => sub.remove()
+    if (mode === 'portrait' || !isOrientationControlAvailable) return
+    return subscribeToLandscape(() => setSettled(true))
   }, [mode])
 
   return (

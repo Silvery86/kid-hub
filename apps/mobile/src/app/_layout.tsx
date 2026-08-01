@@ -2,8 +2,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider, usePathname } from 'expo-router';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
-import * as ScreenOrientation from 'expo-screen-orientation';
 
+import { lockPortrait } from '@/lib/screen-orientation';
 import { AuthProvider } from '@/hooks/use-auth';
 
 import '@/global.css';
@@ -24,7 +24,7 @@ function OrientationGuardrail() {
   useEffect(() => {
     const isGame = GAME_ROUTES.some((route) => pathname.startsWith(route));
     if (!isGame) {
-      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
+      void lockPortrait();
     }
   }, [pathname]);
   return null;
