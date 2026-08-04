@@ -18,7 +18,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "typescript": "catalog:",
     "vitest": "^3"
   }
 }

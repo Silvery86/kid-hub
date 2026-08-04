@@ -6,6 +6,9 @@ packages:
 # packages/shared (Phase 0 — mobile_imp.md §10). Reference with `catalog:`.
 catalog:
   zod: ^4.3.6
+  # Single TypeScript version across every workspace (C1). Both apps compile
+  # @kid-hub/shared from source, so one compiler = identical type-checking.
+  typescript: 5.9.3
 
 allowBuilds:
   '@firebase/util': false
