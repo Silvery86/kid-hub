@@ -19,6 +19,9 @@ const nextConfig: NextConfig = {
   // Next instead of relying on implicit handling. Only the packages web actually
   // imports are listed; api-client is mobile-only.
   transpilePackages: ['@kid-hub/shared', '@kid-hub/assets'],
+  // Keep the argon2 native (.node) addon out of the server bundle so it is loaded
+  // as a real native module at runtime rather than bundled by the compiler.
+  serverExternalPackages: ['@node-rs/argon2'],
   async headers() {
     return [
       {

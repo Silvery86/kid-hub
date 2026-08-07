@@ -1,10 +1,15 @@
 /**
  * Server-only module — do NOT import from client components or hooks.
- * Auth business logic: password/pattern hashing with bcrypt, JWT access/refresh
- * and kid session tokens using jose, plus lockout state calculation.
+ * Auth business logic: password/pattern hashing with argon2id (new hashes) plus
+ * legacy bcrypt verification, JWT access/refresh and kid session tokens using
+ * jose, plus lockout state calculation.
+ *
+ * NOTE: never import this module from `middleware.ts` — argon2 is a native
+ * (Node) addon and would break the Edge runtime. The middleware only uses jose.
  */
 import 'server-only'
 
+import { hash as argon2Hash, verify as argon2Verify } from '@node-rs/argon2'
 import bcrypt from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
 import type { KidSession, ParentRefreshSession, ParentSession } from '@/types'
@@ -26,7 +31,32 @@ import {
   PIN_LOCKOUT_SECONDS,
 } from '@/lib/constants'
 
-const BCRYPT_ROUNDS = 12
+// ── Secret hashing ───────────────────────────────────────────────────────────
+// New hashes use argon2id (async, runs off the event loop — unlike the pure-JS
+// bcryptjs it replaces). Verification transparently accepts both the current
+// argon2 hashes and legacy bcrypt hashes so existing stored secrets keep working;
+// a legacy hash is upgraded the next time that secret is set (single household).
+
+/** Hash a raw secret with argon2id (the algorithm for all new hashes). */
+const hashSecret = (raw: string): Promise<string> => argon2Hash(raw)
+
+/**
+ * Verify a raw secret against a stored hash, supporting both the current argon2id
+ * scheme (`$argon2…`) and legacy bcrypt hashes (`$2…`).
+ */
+const verifySecret = async (raw: string, hash: string): Promise<boolean> => {
+  if (hash.startsWith('$argon2')) {
+    try {
+      return await argon2Verify(hash, raw)
+    } catch {
+      return false
+    }
+  }
+  return bcrypt.compare(raw, hash)
+}
+
+/** True when a stored hash still uses the legacy bcrypt scheme (candidate for re-hash). */
+export const isLegacyHash = (hash: string): boolean => hash.startsWith('$2')
 
 /** Returns the encoded JWT secret from the environment. */
 const getJwtSecret = (): Uint8Array => {
@@ -41,33 +71,30 @@ const getJwtSecret = (): Uint8Array => {
 export const validatePinFormat = (pin: string): boolean =>
   /^\d+$/.test(pin) && pin.length === PIN_LENGTH
 
-/** Hash a raw PIN using bcrypt. */
-export const hashPin = async (pin: string): Promise<string> =>
-  bcrypt.hash(pin, BCRYPT_ROUNDS)
+/** Hash a raw PIN. */
+export const hashPin = async (pin: string): Promise<string> => hashSecret(pin)
 
-/** Hash a parent account password using bcrypt. */
-export const hashPassword = async (password: string): Promise<string> =>
-  bcrypt.hash(password, BCRYPT_ROUNDS)
+/** Hash a parent account password. */
+export const hashPassword = async (password: string): Promise<string> => hashSecret(password)
 
-/** Compare a parent account password against a stored hash. */
+/** Compare a parent account password against a stored hash (argon2 or legacy bcrypt). */
 export const comparePassword = async (password: string, hash: string): Promise<boolean> =>
-  bcrypt.compare(password, hash)
+  verifySecret(password, hash)
 
 /** Validate that kid pattern is exactly two symbols (1-6). */
 export const validateKidPatternFormat = (pattern: string): boolean =>
   /^[1-6]+$/.test(pattern) && pattern.length === KID_PATTERN_LENGTH
 
-/** Hash a kid unlock pattern using bcrypt. */
-export const hashKidPattern = async (pattern: string): Promise<string> =>
-  bcrypt.hash(pattern, BCRYPT_ROUNDS)
+/** Hash a kid unlock pattern. */
+export const hashKidPattern = async (pattern: string): Promise<string> => hashSecret(pattern)
 
-/** Compare kid unlock pattern against stored hash. */
+/** Compare kid unlock pattern against stored hash (argon2 or legacy bcrypt). */
 export const compareKidPattern = async (pattern: string, hash: string): Promise<boolean> =>
-  bcrypt.compare(pattern, hash)
+  verifySecret(pattern, hash)
 
-/** Compare a raw PIN against a stored bcrypt hash. */
+/** Compare a raw PIN against a stored hash (argon2 or legacy bcrypt). */
 export const comparePin = async (pin: string, hash: string): Promise<boolean> =>
-  bcrypt.compare(pin, hash)
+  verifySecret(pin, hash)
 
 /** Determine if an account is currently locked out. */
 export const isLockedOut = (attempts: number, lockedUntil: Date | null): boolean => {
@@ -152,15 +179,14 @@ export const verifyKidSessionToken = async (token: string): Promise<KidSession |
   }
 }
 
-/** Deterministic one-way hash helper used for storing refresh tokens server-side. */
-export const hashTokenForStorage = async (token: string): Promise<string> =>
-  bcrypt.hash(token, BCRYPT_ROUNDS)
+/** One-way hash helper used for storing refresh tokens server-side. */
+export const hashTokenForStorage = async (token: string): Promise<string> => hashSecret(token)
 
-/** Compares a raw refresh token against the stored hash. */
+/** Compares a raw refresh token against the stored hash (argon2 or legacy bcrypt). */
 export const compareStoredTokenHash = async (
   token: string,
   hash: string
-): Promise<boolean> => bcrypt.compare(token, hash)
+): Promise<boolean> => verifySecret(token, hash)
 
 /** Backward-compatible alias used by existing server actions. */
 export const createSessionToken = createParentAccessToken
