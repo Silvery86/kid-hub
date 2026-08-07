@@ -146,6 +146,13 @@ test.describe('API v1 — auth happy-path flow', () => {
     expect(typeof refreshed.accessToken).toBe('string')
     expect(typeof refreshed.refreshToken).toBe('string')
 
+    // Genuine rotation (S1): issuing a new refresh token overwrites the stored
+    // hash, so the OLD refresh token is revoked and can no longer be exchanged.
+    const reuseOld = await request.post('/api/v1/auth/refresh', {
+      data: { refreshToken: login.refreshToken },
+    })
+    expect(reuseOld.status()).toBe(401)
+
     const logoutRes = await request.post('/api/v1/auth/logout', {
       data: { refreshToken: refreshed.refreshToken },
     })

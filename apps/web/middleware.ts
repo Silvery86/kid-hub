@@ -1,7 +1,10 @@
 /**
  * Next.js Edge Middleware — responsibilities:
  * 1. Protect child routes with `kid_session`, redirecting to `/kid-unlock` when absent/invalid.
- * 2. Protect parent routes with `parent_access`, and auto-renew via `parent_refresh`.
+ * 2. Protect parent routes with `parent_access`, minting a fresh access token from a
+ *    valid `parent_refresh` when it expires. The refresh token itself is NOT rotated
+ *    here (the Edge runtime can't persist the new hash to the DB); genuine rotation
+ *    happens only in Node contexts — see the refresh branch in `_handle`.
  * 3. Rate-limit parent login attempts (POST /parent/login) via Upstash sliding window.
  */
 
@@ -14,7 +17,6 @@ import {
   PARENT_ACCESS_COOKIE,
   PARENT_ACCESS_TTL_SECONDS,
   PARENT_REFRESH_COOKIE,
-  PARENT_REFRESH_TTL_SECONDS,
 } from '@/lib/constants'
 
 const isKidAppSurfacePath = (pathname: string): boolean => {
@@ -66,13 +68,6 @@ const createParentAccessToken = async (userId: string): Promise<string> =>
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(`${PARENT_ACCESS_TTL_SECONDS}s`)
-    .sign(getSecret())
-
-const createParentRefreshToken = async (userId: string): Promise<string> =>
-  new SignJWT({ userId, typ: 'parent-refresh' })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime(`${PARENT_REFRESH_TTL_SECONDS}s`)
     .sign(getSecret())
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
@@ -147,27 +142,23 @@ async function _handle(request: NextRequest): Promise<NextResponse> {
   if (refreshToken) {
     const refreshSession = await verifyToken(refreshToken, 'parent-refresh')
     if (refreshSession) {
-      // Rotate both tokens so the old refresh token cannot be reused.
-      // DB hash update requires Node.js runtime — handled by issueParentSessionCookies
-      // on the next full server-action login. JWT-level rotation is enforced here.
-      const [newAccessToken, newRefreshToken] = await Promise.all([
-        createParentAccessToken(refreshSession.userId),
-        createParentRefreshToken(refreshSession.userId),
-      ])
-      const cookieOpts = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax' as const,
-        path: '/',
-      }
+      // Keep the session alive by minting only a short-lived ACCESS token from the
+      // still-valid refresh JWT. We deliberately do NOT rotate the refresh token
+      // here: the Edge runtime cannot reach the DB to persist the new hash, so a
+      // rotated refresh cookie would diverge from users.refreshTokenHash — leaving
+      // the old token still valid server-side (cosmetic rotation) and risking a
+      // spurious logout on the next Server Action, whose DB-hash check would reject
+      // the new cookie. Genuine refresh-token rotation (new hash persisted + old
+      // token revoked) happens only in Node contexts: requireParentSession
+      // (server/lib/auth-guard.ts) and the REST /api/v1/auth/refresh route.
+      const newAccessToken = await createParentAccessToken(refreshSession.userId)
       const response = NextResponse.next()
       response.cookies.set(PARENT_ACCESS_COOKIE, newAccessToken, {
-        ...cookieOpts,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
         maxAge: PARENT_ACCESS_TTL_SECONDS,
-      })
-      response.cookies.set(PARENT_REFRESH_COOKIE, newRefreshToken, {
-        ...cookieOpts,
-        maxAge: PARENT_REFRESH_TTL_SECONDS,
       })
       return response
     }
