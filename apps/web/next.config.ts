@@ -15,6 +15,10 @@ const CSP = [
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // Compile these source-only workspace packages (shipped as raw .ts) through
+  // Next instead of relying on implicit handling. Only the packages web actually
+  // imports are listed; api-client is mobile-only.
+  transpilePackages: ['@kid-hub/shared', '@kid-hub/assets'],
   async headers() {
     return [
       {
