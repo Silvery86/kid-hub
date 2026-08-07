@@ -1,8 +1,18 @@
 import { test, expect } from '@playwright/test'
+import {
+  HomeworkItemArraySchema,
+  ProgressSummarySchema,
+  ReportCardSchema,
+  TodayViewSchema,
+} from '@kid-hub/shared'
 
 // Phase 2, item 8: one smoke test per /api/v1 route.
 // These hit the running Next.js dev server (see playwright.config.ts webServer)
 // via the Playwright `request` fixture — no browser, just the REST contract.
+//
+// Read routes assert the response body against the shared response schemas
+// (C2), so a server-side shape change that the contract types missed fails the
+// test at the exact endpoint instead of silently breaking the mobile client.
 //
 // Read + homework-done routes are kid-facing (no auth, matching their Server Actions).
 // Auth routes are exercised through negative paths plus one full happy-path flow.
@@ -13,39 +23,39 @@ const PARENT_PASSWORD = process.env.TEST_PARENT_PASSWORD ?? 'Giang@123'
 
 test.describe('API v1 — kid-facing read routes', () => {
   // GET /api/v1/homework/today
-  test('GET /homework/today returns an array', async ({ request }) => {
+  test('GET /homework/today matches HomeworkItem[] contract', async ({ request }) => {
     const res = await request.get('/api/v1/homework/today')
     expect(res.status()).toBe(200)
     const body = await res.json()
     expect(body.success).toBe(true)
-    expect(Array.isArray(body.data)).toBe(true)
+    expect(() => HomeworkItemArraySchema.parse(body.data)).not.toThrow()
   })
 
   // GET /api/v1/schedule
-  test('GET /schedule returns today view', async ({ request }) => {
+  test('GET /schedule matches TodayView contract', async ({ request }) => {
     const res = await request.get('/api/v1/schedule')
     expect(res.status()).toBe(200)
     const body = await res.json()
     expect(body.success).toBe(true)
-    expect(body.data).toBeTruthy()
+    expect(() => TodayViewSchema.parse(body.data)).not.toThrow()
   })
 
   // GET /api/v1/grades
-  test('GET /grades returns a report card', async ({ request }) => {
+  test('GET /grades matches ReportCard contract', async ({ request }) => {
     const res = await request.get('/api/v1/grades')
     expect(res.status()).toBe(200)
     const body = await res.json()
     expect(body.success).toBe(true)
-    expect(body.data).toBeTruthy()
+    expect(() => ReportCardSchema.parse(body.data)).not.toThrow()
   })
 
   // GET /api/v1/progress
-  test('GET /progress returns progress (or null)', async ({ request }) => {
+  test('GET /progress matches the progress-summary contract (or null)', async ({ request }) => {
     const res = await request.get('/api/v1/progress')
     expect(res.status()).toBe(200)
     const body = await res.json()
     expect(body.success).toBe(true)
-    expect(body).toHaveProperty('data')
+    expect(() => ProgressSummarySchema.parse(body.data)).not.toThrow()
   })
 })
 

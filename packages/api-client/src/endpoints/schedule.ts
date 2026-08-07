@@ -1,5 +1,5 @@
-import type { TodayView } from '@kid-hub/shared'
+import { TodayViewSchema, type TodayView } from '@kid-hub/shared'
 import type { HttpTransport } from '../http'
 
-export const getSchedule = (http: HttpTransport): Promise<TodayView> =>
-  http.get<TodayView>('/schedule')
+export const getSchedule = async (http: HttpTransport): Promise<TodayView> =>
+  TodayViewSchema.parse(await http.get('/schedule'))

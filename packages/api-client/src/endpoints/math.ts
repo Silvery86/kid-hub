@@ -1,10 +1,16 @@
-import type { SaveMathProgressInput, GameBestScore, GameSaveResult } from '@kid-hub/shared'
+import {
+  GameBestScoreArraySchema,
+  GameSaveResultSchema,
+  type SaveMathProgressInput,
+  type GameBestScore,
+  type GameSaveResult,
+} from '@kid-hub/shared'
 import type { HttpTransport } from '../http'
 
-export const saveMathProgress = (
+export const saveMathProgress = async (
   http: HttpTransport,
   input: SaveMathProgressInput
-): Promise<GameSaveResult> => http.post<GameSaveResult>('/math', input)
+): Promise<GameSaveResult> => GameSaveResultSchema.parse(await http.post('/math', input))
 
-export const getMathBestScores = (http: HttpTransport): Promise<GameBestScore[]> =>
-  http.get<GameBestScore[]>('/math')
+export const getMathBestScores = async (http: HttpTransport): Promise<GameBestScore[]> =>
+  GameBestScoreArraySchema.parse(await http.get('/math'))
