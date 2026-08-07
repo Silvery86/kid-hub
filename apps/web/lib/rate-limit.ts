@@ -1,24 +1,47 @@
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
 
+/**
+ * Reads the Upstash REST credentials shared by every limiter.
+ *
+ * In production, missing credentials is a HARD error: a silently unthrottled
+ * login / PIN / game-save endpoint is a security hole, so we fail loudly the
+ * first time a limiter is needed rather than degrading to a no-op. In
+ * development and tests the limiter degrades to `null` (no-op) so local work
+ * needs no Upstash account.
+ */
+function readUpstashCredentials(purpose: string): { url: string; token: string } | null {
+  const url = process.env.UPSTASH_REDIS_REST_URL
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN
+
+  if (url && token) return { url, token }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      `Rate limiting is misconfigured: UPSTASH_REDIS_REST_URL and ` +
+        `UPSTASH_REDIS_REST_TOKEN must be set in production (needed by: ${purpose}).`
+    )
+  }
+
+  return null
+}
+
 // Singleton — instantiated once per Edge worker lifetime.
-// Returns null when Upstash credentials are absent so the middleware
-// degrades gracefully in dev without crashing.
+// null when Upstash credentials are absent (dev/test only) so the middleware
+// degrades gracefully without crashing; throws in production (see above).
 let _limiter: Ratelimit | null | undefined
 
 export function getPinRateLimiter(): Ratelimit | null {
   if (_limiter !== undefined) return _limiter
 
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
-
-  if (!url || !token) {
+  const creds = readUpstashCredentials('web PIN/login gate')
+  if (!creds) {
     _limiter = null
     return null
   }
 
   _limiter = new Ratelimit({
-    redis: new Redis({ url, token }),
+    redis: new Redis(creds),
     // 10 attempts per IP per 60-second sliding window
     limiter: Ratelimit.slidingWindow(10, '60 s'),
     analytics: false,
@@ -36,16 +59,14 @@ let _loginLimiter: Ratelimit | null | undefined
 export function getLoginRateLimiter(): Ratelimit | null {
   if (_loginLimiter !== undefined) return _loginLimiter
 
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
-
-  if (!url || !token) {
+  const creds = readUpstashCredentials('mobile /api/v1/auth/login')
+  if (!creds) {
     _loginLimiter = null
     return null
   }
 
   _loginLimiter = new Ratelimit({
-    redis: new Redis({ url, token }),
+    redis: new Redis(creds),
     limiter: Ratelimit.slidingWindow(5, '60 s'),
     analytics: false,
     prefix: 'kid-hub:api-login',
@@ -62,16 +83,14 @@ let _gameSaveLimiter: Ratelimit | null | undefined
 export function getGameSaveRateLimiter(): Ratelimit | null {
   if (_gameSaveLimiter !== undefined) return _gameSaveLimiter
 
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
-
-  if (!url || !token) {
+  const creds = readUpstashCredentials('kid game-save /api/v1/{math,english}')
+  if (!creds) {
     _gameSaveLimiter = null
     return null
   }
 
   _gameSaveLimiter = new Ratelimit({
-    redis: new Redis({ url, token }),
+    redis: new Redis(creds),
     limiter: Ratelimit.slidingWindow(30, '60 s'),
     analytics: false,
     prefix: 'kid-hub:api-game-save',
