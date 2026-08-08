@@ -39,8 +39,7 @@
     "react-dom": "19.2.3",
     "server-only": "^0.0.1",
     "tailwind-merge": "^3.5.0",
-    "zod": "catalog:",
-    "zustand": "^5.0.12"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
