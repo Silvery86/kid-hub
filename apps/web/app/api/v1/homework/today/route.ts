@@ -8,7 +8,6 @@ export async function GET() {
   try {
     const data = await homeworkService.getTodayHomework(
       DEFAULT_USER_ID,
-      'monday',
       homeworkService.todayDateKey(),
     )
     return NextResponse.json({ success: true, data })

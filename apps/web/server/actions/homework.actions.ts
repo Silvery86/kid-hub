@@ -12,7 +12,7 @@ import { recordActivity } from '@/server/services/activity.service'
 export const getTodayHomeworkAction = async (): Promise<ActionResult<HomeworkItem[]>> => {
   try {
     // DailyHomework is keyed by date only — no day-of-week filter needed, works on weekends too.
-    const data = await homeworkService.getTodayHomework(DEFAULT_USER_ID, 'monday', todayDateKey())
+    const data = await homeworkService.getTodayHomework(DEFAULT_USER_ID, todayDateKey())
     return { success: true, data }
   } catch {
     return { success: false, error: 'Failed to fetch homework' }

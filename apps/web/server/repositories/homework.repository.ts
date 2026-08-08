@@ -1,10 +1,9 @@
 import { db } from '@/lib/db'
-import type { HomeworkItem, DayOfWeek } from '@/types'
+import type { HomeworkItem } from '@/types'
 
-/** Returns today's homework items (from DailyHomework table) for a user. */
+/** Returns today's homework items (from DailyHomework table) for a user. Keyed by date only. */
 export const getTodayHomework = async (
   userId: string,
-  _day: DayOfWeek,
   date: string
 ): Promise<HomeworkItem[]> => {
   const items = await db.dailyHomework.findMany({
