@@ -45,7 +45,6 @@ model User {
   periods               ClassPeriod[]
   grades                SubjectGrade[]
   progress              UserProgress?
-  homeworkCompletions   HomeworkCompletion[]
   mathProgress          MathProgress[]
   englishProgress       EnglishProgress[]
   dailyHomework         DailyHomework[]
@@ -106,7 +105,6 @@ model ClassPeriod {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  homeworkCompletions HomeworkCompletion[]
   overrides           ExtraClassOverride[]
 
   // Unique slot per school period; NULL periodNumber rows are excluded by Postgres
@@ -117,22 +115,6 @@ model ClassPeriod {
 }
 
 // ── Homework ──────────────────────────────────────────────────
-
-model HomeworkCompletion {
-  id        String      @id @default(cuid())
-  periodId  String
-  period    ClassPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date      String      // "YYYY-MM-DD" — one record per period per day; no record = not done
-  isDone    Boolean     @default(false)
-  doneAt    DateTime?
-  createdAt DateTime    @default(now())
-
-  @@unique([periodId, date])
-  @@index([userId, date])
-  @@map("homework_completions")
-}
 
 /// One-off homework assignment for a specific date. Not recurring.
 model DailyHomework {
@@ -275,7 +257,7 @@ model MathProgress {
   starsEarned      Int          // 1–3
   score            Int          // correctCount × 10 × starsEarned
   homeworkPeriodId String?      // FK to ClassPeriod — set when submitted as homework
-  homeworkDate     String?      // "YYYY-MM-DD" — mirrors HomeworkCompletion.date
+  homeworkDate     String?      // "YYYY-MM-DD" — the homework date it was submitted for
   completedAt      DateTime     @default(now())
 
   @@index([userId, completedAt])
