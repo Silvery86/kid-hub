@@ -147,6 +147,16 @@ export const updatePeriodAction = async (input: unknown): Promise<ActionVoidResu
     if (!parsed.success) {
       return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
     }
+    // A one-sided time edit passes the schema — check the merged range against the stored row.
+    const { startTime, endTime } = parsed.data
+    if ((startTime == null) !== (endTime == null)) {
+      const stored = await scheduleService.getPeriodTimes(parsed.data.id, DEFAULT_USER_ID)
+      if (!stored) return { success: false, error: 'Period not found' }
+      const merged = { start: startTime ?? stored.startTime, end: endTime ?? stored.endTime }
+      if (merged.end <= merged.start) {
+        return { success: false, error: 'Giờ kết thúc phải sau giờ bắt đầu' }
+      }
+    }
     await scheduleService.updatePeriod({ ...parsed.data, userId: DEFAULT_USER_ID })
     revalidatePath('/dashboard')
     revalidatePath('/schedule')

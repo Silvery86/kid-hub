@@ -117,6 +117,16 @@ export const getDaySchedule = async (
   return { day, periods: rows.map(toClassPeriod) }
 }
 
+/** Retrieves the stored time range for a single period owned by the user. */
+export const getPeriodTimes = async (
+  id: string,
+  userId: string
+): Promise<{ startTime: string; endTime: string } | null> =>
+  db.classPeriod.findFirst({
+    where: { id, userId },
+    select: { startTime: true, endTime: true },
+  })
+
 /** Inserts a new class period record. Returns the created period ID. */
 export const createPeriod = async (data: CreatePeriodInput): Promise<string> => {
   const row = await db.classPeriod.create({

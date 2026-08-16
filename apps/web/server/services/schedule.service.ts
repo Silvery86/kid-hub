@@ -63,6 +63,7 @@ export const getOverridesForDate = (userId: string, date: string) => scheduleRep
 export const getDailyHomework = (userId: string, date: string) => scheduleRepo.getDailyHomework(userId, date)
 export const countEveningBlocks = (userId: string, day: DayOfWeek) => scheduleRepo.countEveningBlocks(userId, day)
 export const createPeriod = (data: scheduleRepo.CreatePeriodInput) => scheduleRepo.createPeriod(data)
+export const getPeriodTimes = (id: string, userId: string) => scheduleRepo.getPeriodTimes(id, userId)
 export const updatePeriod = (data: scheduleRepo.UpdatePeriodInput) => scheduleRepo.updatePeriod(data)
 export const deletePeriod = (id: string, userId: string) => scheduleRepo.deletePeriod(id, userId)
 export const createOverride = (periodId: string, userId: string, date: string, reason?: string) =>
