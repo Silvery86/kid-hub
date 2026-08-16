@@ -1,6 +1,35 @@
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
 
+export interface RateLimitResult {
+  success: boolean
+  limit: number
+  remaining: number
+  reset: number
+}
+
+/**
+ * Runs a limiter check, failing OPEN on backend errors.
+ *
+ * Returns the limit result, or `null` when the request should simply be allowed:
+ * either there is no limiter (dev/test without Upstash) or the limiter backend
+ * was unreachable at runtime. A rate-limiter outage must not break login/PIN/
+ * game-save endpoints — missing *configuration* is still caught at startup by the
+ * getters below (production throws), this only covers a transient runtime outage.
+ */
+export async function checkRateLimit(
+  limiter: Ratelimit | null,
+  identifier: string
+): Promise<RateLimitResult | null> {
+  if (!limiter) return null
+  try {
+    return await limiter.limit(identifier)
+  } catch (err) {
+    console.warn('[rate-limit] limiter backend unavailable, allowing request:', err)
+    return null
+  }
+}
+
 /**
  * Reads the Upstash REST credentials shared by every limiter.
  *

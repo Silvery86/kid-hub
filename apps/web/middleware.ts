@@ -11,7 +11,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { SignJWT, jwtVerify } from 'jose'
-import { getPinRateLimiter } from '@/lib/rate-limit'
+import { checkRateLimit, getPinRateLimiter } from '@/lib/rate-limit'
 import {
   KID_SESSION_COOKIE,
   PARENT_ACCESS_COOKIE,
@@ -104,23 +104,19 @@ async function _handle(request: NextRequest): Promise<NextResponse> {
 
   // ── Rate limiting: parent login / PIN Server Action POSTs ────────────────
   if (isParentPublicPath(pathname) && request.method === 'POST') {
-    const limiter = getPinRateLimiter()
-    if (limiter) {
-      const ip =
-        request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? '127.0.0.1'
-      const { success, limit, remaining, reset } = await limiter.limit(ip)
-      if (!success) {
-        return new NextResponse('Too many login attempts. Please wait and try again.', {
-          status: 429,
-          headers: {
-            'Content-Type': 'text/plain',
-            'X-RateLimit-Limit': String(limit),
-            'X-RateLimit-Remaining': String(remaining),
-            'X-RateLimit-Reset': String(reset),
-            'Retry-After': String(Math.ceil((reset - Date.now()) / 1000)),
-          },
-        })
-      }
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? '127.0.0.1'
+    const rl = await checkRateLimit(getPinRateLimiter(), ip)
+    if (rl && !rl.success) {
+      return new NextResponse('Too many login attempts. Please wait and try again.', {
+        status: 429,
+        headers: {
+          'Content-Type': 'text/plain',
+          'X-RateLimit-Limit': String(rl.limit),
+          'X-RateLimit-Remaining': String(rl.remaining),
+          'X-RateLimit-Reset': String(rl.reset),
+          'Retry-After': String(Math.ceil((rl.reset - Date.now()) / 1000)),
+        },
+      })
     }
     return NextResponse.next()
   }
