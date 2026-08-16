@@ -13,7 +13,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           Landscape: pl-24 → lg:pl-60 · Portrait: pb-16 tab bar */}
       <div className="min-h-dvh bg-shell-kid pl-24 portrait:pl-0 lg:pl-60 lg:portrait:pl-0 portrait:pb-16">
         <AppSidebar />
-        <div className="overflow-hidden">
+        {/* overflow-x only — a plain overflow-hidden here clipped any page taller than the viewport. */}
+        <div className="overflow-x-hidden">
           <ErrorBoundary section="dashboard">{children}</ErrorBoundary>
         </div>
       </div>

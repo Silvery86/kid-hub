@@ -5,8 +5,14 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useSchedule } from '@/hooks/useSchedule'
 import { useUserProgress } from '@/hooks/useUserProgress'
+import { DAY_LABELS } from '@/lib/constants'
 import { getSubjectById } from '@/lib/data/subjects'
-import { formatDayTimeRange, getTodayDDMM, schoolPeriodsOnly } from '@/lib/schedule-display'
+import {
+  formatDayTimeRange,
+  getIsoWeekNumber,
+  getTodayDDMM,
+  schoolPeriodsOnly,
+} from '@/lib/schedule-display'
 import { DayRail } from '@/components/dashboard/DayRail'
 import { BadgeModal } from '@/components/dashboard/BadgeModal'
 import { GameEntryCard } from '@/components/games/GameEntryCard'
@@ -17,16 +23,28 @@ interface DashboardViewProps {
   initialSchedule: DailySchedule[]
   initialHomework: HomeworkItem[]
   eveningBlocks?: ClassPeriod[]
+  kidName: string
 }
 
-export const DashboardView = ({ initialSchedule, initialHomework, eveningBlocks = [] }: DashboardViewProps) => {
-  const weeklySchedule: WeeklySchedule = { weekStartDate: '', days: initialSchedule }
+export const DashboardView = ({
+  initialSchedule,
+  initialHomework,
+  eveningBlocks = [],
+  kidName,
+}: DashboardViewProps) => {
+  // Stable identity — a fresh literal here would defeat the useMemo inside useSchedule.
+  const weeklySchedule: WeeklySchedule = useMemo(
+    () => ({ weekStartDate: '', days: initialSchedule }),
+    [initialSchedule]
+  )
   const {
     todaySchedule,
     currentPeriod,
     nextPeriod,
     periodProgress,
     minutesLeftInCurrentPeriod,
+    todayDow,
+    now,
   } = useSchedule(weeklySchedule)
   const { updateStreak, progress } = useUserProgress()
   const [isBadgeModalOpen, setIsBadgeModalOpen] = useState(false)
@@ -49,16 +67,50 @@ export const DashboardView = ({ initialSchedule, initialHomework, eveningBlocks 
     [initialHomework]
   )
 
+  // Weekday · date · clock · ISO week, all derived from the live clock.
+  // Null until the clock is known so the server and first client render agree.
+  const headerSubtitle = useMemo(() => {
+    if (!now || !todayDow) return null
+    const clock = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+    return `${DAY_LABELS[todayDow]} ${getTodayDDMM()} · ${clock} · Tuần ${getIsoWeekNumber(now)}`
+  }, [now, todayDow])
+
+  // Hero copy when no period is running — a day off reads differently from a finished day.
+  const idleHero = useMemo(() => {
+    if (!now) return { emoji: '⏳', title: 'Đang tải lịch…', subtitle: '' }
+    if (nextPeriod) {
+      return {
+        emoji: '☕',
+        title: 'Đang nghỉ giữa giờ',
+        subtitle: `${nextSubject?.name ?? 'Tiết tiếp theo'} bắt đầu lúc ${nextPeriod.startTime}`,
+      }
+    }
+    if (periods.length === 0) {
+      return {
+        emoji: '🌤️',
+        title: 'Hôm nay được nghỉ!',
+        subtitle:
+          eveningBlocks.length > 0
+            ? 'Không có tiết ở trường — chỉ có buổi học thêm tối nay.'
+            : 'Hôm nay không có lịch học.',
+      }
+    }
+    return { emoji: '🎉', title: 'Học xong rồi!', subtitle: 'Hẹn gặp lại ở buổi học tiếp theo.' }
+  }, [now, nextPeriod, nextSubject, periods.length, eveningBlocks.length])
+
   return (
     <>
-      <div className="flex h-dvh min-h-0 flex-col gap-3 overflow-y-auto p-3 portrait:pb-2 sm:gap-4 sm:p-4 lg:overflow-hidden lg:p-5">
+      <div className="flex min-h-dvh flex-col gap-3 p-3 portrait:pb-2 sm:gap-4 sm:p-4 lg:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-3xl font-extrabold tracking-tight text-text-primary" suppressHydrationWarning>
-              Chào Khôi!
+            <h1 className="text-3xl font-extrabold tracking-tight text-text-primary">
+              Chào {kidName}!
             </h1>
-            <p className="mt-1 text-sm font-semibold text-text-secondary portrait:text-base" suppressHydrationWarning>
-              Thứ Tư{mounted ? ` ${getTodayDDMM()}` : ''} · {currentPeriod?.startTime ?? '09:15'} · Tuần 14
+            <p
+              className="mt-1 min-h-5 text-sm font-semibold text-text-secondary portrait:text-base"
+              suppressHydrationWarning
+            >
+              {headerSubtitle}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -133,15 +185,13 @@ export const DashboardView = ({ initialSchedule, initialHomework, eveningBlocks 
               <>
                 <div className="flex min-h-40 items-center justify-center gap-4 text-center">
                   <span className="text-6xl" aria-hidden="true">
-                    🎉
+                    {idleHero.emoji}
                   </span>
                   <div>
-                    <h2 className="text-3xl font-black">
-                      {nextPeriod ? 'Đang nghỉ giữa giờ' : 'Học xong rồi!'}
-                    </h2>
-                    <p className="mt-1 text-sm font-bold text-white/85">
-                      {nextPeriod ? `${nextSubject?.name ?? 'Tiết tiếp theo'} bắt đầu lúc ${nextPeriod.startTime}` : 'Hẹn gặp lại ở buổi học tiếp theo.'}
-                    </p>
+                    <h2 className="text-3xl font-black">{idleHero.title}</h2>
+                    {idleHero.subtitle ? (
+                      <p className="mt-1 text-sm font-bold text-white/85">{idleHero.subtitle}</p>
+                    ) : null}
                   </div>
                 </div>
                 {nextPeriod && nextSubject ? (
@@ -235,23 +285,27 @@ export const DashboardView = ({ initialSchedule, initialHomework, eveningBlocks 
 
           {/* Right-bottom column — homework only (no duplicate schedule list) */}
           <section className="animate-fade-slide-up flex min-h-0 flex-col" style={{ animationDelay: '0.18s' }}>
-            <div className="rounded-card bg-white p-3 shadow-sm lg:flex lg:h-full lg:flex-col">
+            <div className="rounded-card bg-white p-3 shadow-sm">
               <div className="mb-2 flex items-center justify-between">
                 <h3 className="text-lg font-black text-text-primary">Bài tập</h3>
                 <div className="flex items-center gap-2">
-                  {initialHomework.length > 0 && (
-                    <ProgressRing
-                      value={initialHomework.length - pendingHomeworkCount}
-                      max={initialHomework.length}
-                      size={22}
-                    />
+                  {initialHomework.length === 0 ? (
+                    <span className="text-xs font-extrabold text-text-muted">Chưa giao</span>
+                  ) : (
+                    <>
+                      <ProgressRing
+                        value={initialHomework.length - pendingHomeworkCount}
+                        max={initialHomework.length}
+                        size={22}
+                      />
+                      <span className={`text-xs font-extrabold ${pendingHomeworkCount === 0 ? 'text-emerald-600' : 'text-amber-700'}`}>
+                        {pendingHomeworkCount === 0 ? 'Xong!' : `${pendingHomeworkCount} chưa làm`}
+                      </span>
+                    </>
                   )}
-                  <span className={`text-xs font-extrabold ${pendingHomeworkCount === 0 ? 'text-emerald-600' : 'text-amber-700'}`}>
-                    {pendingHomeworkCount === 0 ? 'Xong!' : `${pendingHomeworkCount} chưa làm`}
-                  </span>
                 </div>
               </div>
-              <div className="flex flex-col gap-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+              <div className="flex flex-col gap-2">
                 {initialHomework.length === 0 ? (
                   <p className="py-6 text-center text-sm font-bold text-text-muted">Hôm nay không có bài tập.</p>
                 ) : (
