@@ -1,6 +1,37 @@
 // Cross-platform constants shared by Web + Mobile. Pure primitives only.
 // Owner: @kid-hub/shared. apps/web/lib/constants.ts re-exports these.
 
+import type { DayOfWeek } from './types'
+
+export const DAYS_OF_WEEK: readonly DayOfWeek[] = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday',
+] as const
+
+export const SCHOOL_DAYS: readonly DayOfWeek[] = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+] as const
+
+/** Vietnamese weekday labels — the display copy for both platforms. */
+export const DAY_LABELS: Record<DayOfWeek, string> = {
+  monday: 'Thứ Hai',
+  tuesday: 'Thứ Ba',
+  wednesday: 'Thứ Tư',
+  thursday: 'Thứ Năm',
+  friday: 'Thứ Sáu',
+  saturday: 'Thứ Bảy',
+  sunday: 'Chủ Nhật',
+} as const
+
 /** Score thresholds (0–10 scale) used to derive a BadgeTier. */
 export const GRADE_SCALE = {
   EXCELLENT: 9,

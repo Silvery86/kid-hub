@@ -1,7 +1,5 @@
 /** Application-wide constants — schedule, grades, auth, game, and UI configuration values. */
 
-import type { DayOfWeek } from '@/types'
-
 // ── App User ──────────────────────────────────────────────────
 
 /** Fixed ID for the single app user (Khôi). Created via prisma/seed.ts. */
@@ -9,33 +7,9 @@ export const DEFAULT_USER_ID = 'khoi-default-user'
 
 // ── Schedule ─────────────────────────────────────────────────
 
-export const DAYS_OF_WEEK: readonly DayOfWeek[] = [
-  'monday',
-  'tuesday',
-  'wednesday',
-  'thursday',
-  'friday',
-  'saturday',
-  'sunday',
-] as const
-
-export const SCHOOL_DAYS: readonly DayOfWeek[] = [
-  'monday',
-  'tuesday',
-  'wednesday',
-  'thursday',
-  'friday',
-] as const
-
-export const DAY_LABELS: Record<DayOfWeek, string> = {
-  monday: 'Thứ Hai',
-  tuesday: 'Thứ Ba',
-  wednesday: 'Thứ Tư',
-  thursday: 'Thứ Năm',
-  friday: 'Thứ Sáu',
-  saturday: 'Thứ Bảy',
-  sunday: 'Chủ Nhật',
-} as const
+// DAYS_OF_WEEK, SCHOOL_DAYS and DAY_LABELS are owned by @kid-hub/shared
+// (MOBILE_UI_IMP.md §7 Phase 1) and re-exported here for existing web imports.
+export { DAYS_OF_WEEK, SCHOOL_DAYS, DAY_LABELS } from '@kid-hub/shared'
 
 /** Maximum number of EXTRA_CLASS slots per day (enforced at action + UI layer). */
 export const MAX_EVENING_BLOCKS_PER_DAY = 3
