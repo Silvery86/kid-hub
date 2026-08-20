@@ -1,6 +1,6 @@
 # Mobile UI Implementation Plan — Visual Parity with Web
 
-> **Status:** Review complete · plan proposed · **no code changed yet**
+> **Status:** Phases 1–2 landed · Phases 3–6 outstanding
 > **Date:** 2026-08-16
 > **Scope:** Bring `apps/mobile` (Expo Router + NativeWind) to design, style, icon and
 > content parity with `apps/web` (Next.js 16 + Tailwind v4).
@@ -170,7 +170,7 @@ Mobile already uses `bg-shell-kid`, `bg-shell-parent`, `text-text-primary`, `tex
 
 **No action needed on colour.** This layer is correct and should not be re-architected.
 
-### 5.2 Radius tokens — ⚠️ incomplete
+### 5.2 Radius tokens — ✅ **TOKENS ADDED (Phase 2, 2026-08-20)** · ⚠️ call sites not migrated
 
 Tokens define only `radius.card` (`1.5rem` → `rounded-card`) and `radius.pill`. The web uses many
 raw radii that mobile cannot mirror semantically:
@@ -183,8 +183,16 @@ raw radii that mobile cannot mirror semantically:
 | `rounded-[22px]` | Badges summary | Fold into `radius.hero` |
 | `rounded-2xl` / `rounded-xl` | Buttons, chips, tiles | Add `radius.button` = `1rem`, `radius.chip` = `0.75rem` |
 
-**Action:** extend `tokens.json` with the radius scale above, regenerate, then replace raw values
-on **both** platforms. This is the only way mobile can stay pinned to web.
+**Done:** `tokens.json` now carries `hero` (2rem), `card` (1.5rem), `row` (1.25rem),
+`button` (1rem), `chip` (0.75rem) and `pill`. Two deviations from the table above:
+
+- **No `card-lg`.** Tailwind's `rounded-3xl` *is* 1.5rem, which the existing `radius.card`
+  already holds — a second token with the same value would only invite drift.
+- **`rounded-[22px]` was not folded into `hero`.** 22px → 32px is a real visual change across
+  14 web call sites, not a rename. It belongs in the replacement pass, not the token pass.
+
+**Still open:** replacing the raw utilities on both platforms. Phase 2 only added the tokens, so
+web renders exactly as before; the migration rides along with the Phase 3 primitive port.
 
 ### 5.3 Spacing / tap targets — ✅ shared, ⚠️ underused
 
@@ -193,7 +201,7 @@ on **both** platforms. This is the only way mobile can stay pinned to web.
 
 **Action:** apply `min-h-tap-lg` to every mobile `Pressable`.
 
-### 5.4 Typography — ❌ **broken on mobile**
+### 5.4 Typography — ✅ **RESOLVED (Phase 2, 2026-08-20)**
 
 `tokens.json` sets `fonts.display = "Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif"`.
 `apps/mobile/src/global.css` declares `--font-display` as a CSS variable — but **React Native does
@@ -206,11 +214,20 @@ Consequence: mobile renders in the platform default (SF Pro / Roboto) while web 
 Weight parity is also off — web leans on `font-black` (900) and `font-extrabold` (800); mobile
 mostly uses `font-bold` (700). Without variable-weight font files loaded, RN silently clamps.
 
-**Action:**
-1. Vendor Spline Sans (400/700/800/900) into `apps/mobile/assets/fonts/`.
-2. Load via `useFonts` in `src/app/_layout.tsx`, gated by `expo-splash-screen`.
-3. Add `fontFamily.display` to the generated NativeWind preset so `font-display` works on both.
-4. Map `font-extrabold`/`font-black` to the loaded faces.
+**Done:**
+1. ✅ Vendored into `apps/mobile/assets/fonts/` — with the OFL licence alongside.
+2. ✅ Loaded via `useFonts` in `src/app/_layout.tsx` behind `SplashScreen.preventAutoHideAsync()`.
+   A font error is non-fatal: the app degrades to the system face rather than rendering nothing.
+3. ✅ The preset now emits one family per face, keyed off `tokens.fonts.faces`, and the loader
+   reads its registration keys from that same object — the two cannot drift.
+4. ⚠️ **Deviation — 800/900 do not exist.** Spline Sans's `wght` axis stops at 700; Google Fonts
+   silently drops higher requests (verified against the `css2` API and the `usWeightClass` of each
+   downloaded face). Web's `font-black` is therefore already a browser synthesis of the same 700
+   file, so 400/500/600/700 is full parity, not a compromise.
+5. ⚠️ **Deviation — weight travels in the class name.** RN cannot select a face out of a family by
+   numeric weight, so `font-display font-extrabold` cannot work. Mobile uses
+   `font-display` · `font-display-medium` · `font-display-semibold` · `font-display-bold`
+   instead. Phase 3 primitives must use these, not the `font-*` weight utilities.
 
 ### 5.5 Icons — ⚠️ two systems, one shared, one not
 
@@ -251,17 +268,24 @@ therefore invisible to mobile, which is why mobile rendered raw ids.
 Each is re-exported from its original web path, so no web import changed. `mixWithWhite()` landed
 alongside them in `packages/shared/src/lib/color.ts`.
 
-### 5.7 Shadows / elevation — ❌ missing
+### 5.7 Shadows / elevation — ✅ **RESOLVED (Phase 2, 2026-08-20)**
 
 Web uses `shadow-sm`, `shadow-lg`, `shadow-xl` plus bespoke coloured shadows
 (`0 20px 40px -20px {subjectColor}`, `0 4px 10px -3px rgba(59,130,246,0.55)`). Mobile uses **flat
 cards with no elevation whatsoever**, which reads as a visibly different design.
 
-**Action:** add a `shadows` block to `tokens.json` and a small `src/lib/shadows.ts` on mobile that
-converts each token to `{ shadowColor, shadowOffset, shadowOpacity, shadowRadius, elevation }`,
-since NativeWind's shadow mapping is incomplete on Android.
+**Done:** `tokens.json` gained a `shadows` block (`sm`/`lg`/`xl`, mirroring Tailwind v4's own
+values) and `apps/mobile/src/lib/shadows.ts` converts each to
+`{ shadowColor, shadowOffset, shadowOpacity, shadowRadius, elevation }`. `coloredShadow(hex)`
+covers the bespoke tinted shadows; RN has no `spread`, so the raised opacity stands in for web's
+negative pull-back.
 
-### 5.8 Animation — ❌ missing
+**Deviation:** the block is emitted to *neither* generated artifact. Web keeps Tailwind's stock
+`shadow-{sm,lg,xl}` — overwriting `--shadow-sm` in `@theme` would have silently restyled every
+existing web card — and mobile reads `tokens.shadows` straight from `@kid-hub/shared`, since an RN
+shadow is five style props rather than one class.
+
+### 5.8 Animation — ✅ **RESOLVED (Phase 2, 2026-08-20)**
 
 Web ships `animate-fade-slide-up` (staggered `0.08s`/`0.14s`/`0.18s` section entrances),
 `animate-pop-in`, `animate-grow-width`, `animate-ping-ring`, `animate-shake`, plus
@@ -270,18 +294,29 @@ Web ships `animate-fade-slide-up` (staggered `0.08s`/`0.14s`/`0.18s` section ent
 Mobile has `react-native-reanimated@4.3.1` and `react-native-worklets` installed but grep confirms
 **neither is imported anywhere in `src/`**.
 
-**Action:** build `src/components/ui/animated.tsx` exposing `FadeSlideUp`, `PopIn` and a
-`PressableScale`, mirroring the web timings (`cubic-bezier(0.16, 1, 0.3, 1)`, 400ms / 350ms), and
-honour `AccessibilityInfo.isReduceMotionEnabled()`.
+**Done:** `src/components/ui/animated.tsx` ships `FadeSlideUp` (400ms, y 12→0), `PopIn` (350ms,
+scale 0.85→1) and `PressableScale` (0.97), all on `Easing.bezier(0.16, 1, 0.3, 1)` — the exact web
+values — plus `STAGGER_MS = [80, 140, 180]` for web's section order. Reanimated's own
+`useReducedMotion()` stands in for `prefers-reduced-motion`: when it is on, entrances render at
+their final frame. `PressableScale` drives the dip from `onPressIn`/`onPressOut` rather than the
+`pressed` render prop, so the scale stays on the UI thread when JS is busy.
 
-### 5.9 Safe areas — ⚠️ only one screen handles them
+`animate-grow-width`, `animate-ping-ring` and `animate-shake` are **not** ported — nothing on
+mobile needs them until the screens that use them land in Phases 4–5.
+
+### 5.9 Safe areas — ⚠️ wrapper built (Phase 2), screens not yet migrated
 
 Web has `.safe-top/.safe-bottom/.safe-left/.safe-right` and applies them in `AppSidebar`.
 On mobile, `react-native-safe-area-context` is installed but `SafeAreaView` appears **only in
 `login.tsx`** — the four tab screens render `ScrollView`/`FlatList` straight under the status bar.
 
-**Action:** wrap every screen in `SafeAreaView` (edges `['top']`; the tab bar handles the bottom),
-or adopt `useSafeAreaInsets` in a shared `Screen` wrapper.
+**Done (Phase 2):** `src/components/ui/screen.tsx` exports `<Screen>` — `SafeAreaView`
+(edges `['top']`, since the tab bar owns the bottom), the shell colour, and the standard page
+padding, with `scroll` and `bare` escape hatches. Expo Router already mounts `SafeAreaProvider`
+in `ExpoRoot`, so no provider was added.
+
+**Still open:** the four tab screens still render their own `ScrollView`/`FlatList`. They adopt
+`<Screen>` when they are rebuilt in Phase 4.
 
 ### 5.10 Navigation shell — ⚠️ diverges from web
 
@@ -398,20 +433,51 @@ implementation reproduces the designer's own tint, so mobile tints will match we
 
 **Exit:** ✅ mobile can now `import { getSubjectById, mixWithWhite, DAY_LABELS } from '@kid-hub/shared'`.
 
-### Phase 2 — Mobile design foundation *(no new screens)*
+### Phase 2 — Mobile design foundation *(no new screens)* — ✅ **DONE (2026-08-20)**
 
-1. **Fonts** — vendor Spline Sans 400/700/800/900, load with `useFonts` in `_layout.tsx` behind
-   the splash screen; add `fontFamily.display` to the token generator output.
-2. **Radius + shadow tokens** — extend `tokens.json` per §5.2 and §5.7, regenerate both targets,
-   add `src/lib/shadows.ts`.
-3. **Icons** — install `lucide-react-native`; keep emoji for kid-facing surfaces.
-4. **Gradients** — install `expo-linear-gradient`; **SVG** — install `react-native-svg`
-   (needed by `ProgressRing`).
-5. **Animation** — build `ui/animated.tsx` (`FadeSlideUp`, `PopIn`, `PressableScale`) on
-   reanimated, with reduce-motion support.
-6. **Screen wrapper** — `ui/screen.tsx` applying `SafeAreaView` + `bg-shell-kid` + standard padding.
+1. ✅ **Fonts** — Spline Sans 400/500/600/700 vendored into `apps/mobile/assets/fonts/` (with
+   `OFL.txt`) and loaded by `useFonts` in `_layout.tsx` behind the splash screen. The generator
+   emits one `fontFamily` per face. **Deviation:** the plan asked for 400/700/800/900, but Spline
+   Sans has no 800/900 and weight cannot ride alongside the family on RN — see §5.4.
+2. ✅ **Radius + shadow tokens** — `tokens.json` extended per §5.2 and §5.7, both targets
+   regenerated, `src/lib/shadows.ts` added. **Deviations:** no duplicate `card-lg`, `rounded-[22px]`
+   left alone, and shadows are consumed from the token module rather than generated into either
+   artifact — see §5.2 and §5.7.
+3. ✅ **Icons** — `lucide-react-native@1.33` installed. Emoji stay on kid-facing surfaces.
+4. ✅ **Gradients / SVG** — `expo-linear-gradient@~56.0.4` and `react-native-svg@15.15.4` installed
+   (the latter is also `lucide-react-native`'s peer).
+5. ✅ **Animation** — `ui/animated.tsx` on reanimated, with reduce-motion support — see §5.8.
+6. ✅ **Screen wrapper** — `ui/screen.tsx` — see §5.9.
 
-**Exit:** the primitive kit compiles; existing screens still work.
+**Verification run:**
+
+| Check | Result |
+|---|---|
+| `pnpm type-check` (turbo, 5 packages) | ✅ 5/5 pass |
+| `pnpm -C packages/shared test` | ✅ 43/43 pass |
+| `pnpm -C packages/shared lint` (purity guard) | ✅ isomorphic — safe for Metro |
+| `pnpm -C apps/web build` | ✅ all 28 routes build, static/dynamic split unchanged |
+| `pnpm -C apps/web lint` | ✅ 0 errors, 11 pre-existing warnings — none in touched files |
+| `expo export --platform android` | ✅ bundles; all four `.ttf` files resolve as Metro assets |
+| New utilities compile | ✅ `tailwindcss` run over the mobile config emits `font-display-bold` → `SplineSans-Bold`, `rounded-hero` → `2rem`, `rounded-button`, `min-h-tap-lg` |
+
+The export was run against a throwaway `_ui-probe.tsx` route importing every new module, dep and
+class name, since nothing imports the primitive kit yet and Metro would otherwise tree-shake it.
+The probe was deleted after the run.
+
+**Web blast radius:** one purely additive block of four `--radius-*` custom properties in
+`tokens.generated.css`. No web component changed; no web class changed.
+
+**Not done, deliberately:**
+
+- `apps/mobile` has no ESLint setup at all — `pnpm -C apps/mobile lint` runs `expo lint`, which
+  tries to bootstrap `eslint-config-expo` and then fails because `eslint` itself is not installed.
+  Configuring mobile linting is its own task, not Phase 2 scope.
+- `pnpm install` under pnpm 10.33 drops the now-redundant `catalogs.default.zod` snapshot from
+  `pnpm-lock.yaml`. Both consumers still resolve `catalog:` → zod 4.3.6 and the schema tests pass;
+  the line is lockfile bookkeeping from a newer pnpm, unrelated to this phase.
+
+**Exit:** ✅ the primitive kit compiles and bundles; existing screens are untouched and still work.
 
 ### Phase 3 — UI primitive kit
 
@@ -537,7 +603,8 @@ handler orchestrates only.
 - [ ] All 15 web routes have a mobile counterpart (or a PM-signed-off exclusion).
 - [ ] Zero raw domain IDs rendered — every `subjectId` resolves to a name, icon and colour.
 - [ ] All copy is Vietnamese and matches the web strings.
-- [ ] Spline Sans loads on both platforms; `font-black`/`font-extrabold` render at the right weight.
+- [x] Spline Sans loads on both platforms (Phase 2). Heaviest available face is 700 — mobile
+      selects it with `font-display-bold`, not `font-black`/`font-extrabold` (§5.4).
 - [ ] Every `Pressable` meets `min-h-tap-lg` (`docs/guides/responsive-spec.md §3.1`).
 - [ ] Every screen respects safe-area insets.
 - [ ] Cards carry the shared shadow tokens; sections use the staggered entrance animation.
