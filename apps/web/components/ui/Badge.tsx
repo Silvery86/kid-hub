@@ -11,17 +11,17 @@ interface BadgeProps {
 
 const BADGE_CONFIG: Record<BadgeTier, { classes: string; defaultLabel: string; emoji: string }> = {
   excellent: {
-    classes: 'bg-amber-100 text-amber-700 border-amber-300',
+    classes: 'bg-tier-excellent-bg text-tier-excellent-text border-tier-excellent-border',
     defaultLabel: 'Excellent',
     emoji: '⭐',
   },
   good: {
-    classes: 'bg-blue-100 text-blue-700 border-blue-300',
+    classes: 'bg-tier-good-bg text-tier-good-text border-tier-good-border',
     defaultLabel: 'Good',
     emoji: '👍',
   },
   'needs-practice': {
-    classes: 'bg-orange-100 text-orange-700 border-orange-300',
+    classes: 'bg-tier-practice-bg text-tier-practice-text border-tier-practice-border',
     defaultLabel: 'Keep Trying!',
     emoji: '💪',
   },

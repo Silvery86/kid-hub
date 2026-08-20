@@ -72,7 +72,7 @@ export const PinKeypad = ({
 
   return (
     <div className="flex flex-col items-center gap-6">
-      {label && <p className="text-2xl font-bold text-slate-700">{label}</p>}
+      {label && <p className="text-2xl font-bold text-text-body">{label}</p>}
 
       {/* PIN dot indicators */}
       <div
@@ -85,7 +85,9 @@ export const PinKeypad = ({
             key={i}
             className={cn(
               'h-5 w-5 rounded-full border-4 transition-colors duration-150',
-              i < value.length ? 'border-blue-500 bg-blue-500' : 'border-slate-400 bg-transparent'
+              i < value.length
+                ? 'border-btn-primary bg-btn-primary'
+                : 'border-border-muted bg-transparent'
             )}
           />
         ))}

@@ -10,9 +10,9 @@ interface ProgressBarProps {
 }
 
 const getColorClass = (pct: number): string => {
-  if (pct >= 90) return 'bg-amber-400'
-  if (pct >= 70) return 'bg-blue-400'
-  return 'bg-orange-400'
+  if (pct >= 90) return 'bg-progress-high'
+  if (pct >= 70) return 'bg-progress-mid'
+  return 'bg-progress-low'
 }
 
 export const ProgressBar = ({
@@ -30,7 +30,7 @@ export const ProgressBar = ({
       aria-valuemin={0}
       aria-valuemax={max}
       aria-label={ariaLabel}
-      className={cn('h-4 w-full overflow-hidden rounded-full bg-slate-200', className)}
+      className={cn('h-4 w-full overflow-hidden rounded-full bg-progress-track', className)}
     >
       <div
         className={cn('h-full rounded-full transition-[width] duration-500', getColorClass(pct))}

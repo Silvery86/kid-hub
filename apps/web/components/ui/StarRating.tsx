@@ -19,7 +19,7 @@ export const StarRating = ({ value, max = 3, className }: StarRatingProps) => (
         key={i}
         className={cn(
           'text-4xl transition-colors duration-150',
-          i < value ? 'text-amber-400' : 'text-slate-300'
+          i < value ? 'text-star-filled' : 'text-star-empty'
         )}
         aria-hidden="true"
       >

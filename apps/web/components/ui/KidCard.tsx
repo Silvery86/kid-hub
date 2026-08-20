@@ -9,7 +9,7 @@ export interface KidCardProps {
 export const KidCard = ({ children, isInteractive = false, className }: KidCardProps) => (
   <div
     className={cn(
-      'rounded-3xl bg-white p-6 shadow-xl',
+      'rounded-card bg-white p-6 shadow-xl',
       isInteractive &&
         'cursor-pointer transition-transform duration-150 hover:shadow-2xl active:scale-[0.98]',
       className

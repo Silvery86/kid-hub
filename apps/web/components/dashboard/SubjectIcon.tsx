@@ -15,7 +15,7 @@ export const SubjectIcon = ({ subjectId, size = 40, rounded = 12, className }: S
   if (!subject) {
     return (
       <div
-        className={cn('shrink-0 bg-slate-100', className)}
+        className={cn('shrink-0 bg-surface-muted', className)}
         style={{ width: size, height: size, borderRadius: rounded }}
         aria-hidden="true"
       />

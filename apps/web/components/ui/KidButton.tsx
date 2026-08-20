@@ -12,10 +12,10 @@ export interface KidButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> 
 }
 
 const VARIANT_STYLES: Record<NonNullable<KidButtonProps['variant']>, string> = {
-  primary: 'bg-blue-500   border-blue-700   text-white hover:bg-blue-600',
-  secondary: 'bg-emerald-400 border-emerald-600 text-white hover:bg-emerald-500',
-  danger: 'bg-rose-400   border-rose-600   text-white hover:bg-rose-500',
-  ghost: 'bg-white      border-slate-300  text-slate-700 hover:bg-slate-50',
+  primary: 'bg-btn-primary   border-btn-primary-border   text-white hover:bg-btn-primary-hover',
+  secondary: 'bg-btn-secondary border-btn-secondary-border text-white hover:bg-btn-secondary-hover',
+  danger: 'bg-btn-danger    border-btn-danger-border    text-white hover:bg-btn-danger-hover',
+  ghost: 'bg-white         border-btn-ghost-border     text-text-body hover:bg-shell-light',
 }
 
 export const KidButton = ({
@@ -41,7 +41,7 @@ export const KidButton = ({
         'px-6 py-3',
         'flex items-center justify-center gap-2',
         // Visual style
-        'rounded-2xl border-4 text-xl font-bold',
+        'rounded-button border-4 text-xl font-bold',
         'touch-manipulation select-none',
         // Press animation
         'transition-transform duration-100 active:scale-95',

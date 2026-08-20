@@ -61,21 +61,21 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     return (
       <div
         role="alert"
-        className="mx-4 my-6 flex min-h-[240px] flex-col items-center justify-center rounded-3xl bg-white p-8 text-center shadow-xl"
+        className="mx-4 my-6 flex min-h-[240px] flex-col items-center justify-center rounded-card bg-white p-8 text-center shadow-xl"
       >
         <span className="mb-4 text-7xl select-none" aria-hidden="true">
           😵
         </span>
-        <h2 className="mb-2 text-2xl font-extrabold text-slate-700">Ối! Có lỗi rồi</h2>
-        <p className="mb-6 text-lg text-slate-500">Khôi thử nhấn nút bên dưới nhé!</p>
+        <h2 className="mb-2 text-2xl font-extrabold text-text-body">Ối! Có lỗi rồi</h2>
+        <p className="mb-6 text-lg text-text-secondary">Khôi thử nhấn nút bên dưới nhé!</p>
         <div className="flex flex-col items-center gap-3">
           <button
             type="button"
             onClick={this.handleReset}
             style={{ minHeight: '3.5rem', minWidth: '10rem' }}
             className={[
-              'rounded-2xl bg-blue-500 px-6 py-3 text-white',
-              'border-4 border-blue-700 text-xl font-bold',
+              'rounded-button bg-btn-primary px-6 py-3 text-white',
+              'border-4 border-btn-primary-border text-xl font-bold',
               'transition-transform duration-100 active:scale-95',
               'touch-manipulation select-none',
             ].join(' ')}
@@ -88,8 +88,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               onClick={() => { window.location.href = '/' }}
               style={{ minHeight: '3rem', minWidth: '10rem' }}
               className={[
-                'rounded-2xl bg-slate-100 px-6 py-3 text-slate-700',
-                'border-2 border-slate-300 text-base font-bold',
+                'rounded-button bg-surface-muted px-6 py-3 text-text-body',
+                'border-2 border-btn-ghost-border text-base font-bold',
                 'transition-transform duration-100 active:scale-95',
                 'touch-manipulation select-none',
               ].join(' ')}

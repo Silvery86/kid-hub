@@ -36,7 +36,7 @@ export function ProgressRing({ value, max, size = 24 }: ProgressRingProps) {
         strokeDashoffset={offset}
         strokeLinecap="round"
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        style={{ stroke: isComplete ? '#10b981' : '#fbbf24', transition: 'stroke-dashoffset 0.4s cubic-bezier(0.16,1,0.3,1)' }}
+        style={{ stroke: isComplete ? 'var(--color-progress-complete)' : 'var(--color-progress-high)', transition: 'stroke-dashoffset 0.4s cubic-bezier(0.16,1,0.3,1)' }}
       />
     </svg>
   )
