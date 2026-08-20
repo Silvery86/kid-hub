@@ -1,5 +1,8 @@
+import { tokens } from '@kid-hub/shared';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider, usePathname } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
@@ -9,6 +12,27 @@ import { AuthProvider } from '@/hooks/use-auth';
 import '@/global.css';
 
 const queryClient = new QueryClient();
+
+/**
+ * Spline Sans — the same family web renders (MOBILE_UI_IMP.md §5.4).
+ *
+ * Keys are the family names the NativeWind preset emits for `font-display*`, read
+ * from the token source so the two cannot drift. Each weight is its own family
+ * because RN cannot select a face out of a family by numeric weight; the paths
+ * must stay inline relative literals for Metro to resolve them, matching the
+ * sound assets in use-game-audio.ts.
+ *
+ * The face only goes up to 700 — Spline Sans has no 800/900 — which is also what
+ * web renders, since the browser can only synthesise those from the same 700 file.
+ */
+const FONTS = {
+  [tokens.fonts.faces.display]: require('../../assets/fonts/SplineSans-Regular.ttf'),
+  [tokens.fonts.faces['display-medium']]: require('../../assets/fonts/SplineSans-Medium.ttf'),
+  [tokens.fonts.faces['display-semibold']]: require('../../assets/fonts/SplineSans-SemiBold.ttf'),
+  [tokens.fonts.faces['display-bold']]: require('../../assets/fonts/SplineSans-Bold.ttf'),
+};
+
+void SplashScreen.preventAutoHideAsync();
 
 // Path prefixes that run landscape; everything else is forced back to portrait.
 const GAME_ROUTES = ['/math', '/english'];
@@ -32,6 +56,16 @@ function OrientationGuardrail() {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  // `error` is deliberately not fatal: a missing face degrades to the system font,
+  // which is a worse-looking app rather than a blank one.
+  const [fontsLoaded, fontError] = useFonts(FONTS);
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) void SplashScreen.hideAsync();
+  }, [fontsLoaded, fontError]);
+
+  if (!fontsLoaded && !fontError) return null;
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
