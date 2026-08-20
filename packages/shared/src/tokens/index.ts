@@ -14,3 +14,17 @@ export type TokenColorName = keyof (typeof tokens)['colors']
 
 export { tokens }
 export default tokens
+
+/** One elevation step, expressed platform-neutrally (see `tokens.json` → `shadows`). */
+export interface ShadowToken {
+  /** Downward offset in px — CSS y-offset and RN `shadowOffset.height`. */
+  offsetY: number
+  /** CSS blur radius in px. RN's `shadowRadius` is half this value. */
+  blur: number
+  color: string
+  opacity: number
+  /** Android `elevation`, which ignores every other field. */
+  elevation: number
+}
+
+export type ShadowName = keyof (typeof tokens)['shadows']

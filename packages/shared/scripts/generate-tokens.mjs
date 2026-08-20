@@ -2,6 +2,9 @@
 // One source of truth (src/tokens/tokens.json) → two committed outputs:
 //   • apps/web/app/tokens.generated.css  — the Tailwind v4 `@theme` block
 //   • packages/shared/tailwind-preset.cjs — the mobile NativeWind `theme.extend`
+// `tokens.shadows` is deliberately absent from both: web keeps Tailwind's own
+// shadow-{sm,lg,xl} defaults, and mobile reads the block directly from
+// @kid-hub/shared in src/lib/shadows.ts (RN shadows are not class-expressible).
 // Run: pnpm -C packages/shared tokens
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -35,7 +38,12 @@ const preset = {
       colors: tokens.colors,
       borderRadius: tokens.radius,
       spacing: tokens.spacing,
-      fontFamily: { display: tokens.fonts.display.split(',').map((s) => s.trim()) },
+      // One family per loaded face. React Native cannot pick a face out of a
+      // family by numeric weight, so weight lives in the class name
+      // (font-display-bold) instead of alongside it (font-display font-bold).
+      fontFamily: Object.fromEntries(
+        Object.entries(tokens.fonts.faces).map(([name, face]) => [name, [face]])
+      ),
     },
   },
 }

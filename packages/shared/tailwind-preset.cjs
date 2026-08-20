@@ -40,7 +40,11 @@ module.exports = {
         "star-empty": "#cbd5e1"
       },
       "borderRadius": {
+        "hero": "2rem",
         "card": "1.5rem",
+        "row": "1.25rem",
+        "button": "1rem",
+        "chip": "0.75rem",
         "pill": "9999px"
       },
       "spacing": {
@@ -50,11 +54,16 @@ module.exports = {
       },
       "fontFamily": {
         "display": [
-          "Spline Sans",
-          "Inter",
-          "ui-sans-serif",
-          "system-ui",
-          "sans-serif"
+          "SplineSans-Regular"
+        ],
+        "display-medium": [
+          "SplineSans-Medium"
+        ],
+        "display-semibold": [
+          "SplineSans-SemiBold"
+        ],
+        "display-bold": [
+          "SplineSans-Bold"
         ]
       }
     }

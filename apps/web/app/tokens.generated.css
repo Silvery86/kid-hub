@@ -38,7 +38,11 @@
   --color-star-filled: #fbbf24;
   --color-star-empty: #cbd5e1;
 
+  --radius-hero: 2rem;
   --radius-card: 1.5rem;
+  --radius-row: 1.25rem;
+  --radius-button: 1rem;
+  --radius-chip: 0.75rem;
   --radius-pill: 9999px;
 
   --spacing-tap: 3rem;
