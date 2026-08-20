@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native'
 import { GAME_QUESTIONS_PER_SESSION } from '@kid-hub/shared'
 
-import { StarRating } from './star-rating'
+import { StarRating } from '@/components/ui/star-rating'
 
 const EMOJI_BY_STARS: Record<1 | 2 | 3, string> = { 1: '😊', 2: '🎉', 3: '🏆' }
 const MESSAGE_BY_STARS: Record<1 | 2 | 3, string> = {

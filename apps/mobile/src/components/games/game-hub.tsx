@@ -5,7 +5,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useQuery } from '@tanstack/react-query'
 import type { GameBestScore, GameType } from '@kid-hub/shared'
 
-import { StarRating } from './star-rating'
+import { StarRating } from '@/components/ui/star-rating'
 
 export interface HubGameMeta<Id extends string> {
   id: Id
