@@ -353,20 +353,20 @@ name ("Khôi"), take it from `getKidProfileAction`'s mobile equivalent instead.
 ## 6. Component Parity — RN ports required
 
 Mobile has no `components/ui/` layer. These web primitives need native equivalents, in dependency
-order:
+order. ✅ marks the ten landed in Phase 3; the rest are Phase 4–5 domain components.
 
 | Web primitive | Mobile target | Notes |
 |---|---|---|
-| `ui/KidCard.tsx` | `ui/kid-card.tsx` | `rounded-3xl bg-white p-6` + shadow token |
-| `ui/KidButton.tsx` | `ui/kid-button.tsx` | 4 variants, 4px border, `min-h-tap-lg`, press-scale, loading spinner |
-| `ui/Badge.tsx` | `ui/badge.tsx` | 3 tiers with emoji + border colours |
-| `ui/ProgressBar.tsx` | `ui/progress-bar.tsx` | Colour by pct: ≥90 amber, ≥70 blue, else orange |
-| `ui/ProgressRing.tsx` | `ui/progress-ring.tsx` | Needs `react-native-svg` |
-| `ui/StarRating.tsx` | ✅ `games/star-rating.tsx` exists | Promote to `ui/`, add `max` prop |
-| `ui/PinKeypad.tsx` | `ui/pin-keypad.tsx` | For `/parent/pin` |
-| `ui/FullScreenModal.tsx` | `ui/full-screen-modal.tsx` | RN `Modal` + `X` icon |
-| `ui/ErrorBoundary.tsx` | `ui/error-boundary.tsx` | Class component, same API |
-| `dashboard/SubjectIcon.tsx` | `dashboard/subject-icon.tsx` | Needs shared `SUBJECTS` (§5.6) |
+| `ui/KidCard.tsx` | ✅ `ui/kid-card.tsx` | `rounded-3xl bg-white p-6` + shadow token |
+| `ui/KidButton.tsx` | ✅ `ui/kid-button.tsx` | 4 variants, 4px border, `min-h-tap-lg`, press-scale, loading spinner |
+| `ui/Badge.tsx` | ✅ `ui/badge.tsx` | 3 tiers with emoji + border colours |
+| `ui/ProgressBar.tsx` | ✅ `ui/progress-bar.tsx` | Colour by pct: ≥90 amber, ≥70 blue, else orange |
+| `ui/ProgressRing.tsx` | ✅ `ui/progress-ring.tsx` | Needs `react-native-svg` |
+| `ui/StarRating.tsx` | ✅ `ui/star-rating.tsx` | Promoted from `games/`; `max` prop added |
+| `ui/PinKeypad.tsx` | ✅ `ui/pin-keypad.tsx` | For `/parent/pin` |
+| `ui/FullScreenModal.tsx` | ✅ `ui/full-screen-modal.tsx` | RN `Modal` + `X` icon |
+| `ui/ErrorBoundary.tsx` | ✅ `ui/error-boundary.tsx` | Class component, same API |
+| `dashboard/SubjectIcon.tsx` | ✅ `dashboard/subject-icon.tsx` | Needs shared `SUBJECTS` (§5.6) |
 | `dashboard/DayRail.tsx` | `dashboard/day-rail.tsx` | Horizontal period rail |
 | `dashboard/BadgeModal.tsx` | `dashboard/badge-modal.tsx` | Needs shared `BADGE_DEFINITIONS` |
 | `grades/GradeCard.tsx` | `grades/grade-card.tsx` | `color-mix` → precompute tint in JS (RN has no `color-mix`) |
@@ -479,13 +479,69 @@ The probe was deleted after the run.
 
 **Exit:** ✅ the primitive kit compiles and bundles; existing screens are untouched and still work.
 
-### Phase 3 — UI primitive kit
+### Phase 3 — UI primitive kit — ✅ **DONE (2026-08-20)**
 
-Port the primitives in §6 (`kid-card`, `kid-button`, `badge`, `progress-bar`, `progress-ring`,
-`star-rating` promotion, `pin-keypad`, `full-screen-modal`, `error-boundary`, `subject-icon`).
+All ten primitives ported, each built on the Phase 2 foundation (`shadow()`, `PressableScale`,
+`font-display-*`, the radius tokens). `Shake` was added to `ui/animated.tsx` — Phase 2 skipped it,
+and the PIN keypad needs it.
 
-**Exit:** every primitive renders in isolation and matches its web counterpart's spacing, radius,
-weight and shadow.
+**Colour was tokenized on both platforms first.** Web's primitives used raw palette
+(`bg-blue-500`, `bg-amber-100`, `border-rose-600`), which `CLAUDE.md` forbids and §9 flagged. 17
+semantic tokens were added and *both* platforms migrated onto them in the same change.
+
+This turned out to be load-bearing rather than cosmetic. **Tailwind v4's palette is not Tailwind
+v3's.** Web runs v4, whose colours are authored in OKLCH; mobile's NativeWind preset runs
+tailwindcss 3.4, whose palette is the older sRGB hex set. The same class name therefore renders
+differently per platform — `bg-orange-400` is `#ff8904` on web and `#fb923c` on mobile, a 56/255
+channel gap. Mirroring web's class names would have shipped visibly different colours.
+
+**Web is not pixel-identical afterwards.** The new tokens carry the v3 hexes, matching the existing
+token set (`math #3b82f6`, `star-filled #fbbf24`, `progress-low #fb923c`), so the migrated web
+primitives shift toward the design system's own values. 4 of 30 replacements are exact and 12 are
+within ΔE-imperceptible range; the largest movers:
+
+| Web was | rendered | now uses | renders | Δ max channel |
+|---|---|---|---|---|
+| `bg-orange-400` | `#ff8904` | `bg-progress-low` | `#fb923c` | 56 |
+| `border-emerald-600` | `#2d9966` | `border-btn-secondary-border` | `#059669` | 40 |
+| `hover:bg-emerald-500` | `#37bc7d` | `hover:bg-btn-secondary-hover` | `#10b981` | 39 |
+| `border-amber-300` | `#ffd230` | `border-tier-excellent-border` | `#fcd34d` | 29 |
+| `text-amber-400` | `#ffb93b` | `text-star-filled` | `#fbbf24` | 23 |
+| `bg-blue-500` | `#2b7fff` | `bg-btn-primary` | `#3b82f6` | 16 |
+
+This is arguably a fix: `bg-blue-500` (`#2b7fff`) sat next to `bg-math` (`#3b82f6`) on the same
+screens, so web was already rendering two different blues for one intended colour. If pixel
+stability on web matters more than design-system coherence, repoint the token hexes at the v4
+values instead — one edit to `tokens.json` plus a regen, and mobile follows automatically.
+
+**Platform translations that are not transcription:**
+
+| Primitive | Difference |
+|---|---|
+| `progress-ring` | `react-native-svg`; RN has no CSS transition, so the ring snaps rather than sweeping. Identical in every static frame |
+| `full-screen-modal` | RN `Modal` replaces `createPortal` — it already traps focus and blocks scroll, so web's body-overflow effect has no counterpart. `statusBarTranslucent` stands in for `safe-top` |
+| `error-boundary` | Drops `@sentry/nextjs` (mobile has no Sentry wiring) — errors are logged only. `window.location.href` → `router.replace('/')` |
+| `pin-keypad` | RN has no CSS grid, so the 4×3 layout is explicit rows of `flex-1` cells; the wider delete key cannot skew the columns |
+| `kid-button` | `hover:` variants dropped — no cursor. The press dip comes from `PressableScale`, the native reading of `active:scale-95` |
+| `star-rating` | Promoted from `games/star-rating.tsx`. Its gap moves from 2px to web's `gap-2` (8px), so the two games screens that use it change very slightly |
+
+**Verification run:**
+
+| Check | Result |
+|---|---|
+| `pnpm type-check` (turbo, 5 packages) | ✅ 5/5 pass |
+| `pnpm -C packages/shared test` | ✅ 43/43 pass |
+| `pnpm -C apps/web build` | ✅ compiles, 11/11 static pages generated |
+| `pnpm -C apps/web lint` | ✅ 0 errors, 11 pre-existing warnings |
+| `expo export --platform android` | ✅ bundles with every primitive in the graph |
+| New utilities compile | ✅ 22/22 resolve — `bg-btn-danger` → `#fb7185`, `bg-tier-excellent-bg` → `#fef3c7`, `text-text-body` → `#334155`, `bg-progress-mid` → `#60a5fa` |
+| Raw palette gone from the ten web primitives | ✅ grep returns nothing |
+
+The export ran against a throwaway `_ui-probe.tsx` route exercising every primitive and variant,
+since no screen imports the kit yet. The probe was deleted after the run.
+
+**Exit:** ✅ every primitive compiles, bundles and matches its web counterpart's spacing, radius,
+weight and shadow. Screens assemble them in Phases 4–5.
 
 ### Phase 4 — Rebuild the four tab screens
 
@@ -573,7 +629,7 @@ handler orchestrates only.
 |---|---|---|
 | Spline Sans licensing / file size | Fonts may not be redistributable; 4 weights inflate the bundle | Confirm the licence before vendoring; subset to Latin + Vietnamese (the app needs Vietnamese diacritics) |
 | `color-mix` has no RN equivalent | Grade/homework/subject tints drift between platforms | One shared `mixWithWhite()` used by both — never reimplement per platform |
-| Web's own raw-palette usage | Web uses `bg-amber-100`, `bg-emerald-100`, `bg-slate-50` widely, which `CLAUDE.md` forbids for semantic colour | Tokenize these as part of Phase 2 and fix both platforms together, or the mobile port inherits the violation |
+| ~~Web's own raw-palette usage~~ | **RESOLVED for the primitives (Phase 3).** 17 semantic tokens added; the ten web primitives and their mobile ports both use them. Raw palette survives elsewhere in `apps/web` and rides along with Phases 4–6 | — |
 | Radius/shadow token churn | Phase 2 touches generated files on both platforms | Regenerate and diff-review `tokens.generated.css` + `tailwind-preset.cjs` in one commit |
 | Parent section on a phone | The `w-52` sidebar + two-panel manager layouts assume ≥768px | Redesign as segmented control + stacked panels; treat as a genuine mobile design, not a port |
 | Reanimated on Android | Entrance animations can jank on low-end devices | Keep to opacity/transform only; gate on reduce-motion |
@@ -607,7 +663,8 @@ handler orchestrates only.
       selects it with `font-display-bold`, not `font-black`/`font-extrabold` (§5.4).
 - [ ] Every `Pressable` meets `min-h-tap-lg` (`docs/guides/responsive-spec.md §3.1`).
 - [ ] Every screen respects safe-area insets.
-- [ ] Cards carry the shared shadow tokens; sections use the staggered entrance animation.
+- [~] Cards carry the shared shadow tokens (Phase 3 primitives do); sections use the staggered
+      entrance animation once the screens land in Phase 4.
 - [ ] No colour, radius or spacing literal in `apps/mobile` outside the generated preset.
 - [ ] `pnpm type-check` and `pnpm test` green from the repo root.
 - [ ] Side-by-side screenshots (web phone-portrait vs. mobile) reviewed per screen.
