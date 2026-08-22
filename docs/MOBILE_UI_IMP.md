@@ -1,6 +1,6 @@
 # Mobile UI Implementation Plan — Visual Parity with Web
 
-> **Status:** Phases 1–2 landed · Phases 3–6 outstanding
+> **Status:** Phases 1–4 landed · Phases 5–6 outstanding
 > **Date:** 2026-08-16
 > **Scope:** Bring `apps/mobile` (Expo Router + NativeWind) to design, style, icon and
 > content parity with `apps/web` (Next.js 16 + Tailwind v4).
@@ -543,22 +543,84 @@ since no screen imports the kit yet. The probe was deleted after the run.
 **Exit:** ✅ every primitive compiles, bundles and matches its web counterpart's spacing, radius,
 weight and shadow. Screens assemble them in Phases 4–5.
 
-### Phase 4 — Rebuild the four tab screens
+### Phase 4 — Rebuild the four tab screens — ✅ **DONE (2026-08-20)**
 
-Order matters — simplest first, so the primitives get exercised before the hardest screen.
+All four rebuilt against web's **phone-portrait** branch, which is the layout a phone actually
+renders. 1. Grades ✅ · 2. Homework ✅ · 3. Schedule ✅ · 4. Dashboard ✅. Copy is Vietnamese,
+`headerShown: false`, and the tab bar now matches web's `NavLink variant="tabbar"` — 64px white
+bar, upward hairline shadow, 22px emoji, 10px extrabold label, `btn-primary` active tint.
 
-1. **Grades** — semester tabs, summary bar, `GradeCard` with tint + tier badge + score bar.
-2. **Homework** — status pill, progress header, priority rows, done styling, 🎉 celebration
-   overlay + redirect.
-3. **Schedule** — day tabs, tinted period cells, subject names/icons, evening blocks, legend.
-4. **Dashboard** — greeting, live clock subtitle, 3 stat pills, hero card (subject-tinted,
-   gradient overlay, pulse dot, progress bar, "Tiếp theo" chip, watermark emoji), DayRail,
-   game cards, homework preview with `ProgressRing`.
+#### Backend gap §8 missed
 
-Also in this phase: switch the tab bar to the web set (Trang chủ · Lịch · Điểm · Trò chơi),
-`headerShown: false`, and translate all copy to Vietnamese.
+§8 lists nine endpoints and calls out `kid-profile` as needed early. It does **not** list a weekly
+schedule read — but web's schedule page consumes `getScheduleAction()` (the whole week) plus
+`getAllEveningBlocksAction()`, while `GET /api/v1/schedule` returns only `TodayView`. The day tabs
+cannot be built from today. Three reads were added:
 
-**Exit:** the four tabs are visually indistinguishable from the web phone-portrait branch.
+| Endpoint | Feeds | Note |
+|---|---|---|
+| `GET /api/v1/schedule/week` | Schedule day tabs | **Not in §8** — add it there for future reference |
+| `GET /api/v1/kid-profile` | Dashboard greeting | §8 said pull forward; done |
+| `getProgress` fetcher over the existing `GET /api/v1/progress` | Points, streak, badges, best stars | §5 asked for this for Phase 5; it also unblocks the dashboard stat pills |
+
+`WeekViewSchema` and `KidProfileSchema` joined `response.schema.ts`, so both are Zod-validated at
+the transport boundary like every other fetcher.
+
+#### Shared helpers moved
+
+`lib/grades-display.ts` and `lib/schedule-display.ts` moved into `@kid-hub/shared` and are
+re-exported from their original web paths — no web import changed (Phase 1's pattern). Both are
+pure, and both platforms now compute semester averages, week dates, ISO week numbers and day
+labels from the same code.
+
+#### Colour tokenization continued
+
+Porting each screen surfaced more raw palette on web. Seven more tokens landed
+(`surface-success`, `surface-warn`, `success-bg`, `success-strong`, `success-text`, `border-soft`,
+plus Phase 3's set), and the web counterparts were migrated with them: `GradeCard`,
+`GradeTierBadge`, `GradesSummaryBar`, `SemesterTabs`, `HomeworkListView`, `HomeworkHeader`,
+`HomeworkItemRow`, `DayTabs`, `DayList`, `SubjectLegend`, `ScheduleView`, `DashboardView`,
+`DayRail`, `GameEntryCard`. Same caveat as Phase 3: the tokens hold v3 hexes, so these shift
+slightly from what Tailwind v4 was rendering.
+
+**One palette collapse:** `GradeTierBadge` used amber/blue/orange **-800 text, -200 border** while
+`ui/Badge` used **-700 / -300** for the same three tiers. Two ramps for one concept is an
+inconsistency, not an intent — `GradeTierBadge` now uses the shared `tier-*` tokens on both
+platforms.
+
+#### Deliberate deviations
+
+| Item | Decision |
+|---|---|
+| **Tab bar stays 4 tabs, no Trò chơi** | The games hub (Phase 5 §1) and the homework stack route (Phase 5 §3) do not exist yet. Swapping now points a tab at nothing and makes homework unreachable, breaking §7's "each phase leaves the app working". The swap belongs in Phase 5, where both land |
+| **`PeriodCell` and `SubjectLegend` not ported** | Both are tablet/desktop-only. Web's phone branch renders `DayList` with no legend, and the exit criterion is parity with the phone branch |
+| **Dashboard progress from the server** | Web's `useUserProgress` is localStorage-backed. Mobile reads `GET /api/v1/progress`, so points and streaks survive a reinstall |
+| **Hero paints `subject.color`, not `var(--color-{id})`** | Web's version resolves to nothing for subjects with no colour token (ethics, music, art …), leaving the hero unpainted. The catalogue hex is defined for all ten and identical for the ones that do have tokens |
+| **Radial gradient → linear** | Per §6's translation rule; `expo-linear-gradient` at a diagonal is the closest RN approximation of web's `radial-gradient(ellipse at 20% 20%, …)` |
+| **`animate-ping-ring` on the DayRail live dot** | Not ported (Phase 2 skipped the keyframe). A solid dot reads the same at 8px |
+| **Sign-out button on the dashboard** | No web counterpart — web signs out from the parent area, which mobile does not have until Phase 6. Without it there is no way back to the login screen |
+
+#### Verification run
+
+| Check | Result |
+|---|---|
+| `pnpm type-check` (turbo, 5 packages) | ✅ 5/5 pass |
+| `pnpm -C packages/shared test` | ✅ 43/43 pass |
+| `pnpm -C packages/shared lint` (purity guard) | ✅ isomorphic — safe for Metro |
+| `pnpm -C apps/web build` | ✅ compiles |
+| `pnpm -C apps/web lint` | ✅ 0 errors, 11 pre-existing warnings |
+| `expo export --platform android` | ✅ bundles (6.8MB) |
+| New utilities compile | ✅ 16/16 resolve |
+| Raw palette gone from every ported web component | ✅ grep clean |
+
+**Dead code removed:** `components/homework/HomeworkChip.tsx` and
+`components/homework/HomeworkMode.tsx` were referenced by nothing — which is why they were the
+only files still carrying raw palette. Both were superseded: the chip by `DashboardView`'s own
+homework card, and the mode by `HomeworkListView`, which `/homework` actually renders and which
+already has the same celebration-and-redirect flow.
+
+**Exit:** ✅ the four tabs mirror web's phone-portrait branch. Not yet verified on a device — see
+§9's "no visual regression testing on mobile" risk.
 
 ### Phase 5 — The missing kid screens
 
@@ -610,7 +672,8 @@ New endpoints required:
 | Kid pattern set | `setKidPatternAction` | `PUT /api/v1/kid-access/pattern` |
 | Screen time | `getScreenTimeAction` | `GET /api/v1/screen-time` |
 | Recent activity | `getRecentActivityAction` | `GET /api/v1/activity` |
-| Kid profile | `getKidProfileAction` | `GET /api/v1/kid-profile` (also needed by the dashboard greeting in Phase 4) |
+| Kid profile | `getKidProfileAction` | ✅ `GET /api/v1/kid-profile` — added in Phase 4 |
+| Weekly schedule read | `getScheduleAction` + `getAllEveningBlocksAction` | ✅ `GET /api/v1/schedule/week` — added in Phase 4. **This row was missing from the original plan**; the schedule day tabs cannot be built from `TodayView` |
 | Kid pattern verify | `verifyKidPatternAction` | `POST /api/v1/auth/kid-pattern` (needed by Phase 5) |
 
 Every one of these is a **mutation on the parent surface** — each must go through
@@ -657,12 +720,12 @@ handler orchestrates only.
 ## 11. Definition of Done
 
 - [ ] All 15 web routes have a mobile counterpart (or a PM-signed-off exclusion).
-- [ ] Zero raw domain IDs rendered — every `subjectId` resolves to a name, icon and colour.
-- [ ] All copy is Vietnamese and matches the web strings.
+- [x] Zero raw domain IDs on the four tabs — every `subjectId` resolves through the shared catalogue.
+- [~] All copy is Vietnamese on the four tabs (Phase 4); the remaining screens land in Phases 5–6.
 - [x] Spline Sans loads on both platforms (Phase 2). Heaviest available face is 700 — mobile
       selects it with `font-display-bold`, not `font-black`/`font-extrabold` (§5.4).
 - [ ] Every `Pressable` meets `min-h-tap-lg` (`docs/guides/responsive-spec.md §3.1`).
-- [ ] Every screen respects safe-area insets.
+- [x] Every screen respects safe-area insets — the four tabs use `<Screen>` (Phase 4).
 - [~] Cards carry the shared shadow tokens (Phase 3 primitives do); sections use the staggered
       entrance animation once the screens land in Phase 4.
 - [ ] No colour, radius or spacing literal in `apps/mobile` outside the generated preset.
