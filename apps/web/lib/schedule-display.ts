@@ -1,197 +1,26 @@
-/** Pure helpers for schedule UI — week labels, period slots, stats. */
-
-import { parseTimeToMinutes } from '@kid-hub/shared'
-import { DAY_LABELS, SCHOOL_DAYS } from '@/lib/constants'
-import type { ClassPeriod, DailySchedule, DayOfWeek } from '@/types'
-
-export interface PeriodSlotLabel {
-  periodNumber: number
-  startTime: string
-  endTime: string
-}
-
-/** School period rows only (excludes evening extra-class blocks). */
-export const schoolPeriodsOnly = (periods: ClassPeriod[]): ClassPeriod[] =>
-  periods.filter((p) => p.periodNumber != null)
-
-export const getMaxPeriodNumber = (days: DailySchedule[]): number => {
-  let max = 0
-  for (const day of days) {
-    for (const p of schoolPeriodsOnly(day.periods)) {
-      if (p.periodNumber != null && p.periodNumber > max) max = p.periodNumber
-    }
-  }
-  return max || 5
-}
-
-/** Column/row headers for period slots — times from first day that has each period. */
-export const getPeriodSlotLabels = (days: DailySchedule[]): PeriodSlotLabel[] => {
-  const max = getMaxPeriodNumber(days)
-  return Array.from({ length: max }, (_, i) => {
-    const periodNumber = i + 1
-    for (const day of days) {
-      const p = schoolPeriodsOnly(day.periods).find((x) => x.periodNumber === periodNumber)
-      if (p) {
-        return {
-          periodNumber,
-          startTime: p.startTime,
-          endTime: p.endTime,
-        }
-      }
-    }
-    return { periodNumber, startTime: '', endTime: '' }
-  })
-}
-
-export const getPeriodForCell = (
-  day: DailySchedule | undefined,
-  periodNumber: number
-): ClassPeriod | undefined =>
-  day ? schoolPeriodsOnly(day.periods).find((p) => p.periodNumber === periodNumber) : undefined
-
-export const formatPeriodDuration = (startTime: string, endTime: string): number => {
-  const mins = parseTimeToMinutes(endTime) - parseTimeToMinutes(startTime)
-  return mins > 0 ? mins : 40
-}
-
-export const formatDayTimeRange = (periods: ClassPeriod[]): string => {
-  const school = schoolPeriodsOnly(periods)
-  if (school.length === 0) return '—'
-  const sorted = [...school].sort((a, b) => (a.periodNumber ?? 0) - (b.periodNumber ?? 0))
-  const first = sorted[0]
-  const last = sorted[sorted.length - 1]
-  return `${first?.startTime ?? ''} → ${last?.endTime ?? ''}`
-}
-
-/** 0–1 progress through an in-progress period, or null if now is outside that slot. */
-export const getPeriodProgress = (period: ClassPeriod, now: Date): number | null => {
-  const nowMin = now.getHours() * 60 + now.getMinutes()
-  const start = parseTimeToMinutes(period.startTime)
-  const end = parseTimeToMinutes(period.endTime)
-  if (nowMin < start || nowMin >= end) return null
-  const duration = end - start
-  return duration > 0 ? (nowMin - start) / duration : null
-}
-
-/** Whole minutes remaining until period end; null if not currently in that period. */
-export const getMinutesLeftInPeriod = (period: ClassPeriod, now: Date): number | null => {
-  const nowMin = now.getHours() * 60 + now.getMinutes()
-  const start = parseTimeToMinutes(period.startTime)
-  const end = parseTimeToMinutes(period.endTime)
-  if (nowMin < start || nowMin >= end) return null
-  return end - nowMin
-}
-
-const MONTH_NAMES = [
-  'Tháng 1',
-  'Tháng 2',
-  'Tháng 3',
-  'Tháng 4',
-  'Tháng 5',
-  'Tháng 6',
-  'Tháng 7',
-  'Tháng 8',
-  'Tháng 9',
-  'Tháng 10',
-  'Tháng 11',
-  'Tháng 12',
-]
-
-/** Monday 12:00 local for a calendar week (0 = this week, -1 = previous, +1 = next). */
-export const getMondayForWeekOffset = (weekOffset: number, refDate = new Date()): Date => {
-  const day = refDate.getDay()
-  const diff = day === 0 ? -6 : 1 - day
-  const monday = new Date(refDate)
-  monday.setHours(12, 0, 0, 0)
-  monday.setDate(refDate.getDate() + diff + weekOffset * 7)
-  return monday
-}
-
-export const getIsoWeekNumber = (date: Date): number => {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
-  const dayNum = d.getUTCDay() || 7
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum)
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
-}
-
-/** Subtitle: week number + Mon–Fri date range (no clock — avoids SSR/client hydration drift). */
-export const formatWeekSubtitleForOffset = (weekOffset: number): string => {
-  const start = getMondayForWeekOffset(weekOffset)
-  const end = new Date(start)
-  end.setDate(start.getDate() + 4)
-  const range = `${start.getDate()}–${end.getDate()} ${MONTH_NAMES[end.getMonth()]}`
-  return `Tuần ${getIsoWeekNumber(start)} · ${range}`
-}
-
-export interface WeekStats {
-  totalPeriods: number
-  uniqueSubjects: number
-}
-
-export const computeWeekStats = (days: DailySchedule[]): WeekStats => {
-  const subjectIds = new Set<string>()
-  let totalPeriods = 0
-  for (const day of days) {
-    for (const p of schoolPeriodsOnly(day.periods)) {
-      totalPeriods += 1
-      subjectIds.add(p.subjectId)
-    }
-  }
-  return { totalPeriods, uniqueSubjects: subjectIds.size }
-}
-
-export const countSubjectDistribution = (
-  days: DailySchedule[]
-): { subjectId: string; count: number }[] => {
-  const counts = new Map<string, number>()
-  for (const day of days) {
-    for (const p of schoolPeriodsOnly(day.periods)) {
-      counts.set(p.subjectId, (counts.get(p.subjectId) ?? 0) + 1)
-    }
-  }
-  return [...counts.entries()]
-    .map(([subjectId, count]) => ({ subjectId, count }))
-    .sort((a, b) => b.count - a.count)
-}
-
-export const dayLabel = (dow: DayOfWeek): string => DAY_LABELS[dow]
-
-const DAY_SHORT_MAP: Record<DayOfWeek, string> = {
-  monday: 'T2',
-  tuesday: 'T3',
-  wednesday: 'T4',
-  thursday: 'T5',
-  friday: 'T6',
-  saturday: 'T7',
-  sunday: 'CN',
-}
-
-/** Short tab label (T2–T6) — local map avoids fragile re-exports from constants. */
-export const dayShortLabel = (dow: DayOfWeek): string =>
-  DAY_SHORT_MAP[dow] ?? DAY_LABELS[dow]
-
-export const schoolDaysFromSchedule = (days: DailySchedule[]): DailySchedule[] =>
-  SCHOOL_DAYS.map((dow) => days.find((d) => d.day === dow) ?? { day: dow, periods: [] })
-
-const ALL_WEEK_DAYS: DayOfWeek[] = [
-  'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
-]
-
-/** Returns DD/MM date string for every day of the given week offset (0 = this week). */
-export const getWeekDates = (weekOffset: number): Record<DayOfWeek, string> => {
-  const monday = getMondayForWeekOffset(weekOffset)
-  return Object.fromEntries(
-    ALL_WEEK_DAYS.map((dow, i) => {
-      const d = new Date(monday)
-      d.setDate(monday.getDate() + i)
-      return [dow, `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`]
-    })
-  ) as Record<DayOfWeek, string>
-}
-
-/** Returns today's date as DD/MM. Client-side only — use after mount to avoid SSR mismatch. */
-export const getTodayDDMM = (): string => {
-  const d = new Date()
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
-}
+/**
+ * Owned by @kid-hub/shared (Phase 4 — MOBILE_UI_IMP.md §7) so the schedule and
+ * dashboard screens compute identically on both platforms. Re-exported here so
+ * existing web imports of `@/lib/schedule-display` keep working.
+ */
+export type { PeriodSlotLabel, WeekStats } from '@kid-hub/shared'
+export {
+  computeWeekStats,
+  countSubjectDistribution,
+  dayLabel,
+  dayShortLabel,
+  formatDayTimeRange,
+  formatPeriodDuration,
+  formatWeekSubtitleForOffset,
+  getIsoWeekNumber,
+  getMaxPeriodNumber,
+  getMinutesLeftInPeriod,
+  getMondayForWeekOffset,
+  getPeriodForCell,
+  getPeriodProgress,
+  getPeriodSlotLabels,
+  getTodayDDMM,
+  getWeekDates,
+  schoolDaysFromSchedule,
+  schoolPeriodsOnly,
+} from '@kid-hub/shared'
