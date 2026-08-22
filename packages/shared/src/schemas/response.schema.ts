@@ -9,6 +9,7 @@
 // Each schema is kept in sync with its contract type in ../types via bidirectional
 // type-assignability checks in response.schema.test.ts.
 import { z } from 'zod'
+import { DaySchema } from './schedule.schema'
 
 // ── Shared primitives ────────────────────────────────────────────────────────
 
@@ -72,6 +73,28 @@ export const TodayViewSchema = z.object({
   eveningBlocks: z.array(ClassPeriodSchema),
   cancelledIds: z.array(z.string()),
   homework: z.array(DailyHomeworkSchema),
+})
+
+/** DailySchedule — one weekday's periods. */
+export const DailyScheduleSchema = z.object({
+  day: DaySchema,
+  periods: z.array(ClassPeriodSchema),
+})
+
+/**
+ * GET /api/v1/schedule/week — the full timetable plus every extra-class block,
+ * both keyed by weekday. Feeds the schedule screen's day tabs, which cannot be
+ * built from TodayView.
+ */
+export const WeekViewSchema = z.object({
+  days: z.array(DailyScheduleSchema),
+  eveningBlocks: z.array(DailyScheduleSchema),
+})
+
+/** GET /api/v1/kid-profile — the kid's display name and grade. */
+export const KidProfileSchema = z.object({
+  name: z.string(),
+  gradeLevel: z.number().int(),
 })
 
 /** GET /api/v1/homework/today — HomeworkItem[]. */

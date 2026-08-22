@@ -80,3 +80,19 @@ export interface Subject {
   color: string // hex — PeriodCell tinting via color-mix
   icon: string // emoji — schedule grid / list
 }
+
+/**
+ * GET /api/v1/schedule/week — the whole timetable plus every extra-class block,
+ * both grouped by weekday. The schedule screen's day tabs need the full week,
+ * which `TodayView` cannot provide.
+ */
+export interface WeekView {
+  days: DailySchedule[]
+  eveningBlocks: DailySchedule[]
+}
+
+/** GET /api/v1/kid-profile — the kid's display name and grade. */
+export interface KidProfile {
+  name: string
+  gradeLevel: number
+}
