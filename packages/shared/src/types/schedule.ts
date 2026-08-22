@@ -54,7 +54,7 @@ export interface WeeklySchedule {
   days: DailySchedule[]
 }
 
-/** @deprecated Use DailyHomework. Kept for backward compat with HomeworkChip / DashboardView. */
+/** @deprecated Use DailyHomework. Kept for backward compat with DashboardView. */
 export interface HomeworkItem {
   periodId: string   // maps to DailyHomework.id
   subjectId: string

@@ -178,7 +178,7 @@ Document in the PR **which tiers** you exercised if the change touches layout sh
 |---|---|---|---|
 | B.1 | Replace `min-h-screen` in game flows with `min-h-dvh` or `min-h-full` | G-05 files | `viewport-matrix` tests still green |
 | B.2 | Update `FullScreenModal` and PIN full-screen overlay to `h-dvh` | `FullScreenModal.tsx`, `parent/pin/page.tsx` | No critical UI under status bar or home indicator |
-| B.3 | Confirm `HomeworkMode` full-viewport paths use dvh or flex-1 | `HomeworkMode.tsx` | No `min-h-screen` regression on homework flow |
+| ~~B.3~~ | ~~Confirm `HomeworkMode` full-viewport paths use dvh or flex-1~~ — **obsolete:** `HomeworkMode.tsx` was deleted (2026-08-20) as dead code; `/homework` renders `HomeworkListView` | — | — |
 
 ### Phase C — Tokens and Visual Debt
 
