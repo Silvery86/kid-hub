@@ -1,50 +1,53 @@
-import { FlatList, Text, View } from 'react-native';
+// Grades tab — web's /grades phone-portrait branch (GradesView).
+import { gradesForSemester, semesterAverage, topSubjectForSemester } from '@kid-hub/shared'
+import { useMemo, useState } from 'react'
+import { ScrollView, Text, View } from 'react-native'
 
-import { QueryBoundary } from '@/components/query-boundary';
-import type { BadgeTier } from '@kid-hub/shared';
-import { useGrades } from '@/hooks/use-grades';
+import { QueryBoundary } from '@/components/query-boundary'
+import { useGrades } from '@/hooks/use-grades'
+import { GradeCard } from '@/components/grades/grade-card'
+import { GradesSummaryBar } from '@/components/grades/grades-summary-bar'
+import { SemesterTabs } from '@/components/grades/semester-tabs'
+import { Screen } from '@/components/ui/screen'
+import { FadeSlideUp, STAGGER_MS } from '@/components/ui/animated'
 
-const BADGE_EMOJI: Record<BadgeTier, string> = {
-  excellent: '🏆',
-  good: '👍',
-  'needs-practice': '📈',
-};
-
-// Grades tab: the report card with the running average pinned at the top.
 export default function GradesScreen() {
-  const { data, isLoading, isError, refetch } = useGrades();
+  const { data, isLoading, isError, refetch } = useGrades()
+  const [semester, setSemester] = useState<1 | 2>(1)
+
+  const rows = useMemo(() => gradesForSemester(data?.grades ?? [], semester), [data, semester])
+  const average = useMemo(() => semesterAverage(rows), [rows])
+  const topSubjectId = useMemo(() => topSubjectForSemester(rows), [rows])
 
   return (
-    <QueryBoundary isLoading={isLoading} isError={isError} onRetry={refetch}>
-      <FlatList
-        className="flex-1 bg-shell-kid"
-        contentContainerClassName="p-4 gap-3"
-        data={data?.grades ?? []}
-        keyExtractor={(item) => `${item.subjectId}-${item.semester}`}
-        ListHeaderComponent={
-          <View className="mb-2 gap-1 rounded-card bg-math p-5">
-            <Text className="text-sm text-white/80">Average score</Text>
-            <Text className="text-4xl font-bold text-white">
-              {data ? data.averageScore.toFixed(1) : '—'}
-            </Text>
+    <Screen bare>
+      <QueryBoundary isLoading={isLoading} isError={isError} onRetry={refetch}>
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="gap-3 px-3.5 pb-4 pt-3.5"
+          showsVerticalScrollIndicator={false}>
+          <View className="flex-row items-center justify-between gap-2">
+            <Text className="font-display-bold text-2xl text-text-primary">Điểm số ⭐</Text>
+            <SemesterTabs active={semester} onChange={setSemester} compact />
           </View>
-        }
-        ListEmptyComponent={
-          <Text className="mt-10 text-center text-text-secondary">No grades recorded yet.</Text>
-        }
-        renderItem={({ item }) => (
-          <View className="flex-row items-center justify-between rounded-card bg-white p-4">
-            <View className="gap-1">
-              <Text className="text-base text-text-primary">{item.subjectId}</Text>
-              <Text className="text-xs text-text-muted">Semester {item.semester}</Text>
-            </View>
-            <View className="flex-row items-center gap-2">
-              <Text className="text-lg">{BADGE_EMOJI[item.badge]}</Text>
-              <Text className="text-xl font-bold text-text-primary">{item.score.toFixed(1)}</Text>
-            </View>
-          </View>
-        )}
-      />
-    </QueryBoundary>
-  );
+
+          <FadeSlideUp delay={STAGGER_MS[0]}>
+            <GradesSummaryBar average={average} topSubjectId={topSubjectId} compact />
+          </FadeSlideUp>
+
+          <FadeSlideUp delay={STAGGER_MS[1]} className="gap-2">
+            {rows.map((row) => (
+              <GradeCard
+                key={row.subjectId}
+                subjectId={row.subjectId}
+                score={row.score}
+                badge={row.badge}
+                compact
+              />
+            ))}
+          </FadeSlideUp>
+        </ScrollView>
+      </QueryBoundary>
+    </Screen>
+  )
 }
