@@ -28,10 +28,10 @@ export const SubjectLegend = ({ days }: SubjectLegendProps) => {
                 </span>
                 <span className="text-[11px] font-extrabold text-text-muted">{count} tiết</span>
               </div>
-              <div className="mt-1 h-1 overflow-hidden rounded-full bg-slate-100">
+              <div className="mt-1 h-1 overflow-hidden rounded-full bg-surface-muted">
                 <div
                   className="h-full rounded-full"
-                  style={{ width: `${pct}%`, background: subject?.color ?? '#94a3b8' }}
+                  style={{ width: `${pct}%`, background: subject?.color ?? 'var(--color-text-muted)' }}
                 />
               </div>
             </div>

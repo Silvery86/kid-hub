@@ -3,9 +3,9 @@
 import { cn } from '@/lib/utils'
 
 const TIER_STYLES = {
-  excellent: 'bg-amber-100 text-amber-800 border-amber-200',
-  good: 'bg-blue-100 text-blue-800 border-blue-200',
-  'needs-practice': 'bg-orange-100 text-orange-800 border-orange-200',
+  excellent: 'bg-tier-excellent-bg text-tier-excellent-text border-tier-excellent-border',
+  good: 'bg-tier-good-bg text-tier-good-text border-tier-good-border',
+  'needs-practice': 'bg-tier-practice-bg text-tier-practice-text border-tier-practice-border',
 } as const
 
 const TIER_LABELS = {

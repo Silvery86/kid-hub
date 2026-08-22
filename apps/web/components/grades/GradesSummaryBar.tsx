@@ -18,7 +18,7 @@ export function GradesSummaryBar({
     <div className={cn('flex', compact ? 'gap-2' : 'gap-3')}>
       <div
         className={cn(
-          'flex flex-1 items-center gap-2.5 rounded-[20px] bg-btn-primary text-white',
+          'flex flex-1 items-center gap-2.5 rounded-row bg-btn-primary text-white',
           compact ? 'p-3' : 'px-4 py-3.5'
         )}
       >
@@ -36,7 +36,7 @@ export function GradesSummaryBar({
       </div>
       <div
         className={cn(
-          'flex flex-1 items-center gap-2.5 rounded-[20px] bg-emerald-50',
+          'flex flex-1 items-center gap-2.5 rounded-row bg-surface-success',
           compact ? 'p-3' : 'px-4 py-3.5'
         )}
       >
@@ -55,10 +55,10 @@ export function GradesSummaryBar({
           <span className="text-2xl">⭐</span>
         )}
         <div>
-          <div className="text-[11px] font-extrabold tracking-wide text-slate-400 uppercase">
+          <div className="text-[11px] font-extrabold tracking-wide text-text-muted uppercase">
             Môn giỏi nhất
           </div>
-          <div className={cn('font-black text-slate-800', compact ? 'text-sm' : 'text-base')}>
+          <div className={cn('font-black text-text-primary', compact ? 'text-sm' : 'text-base')}>
             {top?.name ?? '—'}
           </div>
         </div>

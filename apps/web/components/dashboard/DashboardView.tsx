@@ -114,11 +114,11 @@ export const DashboardView = ({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <div className="inline-flex items-center gap-1.5 rounded-pill bg-amber-100 px-4 py-1.5 text-base font-extrabold text-amber-800">
+            <div className="inline-flex items-center gap-1.5 rounded-pill bg-tier-excellent-bg px-4 py-1.5 text-base font-extrabold text-tier-excellent-text">
               <span aria-hidden="true">🪙</span>
               <span suppressHydrationWarning>{progress.totalPoints} điểm</span>
             </div>
-            <div className="inline-flex items-center gap-1.5 rounded-pill bg-orange-100 px-3 py-1.5 text-sm font-extrabold text-orange-800">
+            <div className="inline-flex items-center gap-1.5 rounded-pill bg-tier-practice-bg px-3 py-1.5 text-sm font-extrabold text-tier-practice-text">
               <span aria-hidden="true">🔥</span>
               <span suppressHydrationWarning>{progress.currentStreak} ngày</span>
             </div>
@@ -236,7 +236,7 @@ export const DashboardView = ({
               <p className="py-4 text-center text-sm font-bold text-text-muted">Hôm nay không có lịch học.</p>
             ) : null}
             {eveningBlocks.length > 0 && (
-              <div className={schoolPeriods.length > 0 ? 'mt-3 border-t border-slate-100 pt-3' : ''}>
+              <div className={schoolPeriods.length > 0 ? 'mt-3 border-t border-surface-muted pt-3' : ''}>
                 <p className="mb-2 text-[10px] font-extrabold tracking-widest text-text-muted uppercase">
                   Học thêm buổi tối
                 </p>
@@ -244,7 +244,7 @@ export const DashboardView = ({
                   {eveningBlocks.map((blk, i) => {
                     const subj = getSubjectById(blk.subjectId)
                     return (
-                      <div key={blk.id ?? i} className="flex items-center gap-2.5 rounded-xl bg-slate-50 px-3 py-2">
+                      <div key={blk.id ?? i} className="flex items-center gap-2.5 rounded-chip bg-shell-light px-3 py-2">
                         <span className="text-base leading-none">{subj?.icon ?? '📚'}</span>
                         <span className="flex-1 text-sm font-bold text-text-primary">{subj?.name ?? blk.subjectId}</span>
                         <span className="text-xs font-semibold tabular-nums text-text-muted">{blk.startTime}–{blk.endTime}</span>
@@ -298,7 +298,7 @@ export const DashboardView = ({
                         max={initialHomework.length}
                         size={22}
                       />
-                      <span className={`text-xs font-extrabold ${pendingHomeworkCount === 0 ? 'text-emerald-600' : 'text-amber-700'}`}>
+                      <span className={`text-xs font-extrabold ${pendingHomeworkCount === 0 ? 'text-success-strong' : 'text-tier-excellent-text'}`}>
                         {pendingHomeworkCount === 0 ? 'Xong!' : `${pendingHomeworkCount} chưa làm`}
                       </span>
                     </>
@@ -314,7 +314,7 @@ export const DashboardView = ({
                     return (
                       <div
                         key={hw.periodId}
-                        className={`flex items-center gap-2 rounded-xl px-2.5 py-2 ${hw.isDone ? 'bg-slate-100' : 'bg-amber-50'}`}
+                        className={`flex items-center gap-2 rounded-chip px-2.5 py-2 ${hw.isDone ? 'bg-surface-muted' : 'bg-surface-warn'}`}
                       >
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-lg">
                           {subject?.id === 'math' ? '🔢' : subject?.id === 'english' ? '🔤' : '📘'}
@@ -328,7 +328,7 @@ export const DashboardView = ({
                           <p className="text-[11px] font-bold text-text-muted">{subject?.name ?? hw.subjectId}</p>
                         </div>
                         <div
-                          className={`h-5 w-5 shrink-0 rounded-full border-2 ${hw.isDone ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300 bg-white'}`}
+                          className={`h-5 w-5 shrink-0 rounded-full border-2 ${hw.isDone ? 'border-progress-complete bg-progress-complete' : 'border-btn-ghost-border bg-white'}`}
                           aria-hidden="true"
                         />
                       </div>

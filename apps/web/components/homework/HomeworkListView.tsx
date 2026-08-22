@@ -12,7 +12,9 @@ function StatusPill({ children, tone }: { children: React.ReactNode; tone: 'ambe
     <span
       className={cn(
         'rounded-full px-3 py-1 text-xs font-extrabold',
-        tone === 'amber' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+        tone === 'amber'
+          ? 'bg-tier-excellent-bg text-tier-excellent-text'
+          : 'bg-success-bg text-success-text'
       )}
     >
       {children}

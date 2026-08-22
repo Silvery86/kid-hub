@@ -41,16 +41,16 @@ export function HomeworkHeader({
   return (
     <div
       className={cn(
-        'flex flex-col rounded-[24px] bg-white shadow-sm',
+        'flex flex-col rounded-card bg-white shadow-sm',
         compact ? 'gap-2 p-3' : 'gap-3 p-4 md:p-[18px]'
       )}
     >
       <div className="flex items-center justify-between gap-3">
         <div>
-          <div className={cn('font-black text-slate-800', compact ? 'text-[13px]' : 'text-base')}>
+          <div className={cn('font-black text-text-primary', compact ? 'text-[13px]' : 'text-base')}>
             Bài tập hôm nay
           </div>
-          <div className={cn('font-bold text-slate-500', compact ? 'mt-0.5 text-[11px]' : 'mt-0.5 text-[13px]')}>
+          <div className={cn('font-bold text-text-secondary', compact ? 'mt-0.5 text-[11px]' : 'mt-0.5 text-[13px]')}>
             {done}/{total} bài đã hoàn thành
             {dayLabel ? ` · ${dayLabel}` : ''}
           </div>
@@ -62,7 +62,7 @@ export function HomeworkHeader({
               cy={ring / 2}
               r={r}
               fill="none"
-              stroke="#f1f5f9"
+              stroke="var(--color-surface-muted)"
               strokeWidth={stroke}
             />
             <circle
@@ -70,21 +70,21 @@ export function HomeworkHeader({
               cy={ring / 2}
               r={r}
               fill="none"
-              stroke="#10b981"
+              stroke="var(--color-progress-complete)"
               strokeWidth={stroke}
               strokeDasharray={`${dash} 999`}
               strokeLinecap="round"
               transform={`rotate(-90 ${ring / 2} ${ring / 2})`}
             />
           </svg>
-          <span className={cn('relative font-black text-slate-800', compact ? 'text-[11px]' : 'text-[13px]')}>
+          <span className={cn('relative font-black text-text-primary', compact ? 'text-[11px]' : 'text-[13px]')}>
             {pct}%
           </span>
         </div>
       </div>
-      <div className={cn('overflow-hidden rounded-full bg-slate-100', compact ? 'h-1.5' : 'h-2')}>
+      <div className={cn('overflow-hidden rounded-full bg-surface-muted', compact ? 'h-1.5' : 'h-2')}>
         <div
-          className="h-full rounded-full bg-emerald-500 transition-[width] duration-300"
+          className="h-full rounded-full bg-progress-complete transition-[width] duration-300"
           style={{ width: `${pct}%` }}
           role="progressbar"
           aria-valuenow={pct}

@@ -21,7 +21,7 @@ export function GradeCard({
 
   const pct = (score / 10) * 100
   const barColor =
-    score >= 9 ? 'bg-amber-400' : score >= 7 ? 'bg-blue-500' : 'bg-orange-400'
+    score >= 9 ? 'bg-progress-high' : score >= 7 ? 'bg-btn-primary' : 'bg-progress-low'
 
   return (
     <div
@@ -63,7 +63,7 @@ export function GradeCard({
           </div>
         </div>
         <div
-          className={cn('overflow-hidden rounded-full bg-slate-100', compact ? 'h-1.5' : 'h-1.5')}
+          className={cn('overflow-hidden rounded-full bg-surface-muted', compact ? 'h-1.5' : 'h-1.5')}
         >
           <div
             className={cn('animate-grow-width h-full rounded-full', barColor)}

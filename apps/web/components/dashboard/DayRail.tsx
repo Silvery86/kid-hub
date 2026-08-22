@@ -7,6 +7,9 @@ import { getSubjectById } from '@/lib/data/subjects'
 import { schoolPeriodsOnly } from '@/lib/schedule-display'
 import type { ClassPeriod } from '@/types'
 
+/** Subject colour for an id the catalogue does not know. */
+const FALLBACK_SUBJECT_COLOR = 'var(--color-btn-primary)'
+
 interface DayRailProps {
   periods: ClassPeriod[]
   currentPeriodNumber: number | null
@@ -28,18 +31,18 @@ export const DayRail = ({ periods, currentPeriodNumber, progress, onPick }: DayR
           currentPeriodNumber != null &&
           period.periodNumber != null &&
           period.periodNumber < currentPeriodNumber
-        const color = subject?.color ?? '#3b82f6'
+        const color = subject?.color ?? FALLBACK_SUBJECT_COLOR
 
         return (
           <button
             key={period.periodNumber ?? period.startTime}
             type="button"
             onClick={() => onPick?.(period)}
-            className={`shrink-0 rounded-2xl border-2 bg-white p-3 text-left transition-transform active:scale-[0.98] ${
+            className={`shrink-0 rounded-button border-2 bg-white p-3 text-left transition-transform active:scale-[0.98] ${
               isNow ? 'min-w-50' : 'min-w-35'
             } ${isDone ? 'opacity-55' : ''}`}
             style={{
-              borderColor: isNow ? color : '#e2e8f0',
+              borderColor: isNow ? color : 'var(--color-border-soft)',
               boxShadow: isNow ? `0 8px 20px -12px ${color}` : undefined,
             }}
           >
@@ -47,7 +50,7 @@ export const DayRail = ({ periods, currentPeriodNumber, progress, onPick }: DayR
               <span className="text-[10px] font-extrabold uppercase tracking-wide text-text-muted">
                 Tiết {period.periodNumber}
               </span>
-              {isDone ? <span className="text-sm text-emerald-500">✓</span> : null}
+              {isDone ? <span className="text-sm text-progress-complete">✓</span> : null}
               {isNow ? (
                 <span className="relative inline-flex size-2" aria-label="Đang học">
                   <span
@@ -71,7 +74,7 @@ export const DayRail = ({ periods, currentPeriodNumber, progress, onPick }: DayR
               </div>
             </div>
             {isNow && progress != null ? (
-              <div className="mt-2 h-1 overflow-hidden rounded-full bg-slate-100">
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-surface-muted">
                 <div
                   className="animate-grow-width h-full rounded-full"
                   style={{ '--bar-pct': `${Math.round(progress * 100)}%`, background: color } as React.CSSProperties}

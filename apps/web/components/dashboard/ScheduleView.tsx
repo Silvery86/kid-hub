@@ -416,13 +416,13 @@ function WeekEveningSection({
           return (
             <div
               key={day}
-              className="flex min-w-[140px] flex-1 flex-col gap-1.5 rounded-[14px] bg-slate-50 px-3 py-2.5"
+              className="flex min-w-[140px] flex-1 flex-col gap-1.5 rounded-[14px] bg-shell-light px-3 py-2.5"
             >
               <div className="flex items-baseline gap-1.5">
-                <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wide">
+                <span className="text-[11px] font-extrabold text-text-secondary uppercase tracking-wide">
                   {DAY_LABELS[day]}
                 </span>
-                {date ? <span className="text-[10px] font-bold text-slate-400">{date}</span> : null}
+                {date ? <span className="text-[10px] font-bold text-text-muted">{date}</span> : null}
               </div>
               {blocks.map((blk, i) => {
                 const subj = getSubjectById(blk.subjectId)
@@ -450,7 +450,7 @@ function WeekEveningSection({
 function EveningBlockList({ blocks }: { blocks: ClassPeriod[] }) {
   if (blocks.length === 0) return null
   return (
-    <div className="mt-3 border-t border-slate-100 pt-3">
+    <div className="mt-3 border-t border-surface-muted pt-3">
       <p className="mb-2 text-[10px] font-extrabold uppercase tracking-widest text-text-muted">
         Học thêm buổi tối
       </p>
@@ -460,7 +460,7 @@ function EveningBlockList({ blocks }: { blocks: ClassPeriod[] }) {
           return (
             <div
               key={blk.id ?? i}
-              className="flex items-center gap-2.5 rounded-xl bg-slate-50 px-3 py-2"
+              className="flex items-center gap-2.5 rounded-chip bg-shell-light px-3 py-2"
             >
               <span className="text-base leading-none">{subj?.icon ?? '📚'}</span>
               <span className="flex-1 text-sm font-bold text-text-primary">{subj?.name ?? blk.subjectId}</span>

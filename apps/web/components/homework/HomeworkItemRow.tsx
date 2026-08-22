@@ -36,8 +36,8 @@ export function HomeworkItemRow({
       disabled={item.isDone || isPending}
       className={cn(
         'flex w-full items-center gap-3 text-left transition-opacity',
-        compact ? 'gap-2.5 rounded-2xl p-3' : 'gap-3.5 rounded-[20px] p-4',
-        item.isDone ? 'bg-slate-50 opacity-60' : 'bg-white shadow-sm',
+        compact ? 'gap-2.5 rounded-button p-3' : 'gap-3.5 rounded-row p-4',
+        item.isDone ? 'bg-shell-light opacity-60' : 'bg-white shadow-sm',
         isPriority && !item.isDone && 'border-2'
       )}
       style={
@@ -52,7 +52,9 @@ export function HomeworkItemRow({
           compact ? 'h-[38px] w-[38px] text-lg rounded-[10px]' : 'h-12 w-12 text-2xl'
         )}
         style={{
-          background: item.isDone ? '#f1f5f9' : `color-mix(in oklab, ${color} 15%, white)`,
+          background: item.isDone
+            ? 'var(--color-surface-muted)'
+            : `color-mix(in oklab, ${color} 15%, white)`,
         }}
         aria-hidden="true"
       >
@@ -61,7 +63,7 @@ export function HomeworkItemRow({
       <div className="min-w-0 flex-1">
         <div
           className={cn(
-            'truncate font-black text-slate-800',
+            'truncate font-black text-text-primary',
             compact ? 'text-[13px]' : 'text-[15px]',
             item.isDone && 'line-through'
           )}
@@ -69,7 +71,7 @@ export function HomeworkItemRow({
           {item.homeworkNote || subject?.name || 'Bài tập'}
         </div>
         {subject ? (
-          <div className={cn('font-bold text-slate-500', compact ? 'mt-0.5 text-[11px]' : 'mt-0.5 text-xs')}>
+          <div className={cn('font-bold text-text-secondary', compact ? 'mt-0.5 text-[11px]' : 'mt-0.5 text-xs')}>
             {subject.name}
           </div>
         ) : null}
@@ -89,7 +91,9 @@ export function HomeworkItemRow({
         className={cn(
           'grid shrink-0 place-items-center rounded-full font-black text-white',
           compact ? 'h-[26px] w-[26px] text-xs' : 'h-8 w-8 text-sm',
-          item.isDone ? 'bg-emerald-500' : 'border-[3px] border-slate-200 bg-white text-transparent'
+          item.isDone
+            ? 'bg-progress-complete'
+            : 'border-[3px] border-border-soft bg-white text-transparent'
         )}
         aria-hidden="true"
       >

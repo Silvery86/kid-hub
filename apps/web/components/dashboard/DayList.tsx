@@ -7,6 +7,9 @@ import { getSubjectById } from '@/lib/data/subjects'
 import { schoolPeriodsOnly } from '@/lib/schedule-display'
 import type { ClassPeriod } from '@/types'
 
+/** Subject colour for an id the catalogue does not know. */
+const FALLBACK_SUBJECT_COLOR = 'var(--color-text-muted)'
+
 interface DayListProps {
   periods: ClassPeriod[]
   currentPeriodNumber: number | null
@@ -23,14 +26,14 @@ export const DayList = ({ periods, currentPeriodNumber, onPick }: DayListProps) 
       {school.map((period) => {
         const subject = getSubjectById(period.subjectId)
         const isNow = currentPeriodNumber != null && period.periodNumber === currentPeriodNumber
-        const color = subject?.color ?? '#94a3b8'
+        const color = subject?.color ?? FALLBACK_SUBJECT_COLOR
 
         return (
           <button
             key={period.periodNumber ?? period.startTime}
             type="button"
             onClick={() => onPick?.(period)}
-            className="flex items-center gap-3 rounded-2xl bg-white p-3 text-left transition-transform active:scale-[0.99]"
+            className="flex items-center gap-3 rounded-button bg-white p-3 text-left transition-transform active:scale-[0.99]"
             style={{
               border: isNow ? `2px solid ${color}` : '2px solid transparent',
               boxShadow: isNow
@@ -41,8 +44,8 @@ export const DayList = ({ periods, currentPeriodNumber, onPick }: DayListProps) 
             <div
               className="grid size-8 shrink-0 place-items-center rounded-[10px] text-[13px] font-black"
               style={{
-                background: isNow ? color : '#f1f5f9',
-                color: isNow ? '#fff' : '#64748b',
+                background: isNow ? color : 'var(--color-surface-muted)',
+                color: isNow ? '#fff' : 'var(--color-text-secondary)',
               }}
             >
               {period.periodNumber}
