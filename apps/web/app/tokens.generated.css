@@ -21,7 +21,13 @@
   --color-shell-kid: #f0f9ff;
   --color-shell-parent: #f3f2ec;
   --color-surface-muted: #f1f5f9;
+  --color-surface-success: #ecfdf5;
+  --color-surface-warn: #fffbeb;
+  --color-success-bg: #d1fae5;
+  --color-success-strong: #059669;
+  --color-success-text: #065f46;
   --color-border-muted: #94a3b8;
+  --color-border-soft: #e2e8f0;
   --color-gradient-indigo: #4338ca;
   --color-text-primary: #1e293b;
   --color-text-secondary: #64748b;
