@@ -18,7 +18,12 @@ export const MAX_EVENING_BLOCKS_PER_DAY = 3
 
 // GRADE_SCALE, PIN_LENGTH and KID_PATTERN_LENGTH are owned by @kid-hub/shared
 // (Phase 2 — mobile_imp.md §10) and re-exported here for existing web imports.
-export { GRADE_SCALE, PIN_LENGTH, KID_PATTERN_LENGTH } from '@kid-hub/shared'
+export {
+  GRADE_SCALE,
+  PIN_LENGTH,
+  KID_PATTERN_LENGTH,
+  CURRENT_ACADEMIC_YEAR,
+} from '@kid-hub/shared'
 
 // ── Parent Mode / Auth ────────────────────────────────────────
 

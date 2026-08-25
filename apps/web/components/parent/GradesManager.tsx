@@ -5,6 +5,7 @@
 import { useState, useTransition, useEffect } from 'react'
 import { Save, Check, AlertCircle } from 'lucide-react'
 import type { SubjectGrade } from '@/types'
+import { CURRENT_ACADEMIC_YEAR } from '@/lib/constants'
 import { SUBJECTS } from '@/lib/data/subjects'
 import { upsertGradeAction } from '@/server/actions/grades.actions'
 import { calculateBadge, cn } from '@/lib/utils'
@@ -43,7 +44,7 @@ export const GradesManager = ({
         const raw = editableScores[s.id] ?? ''
         const parsed = parseFloat(raw)
         const score = isNaN(parsed) ? 0 : Math.min(10, Math.max(0, parsed))
-        return { subjectId: s.id, score, semester, academicYear: '2025-2026' }
+        return { subjectId: s.id, score, semester, academicYear: CURRENT_ACADEMIC_YEAR }
       })
 
       const results = await Promise.all(updates.map((u) => upsertGradeAction(u)))

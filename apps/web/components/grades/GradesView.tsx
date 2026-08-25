@@ -4,12 +4,13 @@ import { useMemo, useState } from 'react'
 import { GradeCard } from './GradeCard'
 import { GradesSummaryBar } from './GradesSummaryBar'
 import { SemesterTabs } from './SemesterTabs'
+import { CURRENT_ACADEMIC_YEAR } from '@/lib/constants'
 import { gradesForSemester, semesterAverage, topSubjectForSemester } from '@/lib/grades-display'
 import type { SubjectGrade } from '@/types'
 
 export function GradesView({ grades }: { grades: SubjectGrade[] }) {
   const [semester, setSemester] = useState<1 | 2>(1)
-  const academicYear = grades[0]?.academicYear ?? '2025-2026'
+  const academicYear = grades[0]?.academicYear ?? CURRENT_ACADEMIC_YEAR
 
   const rows = useMemo(() => gradesForSemester(grades, semester), [grades, semester])
   const average = useMemo(() => semesterAverage(rows), [rows])

@@ -44,6 +44,16 @@ export const PIN_LENGTH = 4
 /** Kid unlock-pattern length (taps). */
 export const KID_PATTERN_LENGTH = 2
 
+/**
+ * School year every grade is recorded against.
+ *
+ * CLAUDE.md has listed this constant under "Key Constants" and forbidden the
+ * '2025-2026' literal for a while, but it had never actually been created —
+ * the literal was hard-coded at each call site instead. Added here rather than
+ * in apps/web because the mobile grades manager needs the same value.
+ */
+export const CURRENT_ACADEMIC_YEAR = '2025-2026'
+
 /** Number of questions in one game session. */
 export const GAME_QUESTIONS_PER_SESSION = 10
 
