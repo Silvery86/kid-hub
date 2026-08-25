@@ -33,7 +33,7 @@ export function DayList({ periods, currentPeriodNumber, onPick }: DayListProps) 
             key={period.periodNumber ?? period.startTime}
             onPress={() => onPick?.(period)}
             accessibilityRole="button"
-            className="flex-row items-center gap-3 rounded-button bg-white p-3"
+            className="min-h-tap flex-row items-center gap-3 rounded-button bg-white p-3"
             style={[
               isNow ? coloredShadow(color, 'lg', 0.35) : shadow('sm'),
               { borderWidth: 2, borderColor: isNow ? color : 'transparent' },

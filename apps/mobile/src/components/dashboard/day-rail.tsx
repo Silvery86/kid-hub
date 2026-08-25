@@ -44,7 +44,7 @@ export function DayRail({ periods, currentPeriodNumber, progress, onPick }: DayR
             key={period.periodNumber ?? period.startTime}
             onPress={() => onPick?.(period)}
             accessibilityRole="button"
-            className={`rounded-button bg-white p-3 ${isNow ? 'min-w-[200px]' : 'min-w-[140px]'}`}
+            className={`min-h-tap rounded-button bg-white p-3 ${isNow ? 'min-w-[200px]' : 'min-w-[140px]'}`}
             style={[
               {
                 borderWidth: 2,

@@ -38,7 +38,7 @@ export function HomeworkItemRow({
       disabled={item.isDone || isPending}
       accessibilityRole="button"
       accessibilityState={{ checked: item.isDone, disabled: item.isDone || isPending }}
-      className={`w-full flex-row items-center ${
+      className={`min-h-tap w-full flex-row items-center ${
         compact ? 'gap-2.5 rounded-button p-3' : 'gap-3.5 rounded-row p-4'
       } ${item.isDone ? 'bg-shell-light opacity-60' : 'bg-white'} ${highlighted ? 'border-2' : ''}`}
       style={

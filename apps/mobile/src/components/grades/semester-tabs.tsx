@@ -25,7 +25,7 @@ export function SemesterTabs({ active, onChange, compact = false }: SemesterTabs
             onPress={() => onChange(s)}
             accessibilityRole="tab"
             accessibilityState={{ selected: isActive }}
-            className={`rounded-chip ${compact ? 'px-4 py-1.5' : 'px-5 py-2'} ${isActive ? 'bg-btn-primary' : ''}`}
+            className={`min-h-tap justify-center rounded-chip ${compact ? 'px-4 py-1.5' : 'px-5 py-2'} ${isActive ? 'bg-btn-primary' : ''}`}
             // Web's 0 4px 10px -3px rgba(59,130,246,0.55) glow under the active tab.
             style={isActive ? coloredShadow(tokens.colors['btn-primary'], 'sm', 0.55) : undefined}>
             <Text

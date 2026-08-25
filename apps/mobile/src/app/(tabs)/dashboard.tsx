@@ -167,6 +167,9 @@ export default function DashboardScreen() {
             <PressableScale
               onPress={() => router.navigate('/unlock')}
               accessibilityRole="button"
+              // Rule TAP-B: the pill matches the two static ones beside it, so
+              // the tap target is extended rather than the box.
+              hitSlop={10}
               className="flex-row items-center gap-1.5 rounded-pill bg-white px-3 py-1.5">
               <Text>🏆</Text>
               <Text className="font-display-extrabold text-sm text-text-secondary">
@@ -325,7 +328,7 @@ export default function DashboardScreen() {
             onPress={() => router.navigate('/homework')}
             accessibilityRole="button"
             accessibilityLabel="Mở danh sách bài tập"
-            className="mb-2 flex-row items-center justify-between">
+            className="mb-2 min-h-tap flex-row items-center justify-between">
             <Text className="font-display-extrabold text-lg text-text-primary">Bài tập →</Text>
             <View className="flex-row items-center gap-2">
               {homeworkItems.length === 0 ? (

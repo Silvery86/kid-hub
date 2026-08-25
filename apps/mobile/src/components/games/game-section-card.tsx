@@ -54,7 +54,7 @@ export function GameSectionCard({
       accessibilityRole="button"
       accessibilityLabel={`Vào chơi ${label}`}
       testID={`game-section-${href.replace('/', '')}`}
-      className={`w-full overflow-hidden ${compact ? 'rounded-card' : 'rounded-hero'}`}
+      className={`min-h-tap w-full overflow-hidden ${compact ? 'rounded-card' : 'rounded-hero'}`}
       style={coloredShadow(color, 'xl', 0.45)}>
       <LinearGradient
         colors={[...gradientStops] as [string, string, ...string[]]}

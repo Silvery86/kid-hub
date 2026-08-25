@@ -42,7 +42,7 @@ export function GameHub<Id extends string>({
         <Pressable
           onPress={onExit}
           hitSlop={8}
-          className="rounded-full border-2 border-slate-600 px-4 py-2 active:bg-slate-800">
+          className="min-h-tap justify-center rounded-full border-2 border-slate-600 px-4 py-2 active:bg-slate-800">
           <Text className="text-sm font-extrabold text-slate-300">← Trò chơi</Text>
         </Pressable>
       </View>

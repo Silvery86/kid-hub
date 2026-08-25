@@ -34,7 +34,7 @@ export function DayTabs({
             onPress={() => onChange(dow)}
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
-            className={`flex-1 items-center rounded-chip ${compact ? 'px-1 py-1' : 'px-2 py-2.5'} ${
+            className={`min-h-tap flex-1 items-center justify-center rounded-chip ${compact ? 'px-1 py-1' : 'px-2 py-2.5'} ${
               active ? 'bg-schedule' : ''
             }`}
             style={active ? coloredShadow(tokens.colors.schedule, 'sm', 0.5) : undefined}>

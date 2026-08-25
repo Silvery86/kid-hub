@@ -29,7 +29,9 @@ export function QueryBoundary({
           Couldn&apos;t load this. Check that the app is on the same network as the dev server.
         </Text>
         {onRetry ? (
-          <Pressable className="rounded-pill bg-btn-primary px-4 py-2" onPress={onRetry}>
+          <Pressable
+          className="min-h-tap items-center justify-center rounded-pill bg-btn-primary px-4 py-2"
+          onPress={onRetry}>
             <Text className="font-semibold text-white">Retry</Text>
           </Pressable>
         ) : null}

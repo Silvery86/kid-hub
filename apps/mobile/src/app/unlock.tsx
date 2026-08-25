@@ -49,7 +49,7 @@ function FilterTabs({
             onPress={() => onChange(t.id)}
             accessibilityRole="tab"
             accessibilityState={{ selected: isActive }}
-            className={`rounded-pill px-3.5 py-1.5 ${isActive ? 'bg-btn-primary' : 'bg-white'}`}
+            className={`min-h-tap justify-center rounded-pill px-3.5 py-1.5 ${isActive ? 'bg-btn-primary' : 'bg-white'}`}
             style={isActive ? coloredShadow(tokens.colors['btn-primary'], 'sm', 0.55) : undefined}>
             <Text
               className={`font-display-extrabold text-xs ${isActive ? 'text-white' : 'text-text-secondary'}`}>
