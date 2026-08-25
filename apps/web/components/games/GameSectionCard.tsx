@@ -126,7 +126,7 @@ export const GameSectionCard = ({
                   className={cn(
                     'leading-none',
                     compact ? 'text-[10px]' : 'text-xs',
-                    i <= g.best ? 'text-amber-400' : 'text-white/30'
+                    i <= g.best ? 'text-star-filled' : 'text-white/30'
                   )}
                   aria-hidden="true"
                 >

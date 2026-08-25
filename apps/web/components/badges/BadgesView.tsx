@@ -32,7 +32,7 @@ function BadgeFilterTabs({
             'rounded-full border-0 px-3.5 py-1.5 text-xs font-extrabold transition-colors',
             active === t.id
               ? 'bg-btn-primary text-white shadow-[0_4px_10px_-4px_rgba(59,130,246,0.55)]'
-              : 'bg-white text-slate-500 shadow-sm'
+              : 'bg-white text-text-secondary shadow-sm'
           )}
         >
           {t.label}
@@ -127,7 +127,7 @@ export function BadgesView() {
   return (
     <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-shell-kid portrait:overflow-y-auto">
       <div className="hidden min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3.5 pb-4 pt-3.5 portrait:max-md:flex">
-        <h1 className="text-[22px] font-black text-slate-800">Huy hiệu 🏆</h1>
+        <h1 className="text-[22px] font-black text-text-primary">Huy hiệu 🏆</h1>
         <BadgesSummary earned={earnedCount} total={badges.length} compact />
         <BadgeFilterTabs active={filter} onChange={setFilter} />
         {grid(filtered, true)}
@@ -136,8 +136,8 @@ export function BadgesView() {
       <div className="hidden min-h-0 flex-1 flex-col gap-4 overflow-hidden p-5 md:flex md:gap-5 md:p-6 lg:p-7">
         <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-[30px] font-black text-slate-800 lg:text-[34px]">Huy hiệu 🏆</h1>
-            <p className="mt-1 text-sm font-bold text-slate-500 lg:text-[15px]">
+            <h1 className="text-[30px] font-black text-text-primary lg:text-[34px]">Huy hiệu 🏆</h1>
+            <p className="mt-1 text-sm font-bold text-text-secondary lg:text-[15px]">
               Bộ sưu tập thành tích · {earnedCount}/{badges.length} đã đạt
             </p>
           </div>

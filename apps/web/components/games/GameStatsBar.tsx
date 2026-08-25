@@ -24,10 +24,10 @@ export const GameStatsBar = ({
   className,
 }: GameStatsBarProps) => {
   const chips = [
-    { icon: '🪙', val: String(points), label: 'điểm', bg: '#fef3c7', fg: '#92400e' },
-    { icon: '🔥', val: String(streak), label: 'ngày', bg: '#ffedd5', fg: '#9a3412' },
-    { icon: '⭐', val: `${starsEarned}/${starsMax}`, label: 'sao', bg: '#dbeafe', fg: '#1d4ed8' },
-    { icon: '🏆', val: String(badges), label: 'huy hiệu', bg: '#eff6ff', fg: '#1d4ed8' },
+    { icon: '🪙', val: String(points), label: 'điểm', cls: 'bg-tier-excellent-bg text-tier-excellent-text' },
+    { icon: '🔥', val: String(streak), label: 'ngày', cls: 'bg-tier-practice-bg text-tier-practice-text' },
+    { icon: '⭐', val: `${starsEarned}/${starsMax}`, label: 'sao', cls: 'bg-tier-good-bg text-tier-good-text' },
+    { icon: '🏆', val: String(badges), label: 'huy hiệu', cls: 'bg-schedule-soft text-tier-good-text' },
   ]
 
   return (
@@ -45,9 +45,9 @@ export const GameStatsBar = ({
           className={cn(
             'flex items-center gap-1.5 rounded-full font-extrabold whitespace-nowrap',
             compact ? 'px-3 py-1.5 text-[11px]' : 'px-3.5 py-2 text-[13px]',
-            vertical && 'flex-1'
+            vertical && 'flex-1',
+            c.cls
           )}
-          style={{ background: c.bg, color: c.fg }}
         >
           <span className={compact ? 'text-sm' : 'text-lg'} aria-hidden="true">
             {c.icon}

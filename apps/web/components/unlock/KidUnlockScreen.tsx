@@ -97,10 +97,10 @@ export function KidUnlockScreen() {
             🔓
           </div>
           <h1 className="text-3xl font-black text-white">Mở khóa cho bé</h1>
-          <p className="mt-2 text-sm font-bold text-slate-300">
+          <p className="mt-2 text-sm font-bold text-text-subtle">
             Chạm 2 hình theo đúng thứ tự đã cài đặt
           </p>
-          <p className="mt-3 text-sm font-extrabold text-sky-300">{hint}</p>
+          <p className="mt-3 text-sm font-extrabold text-math-light">{hint}</p>
         </div>
 
         <div className="grid grid-cols-3 gap-3">
@@ -123,9 +123,9 @@ export function KidUnlockScreen() {
         </div>
 
         {error ? (
-          <p className="mt-4 text-center text-sm font-bold text-rose-300">{error}</p>
+          <p className="mt-4 text-center text-sm font-bold text-btn-danger">{error}</p>
         ) : (
-          <p className="mt-4 text-center text-xs font-bold text-slate-500">
+          <p className="mt-4 text-center text-xs font-bold text-text-secondary">
             Nhấn nút Bố mẹ để vào khu quản lý
           </p>
         )}

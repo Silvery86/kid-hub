@@ -13,15 +13,15 @@ export const ComingSoonCard = ({ emoji, name, desc, compact = false }: ComingSoo
   return (
     <div
       className={cn(
-        'relative flex flex-col border-2 border-dashed border-slate-200 bg-white',
+        'relative flex flex-col border-2 border-dashed border-border-soft bg-white',
         'pointer-events-none cursor-not-allowed select-none opacity-50',
-        compact ? 'gap-1.5 rounded-2xl p-3.5' : 'gap-2 rounded-[20px] p-4'
+        compact ? 'gap-1.5 rounded-button p-3.5' : 'gap-2 rounded-row p-4'
       )}
       aria-disabled="true"
     >
       <span
         className={cn(
-          'absolute rounded-full bg-slate-100 font-extrabold tracking-wide text-text-muted',
+          'absolute rounded-full bg-surface-muted font-extrabold tracking-wide text-text-muted',
           compact ? 'right-2 top-2 px-2 py-0.5 text-[10px]' : 'right-2.5 top-2.5 px-2 py-0.5 text-[10px]'
         )}
       >
@@ -32,7 +32,7 @@ export const ComingSoonCard = ({ emoji, name, desc, compact = false }: ComingSoo
       </span>
       <div>
         <div
-          className={cn('font-black text-slate-600', compact ? 'text-[13px]' : 'text-[15px]')}
+          className={cn('font-black text-text-body-soft', compact ? 'text-[13px]' : 'text-[15px]')}
         >
           {name}
         </div>

@@ -27,8 +27,8 @@ export function BadgeCard({
         'flex flex-col gap-2 text-left',
         compact ? 'rounded-[18px] p-3.5' : 'rounded-[22px] p-4 md:p-[18px]',
         badge.isEarned
-          ? 'border-2 border-amber-200 bg-white shadow-[0_4px_12px_-6px_rgba(251,191,36,0.4)]'
-          : 'border-2 border-slate-200 bg-slate-50 opacity-75'
+          ? 'border-2 border-badge-earned-border bg-white shadow-[0_4px_12px_-6px_rgba(251,191,36,0.4)]'
+          : 'border-2 border-border-soft bg-shell-light opacity-75'
       )}
     >
       <div
@@ -39,12 +39,12 @@ export function BadgeCard({
         {badge.emoji}
       </div>
       <div>
-        <div className={cn('font-black text-slate-800', compact ? 'text-xs' : 'text-sm')}>
+        <div className={cn('font-black text-text-primary', compact ? 'text-xs' : 'text-sm')}>
           {badge.name}
         </div>
         <div
           className={cn(
-            'mt-0.5 font-bold leading-snug text-slate-500',
+            'mt-0.5 font-bold leading-snug text-text-secondary',
             compact ? 'text-[10px]' : 'text-[11px]'
           )}
         >
@@ -52,18 +52,18 @@ export function BadgeCard({
         </div>
       </div>
       {badge.isEarned ? (
-        <div className={cn('font-extrabold text-amber-800', compact ? 'text-[10px]' : 'text-[11px]')}>
+        <div className={cn('font-extrabold text-tier-excellent-text', compact ? 'text-[10px]' : 'text-[11px]')}>
           {badge.earnedLabel ?? '✓'} Đã đạt
         </div>
       ) : (
         <div>
-          <div className={cn('overflow-hidden rounded-full bg-slate-200', compact ? 'h-1' : 'h-1.5')}>
+          <div className={cn('overflow-hidden rounded-full bg-border-soft', compact ? 'h-1' : 'h-1.5')}>
             <div
               className="h-full rounded-full bg-btn-primary"
               style={{ width: `${pct}%` }}
             />
           </div>
-          <div className="mt-1 text-[10px] font-bold text-slate-400">{pct}%</div>
+          <div className="mt-1 text-[10px] font-bold text-text-muted">{pct}%</div>
         </div>
       )}
     </div>
