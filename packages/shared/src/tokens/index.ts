@@ -1,6 +1,12 @@
 /**
- * Design tokens — the single source of truth for colors, radii, spacing and the
- * display font, shared by web (Tailwind v4 `@theme`) and mobile (NativeWind preset).
+ * Design tokens — the single source of truth for colors, radii, spacing, shadows
+ * and the font faces, shared by web (Tailwind v4 `@theme`) and mobile
+ * (NativeWind preset).
+ *
+ * `fonts` carries only `faces`: the family name per weight. There is deliberately
+ * no CSS font stack here — web's `--font-display` is set by next/font, and React
+ * Native cannot turn a stack into a `fontFamily` at all, so such a value would be
+ * read but never applied.
  *
  * Values live in `tokens.json` so a plain Node script can read them too
  * (`scripts/generate-tokens.mjs`), which regenerates:

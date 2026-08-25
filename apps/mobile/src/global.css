@@ -2,12 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --font-display:
-    Nunito, ui-rounded, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,
-    Segoe UI Symbol, Noto Color Emoji;
-  --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
-  --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
-  --font-serif: Georgia, 'Times New Roman', serif;
-}
+/*
+ * No :root font variables here on purpose.
+ *
+ * React Native does not resolve a CSS custom property into `fontFamily`, so a
+ * `--font-display` declared in this file renders nothing and misleads whoever
+ * reads it next — which is exactly how MOBILE_UI_IMP.md §5.4 concluded that web
+ * used Spline Sans and sent the whole font effort after the wrong family.
+ *
+ * Fonts live in one place instead: `fonts.faces` in the shared tokens, loaded by
+ * `useFonts` in src/app/_layout.tsx and emitted as `font-display*` classes by
+ * the generated NativeWind preset.
+ */
