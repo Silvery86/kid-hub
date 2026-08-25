@@ -9,6 +9,12 @@ import { getGrades } from './grades'
 import { getTodayHomework } from './homework'
 import { getMathBestScores, saveMathProgress } from './math'
 import { getEnglishBestScores, saveEnglishProgress } from './english'
+import {
+  getKidAccessSettings,
+  getRecentActivity,
+  getScreenTime,
+  verifyParentPin,
+} from './parent'
 
 /** Transport stub that returns a fixed payload for every verb. */
 const stub = (payload: unknown): HttpTransport => ({
@@ -100,5 +106,38 @@ describe('api-client throws on malformed responses', () => {
         timeSpentSecs: 60,
       })
     ).rejects.toThrow()
+  })
+})
+
+// ── Parent surface ───────────────────────────────────────────────────────────
+
+describe('api-client validates the parent surface', () => {
+  it('getScreenTime returns a parsed ScreenTime', async () => {
+    const data = { usedSecs: 900, limitMins: 120 }
+    await expect(getScreenTime(stub(data))).resolves.toEqual(data)
+  })
+
+  it('getScreenTime throws when the server drops limitMins', async () => {
+    await expect(getScreenTime(stub({ usedSecs: 900 }))).rejects.toThrow()
+  })
+
+  it('getRecentActivity accepts a null iconKey', async () => {
+    const rows = [
+      { id: 'a1', type: 'HOMEWORK_DONE', label: 'Toán', iconKey: null, createdAt: '2026-08-22' },
+    ]
+    await expect(getRecentActivity(stub(rows))).resolves.toEqual(rows)
+  })
+
+  it('getKidAccessSettings accepts null for "never customised"', async () => {
+    await expect(getKidAccessSettings(stub(null))).resolves.toBeNull()
+  })
+
+  it('verifyParentPin rejects a status the client does not know', async () => {
+    await expect(verifyParentPin(stub({ status: 'maybe' }), '1234')).rejects.toThrow()
+  })
+
+  it('verifyParentPin parses a lockout', async () => {
+    const data = { status: 'locked', lockoutSeconds: 30 }
+    await expect(verifyParentPin(stub(data), '1234')).resolves.toEqual(data)
   })
 })
