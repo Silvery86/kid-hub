@@ -18,10 +18,10 @@ import {
   type DayOfWeek,
 } from '@kid-hub/shared'
 import { LinearGradient } from 'expo-linear-gradient'
-import { useMemo, useState } from 'react'
+import { useRouter } from 'expo-router'
+import { useMemo } from 'react'
 import { ScrollView, Text, View } from 'react-native'
 
-import { BadgeModal } from '@/components/dashboard/badge-modal'
 import { DayRail } from '@/components/dashboard/day-rail'
 import { GameEntryCard } from '@/components/games/game-entry-card'
 import { FadeSlideUp, PressableScale, STAGGER_MS } from '@/components/ui/animated'
@@ -49,13 +49,13 @@ const heroWatermark = (subjectId: string): string =>
   subjectId === 'math' ? '🔢' : subjectId === 'english' ? '🔤' : '📘'
 
 export default function DashboardScreen() {
+  const router = useRouter()
   const { signOut } = useAuth()
   const now = useNow()
   const profile = useKidProfile()
   const progress = useProgress()
   const schedule = useSchedule()
   const homework = useTodayHomework()
-  const [isBadgeModalOpen, setBadgeModalOpen] = useState(false)
 
   const kidName = profile.data?.name ?? 'bạn'
   const periods = useMemo<ClassPeriod[]>(() => schedule.data?.schoolPeriods ?? [], [schedule.data])
@@ -165,7 +165,7 @@ export default function DashboardScreen() {
               </Text>
             </View>
             <PressableScale
-              onPress={() => setBadgeModalOpen(true)}
+              onPress={() => router.navigate('/unlock')}
               accessibilityRole="button"
               className="flex-row items-center gap-1.5 rounded-pill bg-white px-3 py-1.5">
               <Text>🏆</Text>
@@ -319,10 +319,14 @@ export default function DashboardScreen() {
           </View>
         </FadeSlideUp>
 
-        {/* Homework preview */}
+        {/* Homework preview — tapping the header opens the full list. */}
         <FadeSlideUp delay={STAGGER_MS[2]} className="rounded-card bg-white p-3">
-          <View className="mb-2 flex-row items-center justify-between">
-            <Text className="font-display-bold text-lg text-text-primary">Bài tập</Text>
+          <PressableScale
+            onPress={() => router.navigate('/homework')}
+            accessibilityRole="button"
+            accessibilityLabel="Mở danh sách bài tập"
+            className="mb-2 flex-row items-center justify-between">
+            <Text className="font-display-bold text-lg text-text-primary">Bài tập →</Text>
             <View className="flex-row items-center gap-2">
               {homeworkItems.length === 0 ? (
                 <Text className="font-display-bold text-xs text-text-muted">Chưa giao</Text>
@@ -342,7 +346,7 @@ export default function DashboardScreen() {
                 </>
               )}
             </View>
-          </View>
+          </PressableScale>
 
           <View className="gap-2">
             {homeworkItems.length === 0 ? (
@@ -396,13 +400,6 @@ export default function DashboardScreen() {
           <Text className="font-display-semibold text-vietnamese">Đăng xuất</Text>
         </PressableScale>
       </ScrollView>
-
-      <BadgeModal
-        isOpen={isBadgeModalOpen}
-        onClose={() => setBadgeModalOpen(false)}
-        earnedBadgeIds={earnedBadgeIds}
-        kidName={kidName}
-      />
     </Screen>
   )
 }

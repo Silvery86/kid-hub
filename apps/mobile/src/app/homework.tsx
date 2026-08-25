@@ -1,6 +1,9 @@
-// Homework tab — web's /homework phone-portrait branch (HomeworkListView).
+// Homework — web's /homework phone-portrait branch (HomeworkListView).
+//
+// A stack route rather than a tab, mirroring web portrait: the bottom bar caps
+// at four items, so homework is reached from the dashboard's homework card.
 import type { HomeworkItem } from '@kid-hub/shared'
-import { useRouter } from 'expo-router'
+import { Stack, useRouter } from 'expo-router'
 import { useEffect, useMemo, useState } from 'react'
 import { ScrollView, Text, View } from 'react-native'
 
@@ -51,7 +54,7 @@ export default function HomeworkScreen() {
     setShowCelebration(true)
     const t = setTimeout(() => {
       setShowCelebration(false)
-      router.navigate('/dashboard')
+      router.navigate('/(tabs)/dashboard')
     }, CELEBRATION_MS)
     return () => clearTimeout(t)
   }, [items.length, pending.length, router])
@@ -72,6 +75,7 @@ export default function HomeworkScreen() {
 
   return (
     <Screen bare>
+      <Stack.Screen options={{ title: 'Bài tập', headerShown: false }} />
       <QueryBoundary isLoading={isLoading} isError={isError} onRetry={refetch}>
         <ScrollView
           className="flex-1"

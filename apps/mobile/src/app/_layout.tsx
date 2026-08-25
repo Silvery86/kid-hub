@@ -8,6 +8,7 @@ import { useColorScheme } from 'react-native';
 
 import { lockPortrait } from '@/lib/screen-orientation';
 import { AuthProvider } from '@/hooks/use-auth';
+import { KidGateProvider } from '@/hooks/use-kid-gate';
 
 import '@/global.css';
 
@@ -69,14 +70,19 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <OrientationGuardrail />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="login" />
-            <Stack.Screen name="(tabs)" />
-          </Stack>
-        </ThemeProvider>
+        <KidGateProvider>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <OrientationGuardrail />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="login" />
+              <Stack.Screen name="kid-unlock" />
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="homework" />
+              <Stack.Screen name="unlock" />
+            </Stack>
+          </ThemeProvider>
+        </KidGateProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

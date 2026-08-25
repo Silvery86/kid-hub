@@ -8,9 +8,9 @@ import { useAuth } from '@/hooks/use-auth'
  * Web's portrait bottom bar: h-16 white, a hairline shadow above it, 22px emoji
  * and a 10px extrabold label (AppSidebar.tsx NavLink, variant="tabbar").
  *
- * The tab set is web's minus Trò chơi: the games hub and the homework stack
- * route both land in Phase 5, so swapping now would leave one tab pointing at
- * nothing and make homework unreachable.
+ * The tab set matches web's TAB_ITEMS exactly — four items, with homework and
+ * badges deliberately excluded. Both are stack routes reached from the
+ * dashboard, as they are in web portrait.
  */
 const TAB_BAR_HEIGHT = 64
 
@@ -59,8 +59,8 @@ export default function TabsLayout() {
         options={{ title: 'Điểm', tabBarIcon: () => <TabIcon emoji="⭐" /> }}
       />
       <Tabs.Screen
-        name="homework"
-        options={{ title: 'Bài tập', tabBarIcon: () => <TabIcon emoji="📚" /> }}
+        name="games"
+        options={{ title: 'Trò chơi', tabBarIcon: () => <TabIcon emoji="🎮" /> }}
       />
     </Tabs>
   )
