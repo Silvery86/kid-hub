@@ -194,12 +194,26 @@ raw radii that mobile cannot mirror semantically:
 **Still open:** replacing the raw utilities on both platforms. Phase 2 only added the tokens, so
 web renders exactly as before; the migration rides along with the Phase 3 primitive port.
 
-### 5.3 Spacing / tap targets — ✅ shared, ⚠️ underused
+### 5.3 Spacing / tap targets — ✅ **RESOLVED (2026-08-25)**
 
 `spacing.tap` (3rem), `tap-lg` (4rem), `tap-xl` (5rem) exist in both presets. Web uses
 `min-h-tap-lg`; mobile uses none of them. `docs/guides/responsive-spec.md §3.1` mandates them.
 
-**Action:** apply `min-h-tap-lg` to every mobile `Pressable`.
+**Done.** This was the plan's one action item that got marked as noted and then never carried
+out — and `docs/guides/responsive-spec.md` Rule TAP-A calls a sub-48px interactive element in
+`(dashboard)` or `(games)` a **ship-blocker**, so it was not cosmetic.
+
+Three controls were genuinely under the line: the schedule `day-tabs` (~35px), `semester-tabs`
+(~28px) and the badge filter pills (~28px). Those now carry `min-h-tap`, along with the rows and
+cards that already exceeded 48px but had no guarantee, and the pre-existing game hub's back button.
+
+The dashboard's 🏆 pill is the exception: it sits in a row beside two static pills of the same
+height, so growing it would misalign the row. Rule TAP-B allows exactly this — the visual size may
+stay smaller than the tap target — so it takes `hitSlop` instead.
+
+`min-h-tap` (48px) rather than the `min-h-tap-lg` (64px) the action line asked for: 64px is the
+spec's bar for *primary game buttons*, and `kid-button` already meets it. 48px is the rule for
+everything else.
 
 ### 5.4 Typography — ✅ **RESOLVED (2026-08-25)** · ⚠️ the original diagnosis was wrong
 
@@ -245,6 +259,12 @@ correcting a specific screen against its web original.
 
 **Still true from the original section:** RN cannot select a face out of a family by numeric
 weight, so weight lives in the class name (`font-display-extrabold`), not beside it.
+
+**Both dead values that caused this are gone.** `tokens.fonts.display` held a CSS stack nothing
+read — the value this section quoted as evidence — and `apps/mobile/src/global.css` declared
+`--font-display`, which React Native cannot turn into a `fontFamily` either. A comment explaining
+why a value is ignored is still a value someone will read and believe, so both were deleted rather
+than annotated. Fonts now live in exactly one place: `fonts.faces`.
 
 ### 5.5 Icons — ⚠️ two systems, one shared, one not
 
