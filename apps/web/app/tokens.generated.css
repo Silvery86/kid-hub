@@ -23,6 +23,7 @@
   --color-surface-muted: #f1f5f9;
   --color-surface-success: #ecfdf5;
   --color-surface-warn: #fffbeb;
+  --color-badge-earned-border: #fde68a;
   --color-success-bg: #d1fae5;
   --color-success-strong: #059669;
   --color-success-text: #065f46;
@@ -34,6 +35,7 @@
   --color-text-muted: #94a3b8;
   --color-text-subtle: #cbd5e1;
   --color-text-body: #334155;
+  --color-text-body-soft: #475569;
   --color-btn-primary: #3b82f6;
   --color-btn-primary-hover: #2563eb;
   --color-btn-primary-border: #1d4ed8;
