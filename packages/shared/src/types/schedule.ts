@@ -96,3 +96,14 @@ export interface KidProfile {
   name: string
   gradeLevel: number
 }
+
+/** GET /api/v1/auth/kid-pattern — whether a parent has configured the pattern. */
+export interface KidPatternStatus {
+  hasKidPatternSet: boolean
+}
+
+/** POST /api/v1/auth/kid-pattern — the outcome of one unlock attempt. */
+export interface KidPatternVerify {
+  status: 'ok' | 'wrong' | 'locked' | 'not-configured'
+  lockoutSeconds?: number
+}

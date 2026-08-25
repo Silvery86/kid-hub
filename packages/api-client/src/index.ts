@@ -9,6 +9,7 @@ import { getTodayHomework, markHomeworkDone } from './endpoints/homework'
 import { getGrades } from './endpoints/grades'
 import { getKidProfile } from './endpoints/profile'
 import { getProgress } from './endpoints/progress'
+import { getKidPatternStatus, verifyKidPattern } from './endpoints/kid-pattern'
 import { saveMathProgress, getMathBestScores } from './endpoints/math'
 import { saveEnglishProgress, getEnglishBestScores } from './endpoints/english'
 
@@ -23,6 +24,8 @@ export const createApiClient = (http: HttpTransport) => ({
   getGrades: () => getGrades(http),
   getKidProfile: () => getKidProfile(http),
   getProgress: () => getProgress(http),
+  getKidPatternStatus: () => getKidPatternStatus(http),
+  verifyKidPattern: (pattern: string) => verifyKidPattern(http, pattern),
   saveMathProgress: (input: SaveMathProgressInput) => saveMathProgress(http, input),
   getMathBestScores: () => getMathBestScores(http),
   saveEnglishProgress: (input: SaveEnglishProgressInput) => saveEnglishProgress(http, input),

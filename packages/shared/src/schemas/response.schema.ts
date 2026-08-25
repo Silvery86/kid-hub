@@ -91,6 +91,21 @@ export const WeekViewSchema = z.object({
   eveningBlocks: z.array(DailyScheduleSchema),
 })
 
+/** GET /api/v1/auth/kid-pattern — whether a parent has configured the pattern. */
+export const KidPatternStatusSchema = z.object({
+  hasKidPatternSet: z.boolean(),
+})
+
+/**
+ * POST /api/v1/auth/kid-pattern — the outcome of one attempt.
+ * A wrong pattern is a successful request with a 'wrong' result, not an HTTP
+ * error: the client renders all four outcomes the same way.
+ */
+export const KidPatternVerifySchema = z.object({
+  status: z.enum(['ok', 'wrong', 'locked', 'not-configured']),
+  lockoutSeconds: z.number().optional(),
+})
+
 /** GET /api/v1/kid-profile — the kid's display name and grade. */
 export const KidProfileSchema = z.object({
   name: z.string(),
