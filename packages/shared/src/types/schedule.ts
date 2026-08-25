@@ -107,3 +107,37 @@ export interface KidPatternVerify {
   status: 'ok' | 'wrong' | 'locked' | 'not-configured'
   lockoutSeconds?: number
 }
+
+/** POST /api/v1/auth/pin — the outcome of one PIN attempt. */
+export interface PinVerify {
+  status: 'ok' | 'wrong' | 'locked' | 'not-configured'
+  lockoutSeconds?: number
+}
+
+/** GET /api/v1/kid-access — saved toggles, or null when never customised. */
+export type KidAccessSettings = Record<string, boolean> | null
+
+/** GET /api/v1/screen-time — today's usage against the configured limit. */
+export interface ScreenTime {
+  usedSecs: number
+  limitMins: number
+}
+
+/** GET /api/v1/activity — one recent kid activity event. */
+export interface ActivityItem {
+  id: string
+  type: string
+  label: string
+  iconKey: string | null
+  createdAt: string
+}
+
+/** Acknowledgement returned by the parent write endpoints. */
+export interface MutationAck {
+  id?: string
+  saved?: boolean
+  deleted?: boolean
+  cancelled?: boolean
+  restored?: boolean
+  recorded?: boolean
+}

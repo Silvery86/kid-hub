@@ -91,6 +91,41 @@ export const WeekViewSchema = z.object({
   eveningBlocks: z.array(DailyScheduleSchema),
 })
 
+/** POST /api/v1/auth/pin — the outcome of one PIN attempt. */
+export const PinVerifySchema = z.object({
+  status: z.enum(['ok', 'wrong', 'locked', 'not-configured']),
+  lockoutSeconds: z.number().optional(),
+})
+
+/** GET /api/v1/kid-access — saved toggles, or null when never customised. */
+export const KidAccessSettingsSchema = z.record(z.string(), z.boolean()).nullable()
+
+/** GET /api/v1/screen-time — today's usage against the configured limit. */
+export const ScreenTimeSchema = z.object({
+  usedSecs: z.number(),
+  limitMins: z.number(),
+})
+
+/** GET /api/v1/activity — recent kid activity, newest first. */
+export const ActivityItemSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  label: z.string(),
+  iconKey: z.string().nullable(),
+  createdAt: z.string(),
+})
+export const ActivityItemArraySchema = z.array(ActivityItemSchema)
+
+/** Write endpoints answer with a small acknowledgement rather than the row. */
+export const MutationAckSchema = z.object({
+  id: z.string().optional(),
+  saved: z.boolean().optional(),
+  deleted: z.boolean().optional(),
+  cancelled: z.boolean().optional(),
+  restored: z.boolean().optional(),
+  recorded: z.boolean().optional(),
+})
+
 /** GET /api/v1/auth/kid-pattern — whether a parent has configured the pattern. */
 export const KidPatternStatusSchema = z.object({
   hasKidPatternSet: z.boolean(),
