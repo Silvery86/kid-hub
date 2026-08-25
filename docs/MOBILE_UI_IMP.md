@@ -1,6 +1,6 @@
 # Mobile UI Implementation Plan — Visual Parity with Web
 
-> **Status:** Phases 1–5 landed · Phase 6 outstanding
+> **Status:** All six phases landed · device verification outstanding
 > **Date:** 2026-08-16
 > **Scope:** Bring `apps/mobile` (Expo Router + NativeWind) to design, style, icon and
 > content parity with `apps/web` (Next.js 16 + Tailwind v4).
@@ -201,33 +201,50 @@ web renders exactly as before; the migration rides along with the Phase 3 primit
 
 **Action:** apply `min-h-tap-lg` to every mobile `Pressable`.
 
-### 5.4 Typography — ✅ **RESOLVED (Phase 2, 2026-08-20)**
+### 5.4 Typography — ✅ **RESOLVED (2026-08-25)** · ⚠️ the original diagnosis was wrong
 
-`tokens.json` sets `fonts.display = "Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif"`.
-`apps/mobile/src/global.css` declares `--font-display` as a CSS variable — but **React Native does
-not resolve CSS variables into `fontFamily`**, and grep confirms **zero** font loading in the app:
-no `useFonts`, no `loadAsync`, no `expo-font` call, no font files under `apps/mobile/assets/`,
-despite `expo-font` being an installed dependency.
+**What this section originally claimed was false.** It read `fonts.display = "Spline Sans, …"`
+out of `tokens.json` and concluded web rendered Spline Sans. It does not, and never did:
+`apps/web/app/layout.tsx` loads **Nunito** through `next/font/google` and binds it to
+`--font-display`. The token value was dead — Next's font loader sets that variable itself, so the
+stack in `tokens.json` never resolved.
 
-Consequence: mobile renders in the platform default (SF Pro / Roboto) while web renders Spline Sans.
+Phase 2 vendored Spline Sans on that basis. That was wrong twice over:
 
-Weight parity is also off — web leans on `font-black` (900) and `font-extrabold` (800); mobile
-mostly uses `font-bold` (700). Without variable-weight font files loaded, RN silently clamps.
+1. **It did not match web.** Mobile rendered Spline Sans while web rendered Nunito — the exact
+   divergence the phase existed to close.
+2. **Spline Sans cannot render Vietnamese.** Its `METADATA.pb` declares only `latin`, `latin-ext`
+   and `menu`; the file carries 425 codepoints and is missing `ế ổ ữ ạ ề ứ ơ ư` and most
+   precomposed diacritics. The upstream variable font has the same coverage. Since every string in
+   this app is Vietnamese, those letters fell back to the system face **mid-word**, on every screen
+   built in Phases 3–6.
 
-**Done:**
-1. ✅ Vendored into `apps/mobile/assets/fonts/` — with the OFL licence alongside.
-2. ✅ Loaded via `useFonts` in `src/app/_layout.tsx` behind `SplashScreen.preventAutoHideAsync()`.
-   A font error is non-fatal: the app degrades to the system face rather than rendering nothing.
-3. ✅ The preset now emits one family per face, keyed off `tokens.fonts.faces`, and the loader
-   reads its registration keys from that same object — the two cannot drift.
-4. ⚠️ **Deviation — 800/900 do not exist.** Spline Sans's `wght` axis stops at 700; Google Fonts
-   silently drops higher requests (verified against the `css2` API and the `usWeightClass` of each
-   downloaded face). Web's `font-black` is therefore already a browser synthesis of the same 700
-   file, so 400/500/600/700 is full parity, not a compromise.
-5. ⚠️ **Deviation — weight travels in the class name.** RN cannot select a face out of a family by
-   numeric weight, so `font-display font-extrabold` cannot work. Mobile uses
-   `font-display` · `font-display-medium` · `font-display-semibold` · `font-display-bold`
-   instead. Phase 3 primitives must use these, not the `font-*` weight utilities.
+The Phase 2 note that "800/900 do not exist" was a fact about the wrong font.
+
+**Resolved by standardising on Nunito, one family for both platforms:**
+
+1. ✅ Six static faces vendored — 400/500/600/700/800/900, with the OFL licence. Verified
+   individually: correct `usWeightClass`, no `fvar` (true statics, not variable files RN handles
+   unreliably), 938 codepoints each, **zero missing Vietnamese**.
+2. ✅ `apps/web/app/layout.tsx` now requests `subsets: ['latin', 'vietnamese']`. It previously asked
+   for `latin` only, so **web was falling back for every diacritic too** — a live defect on the web
+   app, not just a mobile one. The built CSS now carries `U+1EA0-1EF9` on all six weights.
+3. ✅ `tokens.json` names Nunito, and the generated preset emits six families.
+4. ✅ Mobile weights shifted up now that 800 and 900 exist — see below.
+
+**Weights.** Spline Sans's 700 ceiling forced the Phase 3–6 ports to collapse web's `font-black`
+(900) and `font-extrabold` (800) onto a single `font-display-bold`. With the real faces available
+those call sites moved up one step: `font-display-semibold` → `font-display-bold`, and
+`font-display-bold` → `font-display-extrabold`.
+
+⚠️ **Residual imprecision, deliberately accepted.** The ports had already merged web's 900 and 800
+into one class, and which original a given call site came from cannot be recovered by grep. 800 is
+the better single guess — web uses `font-extrabold` 179 times against `font-black` 110 — so
+headings web renders at 900 render at 800 on mobile. `font-display-black` exists for anyone
+correcting a specific screen against its web original.
+
+**Still true from the original section:** RN cannot select a face out of a family by numeric
+weight, so weight lives in the class name (`font-display-extrabold`), not beside it.
 
 ### 5.5 Icons — ⚠️ two systems, one shared, one not
 
@@ -435,10 +452,9 @@ implementation reproduces the designer's own tint, so mobile tints will match we
 
 ### Phase 2 — Mobile design foundation *(no new screens)* — ✅ **DONE (2026-08-20)**
 
-1. ✅ **Fonts** — Spline Sans 400/500/600/700 vendored into `apps/mobile/assets/fonts/` (with
-   `OFL.txt`) and loaded by `useFonts` in `_layout.tsx` behind the splash screen. The generator
-   emits one `fontFamily` per face. **Deviation:** the plan asked for 400/700/800/900, but Spline
-   Sans has no 800/900 and weight cannot ride alongside the family on RN — see §5.4.
+1. ⚠️→✅ **Fonts** — originally vendored Spline Sans on a false premise; **superseded 2026-08-25**
+   by Nunito 400–900, the family web actually renders, and the only one of the two with a
+   Vietnamese subset. See §5.4 for the full correction.
 2. ✅ **Radius + shadow tokens** — `tokens.json` extended per §5.2 and §5.7, both targets
    regenerated, `src/lib/shadows.ts` added. **Deviations:** no duplicate `card-lg`, `rounded-[22px]`
    left alone, and shadows are consumed from the token module rather than generated into either
@@ -695,25 +711,102 @@ misleading "not assignable to Href" error. Run `expo start` once after adding a 
 
 **Exit:** ✅ every kid-facing web route has a mobile counterpart. Still unverified on a device.
 
-### Phase 6 — Parent section
+### Phase 6 — Parent section — ✅ **DONE (2026-08-22)**
 
-Largest phase and the only one blocked on backend work (see §8).
+1. ✅ **`/parent/login`** — restyled, Vietnamese, on the parent shell.
+2. ✅ **`/parent/pin`** — hero, keypad, shake, lockout countdown.
+3. ✅ **`/parent`** — overview / schedule manager / grades manager behind a segmented control.
+4. ✅ **`/parent/kid-access`** — toggles, pattern setup, screen time, recent activity.
 
-1. `/parent/login` restyle + Vietnamese copy + step indicator.
-2. `/parent/pin` — hero + keypad + shake.
-3. `/parent` — overview / schedule manager / grades manager (segmented control replaces the
-   `?view=` query param and the `w-52` sidebar, which does not fit a phone).
-4. `/parent/kid-access` — toggles, pattern setup, screen time, recent activity.
+Reached from a 🛡️ **Bố mẹ** button on the kid dashboard — web reaches it from the sidebar, which a
+phone has no room for.
 
-**Exit:** full parity across all 15 routes.
+#### 6a — the REST surface §8 under-counted
+
+§8 lists seven endpoints for this phase. Its single `PUT /api/v1/schedule` row covers **nine**
+separate mutations, so the real surface is **13 handlers across 10 paths**. All landed.
+
+More importantly, §8 says each "must go through `requireParentSession` in the service layer" —
+which cannot work. `requireParentSession` reads the parent **cookies** and rotates them; mobile
+sends a **Bearer header** and cannot receive a `Set-Cookie` rotation. A `requireParentApi` helper
+already existed for this, written earlier and never called; it now returns null instead of throwing
+so a handler answers with a 401 in one line rather than wrapping thirteen calls in try/catch.
+
+Before this phase **no `/api/v1` route authenticated at all** — fine for the kid reads in a
+single-household app, not fine for parent mutations.
+
+Two deliberate asymmetries with the web actions:
+
+- **`POST /auth/pin` mints no session.** The caller already holds a parent access token, so the PIN
+  gates the parent UI rather than granting access. It still *requires* that token, so the route
+  cannot be used to brute-force the PIN unauthenticated, and it shares `getPinRateLimiter`.
+- **`POST /screen-time` stays unauthenticated**, matching `addScreenTimeAction`: the kid app reports
+  its own usage, clamped to two minutes per call.
+
+The transport also had to grow: `HttpTransport` only spoke GET and POST.
+
+#### 6b — designed for a phone, not ported
+
+§9 called this "a genuine mobile design, not a port", and the numbers agree: `ScheduleManager` is
+906 lines of week grid, inline editor panel and drag targets built around a `w-52` sidebar.
+
+| Web | Mobile |
+|---|---|
+| `w-52` sidebar + `?view=` query param | One segmented control over a single scrolling column |
+| Week grid, all five days at once | Day tabs — pick a day, see its rows |
+| Inline editor panel beside the grid | Tap a subject chip to add; a delete button per row |
+| Grades table with number inputs | One row per subject with ± steppers in half points |
+| Hand-built toggle pill | RN `Switch`, which inherits platform accessibility |
+| Screen-time number input | Two large ± targets stepping in half hours |
+
+The steppers are not only ergonomics: a stepper cannot produce an out-of-range value the server
+would reject, so the 0–10 and 30–480 bounds are enforced before the request rather than after.
+
+#### A constant CLAUDE.md promised but nobody had written
+
+`CLAUDE.md` lists `CURRENT_ACADEMIC_YEAR` under "Key Constants" and forbids the `'2025-2026'`
+literal under "What NOT to do". **The constant did not exist** — the literal was hard-coded at
+three call sites instead. Writing the mobile grades manager needed a value, so the constant now
+lives in `@kid-hub/shared` and the two web call sites use it.
+
+#### Deliberate deviations
+
+| Item | Decision |
+|---|---|
+| **No step indicator on login** | Web's is a setup wizard: email → welcome → create PIN → confirm → success. `registerParentAccountAction` and `setPinAction` have no REST route, so mobile can only *sign in* — an account and its PIN are created on web. An indicator over a single step would claim a flow that does not exist |
+| **Parent gate is per-launch** | Like the kid gate, and for the same reason: the API already trusts the Bearer token, so the PIN gates the UI. Leaving the section re-locks it |
+| **Period times are not editable in place** | A new row lands in the slot after the last one of that day. A time picker per row is a real piece of design work; adding and removing rows covers the common case |
+
+#### Verification run
+
+| Check | Result |
+|---|---|
+| `pnpm type-check` (turbo, 5 packages) | ✅ 5/5 pass |
+| `pnpm -C packages/shared test` | ✅ 43/43 pass |
+| `pnpm -C packages/api-client test` | ✅ 15/15 pass (6 new parent contract tests) |
+| `pnpm -C packages/shared lint` (purity guard) | ✅ isomorphic — safe for Metro |
+| `pnpm -C apps/web build` | ✅ compiles; all 13 handlers registered |
+| `pnpm -C apps/web lint` | ✅ 0 errors, 11 pre-existing warnings |
+| `expo export --platform android` | ✅ bundles |
+| **Live auth probe** against a running build | ✅ all 10 parent paths 401 unauthenticated *and* with a bogus bearer; a genuine `parent-access` JWT returns 200 with real data; a validly-signed `parent-refresh` token is refused, so the type claim is checked and not just the signature; the kid surface answers 200 throughout |
+
+**Exit:** ✅ all 15 routes have a mobile counterpart. Still unverified on a device — §9's open risk.
 
 ---
 
-## 8. Backend Gaps Blocking Phase 6
+## 8. Backend Gaps — ✅ closed in Phase 6
 
 The parent section runs entirely on Server Actions, which mobile cannot call. Existing REST
 coverage under `/api/v1`: `auth/login`, `auth/logout`, `auth/refresh`, `schedule`, `homework/today`,
 `homework/[id]/done`, `grades`, `math`, `english`, `progress`.
+
+All of these landed in Phase 6. The table is kept as the record of what was built — and of the
+two rows the original plan got wrong: the weekly schedule read was missing entirely, and the
+single schedule-write row turned out to be nine separate mutations.
+
+Note the instruction below it — "each must go through `requireParentSession`" — is **wrong for
+REST**: that guard reads cookies, and mobile sends a Bearer header. `requireParentApi` is the
+Bearer counterpart.
 
 New endpoints required:
 
@@ -744,7 +837,7 @@ handler orchestrates only.
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| Spline Sans licensing / file size | Fonts may not be redistributable; 4 weights inflate the bundle | Confirm the licence before vendoring; subset to Latin + Vietnamese (the app needs Vietnamese diacritics) |
+| ~~Spline Sans licensing / file size~~ | **RESOLVED (2026-08-25).** The real risk was not licensing (OFL, fine) but coverage: Spline Sans has no Vietnamese subset at all. Both platforms now use Nunito, which does, at six weights | — |
 | `color-mix` has no RN equivalent | Grade/homework/subject tints drift between platforms | One shared `mixWithWhite()` used by both — never reimplement per platform |
 | ~~Web's own raw-palette usage~~ | **RESOLVED for the primitives (Phase 3).** 17 semantic tokens added; the ten web primitives and their mobile ports both use them. Raw palette survives elsewhere in `apps/web` and rides along with Phases 4–6 | — |
 | Radius/shadow token churn | Phase 2 touches generated files on both platforms | Regenerate and diff-review `tokens.generated.css` + `tailwind-preset.cjs` in one commit |
@@ -773,11 +866,12 @@ handler orchestrates only.
 
 ## 11. Definition of Done
 
-- [~] Every **kid-facing** web route has a mobile counterpart (Phase 5). The parent routes are Phase 6.
+- [x] All 15 web routes have a mobile counterpart (Phases 4–6).
 - [x] Zero raw domain IDs on the four tabs — every `subjectId` resolves through the shared catalogue.
-- [~] All copy is Vietnamese on every kid screen (Phases 4–5); the parent screens land in Phase 6.
-- [x] Spline Sans loads on both platforms (Phase 2). Heaviest available face is 700 — mobile
-      selects it with `font-display-bold`, not `font-black`/`font-extrabold` (§5.4).
+- [x] All copy is Vietnamese, kid and parent screens alike.
+- [x] Nunito loads on both platforms, Vietnamese subset included, 400–900 (2026-08-25). Mobile
+      selects weight by class name (`font-display-extrabold`), since RN cannot pick a face out of
+      a family by numeric weight (§5.4).
 - [ ] Every `Pressable` meets `min-h-tap-lg` (`docs/guides/responsive-spec.md §3.1`).
 - [x] Every screen respects safe-area insets — the four tabs use `<Screen>` (Phase 4).
 - [~] Cards carry the shared shadow tokens (Phase 3 primitives do); sections use the staggered
