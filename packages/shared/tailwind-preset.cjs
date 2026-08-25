@@ -79,16 +79,22 @@ module.exports = {
       },
       "fontFamily": {
         "display": [
-          "SplineSans-Regular"
+          "Nunito-Regular"
         ],
         "display-medium": [
-          "SplineSans-Medium"
+          "Nunito-Medium"
         ],
         "display-semibold": [
-          "SplineSans-SemiBold"
+          "Nunito-SemiBold"
         ],
         "display-bold": [
-          "SplineSans-Bold"
+          "Nunito-Bold"
+        ],
+        "display-extrabold": [
+          "Nunito-ExtraBold"
+        ],
+        "display-black": [
+          "Nunito-Black"
         ]
       }
     }

@@ -5,8 +5,11 @@ import { Nunito } from 'next/font/google'
 import { ServiceWorkerRegistrar } from '@/components/layout/ServiceWorkerRegistrar'
 import './globals.css'
 
+// 'vietnamese' is not optional here: the entire app is written in Vietnamese,
+// and without that subset every diacritic falls back to the system sans
+// mid-word. Nunito ships it — mobile vendors the same six weights.
 const nunito = Nunito({
-  subsets: ['latin'],
+  subsets: ['latin', 'vietnamese'],
   weight: ['400', '500', '600', '700', '800', '900'],
   variable: '--font-display',
   display: 'swap',
