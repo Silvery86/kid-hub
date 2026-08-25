@@ -19,10 +19,29 @@ export interface GameSectionDefinition {
   emoji: string
   color: string
   colorDark: string
-  gradient: string
+  /**
+   * Gradient as data rather than a CSS string: React Native cannot parse
+   * `linear-gradient(...)`, and expo-linear-gradient wants the stops as an
+   * array. Web renders the same values through `cssLinearGradient()`.
+   */
+  gradientAngle: number
+  gradientStops: readonly string[]
   desc: string
   href: '/math' | '/english'
   games: GameSectionGame[]
+}
+
+/**
+ * The CSS `linear-gradient(...)` for a section, for the web card only.
+ * Stops are spread evenly the way the hand-written values were: 0%, 55%, 100%.
+ */
+export const cssLinearGradient = (section: GameSectionDefinition): string => {
+  const last = section.gradientStops.length - 1
+  const stops = section.gradientStops.map((color, i) => {
+    const pct = i === 0 ? 0 : i === last ? 100 : Math.round((i / last) * 110)
+    return `${color} ${pct}%`
+  })
+  return `linear-gradient(${section.gradientAngle}deg, ${stops.join(', ')})`
 }
 
 export const GAME_SECTION_DEFINITIONS: readonly GameSectionDefinition[] = [
@@ -32,7 +51,8 @@ export const GAME_SECTION_DEFINITIONS: readonly GameSectionDefinition[] = [
     emoji: '🧮',
     color: '#3b82f6',
     colorDark: '#1d4ed8',
-    gradient: 'linear-gradient(140deg, #60a5fa 0%, #3b82f6 55%, #2563eb 100%)',
+    gradientAngle: 140,
+    gradientStops: ['#60a5fa', '#3b82f6', '#2563eb'],
     desc: '3 trò chơi · Đếm, Cộng/Trừ, Hình học',
     href: '/math',
     games: [
@@ -47,7 +67,8 @@ export const GAME_SECTION_DEFINITIONS: readonly GameSectionDefinition[] = [
     emoji: '🔤',
     color: '#10b981',
     colorDark: '#047857',
-    gradient: 'linear-gradient(140deg, #34d399 0%, #10b981 55%, #047857 100%)',
+    gradientAngle: 140,
+    gradientStops: ['#34d399', '#10b981', '#047857'],
     desc: '3 trò chơi · Chữ cái, Từ vựng, Phát âm',
     href: '/english',
     games: [

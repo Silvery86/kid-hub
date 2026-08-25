@@ -12,6 +12,7 @@ import {
   GAME_SECTION_DEFINITIONS,
   STARS_PER_MINIGAME,
   TOTAL_MINIGAMES,
+  cssLinearGradient,
 } from '@/lib/data/games-hub'
 import type { GameBestScore, UserProgress } from '@/types'
 
@@ -37,7 +38,9 @@ function buildSections(progress: UserProgress['bestScores']) {
     }))
     const totalStars = games.reduce((sum, g) => sum + g.best, 0)
     const maxStars = games.length * STARS_PER_MINIGAME
-    return { ...sec, games, totalStars, maxStars }
+    // The catalogue stores gradient stops as data so mobile can use them too;
+    // the CSS string is built here, for the web card only.
+    return { ...sec, games, totalStars, maxStars, gradient: cssLinearGradient(sec) }
   })
 }
 

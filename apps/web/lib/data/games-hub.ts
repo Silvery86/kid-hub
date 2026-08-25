@@ -11,4 +11,5 @@ export {
   COMING_SOON_GAMES,
   STARS_PER_MINIGAME,
   TOTAL_MINIGAMES,
+  cssLinearGradient,
 } from '@kid-hub/shared'
