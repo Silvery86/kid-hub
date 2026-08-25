@@ -9,6 +9,11 @@ import type { ActionResult } from '@kid-hub/shared'
 export interface HttpTransport {
   get<T>(path: string): Promise<T>
   post<T>(path: string, body?: unknown): Promise<T>
+  /** Full replacement — the parent settings and grade writes. */
+  put<T>(path: string, body?: unknown): Promise<T>
+  /** Partial update — the schedule period edit, whose fields are all optional. */
+  patch<T>(path: string, body?: unknown): Promise<T>
+  delete<T>(path: string): Promise<T>
 }
 
 export interface FetchTransportOptions {
@@ -30,7 +35,9 @@ export const unwrapEnvelope = <T>(body: unknown): T => {
 
 /** A `fetch`-based transport — isomorphic (browser, React Native, Node ≥18). */
 export const createFetchTransport = (opts: FetchTransportOptions): HttpTransport => {
-  const request = async <T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> => {
+  type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+
+  const request = async <T>(method: Method, path: string, body?: unknown): Promise<T> => {
     const token = opts.getAuthToken ? await opts.getAuthToken() : null
     const res = await fetch(`${opts.baseUrl}${path}`, {
       method,
@@ -51,5 +58,8 @@ export const createFetchTransport = (opts: FetchTransportOptions): HttpTransport
   return {
     get: (path) => request('GET', path),
     post: (path, body) => request('POST', path, body),
+    put: (path, body) => request('PUT', path, body),
+    patch: (path, body) => request('PATCH', path, body),
+    delete: (path) => request('DELETE', path),
   }
 }

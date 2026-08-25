@@ -16,6 +16,18 @@ const axiosTransport: HttpTransport = {
     const { data } = await api.post(path, body)
     return unwrapEnvelope<T>(data)
   },
+  put: async <T>(path: string, body?: unknown): Promise<T> => {
+    const { data } = await api.put(path, body)
+    return unwrapEnvelope<T>(data)
+  },
+  patch: async <T>(path: string, body?: unknown): Promise<T> => {
+    const { data } = await api.patch(path, body)
+    return unwrapEnvelope<T>(data)
+  },
+  delete: async <T>(path: string): Promise<T> => {
+    const { data } = await api.delete(path)
+    return unwrapEnvelope<T>(data)
+  },
 }
 
 export const apiClient = createApiClient(axiosTransport)

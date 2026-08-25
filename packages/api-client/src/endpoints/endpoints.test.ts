@@ -10,10 +10,13 @@ import { getTodayHomework } from './homework'
 import { getMathBestScores, saveMathProgress } from './math'
 import { getEnglishBestScores, saveEnglishProgress } from './english'
 
-/** Transport stub that returns a fixed payload for both get and post. */
+/** Transport stub that returns a fixed payload for every verb. */
 const stub = (payload: unknown): HttpTransport => ({
   get: async () => payload as never,
   post: async () => payload as never,
+  put: async () => payload as never,
+  patch: async () => payload as never,
+  delete: async () => payload as never,
 })
 
 describe('api-client validates valid responses through', () => {
