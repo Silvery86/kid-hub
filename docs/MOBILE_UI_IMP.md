@@ -1,6 +1,6 @@
 # Mobile UI Implementation Plan — Visual Parity with Web
 
-> **Status:** Phases 1–4 landed · Phases 5–6 outstanding
+> **Status:** Phases 1–5 landed · Phase 6 outstanding
 > **Date:** 2026-08-16
 > **Scope:** Bring `apps/mobile` (Expo Router + NativeWind) to design, style, icon and
 > content parity with `apps/web` (Next.js 16 + Tailwind v4).
@@ -622,24 +622,78 @@ already has the same celebration-and-redirect flow.
 **Exit:** ✅ the four tabs mirror web's phone-portrait branch. Not yet verified on a device — see
 §9's "no visual regression testing on mobile" risk.
 
-### Phase 5 — The missing kid screens
+### Phase 5 — The missing kid screens — ✅ **DONE (2026-08-22)**
 
-1. **`/games` hub** — `GameStatsBar`, two gradient `GameSectionCard`s (`expo-linear-gradient`,
-   rotated watermark emoji, per-minigame stars), coming-soon grid. Becomes the 4th tab.
-2. **`/unlock` badges** — amber gradient summary, filter pills, badge grid. Pushed from the 🏆
-   stat pill.
-3. **`/homework`** as a stack route pushed from the dashboard homework card (mirroring web
-   portrait, where homework has no tab).
-4. **`/kid-unlock`** — 6 emoji tiles, 2-tap pattern, lockout countdown, shake on error. Becomes
-   the real entry gate; `index.tsx` routes here instead of `/login` for the kid flow.
-5. **`+not-found.tsx`** — port the 🗺️ card.
+1. ✅ **`/games` hub** — stats chips, two gradient section cards, coming-soon grid. Now the 4th tab.
+2. ✅ **`/unlock` badges** — amber gradient summary, filter pills, two-up badge grid, pushed from
+   the 🏆 pill.
+3. ✅ **`/homework`** — moved out of the tabs into a stack route, pushed from the dashboard card.
+4. ✅ **`/kid-unlock`** — 6 emoji tiles, 2-tap pattern, lockout countdown, shake on error.
+5. ✅ **`+not-found`** — the 🗺️ card.
 
-**Note:** `/unlock` needs a badge-progress read. `/api/v1/progress` already returns
-`earnedBadgeIds`, `totalPoints`, `currentStreak`, `mathBestStars`, `englishBestStars` — enough to
-build the screen. Add a `getProgress` fetcher to `@kid-hub/api-client` (it is currently
-app-specific, per the note in `packages/api-client/src/index.ts`).
+**The tab bar now matches web exactly**: Trang chủ · Lịch · Điểm · Trò chơi. Phase 4 deferred this
+because the games hub and the homework route did not exist; both land here, so the swap is safe.
 
-**Exit:** every kid-facing web route has a mobile counterpart.
+#### Kid unlock is a UI gate, not an auth boundary
+
+This is the one item that could not be ported as-designed. Web's `/kid-unlock` issues a
+`KID_SESSION_COOKIE` that its middleware enforces on every kid route. Mobile cannot reproduce that:
+the API authenticates with the Bearer token from parent login, and `/api/v1/*` sits **outside the
+middleware matcher**, so a valid token already grants full API access before any pattern is
+entered. A pattern check there gates pixels, not data.
+
+So the screen gates the UI (`hooks/use-kid-gate.ts`, per-launch and deliberately not persisted)
+while everything that must not live on the device stays server-side behind the new
+`POST /api/v1/auth/kid-pattern`: the pattern hash, the attempt counter and the lockout. The route
+reuses `getPinRateLimiter` — both are short secrets guarding the same household — and returns
+`ok` / `wrong` / `locked` / `not-configured` as data rather than HTTP errors, since the screen
+renders all four the same way. `GET` on the same path reports whether a parent has configured a
+pattern at all; when none is set the screen lets the kid through rather than trapping them.
+
+Making this a real gate would mean a new token type with its own storage, refresh and server-side
+acceptance across the whole mobile auth model — a redesign, not a screen. Worth doing if the parent
+section (Phase 6) lands, since that is where a genuine kid/parent split starts to matter.
+
+#### Gradients became data
+
+`GAME_SECTION_DEFINITIONS` stored `gradient` as a CSS string (`linear-gradient(140deg, …)`), which
+RN cannot parse. The catalogue now carries `gradientAngle` + `gradientStops`, mobile feeds the
+stops to `expo-linear-gradient`, and web builds the identical CSS string through a new
+`cssLinearGradient()` helper — verified to reproduce the original `0% / 55% / 100%` stops exactly.
+One source, no drift.
+
+#### Deliberate deviations
+
+| Item | Decision |
+|---|---|
+| **`BadgeModal` deleted** | Phase 4 added it for the dashboard's 🏆 pill. The plan routes that pill to the `/unlock` screen instead, which left the modal unreferenced — dead on arrival, so it is gone |
+| **No earned date on badge cards** | Web's localStorage progress records when each badge was earned; `GET /api/v1/progress` returns ids only, so the card falls back to a plain "✓ Đã đạt" |
+| **Per-minigame stars come from a second read** | `ProgressSummary` only carries best stars per *subject*. The hub shows a star row per *minigame*, so it also reads `getMathBestScores`/`getEnglishBestScores` (`hooks/use-best-scores.ts`) |
+| **No "Bố mẹ" button on kid-unlock** | Web's links to `/parent/login`. Mobile has no parent section until Phase 6 |
+| **Locked badge emoji uses opacity, not grayscale** | RN has no `filter: grayscale()`; the card's own opacity carries that weight |
+| **Radial gradients → linear** | Per §6, for both the kid-unlock backdrop and the badges summary |
+
+#### A trap worth knowing about
+
+`pnpm type-check` on `@kid-hub/mobile` depends on `apps/mobile/.expo/types/router.d.ts`, a
+gitignored generated file listing every valid route. **`expo export` does not regenerate it — only
+the dev server does.** A stale copy makes type-check fail on any newly added route with a
+misleading "not assignable to Href" error. Run `expo start` once after adding a route.
+
+#### Verification run
+
+| Check | Result |
+|---|---|
+| `pnpm type-check` (turbo, 5 packages) | ✅ 5/5 pass |
+| `pnpm -C packages/shared test` | ✅ 43/43 pass |
+| `pnpm -C packages/shared lint` (purity guard) | ✅ isomorphic — safe for Metro |
+| `pnpm -C apps/web build` | ✅ compiles |
+| `pnpm -C apps/web lint` | ✅ 0 errors, 11 pre-existing warnings |
+| `expo export --platform android` | ✅ bundles (6.9MB) |
+| New tokens reach both platforms | ✅ `border-badge-earned-border` compiles to `#fde68a` in the web CSS chunk; both are in the mobile preset |
+| Raw palette gone from every ported web component | ✅ grep clean across `games/`, `badges/`, `unlock/`, `not-found` |
+
+**Exit:** ✅ every kid-facing web route has a mobile counterpart. Still unverified on a device.
 
 ### Phase 6 — Parent section
 
@@ -674,7 +728,7 @@ New endpoints required:
 | Recent activity | `getRecentActivityAction` | `GET /api/v1/activity` |
 | Kid profile | `getKidProfileAction` | ✅ `GET /api/v1/kid-profile` — added in Phase 4 |
 | Weekly schedule read | `getScheduleAction` + `getAllEveningBlocksAction` | ✅ `GET /api/v1/schedule/week` — added in Phase 4. **This row was missing from the original plan**; the schedule day tabs cannot be built from `TodayView` |
-| Kid pattern verify | `verifyKidPatternAction` | `POST /api/v1/auth/kid-pattern` (needed by Phase 5) |
+| Kid pattern verify | `verifyKidPatternAction` | ✅ `POST`/`GET /api/v1/auth/kid-pattern` — added in Phase 5. Verifies only; it issues no session (see Phase 5 notes) |
 
 Every one of these is a **mutation on the parent surface** — each must go through
 `requireParentSession` in the service layer and be rate-limited consistently with
@@ -719,9 +773,9 @@ handler orchestrates only.
 
 ## 11. Definition of Done
 
-- [ ] All 15 web routes have a mobile counterpart (or a PM-signed-off exclusion).
+- [~] Every **kid-facing** web route has a mobile counterpart (Phase 5). The parent routes are Phase 6.
 - [x] Zero raw domain IDs on the four tabs — every `subjectId` resolves through the shared catalogue.
-- [~] All copy is Vietnamese on the four tabs (Phase 4); the remaining screens land in Phases 5–6.
+- [~] All copy is Vietnamese on every kid screen (Phases 4–5); the parent screens land in Phase 6.
 - [x] Spline Sans loads on both platforms (Phase 2). Heaviest available face is 700 — mobile
       selects it with `font-display-bold`, not `font-black`/`font-extrabold` (§5.4).
 - [ ] Every `Pressable` meets `min-h-tap-lg` (`docs/guides/responsive-spec.md §3.1`).
