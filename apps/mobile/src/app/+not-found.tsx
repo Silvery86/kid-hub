@@ -14,7 +14,7 @@ export default function NotFoundScreen() {
         <Text className="mb-4" style={{ fontSize: 64 }}>
           🗺️
         </Text>
-        <Text className="mb-2 text-center font-display-bold text-2xl text-text-body">
+        <Text className="mb-2 text-center font-display-extrabold text-2xl text-text-body">
           Trang này không có rồi
         </Text>
         <Text className="mb-6 text-center text-lg text-text-secondary">

@@ -39,14 +39,14 @@ export function DayTabs({
             }`}
             style={active ? coloredShadow(tokens.colors.schedule, 'sm', 0.5) : undefined}>
             <Text
-              className={`font-display-bold ${compact ? 'text-[11px]' : 'text-[13px]'} ${
+              className={`font-display-extrabold ${compact ? 'text-[11px]' : 'text-[13px]'} ${
                 active ? 'text-white' : isToday ? 'text-schedule-deep' : 'text-text-body'
               }`}>
               {compact ? dayShortLabel(dow) : DAY_LABELS[dow]}
             </Text>
             {date ? (
               <Text
-                className={`font-display-semibold text-[9px] ${active ? 'text-white' : 'text-text-body'}`}
+                className={`font-display-bold text-[9px] ${active ? 'text-white' : 'text-text-body'}`}
                 style={{ opacity: active ? 0.85 : 0.5 }}>
                 {date}
               </Text>

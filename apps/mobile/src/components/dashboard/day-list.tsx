@@ -42,7 +42,7 @@ export function DayList({ periods, currentPeriodNumber, onPick }: DayListProps) 
               className="h-8 w-8 items-center justify-center rounded-[10px]"
               style={{ backgroundColor: isNow ? color : tokens.colors['surface-muted'] }}>
               <Text
-                className="font-display-bold text-[13px]"
+                className="font-display-extrabold text-[13px]"
                 style={{ color: isNow ? '#ffffff' : tokens.colors['text-secondary'] }}>
                 {period.periodNumber}
               </Text>
@@ -51,17 +51,17 @@ export function DayList({ periods, currentPeriodNumber, onPick }: DayListProps) 
             <SubjectIcon subjectId={period.subjectId} size={40} rounded={11} />
 
             <View className="min-w-0 flex-1">
-              <Text className="font-display-bold text-sm text-text-primary">
+              <Text className="font-display-extrabold text-sm text-text-primary">
                 {subject?.name ?? '—'}
               </Text>
-              <Text className="font-display-semibold text-xs text-text-secondary">
+              <Text className="font-display-bold text-xs text-text-secondary">
                 {period.startTime} – {period.endTime}
               </Text>
             </View>
 
             {isNow ? (
               <View className="rounded-pill bg-schedule-soft px-2.5 py-1">
-                <Text className="font-display-bold text-[11px] text-schedule-deep">Đang học</Text>
+                <Text className="font-display-extrabold text-[11px] text-schedule-deep">Đang học</Text>
               </View>
             ) : null}
           </PressableScale>

@@ -75,17 +75,17 @@ export function GameSectionCard({
             <Text style={{ fontSize: compact ? 24 : 30 }}>{emoji}</Text>
           </View>
           <View className="min-w-0 flex-1">
-            <Text className={`font-display-bold text-white ${compact ? 'text-lg' : 'text-2xl'}`}>
+            <Text className={`font-display-extrabold text-white ${compact ? 'text-lg' : 'text-2xl'}`}>
               {label}
             </Text>
             <Text
-              className={`mt-0.5 font-display-semibold text-white/85 ${compact ? 'text-[11px]' : 'text-[13px]'}`}>
+              className={`mt-0.5 font-display-bold text-white/85 ${compact ? 'text-[11px]' : 'text-[13px]'}`}>
               {desc}
             </Text>
           </View>
           <View className={`rounded-pill bg-white ${compact ? 'px-3 py-1.5' : 'px-4 py-2'}`}>
             <Text
-              className={`font-display-bold ${compact ? 'text-[11px]' : 'text-[13px]'}`}
+              className={`font-display-extrabold ${compact ? 'text-[11px]' : 'text-[13px]'}`}
               style={{ color: colorDark }}>
               Vào chơi →
             </Text>
@@ -98,7 +98,7 @@ export function GameSectionCard({
               <Text style={{ fontSize: compact ? 18 : 22 }}>{g.emoji}</Text>
               <Text
                 numberOfLines={1}
-                className={`font-display-bold text-white ${compact ? 'text-[10px]' : 'text-xs'}`}>
+                className={`font-display-extrabold text-white ${compact ? 'text-[10px]' : 'text-xs'}`}>
                 {g.name}
               </Text>
               <View className="flex-row gap-0.5">
@@ -117,10 +117,10 @@ export function GameSectionCard({
 
         <View>
           <View className="mb-1.5 flex-row items-center justify-between">
-            <Text className="font-display-bold text-[11px] text-white/85">
+            <Text className="font-display-extrabold text-[11px] text-white/85">
               {totalStars} / {maxStars} ⭐
             </Text>
-            <Text className="font-display-bold text-[11px] text-white/85">{pct}%</Text>
+            <Text className="font-display-extrabold text-[11px] text-white/85">{pct}%</Text>
           </View>
           <View className="h-1.5 overflow-hidden rounded-pill bg-white/25">
             <View className="h-full rounded-pill bg-white" style={{ width: `${pct}%` }} />

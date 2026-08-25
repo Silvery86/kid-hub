@@ -69,7 +69,7 @@ export function PinKeypad({
 
   return (
     <View className="items-center gap-6">
-      {label ? <Text className="font-display-bold text-2xl text-text-body">{label}</Text> : null}
+      {label ? <Text className="font-display-extrabold text-2xl text-text-body">{label}</Text> : null}
 
       <Shake
         trigger={errorCount}

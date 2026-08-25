@@ -39,7 +39,7 @@ export function SegmentedControl<T extends string>({
             }`}>
             <Text style={{ fontSize: 16 }}>{s.emoji}</Text>
             <Text
-              className={`font-display-bold text-[11px] ${
+              className={`font-display-extrabold text-[11px] ${
                 isActive ? 'text-white' : 'text-text-secondary'
               }`}>
               {s.label}

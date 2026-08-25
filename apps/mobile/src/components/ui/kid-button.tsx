@@ -51,7 +51,7 @@ export function KidButton({
       {isLoading ? (
         <ActivityIndicator color={spinner} />
       ) : typeof children === 'string' || typeof children === 'number' ? (
-        <Text className={`font-display-bold text-xl ${label}`}>{children}</Text>
+        <Text className={`font-display-extrabold text-xl ${label}`}>{children}</Text>
       ) : (
         <View className="flex-row items-center gap-2">{children}</View>
       )}

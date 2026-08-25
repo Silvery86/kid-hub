@@ -67,8 +67,8 @@ export default function ParentPinScreen() {
       <View className="flex-1 items-center justify-center gap-6">
         <View className="items-center">
           <Text style={{ fontSize: 64 }}>🛡️</Text>
-          <Text className="mt-2 font-display-bold text-2xl text-text-primary">Khu vực bố mẹ</Text>
-          <Text className="mt-1 font-display-semibold text-sm text-text-secondary">
+          <Text className="mt-2 font-display-extrabold text-2xl text-text-primary">Khu vực bố mẹ</Text>
+          <Text className="mt-1 font-display-bold text-sm text-text-secondary">
             Nhập mã PIN {PIN_LENGTH} số để tiếp tục
           </Text>
         </View>
@@ -80,11 +80,11 @@ export default function ParentPinScreen() {
         />
 
         {isLocked ? (
-          <Text className="font-display-bold text-sm text-btn-danger">
+          <Text className="font-display-extrabold text-sm text-btn-danger">
             Thử lại sau {lockoutSeconds}s
           </Text>
         ) : error ? (
-          <Text className="font-display-semibold text-sm text-btn-danger">{error}</Text>
+          <Text className="font-display-bold text-sm text-btn-danger">{error}</Text>
         ) : null}
       </View>
     </Screen>

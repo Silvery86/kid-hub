@@ -36,7 +36,7 @@ export function Badge({ variant, label, className = '' }: BadgeProps) {
     <View
       className={`flex-row items-center gap-1.5 self-start rounded-pill border-2 px-3 py-1.5 ${config.container} ${className}`.trim()}>
       <Text className="text-sm">{config.emoji}</Text>
-      <Text className={`font-display-bold text-sm ${config.label}`}>{label ?? config.defaultLabel}</Text>
+      <Text className={`font-display-extrabold text-sm ${config.label}`}>{label ?? config.defaultLabel}</Text>
     </View>
   )
 }

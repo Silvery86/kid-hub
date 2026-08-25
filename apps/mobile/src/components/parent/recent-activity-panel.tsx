@@ -19,7 +19,7 @@ export function RecentActivityPanel({ activities }: { activities: ActivityItem[]
     return (
       <View className="items-center gap-2 py-6">
         <Text style={{ fontSize: 24 }}>🎮</Text>
-        <Text className="font-display-semibold text-xs text-text-muted">
+        <Text className="font-display-bold text-xs text-text-muted">
           Chưa có hoạt động nào
         </Text>
       </View>
@@ -35,10 +35,10 @@ export function RecentActivityPanel({ activities }: { activities: ActivityItem[]
           style={shadow('sm')}>
           <Text style={{ fontSize: 20 }}>{a.iconKey ?? '📋'}</Text>
           <View className="min-w-0 flex-1">
-            <Text numberOfLines={1} className="font-display-bold text-sm text-text-primary">
+            <Text numberOfLines={1} className="font-display-extrabold text-sm text-text-primary">
               {a.label}
             </Text>
-            <Text className="mt-0.5 font-display-semibold text-xs text-text-muted">
+            <Text className="mt-0.5 font-display-bold text-xs text-text-muted">
               {formatTime(a.createdAt)}
             </Text>
           </View>

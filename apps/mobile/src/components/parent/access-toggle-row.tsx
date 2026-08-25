@@ -24,7 +24,7 @@ export function AccessToggleRow({ feature, enabled, onToggle, disabled }: Access
         <Text style={{ fontSize: 18 }}>{feature.icon}</Text>
       </View>
 
-      <Text className="min-w-0 flex-1 font-display-bold text-sm text-text-primary">
+      <Text className="min-w-0 flex-1 font-display-extrabold text-sm text-text-primary">
         {feature.label}
       </Text>
 

@@ -134,9 +134,9 @@ export default function DashboardScreen() {
   const nextUpChip =
     nextPeriod && nextSubject ? (
       <View className="mt-4 flex-row items-center gap-2 self-start rounded-chip bg-white/20 px-3 py-2">
-        <Text className="font-display-bold text-xs uppercase text-white/80">Tiếp theo</Text>
-        <Text className="font-display-bold text-sm text-white">{nextSubject.name}</Text>
-        <Text className="font-display-semibold text-xs text-white/85">{nextPeriod.startTime}</Text>
+        <Text className="font-display-extrabold text-xs uppercase text-white/80">Tiếp theo</Text>
+        <Text className="font-display-extrabold text-sm text-white">{nextSubject.name}</Text>
+        <Text className="font-display-bold text-xs text-white/85">{nextPeriod.startTime}</Text>
       </View>
     ) : null
 
@@ -145,8 +145,8 @@ export default function DashboardScreen() {
       <ScrollView className="flex-1" contentContainerClassName="gap-3 p-3" showsVerticalScrollIndicator={false}>
         <View className="gap-3">
           <View className="min-w-0">
-            <Text className="font-display-bold text-3xl text-text-primary">Chào {kidName}!</Text>
-            <Text className="mt-1 min-h-5 font-display-semibold text-base text-text-secondary">
+            <Text className="font-display-extrabold text-3xl text-text-primary">Chào {kidName}!</Text>
+            <Text className="mt-1 min-h-5 font-display-bold text-base text-text-secondary">
               {headerSubtitle}
             </Text>
           </View>
@@ -154,13 +154,13 @@ export default function DashboardScreen() {
           <View className="flex-row flex-wrap gap-2">
             <View className="flex-row items-center gap-1.5 rounded-pill bg-tier-excellent-bg px-4 py-1.5">
               <Text>🪙</Text>
-              <Text className="font-display-bold text-base text-tier-excellent-text">
+              <Text className="font-display-extrabold text-base text-tier-excellent-text">
                 {progress.data?.totalPoints ?? 0} điểm
               </Text>
             </View>
             <View className="flex-row items-center gap-1.5 rounded-pill bg-tier-practice-bg px-3 py-1.5">
               <Text>🔥</Text>
-              <Text className="font-display-bold text-sm text-tier-practice-text">
+              <Text className="font-display-extrabold text-sm text-tier-practice-text">
                 {progress.data?.currentStreak ?? 0} ngày
               </Text>
             </View>
@@ -169,7 +169,7 @@ export default function DashboardScreen() {
               accessibilityRole="button"
               className="flex-row items-center gap-1.5 rounded-pill bg-white px-3 py-1.5">
               <Text>🏆</Text>
-              <Text className="font-display-bold text-sm text-text-secondary">
+              <Text className="font-display-extrabold text-sm text-text-secondary">
                 {earnedBadgeIds.length} huy hiệu
               </Text>
             </PressableScale>
@@ -190,14 +190,14 @@ export default function DashboardScreen() {
               <>
                 <View className="flex-row items-center gap-2">
                   <View className="h-3 w-3 rounded-pill bg-white" />
-                  <Text className="font-display-bold text-xs uppercase text-white/85">
+                  <Text className="font-display-extrabold text-xs uppercase text-white/85">
                     Đang học - Tiết {currentPeriod.periodNumber}
                   </Text>
                 </View>
-                <Text className="mt-2 font-display-bold text-4xl text-white">
+                <Text className="mt-2 font-display-extrabold text-4xl text-white">
                   {currentSubject.name}
                 </Text>
-                <Text className="mt-2 font-display-bold text-base text-white/90">
+                <Text className="mt-2 font-display-extrabold text-base text-white/90">
                   {currentPeriod.startTime} – {currentPeriod.endTime}
                   {minutesLeft != null ? `  · còn ${minutesLeft} phút` : ''}
                 </Text>
@@ -221,9 +221,9 @@ export default function DashboardScreen() {
                 <View className="min-h-40 flex-row items-center justify-center gap-4">
                   <Text style={{ fontSize: 60 }}>{idleHero.emoji}</Text>
                   <View className="min-w-0 flex-1">
-                    <Text className="font-display-bold text-3xl text-white">{idleHero.title}</Text>
+                    <Text className="font-display-extrabold text-3xl text-white">{idleHero.title}</Text>
                     {idleHero.subtitle ? (
-                      <Text className="mt-1 font-display-semibold text-sm text-white/85">
+                      <Text className="mt-1 font-display-bold text-sm text-white/85">
                         {idleHero.subtitle}
                       </Text>
                     ) : null}
@@ -238,20 +238,20 @@ export default function DashboardScreen() {
         {/* Today */}
         <FadeSlideUp delay={STAGGER_MS[0]} className="rounded-card bg-white p-3" testID="dashboard-day-rail">
           <View className="mb-3 flex-row items-baseline justify-between px-0.5">
-            <Text className="font-display-bold text-lg text-text-primary">Hôm nay</Text>
+            <Text className="font-display-extrabold text-lg text-text-primary">Hôm nay</Text>
             {schoolPeriods.length > 0 ? (
               <View className="flex-row items-center gap-2">
                 <View className="rounded-pill bg-shell-light px-2.5 py-0.5">
-                  <Text className="font-display-bold text-xs text-text-muted">
+                  <Text className="font-display-extrabold text-xs text-text-muted">
                     {schoolPeriods.length} tiết
                   </Text>
                 </View>
-                <Text className="font-display-semibold text-xs text-text-muted">
+                <Text className="font-display-bold text-xs text-text-muted">
                   {formatDayTimeRange(periods)}
                 </Text>
               </View>
             ) : (
-              <Text className="font-display-semibold text-xs text-text-muted">
+              <Text className="font-display-bold text-xs text-text-muted">
                 {eveningBlocks.length > 0 ? `${eveningBlocks.length} buổi tối` : 'Không có tiết học'}
               </Text>
             )}
@@ -264,14 +264,14 @@ export default function DashboardScreen() {
               progress={periodProgress}
             />
           ) : eveningBlocks.length === 0 ? (
-            <Text className="py-4 text-center font-display-semibold text-sm text-text-muted">
+            <Text className="py-4 text-center font-display-bold text-sm text-text-muted">
               Hôm nay không có lịch học.
             </Text>
           ) : null}
 
           {eveningBlocks.length > 0 ? (
             <View className={schoolPeriods.length > 0 ? 'mt-3 border-t border-surface-muted pt-3' : ''}>
-              <Text className="mb-2 font-display-bold text-[10px] uppercase text-text-muted">
+              <Text className="mb-2 font-display-extrabold text-[10px] uppercase text-text-muted">
                 Học thêm buổi tối
               </Text>
               <View className="gap-2">
@@ -282,10 +282,10 @@ export default function DashboardScreen() {
                       key={blk.id ?? i}
                       className="flex-row items-center gap-2.5 rounded-chip bg-shell-light px-3 py-2">
                       <Text style={{ fontSize: 16 }}>{subj?.icon ?? '📚'}</Text>
-                      <Text className="flex-1 font-display-semibold text-sm text-text-primary">
+                      <Text className="flex-1 font-display-bold text-sm text-text-primary">
                         {subj?.name ?? blk.subjectId}
                       </Text>
-                      <Text className="font-display-semibold text-xs text-text-muted">
+                      <Text className="font-display-bold text-xs text-text-muted">
                         {blk.startTime}–{blk.endTime}
                       </Text>
                     </View>
@@ -298,7 +298,7 @@ export default function DashboardScreen() {
 
         {/* Games */}
         <FadeSlideUp delay={STAGGER_MS[1]} className="rounded-card bg-white p-3">
-          <Text className="mb-3 font-display-bold text-lg text-text-primary">Trò chơi 🎮</Text>
+          <Text className="mb-3 font-display-extrabold text-lg text-text-primary">Trò chơi 🎮</Text>
           <View className="gap-3">
             <GameEntryCard
               title="Number Ninja"
@@ -326,10 +326,10 @@ export default function DashboardScreen() {
             accessibilityRole="button"
             accessibilityLabel="Mở danh sách bài tập"
             className="mb-2 flex-row items-center justify-between">
-            <Text className="font-display-bold text-lg text-text-primary">Bài tập →</Text>
+            <Text className="font-display-extrabold text-lg text-text-primary">Bài tập →</Text>
             <View className="flex-row items-center gap-2">
               {homeworkItems.length === 0 ? (
-                <Text className="font-display-bold text-xs text-text-muted">Chưa giao</Text>
+                <Text className="font-display-extrabold text-xs text-text-muted">Chưa giao</Text>
               ) : (
                 <>
                   <ProgressRing
@@ -338,7 +338,7 @@ export default function DashboardScreen() {
                     size={22}
                   />
                   <Text
-                    className={`font-display-bold text-xs ${
+                    className={`font-display-extrabold text-xs ${
                       pendingHomeworkCount === 0 ? 'text-success-strong' : 'text-tier-excellent-text'
                     }`}>
                     {pendingHomeworkCount === 0 ? 'Xong!' : `${pendingHomeworkCount} chưa làm`}
@@ -350,7 +350,7 @@ export default function DashboardScreen() {
 
           <View className="gap-2">
             {homeworkItems.length === 0 ? (
-              <Text className="py-6 text-center font-display-semibold text-sm text-text-muted">
+              <Text className="py-6 text-center font-display-bold text-sm text-text-muted">
                 Hôm nay không có bài tập.
               </Text>
             ) : (
@@ -368,12 +368,12 @@ export default function DashboardScreen() {
                     <View className="min-w-0 flex-1">
                       <Text
                         numberOfLines={1}
-                        className={`font-display-bold text-sm ${
+                        className={`font-display-extrabold text-sm ${
                           hw.isDone ? 'text-text-muted line-through' : 'text-text-primary'
                         }`}>
                         {hw.homeworkNote}
                       </Text>
-                      <Text className="font-display-semibold text-[11px] text-text-muted">
+                      <Text className="font-display-bold text-[11px] text-text-muted">
                         {subject?.name ?? hw.subjectId}
                       </Text>
                     </View>
@@ -398,14 +398,14 @@ export default function DashboardScreen() {
             testID="parent-mode"
             className="min-h-tap flex-1 flex-row items-center justify-center gap-2 rounded-pill bg-shell-parent py-3">
             <Text style={{ fontSize: 16 }}>🛡️</Text>
-            <Text className="font-display-bold text-sm text-text-body">Bố mẹ</Text>
+            <Text className="font-display-extrabold text-sm text-text-body">Bố mẹ</Text>
           </PressableScale>
           <PressableScale
             onPress={signOut}
             accessibilityRole="button"
             testID="sign-out"
             className="min-h-tap flex-1 items-center justify-center rounded-pill border border-btn-ghost-border py-3">
-            <Text className="font-display-semibold text-vietnamese">Đăng xuất</Text>
+            <Text className="font-display-bold text-vietnamese">Đăng xuất</Text>
           </PressableScale>
         </View>
       </ScrollView>

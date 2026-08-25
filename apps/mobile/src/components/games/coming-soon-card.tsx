@@ -22,14 +22,14 @@ export function ComingSoonCard({ emoji, name, desc, compact = false }: ComingSoo
         borderColor: tokens.colors['border-soft'],
       }}>
       <View className={`absolute rounded-pill bg-surface-muted px-2 py-0.5 ${compact ? 'right-2 top-2' : 'right-2.5 top-2.5'}`}>
-        <Text className="font-display-bold text-[10px] text-text-muted">Sắp ra mắt</Text>
+        <Text className="font-display-extrabold text-[10px] text-text-muted">Sắp ra mắt</Text>
       </View>
       <Text style={{ fontSize: compact ? 28 : 36 }}>{emoji}</Text>
       <View>
-        <Text className={`font-display-bold text-text-body-soft ${compact ? 'text-[13px]' : 'text-[15px]'}`}>
+        <Text className={`font-display-extrabold text-text-body-soft ${compact ? 'text-[13px]' : 'text-[15px]'}`}>
           {name}
         </Text>
-        <Text className={`mt-0.5 font-display-semibold text-text-muted ${compact ? 'text-[10px]' : 'text-[11px]'}`}>
+        <Text className={`mt-0.5 font-display-bold text-text-muted ${compact ? 'text-[10px]' : 'text-[11px]'}`}>
           {desc}
         </Text>
       </View>

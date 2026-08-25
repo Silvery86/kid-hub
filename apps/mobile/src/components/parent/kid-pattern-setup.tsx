@@ -73,7 +73,7 @@ export function KidPatternSetup() {
 
   return (
     <View className="gap-3">
-      <Text className="font-display-bold text-sm text-text-secondary">{hint}</Text>
+      <Text className="font-display-extrabold text-sm text-text-secondary">{hint}</Text>
 
       <Shake trigger={errorCount} className="flex-row flex-wrap gap-2">
         {SYMBOLS.map((s) => {
@@ -97,7 +97,7 @@ export function KidPatternSetup() {
 
       {error ? (
         <Text
-          className={`font-display-semibold text-xs ${saved ? 'text-success-strong' : 'text-btn-danger'}`}>
+          className={`font-display-bold text-xs ${saved ? 'text-success-strong' : 'text-btn-danger'}`}>
           {error}
         </Text>
       ) : null}

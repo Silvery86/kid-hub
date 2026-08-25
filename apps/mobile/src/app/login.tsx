@@ -58,8 +58,8 @@ export default function LoginScreen() {
         <View className="flex-1 justify-center gap-6 px-6">
           <View className="items-center gap-1">
             <Text style={{ fontSize: 56 }}>🛡️</Text>
-            <Text className="font-display-bold text-3xl text-text-primary">Kid Hub</Text>
-            <Text className="font-display-semibold text-base text-text-secondary">
+            <Text className="font-display-extrabold text-3xl text-text-primary">Kid Hub</Text>
+            <Text className="font-display-bold text-base text-text-secondary">
               Đăng nhập cho bố mẹ
             </Text>
           </View>
@@ -91,7 +91,7 @@ export default function LoginScreen() {
           </View>
 
           {error ? (
-            <Text className="font-display-semibold text-sm text-btn-danger" testID="login-error">
+            <Text className="font-display-bold text-sm text-btn-danger" testID="login-error">
               {error}
             </Text>
           ) : null}
@@ -104,7 +104,7 @@ export default function LoginScreen() {
             Đăng nhập
           </KidButton>
 
-          <Text className="text-center font-display-semibold text-xs text-text-muted">
+          <Text className="text-center font-display-bold text-xs text-text-muted">
             Tài khoản và mã PIN được tạo trên bản web.
           </Text>
         </View>

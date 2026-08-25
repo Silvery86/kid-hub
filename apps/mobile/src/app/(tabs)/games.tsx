@@ -58,8 +58,8 @@ export default function GamesScreen() {
           contentContainerClassName="gap-3.5 px-3.5 pb-4 pt-3.5"
           showsVerticalScrollIndicator={false}>
           <View>
-            <Text className="font-display-bold text-2xl text-text-primary">Trò chơi 🎮</Text>
-            <Text className="mt-0.5 font-display-semibold text-xs text-text-secondary">
+            <Text className="font-display-extrabold text-2xl text-text-primary">Trò chơi 🎮</Text>
+            <Text className="mt-0.5 font-display-bold text-xs text-text-secondary">
               Học mà chơi · chơi mà học!
             </Text>
           </View>
@@ -80,7 +80,7 @@ export default function GamesScreen() {
           </FadeSlideUp>
 
           <FadeSlideUp delay={STAGGER_MS[1]}>
-            <Text className="mb-2 font-display-bold text-[13px] uppercase text-text-muted">
+            <Text className="mb-2 font-display-extrabold text-[13px] uppercase text-text-muted">
               Sắp ra mắt
             </Text>
             <View className="flex-row gap-2">

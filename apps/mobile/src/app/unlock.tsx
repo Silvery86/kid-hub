@@ -52,7 +52,7 @@ function FilterTabs({
             className={`rounded-pill px-3.5 py-1.5 ${isActive ? 'bg-btn-primary' : 'bg-white'}`}
             style={isActive ? coloredShadow(tokens.colors['btn-primary'], 'sm', 0.55) : undefined}>
             <Text
-              className={`font-display-bold text-xs ${isActive ? 'text-white' : 'text-text-secondary'}`}>
+              className={`font-display-extrabold text-xs ${isActive ? 'text-white' : 'text-text-secondary'}`}>
               {t.label}
             </Text>
           </PressableScale>
@@ -82,13 +82,13 @@ function BadgesSummary({
       <View className="flex-row items-center gap-3">
         <Text style={{ fontSize: 40 }}>🏆</Text>
         <View className="min-w-0 flex-1">
-          <Text className="font-display-bold text-[11px] uppercase text-white/85">
+          <Text className="font-display-extrabold text-[11px] uppercase text-white/85">
             Bộ sưu tập huy hiệu của {kidName}
           </Text>
-          <Text className="font-display-bold text-2xl text-white">
+          <Text className="font-display-extrabold text-2xl text-white">
             {earned} / {total}
           </Text>
-          <Text className="font-display-semibold text-[11px] text-white/85">huy hiệu đã đạt</Text>
+          <Text className="font-display-bold text-[11px] text-white/85">huy hiệu đã đạt</Text>
         </View>
         <View className="flex-row gap-0.5">
           {[1, 2, 3, 4, 5].map((i) => (
@@ -144,7 +144,7 @@ export default function BadgesScreen() {
           className="flex-1"
           contentContainerClassName="gap-3 px-3.5 pb-4 pt-3.5"
           showsVerticalScrollIndicator={false}>
-          <Text className="font-display-bold text-[22px] text-text-primary">Huy hiệu 🏆</Text>
+          <Text className="font-display-extrabold text-[22px] text-text-primary">Huy hiệu 🏆</Text>
 
           <FadeSlideUp delay={STAGGER_MS[0]}>
             <BadgesSummary

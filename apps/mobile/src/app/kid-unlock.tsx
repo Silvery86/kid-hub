@@ -126,11 +126,11 @@ export default function KidUnlockScreen() {
             <Text className="mb-3" style={{ fontSize: 64 }}>
               🔓
             </Text>
-            <Text className="font-display-bold text-3xl text-white">Mở khóa cho bé</Text>
-            <Text className="mt-2 font-display-semibold text-sm text-text-subtle">
+            <Text className="font-display-extrabold text-3xl text-white">Mở khóa cho bé</Text>
+            <Text className="mt-2 font-display-bold text-sm text-text-subtle">
               Chạm {KID_PATTERN_LENGTH} hình theo đúng thứ tự đã cài đặt
             </Text>
-            <Text className="mt-3 font-display-bold text-sm text-math-light">{hint}</Text>
+            <Text className="mt-3 font-display-extrabold text-sm text-math-light">{hint}</Text>
           </View>
 
           <Shake trigger={errorCount} className="flex-row flex-wrap gap-3">
@@ -150,11 +150,11 @@ export default function KidUnlockScreen() {
           </Shake>
 
           {error ? (
-            <Text className="mt-4 text-center font-display-semibold text-sm text-btn-danger">
+            <Text className="mt-4 text-center font-display-bold text-sm text-btn-danger">
               {error}
             </Text>
           ) : (
-            <Text className="mt-4 text-center font-display-semibold text-xs text-text-secondary">
+            <Text className="mt-4 text-center font-display-bold text-xs text-text-secondary">
               Nhấn nút Bố mẹ để vào khu quản lý
             </Text>
           )}

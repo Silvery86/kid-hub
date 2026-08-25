@@ -49,13 +49,13 @@ export function GradeCard({ subjectId, score, badge, compact = false }: GradeCar
         <View className="mb-1 flex-row items-center justify-between gap-2">
           <Text
             numberOfLines={1}
-            className={`flex-1 font-display-bold text-text-primary ${compact ? 'text-sm' : 'text-base'}`}>
+            className={`flex-1 font-display-extrabold text-text-primary ${compact ? 'text-sm' : 'text-base'}`}>
             {subject.name}
           </Text>
           <View className="flex-row items-center gap-2">
             <GradeTierBadge tier={badge} compact={compact} />
             <Text
-              className={`min-w-9 text-right font-display-bold text-text-primary ${compact ? 'text-lg' : 'text-2xl'}`}>
+              className={`min-w-9 text-right font-display-extrabold text-text-primary ${compact ? 'text-lg' : 'text-2xl'}`}>
               {score}
             </Text>
           </View>

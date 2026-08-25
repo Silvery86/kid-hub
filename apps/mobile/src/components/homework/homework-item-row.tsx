@@ -63,14 +63,14 @@ export function HomeworkItemRow({
       <View className="min-w-0 flex-1">
         <Text
           numberOfLines={1}
-          className={`font-display-bold text-text-primary ${compact ? 'text-[13px]' : 'text-[15px]'} ${
+          className={`font-display-extrabold text-text-primary ${compact ? 'text-[13px]' : 'text-[15px]'} ${
             item.isDone ? 'line-through' : ''
           }`}>
           {item.homeworkNote || subject?.name || 'Bài tập'}
         </Text>
         {subject ? (
           <Text
-            className={`mt-0.5 font-display-semibold text-text-secondary ${compact ? 'text-[11px]' : 'text-xs'}`}>
+            className={`mt-0.5 font-display-bold text-text-secondary ${compact ? 'text-[11px]' : 'text-xs'}`}>
             {subject.name}
           </Text>
         ) : null}
@@ -80,7 +80,7 @@ export function HomeworkItemRow({
         <View
           className="rounded-pill px-2 py-0.5"
           style={{ backgroundColor: mixWithWhite(color, 12) }}>
-          <Text className="font-display-bold text-[10px]" style={{ color }}>
+          <Text className="font-display-extrabold text-[10px]" style={{ color }}>
             Ưu tiên
           </Text>
         </View>
@@ -91,7 +91,7 @@ export function HomeworkItemRow({
           compact ? 'h-[26px] w-[26px]' : 'h-8 w-8'
         } ${item.isDone ? 'bg-progress-complete' : 'border-[3px] border-border-soft bg-white'}`}>
         {item.isDone ? (
-          <Text className={`font-display-bold text-white ${compact ? 'text-xs' : 'text-sm'}`}>✓</Text>
+          <Text className={`font-display-extrabold text-white ${compact ? 'text-xs' : 'text-sm'}`}>✓</Text>
         ) : null}
       </View>
     </PressableScale>

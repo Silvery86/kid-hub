@@ -67,7 +67,7 @@ function SubjectPicker({
           className="min-h-tap flex-row items-center gap-1.5 rounded-pill border-2 border-border-soft bg-white px-3 py-1.5"
           style={{ opacity: disabled ? 0.5 : 1 }}>
           <Text style={{ fontSize: 14 }}>{s.icon}</Text>
-          <Text className="font-display-bold text-xs text-text-primary">{s.name}</Text>
+          <Text className="font-display-extrabold text-xs text-text-primary">{s.name}</Text>
         </PressableScale>
       ))}
     </View>
@@ -90,10 +90,10 @@ function RowCard({
       style={shadow('sm')}>
       <SubjectIcon subjectId={period.subjectId} size={36} rounded={10} />
       <View className="min-w-0 flex-1">
-        <Text numberOfLines={1} className="font-display-bold text-sm text-text-primary">
+        <Text numberOfLines={1} className="font-display-extrabold text-sm text-text-primary">
           {subject?.name ?? period.subjectId}
         </Text>
-        <Text className="font-display-semibold text-xs text-text-secondary">
+        <Text className="font-display-bold text-xs text-text-secondary">
           {period.startTime} – {period.endTime}
           {period.periodNumber != null ? ` · Tiết ${period.periodNumber}` : ''}
         </Text>
@@ -158,15 +158,15 @@ export function ScheduleManager({ week }: { week: WeekView | undefined }) {
       <DayTabs activeDay={activeDay} todayDow={null} onChange={setActiveDay} compact />
 
       {error ? (
-        <Text className="font-display-semibold text-xs text-btn-danger">{error}</Text>
+        <Text className="font-display-bold text-xs text-btn-danger">{error}</Text>
       ) : null}
 
-      <Text className="font-display-bold text-sm text-text-primary">
+      <Text className="font-display-extrabold text-sm text-text-primary">
         {DAY_LABELS[activeDay]} · {periods.length} tiết
       </Text>
 
       {periods.length === 0 ? (
-        <Text className="py-3 text-center font-display-semibold text-xs text-text-muted">
+        <Text className="py-3 text-center font-display-bold text-xs text-text-muted">
           Chưa có tiết nào.
         </Text>
       ) : (
@@ -180,12 +180,12 @@ export function ScheduleManager({ week }: { week: WeekView | undefined }) {
         ))
       )}
 
-      <Text className="mt-1 font-display-bold text-xs uppercase text-text-muted">Thêm tiết</Text>
+      <Text className="mt-1 font-display-extrabold text-xs uppercase text-text-muted">Thêm tiết</Text>
       <SubjectPicker onPick={addPeriod} disabled={createPeriod.isPending} />
 
-      <Text className="mt-2 font-display-bold text-sm text-text-primary">🌙 Học thêm buổi tối</Text>
+      <Text className="mt-2 font-display-extrabold text-sm text-text-primary">🌙 Học thêm buổi tối</Text>
       {evening.length === 0 ? (
-        <Text className="py-2 text-center font-display-semibold text-xs text-text-muted">
+        <Text className="py-2 text-center font-display-bold text-xs text-text-muted">
           Chưa có buổi nào.
         </Text>
       ) : (

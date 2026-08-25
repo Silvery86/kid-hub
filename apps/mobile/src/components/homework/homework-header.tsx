@@ -47,11 +47,11 @@ export function HomeworkHeader({ total, done, compact = false }: HomeworkHeaderP
       style={shadow('sm')}>
       <View className="flex-row items-center justify-between gap-3">
         <View className="min-w-0 flex-1">
-          <Text className={`font-display-bold text-text-primary ${compact ? 'text-[13px]' : 'text-base'}`}>
+          <Text className={`font-display-extrabold text-text-primary ${compact ? 'text-[13px]' : 'text-base'}`}>
             Bài tập hôm nay
           </Text>
           <Text
-            className={`mt-0.5 font-display-semibold text-text-secondary ${compact ? 'text-[11px]' : 'text-[13px]'}`}>
+            className={`mt-0.5 font-display-bold text-text-secondary ${compact ? 'text-[11px]' : 'text-[13px]'}`}>
             {done}/{total} bài đã hoàn thành
             {dayLabel ? ` · ${dayLabel}` : ''}
           </Text>
@@ -79,7 +79,7 @@ export function HomeworkHeader({ total, done, compact = false }: HomeworkHeaderP
               transform={`rotate(-90 ${ring / 2} ${ring / 2})`}
             />
           </Svg>
-          <Text className={`font-display-bold text-text-primary ${compact ? 'text-[11px]' : 'text-[13px]'}`}>
+          <Text className={`font-display-extrabold text-text-primary ${compact ? 'text-[11px]' : 'text-[13px]'}`}>
             {pct}%
           </Text>
         </View>

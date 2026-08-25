@@ -30,7 +30,7 @@ const GROUPS: KidAccessGroup[] = ['games', 'views', 'settings']
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View className="gap-3 rounded-card bg-white p-4" style={shadow('sm')}>
-      <Text className="font-display-bold text-base text-text-primary">{title}</Text>
+      <Text className="font-display-extrabold text-base text-text-primary">{title}</Text>
       {children}
     </View>
   )
@@ -65,7 +65,7 @@ export default function KidAccessScreen() {
         className="flex-1"
         contentContainerClassName="gap-3 px-3.5 pb-6 pt-3.5"
         showsVerticalScrollIndicator={false}>
-        <Text className="font-display-bold text-2xl text-text-primary">Quyền của bé 🔐</Text>
+        <Text className="font-display-extrabold text-2xl text-text-primary">Quyền của bé 🔐</Text>
 
         <FadeSlideUp delay={STAGGER_MS[0]}>
           <Card title="Thời gian dùng máy">
@@ -76,7 +76,7 @@ export default function KidAccessScreen() {
                 onChangeLimit={(mins) => setLimit.mutate(mins)}
               />
             ) : (
-              <Text className="font-display-semibold text-xs text-text-muted">Đang tải…</Text>
+              <Text className="font-display-bold text-xs text-text-muted">Đang tải…</Text>
             )}
           </Card>
         </FadeSlideUp>

@@ -36,16 +36,16 @@ export function GameEntryCard({
       style={shadow('lg')}>
       <Text style={{ fontSize: 44 }}>{emoji}</Text>
       <View>
-        <Text className="font-display-bold text-xl text-white">{title}</Text>
+        <Text className="font-display-extrabold text-xl text-white">{title}</Text>
         <Text className="text-sm text-white/80">{description}</Text>
       </View>
       {bestStars ? (
         <View className="flex-row items-center gap-2">
           <StarRating value={bestStars} size={20} />
-          <Text className="font-display-semibold text-xs text-white/70">Kỷ lục</Text>
+          <Text className="font-display-bold text-xs text-white/70">Kỷ lục</Text>
         </View>
       ) : (
-        <Text className="font-display-semibold text-xs text-white/60">Chưa chơi</Text>
+        <Text className="font-display-bold text-xs text-white/60">Chưa chơi</Text>
       )}
     </PressableScale>
   )

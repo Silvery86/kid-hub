@@ -18,8 +18,8 @@ export function GradesSummaryBar({ average, topSubjectId, compact = false }: Gra
         className={`flex-1 flex-row items-center gap-2.5 rounded-row bg-btn-primary ${compact ? 'p-3' : 'px-4 py-3.5'}`}>
         <Text style={{ fontSize: compact ? 24 : 32 }}>📊</Text>
         <View>
-          <Text className="font-display-bold text-[11px] uppercase text-white/85">Điểm TB</Text>
-          <Text className={`font-display-bold text-white ${compact ? 'text-[22px]' : 'text-[28px]'}`}>
+          <Text className="font-display-extrabold text-[11px] uppercase text-white/85">Điểm TB</Text>
+          <Text className={`font-display-extrabold text-white ${compact ? 'text-[22px]' : 'text-[28px]'}`}>
             {average}
           </Text>
         </View>
@@ -37,12 +37,12 @@ export function GradesSummaryBar({ average, topSubjectId, compact = false }: Gra
           <Text style={{ fontSize: 24 }}>⭐</Text>
         )}
         <View className="min-w-0 flex-1">
-          <Text className="font-display-bold text-[11px] uppercase text-text-muted">
+          <Text className="font-display-extrabold text-[11px] uppercase text-text-muted">
             Môn giỏi nhất
           </Text>
           <Text
             numberOfLines={1}
-            className={`font-display-bold text-text-primary ${compact ? 'text-sm' : 'text-base'}`}>
+            className={`font-display-extrabold text-text-primary ${compact ? 'text-sm' : 'text-base'}`}>
             {top?.name ?? '—'}
           </Text>
         </View>

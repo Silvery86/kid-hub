@@ -78,8 +78,8 @@ export default function ScheduleScreen() {
           contentContainerClassName="gap-3 px-3.5 pb-4 pt-3.5"
           showsVerticalScrollIndicator={false}>
           <View>
-            <Text className="font-display-bold text-[22px] text-text-primary">Lịch học</Text>
-            <Text className="mt-0.5 font-display-semibold text-xs text-text-secondary">
+            <Text className="font-display-extrabold text-[22px] text-text-primary">Lịch học</Text>
+            <Text className="mt-0.5 font-display-bold text-xs text-text-secondary">
               {formatWeekSubtitleForOffset(0)}
             </Text>
           </View>

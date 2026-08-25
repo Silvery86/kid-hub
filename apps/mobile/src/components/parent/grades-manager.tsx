@@ -48,7 +48,7 @@ export function GradesManager({ grades }: { grades: SubjectGrade[] }) {
   return (
     <View className="gap-3">
       <View className="flex-row items-center justify-between">
-        <Text className="font-display-bold text-base text-text-primary">Nhập điểm</Text>
+        <Text className="font-display-extrabold text-base text-text-primary">Nhập điểm</Text>
         <SemesterTabs active={semester} onChange={setSemester} compact />
       </View>
 
@@ -63,11 +63,11 @@ export function GradesManager({ grades }: { grades: SubjectGrade[] }) {
             <SubjectIcon subjectId={subject.id} size={36} rounded={10} />
 
             <View className="min-w-0 flex-1">
-              <Text numberOfLines={1} className="font-display-bold text-sm text-text-primary">
+              <Text numberOfLines={1} className="font-display-extrabold text-sm text-text-primary">
                 {subject.name}
               </Text>
               <View className="mt-1 flex-row items-center gap-2">
-                <Text className="font-display-bold text-lg text-text-primary">
+                <Text className="font-display-extrabold text-lg text-text-primary">
                   {score.toFixed(1)}
                 </Text>
                 <GradeTierBadge tier={calculateBadge(score)} compact />

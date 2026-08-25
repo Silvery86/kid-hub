@@ -54,7 +54,7 @@ export function DayRail({ periods, currentPeriodNumber, progress, onPick }: DayR
               isNow ? coloredShadow(color, 'lg', 0.35) : undefined,
             ]}>
             <View className="mb-2 flex-row items-center justify-between">
-              <Text className="font-display-bold text-[10px] uppercase text-text-muted">
+              <Text className="font-display-extrabold text-[10px] uppercase text-text-muted">
                 Tiết {period.periodNumber}
               </Text>
               {isDone ? <Text className="text-sm text-progress-complete">✓</Text> : null}
@@ -66,10 +66,10 @@ export function DayRail({ periods, currentPeriodNumber, progress, onPick }: DayR
             <View className="flex-row items-center gap-2">
               <SubjectIcon subjectId={period.subjectId} size={28} rounded={8} />
               <View className="min-w-0 flex-1">
-                <Text numberOfLines={1} className="font-display-bold text-[13px] text-text-primary">
+                <Text numberOfLines={1} className="font-display-extrabold text-[13px] text-text-primary">
                   {subject?.name}
                 </Text>
-                <Text className="font-display-semibold text-[11px] text-text-muted">
+                <Text className="font-display-bold text-[11px] text-text-muted">
                   {period.startTime}
                 </Text>
               </View>

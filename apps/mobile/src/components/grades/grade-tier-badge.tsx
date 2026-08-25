@@ -28,7 +28,7 @@ export function GradeTierBadge({ tier, compact = false }: { tier: BadgeTier; com
   const { container, label } = TIER_STYLES[tier]
   return (
     <View className={`rounded-pill border-2 ${compact ? 'px-2 py-0.5' : 'px-2.5 py-0.5'} ${container}`}>
-      <Text className={`font-display-bold ${compact ? 'text-[10px]' : 'text-[11px]'} ${label}`}>
+      <Text className={`font-display-extrabold ${compact ? 'text-[10px]' : 'text-[11px]'} ${label}`}>
         {TIER_LABELS[tier]}
       </Text>
     </View>

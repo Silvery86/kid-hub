@@ -29,7 +29,7 @@ export function SemesterTabs({ active, onChange, compact = false }: SemesterTabs
             // Web's 0 4px 10px -3px rgba(59,130,246,0.55) glow under the active tab.
             style={isActive ? coloredShadow(tokens.colors['btn-primary'], 'sm', 0.55) : undefined}>
             <Text
-              className={`font-display-bold ${compact ? 'text-xs' : 'text-sm'} ${
+              className={`font-display-extrabold ${compact ? 'text-xs' : 'text-sm'} ${
                 isActive ? 'text-white' : 'text-text-secondary'
               }`}>
               Học kỳ {s}

@@ -39,18 +39,18 @@ export function BadgeCard({ badge, compact = false }: { badge: BadgeDisplayItem;
       <Text style={{ fontSize: compact ? 32 : 40 }}>{badge.emoji}</Text>
 
       <View>
-        <Text className={`font-display-bold text-text-primary ${compact ? 'text-xs' : 'text-sm'}`}>
+        <Text className={`font-display-extrabold text-text-primary ${compact ? 'text-xs' : 'text-sm'}`}>
           {badge.name}
         </Text>
         <Text
-          className={`mt-0.5 font-display-semibold text-text-secondary ${compact ? 'text-[10px]' : 'text-[11px]'}`}>
+          className={`mt-0.5 font-display-bold text-text-secondary ${compact ? 'text-[10px]' : 'text-[11px]'}`}>
           {badge.description}
         </Text>
       </View>
 
       {badge.isEarned ? (
         <Text
-          className={`font-display-bold text-tier-excellent-text ${compact ? 'text-[10px]' : 'text-[11px]'}`}>
+          className={`font-display-extrabold text-tier-excellent-text ${compact ? 'text-[10px]' : 'text-[11px]'}`}>
           {badge.earnedLabel ?? '✓'} Đã đạt
         </Text>
       ) : (
@@ -58,7 +58,7 @@ export function BadgeCard({ badge, compact = false }: { badge: BadgeDisplayItem;
           <View className={`overflow-hidden rounded-pill bg-border-soft ${compact ? 'h-1' : 'h-1.5'}`}>
             <View className="h-full rounded-pill bg-btn-primary" style={{ width: `${pct}%` }} />
           </View>
-          <Text className="mt-1 font-display-semibold text-[10px] text-text-muted">{pct}%</Text>
+          <Text className="mt-1 font-display-bold text-[10px] text-text-muted">{pct}%</Text>
         </View>
       )}
     </View>

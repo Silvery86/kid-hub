@@ -36,7 +36,7 @@ export function GameStatsBar({
           style={{ backgroundColor: c.bg }}>
           <Text style={{ fontSize: compact ? 14 : 18 }}>{c.icon}</Text>
           <Text
-            className={`font-display-bold ${compact ? 'text-[11px]' : 'text-[13px]'}`}
+            className={`font-display-extrabold ${compact ? 'text-[11px]' : 'text-[13px]'}`}
             style={{ color: c.fg }}>
             {c.val} {c.label}
           </Text>

@@ -28,11 +28,11 @@ export function ScreenTimePanel({ screenTime, onChangeLimit, isSaving }: ScreenT
   return (
     <View className="gap-3">
       <View className="flex-row items-baseline justify-between">
-        <Text className="font-display-bold text-2xl text-text-primary">
+        <Text className="font-display-extrabold text-2xl text-text-primary">
           {usedMins} <Text className="text-base text-text-secondary">/ {screenTime.limitMins} phút</Text>
         </Text>
         <Text
-          className={`font-display-bold text-sm ${isOver ? 'text-btn-danger' : 'text-text-muted'}`}>
+          className={`font-display-extrabold text-sm ${isOver ? 'text-btn-danger' : 'text-text-muted'}`}>
           {pct}%
         </Text>
       </View>
@@ -52,7 +52,7 @@ export function ScreenTimePanel({ screenTime, onChangeLimit, isSaving }: ScreenT
           accessibilityLabel="Giảm giới hạn 30 phút">
           −
         </KidButton>
-        <Text className="flex-1 text-center font-display-bold text-sm text-text-secondary">
+        <Text className="flex-1 text-center font-display-extrabold text-sm text-text-secondary">
           Giới hạn mỗi ngày
         </Text>
         <KidButton

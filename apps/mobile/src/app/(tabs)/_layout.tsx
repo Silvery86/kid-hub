@@ -43,7 +43,7 @@ export default function TabsLayout() {
         },
         tabBarLabelStyle: {
           fontSize: 10,
-          fontFamily: tokens.fonts.faces['display-bold'],
+          fontFamily: tokens.fonts.faces['display-extrabold'],
         },
       }}>
       <Tabs.Screen

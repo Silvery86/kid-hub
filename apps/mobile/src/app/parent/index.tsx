@@ -32,8 +32,8 @@ const SEGMENTS: readonly Segment<PanelView>[] = [
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <View className="flex-1 gap-1 rounded-button bg-white p-3" style={shadow('sm')}>
-      <Text className="font-display-bold text-xl text-text-primary">{value}</Text>
-      <Text className="font-display-semibold text-[11px] text-text-secondary">{label}</Text>
+      <Text className="font-display-extrabold text-xl text-text-primary">{value}</Text>
+      <Text className="font-display-bold text-[11px] text-text-secondary">{label}</Text>
     </View>
   )
 }
@@ -61,7 +61,7 @@ export default function ParentDashboard() {
         contentContainerClassName="gap-3 px-3.5 pb-6 pt-3.5"
         showsVerticalScrollIndicator={false}>
         <View className="flex-row items-center justify-between gap-2">
-          <Text className="font-display-bold text-2xl text-text-primary">Bố mẹ 🛡️</Text>
+          <Text className="font-display-extrabold text-2xl text-text-primary">Bố mẹ 🛡️</Text>
           <KidButton
             variant="ghost"
             onPress={() => {
@@ -88,8 +88,8 @@ export default function ParentDashboard() {
             </View>
 
             <View className="gap-2 rounded-card bg-white p-4" style={shadow('sm')}>
-              <Text className="font-display-bold text-base text-text-primary">Lịch hôm nay</Text>
-              <Text className="font-display-semibold text-xs text-text-secondary">
+              <Text className="font-display-extrabold text-base text-text-primary">Lịch hôm nay</Text>
+              <Text className="font-display-bold text-xs text-text-secondary">
                 {periods.length > 0 ? formatDayTimeRange(periods) : 'Không có tiết học'}
               </Text>
             </View>

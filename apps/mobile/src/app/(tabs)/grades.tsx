@@ -27,7 +27,7 @@ export default function GradesScreen() {
           contentContainerClassName="gap-3 px-3.5 pb-4 pt-3.5"
           showsVerticalScrollIndicator={false}>
           <View className="flex-row items-center justify-between gap-2">
-            <Text className="font-display-bold text-2xl text-text-primary">Điểm số ⭐</Text>
+            <Text className="font-display-extrabold text-2xl text-text-primary">Điểm số ⭐</Text>
             <SemesterTabs active={semester} onChange={setSemester} compact />
           </View>
 

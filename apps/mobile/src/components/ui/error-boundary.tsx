@@ -57,7 +57,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         className="mx-4 my-6 min-h-[240px] items-center justify-center rounded-card bg-white p-8"
         style={shadow('xl')}>
         <Text className="mb-4 text-7xl">😵</Text>
-        <Text className="mb-2 font-display-bold text-2xl text-text-body">Ối! Có lỗi rồi</Text>
+        <Text className="mb-2 font-display-extrabold text-2xl text-text-body">Ối! Có lỗi rồi</Text>
         <Text className="mb-6 text-lg text-text-secondary">Khôi thử nhấn nút bên dưới nhé!</Text>
         <View className="items-center gap-3">
           <KidButton onPress={this.handleReset}>Thử lại 🔄</KidButton>

@@ -28,7 +28,7 @@ function StatusPill({ label, tone }: { label: string; tone: 'amber' | 'emerald' 
   const text = tone === 'amber' ? 'text-tier-excellent-text' : 'text-success-text'
   return (
     <View className={`rounded-pill px-3 py-1 ${styles}`}>
-      <Text className={`font-display-bold text-xs ${text}`}>{label}</Text>
+      <Text className={`font-display-extrabold text-xs ${text}`}>{label}</Text>
     </View>
   )
 }
@@ -64,8 +64,8 @@ export default function HomeworkScreen() {
       <Screen>
         <View className="flex-1 items-center justify-center gap-4 p-6">
           <Text style={{ fontSize: 80 }}>🎉</Text>
-          <Text className="font-display-bold text-3xl text-text-primary">Không có bài tập!</Text>
-          <Text className="font-display-semibold text-text-secondary">
+          <Text className="font-display-extrabold text-3xl text-text-primary">Không có bài tập!</Text>
+          <Text className="font-display-bold text-text-secondary">
             Hôm nay rảnh rỗi, chơi game nào.
           </Text>
         </View>
@@ -82,7 +82,7 @@ export default function HomeworkScreen() {
           contentContainerClassName="gap-3 px-3.5 pb-4 pt-3.5"
           showsVerticalScrollIndicator={false}>
           <View className="flex-row items-center justify-between gap-2">
-            <Text className="font-display-bold text-2xl text-text-primary">Bài tập 📚</Text>
+            <Text className="font-display-extrabold text-2xl text-text-primary">Bài tập 📚</Text>
             {pending.length > 0 ? (
               <StatusPill tone="amber" label={`${pending.length} chưa làm`} />
             ) : (
@@ -115,7 +115,7 @@ export default function HomeworkScreen() {
             <Text className="mb-4" style={{ fontSize: 80 }}>
               🎉
             </Text>
-            <Text className="font-display-bold text-4xl text-text-primary">Xong hết rồi!</Text>
+            <Text className="font-display-extrabold text-4xl text-text-primary">Xong hết rồi!</Text>
             <Text className="mt-2 text-xl text-text-secondary">Giỏi lắm! ⭐</Text>
           </PopIn>
         </View>
