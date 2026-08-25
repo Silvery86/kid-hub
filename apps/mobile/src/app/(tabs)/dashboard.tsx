@@ -390,15 +390,24 @@ export default function DashboardScreen() {
             )}
           </View>
         </FadeSlideUp>
-        {/* No web counterpart — web signs out from the parent area, which mobile
-            does not have until Phase 6, and this is the only way back to login. */}
-        <PressableScale
-          onPress={signOut}
-          accessibilityRole="button"
-          testID="sign-out"
-          className="mt-2 items-center rounded-pill border border-btn-ghost-border py-3">
-          <Text className="font-display-semibold text-vietnamese">Đăng xuất</Text>
-        </PressableScale>
+        {/* Web reaches these from the sidebar, which a phone has no room for. */}
+        <View className="mt-2 flex-row gap-2">
+          <PressableScale
+            onPress={() => router.navigate('/parent/pin')}
+            accessibilityRole="button"
+            testID="parent-mode"
+            className="min-h-tap flex-1 flex-row items-center justify-center gap-2 rounded-pill bg-shell-parent py-3">
+            <Text style={{ fontSize: 16 }}>🛡️</Text>
+            <Text className="font-display-bold text-sm text-text-body">Bố mẹ</Text>
+          </PressableScale>
+          <PressableScale
+            onPress={signOut}
+            accessibilityRole="button"
+            testID="sign-out"
+            className="min-h-tap flex-1 items-center justify-center rounded-pill border border-btn-ghost-border py-3">
+            <Text className="font-display-semibold text-vietnamese">Đăng xuất</Text>
+          </PressableScale>
+        </View>
       </ScrollView>
     </Screen>
   )
