@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { KidPatternSchema } from '@kid-hub/shared'
-import { DEFAULT_USER_ID } from '@/lib/constants'
+import { DEFAULT_PARENT_ID, DEFAULT_USER_ID } from '@/lib/constants'
 import { checkRateLimit, getPinRateLimiter } from '@/lib/rate-limit'
 import { getParentStatus, verifyKidUnlockPattern } from '@/server/services/auth.service'
 
@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic'
 /** Whether a pattern has been configured, so the screen can explain itself. */
 export async function GET() {
   try {
-    const { hasKidPatternSet } = await getParentStatus(DEFAULT_USER_ID)
+    const { hasKidPatternSet } = await getParentStatus(DEFAULT_PARENT_ID, DEFAULT_USER_ID)
     return NextResponse.json({ success: true, data: { hasKidPatternSet } })
   } catch {
     return NextResponse.json({ success: false, error: 'Failed to read status' }, { status: 500 })

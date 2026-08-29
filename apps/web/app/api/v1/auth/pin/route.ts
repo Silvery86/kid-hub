@@ -1,5 +1,5 @@
 import { ParentPinSchema } from '@kid-hub/shared'
-import { DEFAULT_USER_ID } from '@/lib/constants'
+import { DEFAULT_PARENT_ID } from '@/lib/constants'
 import { checkRateLimit, getPinRateLimiter } from '@/lib/rate-limit'
 import { requireParentApi } from '@/server/lib/api-auth'
 import { verifyPin } from '@/server/services/auth.service'
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
   if (!parsed.success) return badRequest('Invalid PIN')
 
   try {
-    const result = await verifyPin(DEFAULT_USER_ID, parsed.data)
+    const result = await verifyPin(DEFAULT_PARENT_ID, parsed.data)
     if (result.status === 'locked') {
       return ok({ status: 'locked' as const, lockoutSeconds: result.lockoutSeconds })
     }

@@ -19,49 +19,146 @@ datasource db {
   provider = "postgresql"
 }
 
-// ── User & Profile ────────────────────────────────────────────
+// ── Accounts ──────────────────────────────────────────────────
+// Parent = who signs in. Student = whose data it is. They were one `User`
+// row until the 20260829 split; keeping them separate is what makes more
+// than one household possible. A parent reaches a student ONLY through a
+// ParentStudent row — that join is the authorization edge.
 
-model User {
-  id                     String    @id @default(cuid())
-  name                   String
-  gradeLevel             Int       @default(1)
-  avatarUrl              String?
-  parentEmail            String?   @unique
-  parentPasswordHash     String?
-  parentLoginAttempts    Int       @default(0)
-  parentLoginLockedUntil DateTime?
-  refreshTokenHash       String?
-  refreshTokenExpiresAt  DateTime?
-  kidPatternHash         String?
-  kidPatternAttempts     Int       @default(0)
-  kidPatternLockedUntil  DateTime?
-  kidAccessSettings      Json?     // Record<string, boolean> — feature toggle state; null = all defaults
-  screenTimeLimitMins    Int       @default(120) // daily screen time limit set by parent
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
+/// Signup is open, but a new parent lands in PENDING and cannot obtain a
+/// session until an admin moves them to ACTIVE. SUSPENDED is the reversible
+/// off-switch for an account that was previously approved.
+enum AccountStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+  SUSPENDED
+}
+
+model Parent {
+  id               String        @id @default(cuid())
+  email            String        @unique
+  passwordHash     String
+  displayName      String?
+  loginAttempts    Int           @default(0)
+  loginLockedUntil DateTime?
+
+  status        AccountStatus @default(PENDING)
+  isAdmin       Boolean       @default(false)
+  approvedAt    DateTime?
+  approvedById  String?
+  approvedBy    Parent?       @relation("ParentApproval", fields: [approvedById], references: [id], onDelete: SetNull)
+  approved      Parent[]      @relation("ParentApproval")
+  reviewNote    String?       @db.VarChar(200) // shown to the applicant on rejection
+  signupPayload Json?         // first student's name/grade, held until approval
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pin           ParentPin?
+  refreshTokens RefreshToken[]
+  students      ParentStudent[]
+  invitesSent   StudentInvite[]
+
+  @@index([status])
+  @@map("parents")
+}
+
+model Student {
+  id                    String    @id @default(cuid())
+  name                  String
+  gradeLevel            Int       @default(1)
+  avatarUrl             String?
+  kidPatternHash        String?
+  kidPatternAttempts    Int       @default(0)
+  kidPatternLockedUntil DateTime?
+  kidAccessSettings     Json?     // Record<string, boolean> — feature toggle state; null = all defaults
+  screenTimeLimitMins   Int       @default(120) // daily screen time limit set by parent
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   // Relations
-  pin                   ParentPin?
-  periods               ClassPeriod[]
-  grades                SubjectGrade[]
-  progress              UserProgress?
-  mathProgress          MathProgress[]
-  englishProgress       EnglishProgress[]
-  dailyHomework         DailyHomework[]
-  extraClassOverrides   ExtraClassOverride[]
-  screenTimeLogs        ScreenTimeLog[]
-  activityEvents        ActivityEvent[]
+  parents             ParentStudent[]
+  invites             StudentInvite[]
+  periods             ClassPeriod[]
+  grades              SubjectGrade[]
+  progress            UserProgress?
+  mathProgress        MathProgress[]
+  englishProgress     EnglishProgress[]
+  dailyHomework       DailyHomework[]
+  extraClassOverrides ExtraClassOverride[]
+  screenTimeLogs      ScreenTimeLog[]
+  activityEvents      ActivityEvent[]
 
-  @@map("users")
+  @@map("students")
+}
+
+/// OWNER created the student; GUARDIAN was invited to it. Not enforced yet —
+/// both roles have identical permissions until a later project says otherwise.
+enum ParentRole {
+  OWNER
+  GUARDIAN
+}
+
+/// The authorization edge: a parent may read or write a student's data if and
+/// only if a row exists here.
+model ParentStudent {
+  id        String     @id @default(cuid())
+  parentId  String
+  parent    Parent     @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  studentId String
+  student   Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  role      ParentRole @default(OWNER)
+  createdAt DateTime   @default(now())
+
+  @@unique([parentId, studentId])
+  @@index([studentId])
+  @@map("parent_students")
+}
+
+/// One row per signed-in device. Replaces the single users.refreshTokenHash
+/// column, which silently signed out the first device when a second signed in.
+model RefreshToken {
+  id          String    @id @default(cuid())
+  parentId    String
+  parent      Parent    @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  tokenHash   String
+  deviceLabel String?   @db.VarChar(60) // "iPhone", "Chrome on Windows"
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime  @default(now())
+  revokedAt   DateTime?
+
+  @@index([parentId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+/// Second-parent invite: one parent invites another to an existing student.
+model StudentInvite {
+  id          String    @id @default(cuid())
+  studentId   String
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  invitedById String
+  invitedBy   Parent    @relation(fields: [invitedById], references: [id], onDelete: Cascade)
+  codeHash    String    // hash of the code — the raw code is never stored
+  email       String?   // optional: restrict redemption to one address
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  acceptedBy  String?
+  createdAt   DateTime  @default(now())
+
+  @@index([studentId])
+  @@map("student_invites")
 }
 
 // ── Parent Auth ───────────────────────────────────────────────
 
 model ParentPin {
   id          String    @id @default(cuid())
-  hash        String    // bcrypt hash — raw PIN never stored
-  userId      String    @unique
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hash        String    // argon2id hash — raw PIN never stored
+  parentId    String    @unique
+  parent      Parent    @relation(fields: [parentId], references: [id], onDelete: Cascade)
   attempts    Int       @default(0)
   lockedUntil DateTime?
   createdAt   DateTime  @default(now())
@@ -91,8 +188,8 @@ enum EventType {
 
 model ClassPeriod {
   id           String    @id @default(cuid())
-  userId       String
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId    String
+  student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   day          DayOfWeek
   periodNumber Int?      // 1–10 for SCHOOL_PERIOD; null for EXTRA_CLASS
   eventType    EventType @default(SCHOOL_PERIOD)
@@ -100,17 +197,17 @@ model ClassPeriod {
   startTime    String    // "HH:MM" 24-hour format
   endTime      String    // "HH:MM" 24-hour format
   roomNumber   String?
-  iconKey      String?   @db.VarChar(30)  // e.g. "english", "music", "backpack"
+  iconKey      String?   @db.VarChar(30) // e.g. "english", "music", "backpack"
   sortOrder    Int       @default(0)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  overrides           ExtraClassOverride[]
+  overrides ExtraClassOverride[]
 
   // Unique slot per school period; NULL periodNumber rows are excluded by Postgres
-  @@unique([userId, day, periodNumber])
-  @@index([userId, day])
-  @@index([userId, eventType])
+  @@unique([studentId, day, periodNumber])
+  @@index([studentId, day])
+  @@index([studentId, eventType])
   @@map("class_periods")
 }
 
@@ -119,8 +216,8 @@ model ClassPeriod {
 /// One-off homework assignment for a specific date. Not recurring.
 model DailyHomework {
   id        String    @id @default(cuid())
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId String
+  student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   date      String    @db.VarChar(10) // "YYYY-MM-DD"
   subjectId String    @db.VarChar(30)
   label     String    @db.VarChar(150)
@@ -130,7 +227,7 @@ model DailyHomework {
   points    Int       @default(10)
   createdAt DateTime  @default(now())
 
-  @@index([userId, date])
+  @@index([studentId, date])
   @@map("daily_homework")
 }
 
@@ -139,14 +236,14 @@ model ExtraClassOverride {
   id        String      @id @default(cuid())
   periodId  String
   period    ClassPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId String
+  student   Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
   date      String      @db.VarChar(10) // "YYYY-MM-DD" of the cancellation
   reason    String?     @db.VarChar(100)
   createdAt DateTime    @default(now())
 
   @@unique([periodId, date])
-  @@index([userId, date])
+  @@index([studentId, date])
   @@map("extra_class_overrides")
 }
 
@@ -161,8 +258,8 @@ enum BadgeTier {
 
 model SubjectGrade {
   id           String    @id @default(cuid())
-  userId       String
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId    String
+  student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   subjectId    String    // References SUBJECTS constant
   score        Float     // 0–10 scale
   badge        BadgeTier
@@ -172,8 +269,8 @@ model SubjectGrade {
   updatedAt    DateTime  @updatedAt
 
   // One grade per subject per semester per year
-  @@unique([userId, subjectId, semester, academicYear])
-  @@index([userId])
+  @@unique([studentId, subjectId, semester, academicYear])
+  @@index([studentId])
   @@map("subject_grades")
 }
 
@@ -181,8 +278,8 @@ model SubjectGrade {
 
 model UserProgress {
   id             String   @id @default(cuid())
-  userId         String   @unique
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId      String   @unique
+  student        Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   totalPoints    Int      @default(0)
   currentStreak  Int      @default(0)
   lastActiveDate String   // ISO date "YYYY-MM-DD"
@@ -247,8 +344,8 @@ model GameBestScore {
 /// Records a single completed math mini-game session.
 model MathProgress {
   id               String       @id @default(cuid())
-  userId           String
-  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId        String
+  student          Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
   minigame         MathGameType
   level            Int          // 1, 2, or 3
   correctCount     Int
@@ -260,8 +357,8 @@ model MathProgress {
   homeworkDate     String?      // "YYYY-MM-DD" — the homework date it was submitted for
   completedAt      DateTime     @default(now())
 
-  @@index([userId, completedAt])
-  @@index([userId, homeworkPeriodId])
+  @@index([studentId, completedAt])
+  @@index([studentId, homeworkPeriodId])
   @@map("math_progress")
 }
 
@@ -270,8 +367,8 @@ model MathProgress {
 /// Records a single completed English mini-game session.
 model EnglishProgress {
   id               String          @id @default(cuid())
-  userId           String
-  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId        String
+  student          Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
   minigame         EnglishGameType // alphabet | vocabulary | phonics
   level            Int             // 1, 2, or 3
   correctCount     Int
@@ -283,24 +380,24 @@ model EnglishProgress {
   homeworkDate     String?         // "YYYY-MM-DD" — required if homeworkPeriodId set
   completedAt      DateTime        @default(now())
 
-  @@index([userId, completedAt])
-  @@index([userId, homeworkPeriodId])
+  @@index([studentId, completedAt])
+  @@index([studentId, homeworkPeriodId])
   @@map("english_progress")
 }
 
 // ── Screen Time ───────────────────────────────────────────────
 
-/// Accumulates total screen time per kid per day in seconds. One record per (userId, date).
+/// Accumulates total screen time per kid per day in seconds. One record per (studentId, date).
 model ScreenTimeLog {
   id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   date      String   @db.VarChar(10) // "YYYY-MM-DD"
   totalSecs Int      @default(0)
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, date])
-  @@index([userId])
+  @@unique([studentId, date])
+  @@index([studentId])
   @@map("screen_time_logs")
 }
 
@@ -309,13 +406,13 @@ model ScreenTimeLog {
 /// Records a significant kid-side event for the parent activity feed.
 model ActivityEvent {
   id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   type      String   @db.VarChar(30)  // GAME_COMPLETE | HOMEWORK_DONE
   label     String   @db.VarChar(150) // human-readable description shown to parent
   iconKey   String?  @db.VarChar(10)  // emoji displayed in the feed
   createdAt DateTime @default(now())
 
-  @@index([userId, createdAt])
+  @@index([studentId, createdAt])
   @@map("activity_events")
 }

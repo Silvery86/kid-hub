@@ -3,11 +3,11 @@ import type { HomeworkItem } from '@/types'
 
 /** Returns today's homework items (from DailyHomework table) for a user. Keyed by date only. */
 export const getTodayHomework = async (
-  userId: string,
+  studentId: string,
   date: string
 ): Promise<HomeworkItem[]> => {
   const items = await db.dailyHomework.findMany({
-    where: { userId, date },
+    where: { studentId, date },
     orderBy: { createdAt: 'asc' },
   })
 
@@ -22,9 +22,9 @@ export const getTodayHomework = async (
 }
 
 /** Marks a DailyHomework item as done. `periodId` maps to DailyHomework.id. */
-export const markDone = async (periodId: string, userId: string, _date: string): Promise<void> => {
+export const markDone = async (periodId: string, studentId: string, _date: string): Promise<void> => {
   await db.dailyHomework.update({
-    where: { id: periodId, userId },
+    where: { id: periodId, studentId },
     data: { isDone: true, doneAt: new Date() },
   })
 }

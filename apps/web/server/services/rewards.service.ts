@@ -10,21 +10,21 @@ import {
  * Awards the 'game-win' badge on the first ever completed game session.
  * Safe to call after every game save — no-op if already earned.
  */
-export const checkAndAwardGameWinBadge = async (userId: string): Promise<void> => {
-  const earned = await getEarnedBadgeIds(userId)
+export const checkAndAwardGameWinBadge = async (studentId: string): Promise<void> => {
+  const earned = await getEarnedBadgeIds(studentId)
   if (earned.includes('game-win')) return
-  const count = await getTotalGameCount(userId)
-  if (count >= 1) await awardBadge(userId, 'game-win')
+  const count = await getTotalGameCount(studentId)
+  if (count >= 1) await awardBadge(studentId, 'game-win')
 }
 
 /**
  * Awards the 'first-login' badge. Should be called after the first kid session unlock.
  * No-op if already earned.
  */
-export const checkAndAwardFirstLoginBadge = async (userId: string): Promise<void> => {
-  const earned = await getEarnedBadgeIds(userId)
+export const checkAndAwardFirstLoginBadge = async (studentId: string): Promise<void> => {
+  const earned = await getEarnedBadgeIds(studentId)
   if (!earned.includes('first-login')) {
-    await awardBadge(userId, 'first-login')
+    await awardBadge(studentId, 'first-login')
   }
 }
 
@@ -33,14 +33,14 @@ export const checkAndAwardFirstLoginBadge = async (userId: string): Promise<void
  * Safe to call after every streak update — no-op if already earned.
  */
 export const checkAndAwardStreakBadges = async (
-  userId: string,
+  studentId: string,
   currentStreak: number
 ): Promise<void> => {
-  const earned = await getEarnedBadgeIds(userId)
+  const earned = await getEarnedBadgeIds(studentId)
   if (currentStreak >= 3 && !earned.includes('streak-3')) {
-    await awardBadge(userId, 'streak-3')
+    await awardBadge(studentId, 'streak-3')
   }
   if (currentStreak >= 7 && !earned.includes('streak-7')) {
-    await awardBadge(userId, 'streak-7')
+    await awardBadge(studentId, 'streak-7')
   }
 }

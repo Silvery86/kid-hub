@@ -15,23 +15,23 @@ export interface ActivityEventRow {
  * Call without `await` to avoid blocking the parent action.
  */
 export const logActivity = async (
-  userId: string,
+  studentId: string,
   type: string,
   label: string,
   iconKey?: string
 ): Promise<void> => {
   await db.activityEvent.create({
-    data: { userId, type, label, iconKey: iconKey ?? null },
+    data: { studentId, type, label, iconKey: iconKey ?? null },
   })
 }
 
 /** Returns the most recent N activity events for a user, newest first. */
 export const getRecentActivity = async (
-  userId: string,
+  studentId: string,
   limit = 10
 ): Promise<ActivityEventRow[]> => {
   return db.activityEvent.findMany({
-    where: { userId },
+    where: { studentId },
     orderBy: { createdAt: 'desc' },
     take: limit,
     select: { id: true, type: true, label: true, iconKey: true, createdAt: true },

@@ -20,8 +20,8 @@ export const todayDayOfWeek = (): DayOfWeek | null => {
   return map[new Date().getDay()] ?? null
 }
 
-export const getTodayHomework = (userId: string, date: string): Promise<HomeworkItem[]> =>
-  homeworkRepo.getTodayHomework(userId, date)
+export const getTodayHomework = (studentId: string, date: string): Promise<HomeworkItem[]> =>
+  homeworkRepo.getTodayHomework(studentId, date)
 
-export const markDone = (periodId: string, userId: string, date: string): Promise<void> =>
-  homeworkRepo.markDone(periodId, userId, date)
+export const markDone = (periodId: string, studentId: string, date: string): Promise<void> =>
+  homeworkRepo.markDone(periodId, studentId, date)

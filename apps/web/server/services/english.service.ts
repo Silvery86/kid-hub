@@ -26,18 +26,18 @@ export interface EnglishSessionResult {
  *  4. If a homeworkPeriodId is provided, marks that period done for the given date.
  */
 export const saveEnglishSession = async (
-  userId: string,
+  studentId: string,
   input: SaveEnglishProgressInput
 ): Promise<EnglishSessionResult> => {
   const stars = calculateStars(input.correctCount, GAME_QUESTIONS_PER_SESSION)
   const score = input.correctCount * 10
   const pointsEarned = calculatePointsEarned(input.correctCount, stars)
 
-  const existing = await englishRepo.getEnglishBestScore(userId, input.minigame, input.level)
+  const existing = await englishRepo.getEnglishBestScore(studentId, input.minigame, input.level)
   const isNewBest = !existing || stars > existing.starsEarned
 
   await englishRepo.saveEnglishProgress({
-    userId,
+    studentId,
     minigame: input.minigame,
     level: input.level,
     correctCount: input.correctCount,
@@ -50,13 +50,13 @@ export const saveEnglishSession = async (
   })
 
   if (isNewBest) {
-    await englishRepo.upsertEnglishBestScore(userId, input.minigame, input.level, score, stars)
+    await englishRepo.upsertEnglishBestScore(studentId, input.minigame, input.level, score, stars)
   }
 
-  await englishRepo.addUserPoints(userId, pointsEarned)
+  await englishRepo.addUserPoints(studentId, pointsEarned)
 
   if (input.homeworkPeriodId && input.homeworkDate) {
-    await homeworkRepo.markDone(input.homeworkPeriodId, userId, input.homeworkDate)
+    await homeworkRepo.markDone(input.homeworkPeriodId, studentId, input.homeworkDate)
   }
 
   return { starsEarned: stars, score, pointsEarned, isNewBest }
@@ -67,13 +67,13 @@ export const saveEnglishSession = async (
  * Used server-side by the /english page to pre-render the homework banner.
  */
 export const getTodayEnglishHomework = async (
-  userId: string,
+  studentId: string,
   _day: import('@/types').DayOfWeek | null,
   date: string
 ): Promise<{ periodId: string; homeworkNote: string } | null> => {
   const db = await import('@/lib/db').then((m) => m.db)
   const item = await db.dailyHomework.findFirst({
-    where: { userId, date, subjectId: 'english', isDone: false },
+    where: { studentId, date, subjectId: 'english', isDone: false },
   })
   if (!item) return null
   return { periodId: item.id, homeworkNote: item.label }

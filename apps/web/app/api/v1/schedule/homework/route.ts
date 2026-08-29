@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   try {
     const id = await scheduleService.createDailyHomework({
       ...parsed.data,
-      userId: DEFAULT_USER_ID,
+      studentId: DEFAULT_USER_ID,
     })
     return ok({ id })
   } catch {

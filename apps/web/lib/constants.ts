@@ -2,8 +2,18 @@
 
 // ── App User ──────────────────────────────────────────────────
 
-/** Fixed ID for the single app user (Khôi). Created via prisma/seed.ts. */
+/** Fixed ID of the single student (Khôi). Created via prisma/seed.ts. */
 export const DEFAULT_USER_ID = 'khoi-default-user'
+
+/**
+ * Fixed ID of the single parent, derived from the student id exactly as the
+ * 20260829 split migration derives it.
+ *
+ * TRANSITIONAL — parent-scoped calls (PIN, credentials, sessions) need a parent
+ * id now that parents and students are separate rows, and the call sites do not
+ * carry one until the session work lands. Deleted alongside DEFAULT_USER_ID.
+ */
+export const DEFAULT_PARENT_ID = `parent-${DEFAULT_USER_ID}`
 
 // ── Schedule ─────────────────────────────────────────────────
 

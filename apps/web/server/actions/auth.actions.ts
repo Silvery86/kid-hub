@@ -36,6 +36,7 @@ import {
 import { checkRateLimit, getLoginEmailRateLimiter } from '@/lib/rate-limit'
 import type { ActionVoidResult, AuthActionResult } from '@/types'
 import {
+  DEFAULT_PARENT_ID,
   DEFAULT_USER_ID,
   KID_SESSION_TTL_SECONDS,
   PARENT_ACCESS_TTL_SECONDS,
@@ -69,8 +70,8 @@ const KID_SESSION_COOKIE_OPTIONS = {
   path: '/',
 }
 
-const issueParentSessionCookies = async (userId: string): Promise<void> => {
-  const { accessToken, refreshToken } = await createParentSession(userId)
+const issueParentSessionCookies = async (parentId: string): Promise<void> => {
+  const { accessToken, refreshToken } = await createParentSession(parentId)
   const cookieStore = await cookies()
   cookieStore.set(PARENT_ACCESS_COOKIE, accessToken, PARENT_ACCESS_COOKIE_OPTIONS)
   cookieStore.set(PARENT_REFRESH_COOKIE, refreshToken, PARENT_REFRESH_COOKIE_OPTIONS)
@@ -110,8 +111,8 @@ export const registerParentAccountAction = async (
   }
 
   try {
-    await registerParent(DEFAULT_USER_ID, parsedEmail.data, parsedPassword.data)
-    await issueParentSessionCookies(DEFAULT_USER_ID)
+    await registerParent(DEFAULT_PARENT_ID, parsedEmail.data, parsedPassword.data)
+    await issueParentSessionCookies(DEFAULT_PARENT_ID)
     return { success: true }
   } catch (err) {
     const msg = err instanceof Error ? err.message : ''
@@ -189,7 +190,7 @@ export const checkParentSessionAction = async (): Promise<{
 }> => {
   try {
     const session = await ensureParentSession()
-    const { hasParentAccount } = await getParentStatus(DEFAULT_USER_ID)
+    const { hasParentAccount } = await getParentStatus(DEFAULT_PARENT_ID, DEFAULT_USER_ID)
     return { hasSession: session.ok, hasParentAccount }
   } catch {
     return { hasSession: false, hasParentAccount: false }
@@ -254,7 +255,7 @@ export const checkKidSessionAction = async (): Promise<{
     const cookieStore = await cookies()
     const token = cookieStore.get(KID_SESSION_COOKIE)?.value
     const hasSession = token ? (await verifyKidSessionToken(token)) !== null : false
-    const { hasKidPatternSet } = await getParentStatus(DEFAULT_USER_ID)
+    const { hasKidPatternSet } = await getParentStatus(DEFAULT_PARENT_ID, DEFAULT_USER_ID)
     return { hasSession, hasKidPatternSet }
   } catch {
     return { hasSession: false, hasKidPatternSet: false }
@@ -289,7 +290,7 @@ export const signOutKidAction = async (): Promise<ActionVoidResult> => {
 /** Whether the household has a parent PIN configured. */
 export const checkParentPinAction = async (): Promise<{ hasPin: boolean }> => {
   try {
-    const record = await getPinRecord(DEFAULT_USER_ID)
+    const record = await getPinRecord(DEFAULT_PARENT_ID)
     return { hasPin: record?.hasPin ?? false }
   } catch {
     return { hasPin: false }
@@ -317,7 +318,7 @@ export const setPinAction = async (pin: string): Promise<ActionVoidResult> => {
   if (!session.ok) return { success: false, error: 'Unauthorized' }
 
   try {
-    await savePin(DEFAULT_USER_ID, parsed.data)
+    await savePin(DEFAULT_PARENT_ID, parsed.data)
     return { success: true }
   } catch {
     return { success: false, error: 'Failed to save PIN' }
@@ -335,7 +336,7 @@ export const verifyPinAction = async (pin: string): Promise<AuthActionResult> =>
   }
 
   try {
-    const result = await verifyPin(DEFAULT_USER_ID, parsed.data)
+    const result = await verifyPin(DEFAULT_PARENT_ID, parsed.data)
     if (result.status === 'not-configured') {
       return { success: false, error: 'PIN is not configured yet' }
     }
@@ -350,7 +351,7 @@ export const verifyPinAction = async (pin: string): Promise<AuthActionResult> =>
     if (result.status === 'wrong') {
       return { success: false, error: 'Incorrect PIN', isWrong: true }
     }
-    await issueParentSessionCookies(DEFAULT_USER_ID)
+    await issueParentSessionCookies(DEFAULT_PARENT_ID)
     return { success: true }
   } catch {
     return { success: false, error: 'PIN verification failed' }

@@ -9,12 +9,12 @@ export type { ActivityEventRow }
 
 /** Records a kid-side event. Fire-and-forget safe — call with void. */
 export const recordActivity = async (
-  userId: string,
+  studentId: string,
   type: string,
   label: string,
   iconKey?: string
 ): Promise<void> => {
-  await logActivity(userId, type, label, iconKey)
+  await logActivity(studentId, type, label, iconKey)
 }
 
 /**
@@ -22,9 +22,9 @@ export const recordActivity = async (
  * Default is 20 items.
  */
 export const fetchRecentActivity = async (
-  userId: string,
+  studentId: string,
   limit = 20
 ): Promise<ActivityEventRow[]> => {
   const capped = Math.min(Math.max(1, limit), 100)
-  return getRecentActivity(userId, capped)
+  return getRecentActivity(studentId, capped)
 }

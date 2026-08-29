@@ -125,7 +125,7 @@ export const createPeriodAction = async (input: unknown): Promise<ActionVoidResu
     }
     await scheduleService.createPeriod({
       ...data,
-      userId: DEFAULT_USER_ID,
+      studentId: DEFAULT_USER_ID,
       day: data.day as DayOfWeek,
       eventType: 'SCHOOL_PERIOD',
     })
@@ -157,7 +157,7 @@ export const updatePeriodAction = async (input: unknown): Promise<ActionVoidResu
         return { success: false, error: 'Giờ kết thúc phải sau giờ bắt đầu' }
       }
     }
-    await scheduleService.updatePeriod({ ...parsed.data, userId: DEFAULT_USER_ID })
+    await scheduleService.updatePeriod({ ...parsed.data, studentId: DEFAULT_USER_ID })
     revalidatePath('/dashboard')
     revalidatePath('/schedule')
     return { success: true }
@@ -216,7 +216,7 @@ export const createExtraClassAction = async (
     }
     const id = await scheduleService.createPeriod({
       ...data,
-      userId: DEFAULT_USER_ID,
+      studentId: DEFAULT_USER_ID,
       day: data.day as DayOfWeek,
       eventType: 'EXTRA_CLASS',
     })
@@ -283,7 +283,7 @@ export const addDailyHomeworkAction = async (
     }
     const id = await scheduleService.createDailyHomework({
       ...parsed.data,
-      userId: DEFAULT_USER_ID,
+      studentId: DEFAULT_USER_ID,
     })
     revalidatePath('/schedule')
     return { success: true, data: { id } }

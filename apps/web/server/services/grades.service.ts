@@ -22,13 +22,13 @@ export const enrichWithBadges = (grades: Omit<SubjectGrade, 'badge'>[]): Subject
   grades.map((g) => ({ ...g, badge: calculateBadge(g.score) }))
 
 /** Build a full ReportCard from raw grade data. */
-export const buildReportCard = (userId: string, grades: SubjectGrade[]): ReportCard => ({
-  userId,
+export const buildReportCard = (studentId: string, grades: SubjectGrade[]): ReportCard => ({
+  userId: studentId,
   grades,
   averageScore: calculateAverage(grades),
 })
 
-export const getReportCard = (userId: string) => gradesRepo.getReportCard(userId)
+export const getReportCard = (studentId: string) => gradesRepo.getReportCard(studentId)
 
-export const upsertGrade = (userId: string, data: gradesRepo.GradeRecord): Promise<void> =>
-  gradesRepo.upsertGrade(userId, data)
+export const upsertGrade = (studentId: string, data: gradesRepo.GradeRecord): Promise<void> =>
+  gradesRepo.upsertGrade(studentId, data)

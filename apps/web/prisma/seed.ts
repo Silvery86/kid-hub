@@ -12,6 +12,8 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client'
 
 const DEFAULT_USER_ID = 'khoi-default-user'
+// Derived exactly as the 20260829 split migration derives it.
+const DEFAULT_PARENT_ID = `parent-${DEFAULT_USER_ID}`
 
 type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday'
 
@@ -173,7 +175,7 @@ const db = new PrismaClient({ adapter, log: ['error'] })
 async function main() {
   console.warn('🌱 Seeding database...')
 
-  const user = await db.user.upsert({
+  const student = await db.student.upsert({
     where: { id: DEFAULT_USER_ID },
     create: {
       id: DEFAULT_USER_ID,
@@ -184,9 +186,9 @@ async function main() {
   })
 
   await db.userProgress.upsert({
-    where: { userId: user.id },
+    where: { studentId: student.id },
     create: {
-      userId: user.id,
+      studentId: student.id,
       totalPoints: 0,
       currentStreak: 0,
       lastActiveDate: new Date().toISOString().split('T')[0]!,
@@ -194,24 +196,40 @@ async function main() {
     update: {},
   })
 
-  console.warn(`✅ Default user seeded: ${user.name} (id: ${user.id})`)
+  console.warn(`✅ Default student seeded: ${student.name} (id: ${student.id})`)
 
-  // Seed parent account credentials (safe to re-run: only sets if not already configured)
+  // Seed the parent account (safe to re-run: only creates if not already configured).
+  // The founding parent is ACTIVE and admin — somebody has to be able to approve the
+  // first applicant, and the approval flow has no other way to bootstrap.
   const PARENT_EMAIL = 'giang8692@gmail.com'
   const PARENT_PASSWORD = 'Giang@123'
-  const [authRow] = await db.$queryRaw<
-    Array<{ parentEmail: string | null; parentPasswordHash: string | null }>
-  >`SELECT "parentEmail", "parentPasswordHash" FROM users WHERE id = ${DEFAULT_USER_ID}`
-  if (!authRow?.parentEmail || !authRow?.parentPasswordHash) {
+  const existingParent = await db.parent.findUnique({ where: { id: DEFAULT_PARENT_ID } })
+  if (!existingParent) {
     const passwordHash = await bcrypt.hash(PARENT_PASSWORD, 12)
-    await db.$executeRaw`
-      UPDATE users SET "parentEmail" = ${PARENT_EMAIL}, "parentPasswordHash" = ${passwordHash}
-      WHERE id = ${DEFAULT_USER_ID}
-    `
+    await db.parent.create({
+      data: {
+        id: DEFAULT_PARENT_ID,
+        email: PARENT_EMAIL,
+        passwordHash,
+        status: 'ACTIVE',
+        isAdmin: true,
+        approvedAt: new Date(),
+      },
+    })
     console.warn(`✅ Parent account seeded: ${PARENT_EMAIL}`)
   } else {
-    console.warn(`ℹ️  Parent account already configured: ${authRow.parentEmail} (skipped)`)
+    console.warn(`ℹ️  Parent account already configured: ${existingParent.email} (skipped)`)
   }
+
+  // The join row is the authorization edge — without it the parent sees nothing.
+  await db.parentStudent.upsert({
+    where: {
+      parentId_studentId: { parentId: DEFAULT_PARENT_ID, studentId: DEFAULT_USER_ID },
+    },
+    create: { parentId: DEFAULT_PARENT_ID, studentId: DEFAULT_USER_ID, role: 'OWNER' },
+    update: {},
+  })
+  console.warn('✅ Parent linked to student')
 
   // Validate schedule data before touching the DB
   assertNoOverlaps(WEEKLY_SCHEDULE)
@@ -220,14 +238,14 @@ async function main() {
   for (const period of WEEKLY_SCHEDULE) {
     await db.classPeriod.upsert({
       where: {
-        userId_day_periodNumber: {
-          userId: DEFAULT_USER_ID,
+        studentId_day_periodNumber: {
+          studentId: DEFAULT_USER_ID,
           day: period.day,
           periodNumber: period.periodNumber,
         },
       },
       create: {
-        userId: DEFAULT_USER_ID,
+        studentId: DEFAULT_USER_ID,
         day: period.day,
         periodNumber: period.periodNumber,
         subjectId: period.subjectId,
@@ -252,12 +270,12 @@ async function main() {
   let created = 0
   for (const entry of homeworkEntries) {
     const exists = await db.dailyHomework.findFirst({
-      where: { userId: DEFAULT_USER_ID, date: entry.date, subjectId: entry.subjectId },
+      where: { studentId: DEFAULT_USER_ID, date: entry.date, subjectId: entry.subjectId },
     })
     if (!exists) {
       await db.dailyHomework.create({
         data: {
-          userId: DEFAULT_USER_ID,
+          studentId: DEFAULT_USER_ID,
           date: entry.date,
           subjectId: entry.subjectId,
           label: entry.label,

@@ -13,7 +13,8 @@ import { hash as argon2Hash, verify as argon2Verify } from '@node-rs/argon2'
 import bcrypt from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
 import type { KidSession, ParentRefreshSession, ParentSession } from '@/types'
-import * as userRepo from '@/server/repositories/user.repository'
+import * as parentRepo from '@/server/repositories/parent.repository'
+import * as studentRepo from '@/server/repositories/student.repository'
 import {
   KID_PATTERN_LENGTH,
   KID_SESSION_COOKIE,
@@ -210,13 +211,13 @@ export {
  * and returns both tokens for the action layer to set as cookies.
  */
 export const createParentSession = async (
-  userId: string
+  parentId: string
 ): Promise<{ accessToken: string; refreshToken: string }> => {
-  const accessToken = await createParentAccessToken(userId)
-  const refreshToken = await createParentRefreshToken(userId)
+  const accessToken = await createParentAccessToken(parentId)
+  const refreshToken = await createParentRefreshToken(parentId)
   const refreshHash = await hashTokenForStorage(refreshToken)
   const refreshExpiresAt = new Date(Date.now() + PARENT_REFRESH_TTL_SECONDS * 1000)
-  await userRepo.saveRefreshToken(userId, refreshHash, refreshExpiresAt)
+  await parentRepo.saveRefreshToken(parentId, refreshHash, refreshExpiresAt)
   return { accessToken, refreshToken }
 }
 
@@ -229,27 +230,35 @@ export const validateRefreshToken = async (
 ): Promise<string | null> => {
   const session = await verifyParentRefreshToken(refreshToken)
   if (!session) return null
-  const record = await userRepo.getParentAuthRecord(session.userId)
-  if (!record?.refreshTokenHash || !record.refreshTokenExpiresAt) return null
-  if (record.refreshTokenExpiresAt.getTime() <= Date.now()) return null
-  const valid = await compareStoredTokenHash(refreshToken, record.refreshTokenHash)
+  const stored = await parentRepo.getActiveRefreshToken(session.userId)
+  if (!stored) return null
+  if (stored.expiresAt.getTime() <= Date.now()) return null
+  const valid = await compareStoredTokenHash(refreshToken, stored.tokenHash)
   return valid ? session.userId : null
 }
 
 /** Clears the persisted refresh token for the userId resolved from the token. */
 export const revokeRefreshToken = async (refreshToken: string): Promise<void> => {
   const session = await verifyParentRefreshToken(refreshToken)
-  if (session) await userRepo.clearRefreshToken(session.userId)
+  if (session) await parentRepo.clearRefreshTokens(session.userId)
 }
 
-/** Returns account and kid-pattern existence flags for the given user. */
+/**
+ * Returns account and kid-pattern existence flags. The two flags now live on two
+ * different rows — credentials on the parent, the unlock pattern on the student —
+ * so both ids are needed.
+ */
 export const getParentStatus = async (
-  userId: string
+  parentId: string,
+  studentId: string
 ): Promise<{ hasParentAccount: boolean; hasKidPatternSet: boolean }> => {
-  const record = await userRepo.getParentAuthRecord(userId)
+  const [parent, student] = await Promise.all([
+    parentRepo.getById(parentId),
+    studentRepo.getKidPatternRecord(studentId),
+  ])
   return {
-    hasParentAccount: Boolean(record?.parentEmail && record.parentPasswordHash),
-    hasKidPatternSet: Boolean(record?.kidPatternHash),
+    hasParentAccount: Boolean(parent?.email && parent.passwordHash),
+    hasKidPatternSet: Boolean(student?.kidPatternHash),
   }
 }
 
@@ -258,17 +267,14 @@ export const getParentStatus = async (
  * Throws if an account is already configured.
  */
 export const registerParent = async (
-  userId: string,
+  parentId: string,
   email: string,
   password: string
 ): Promise<void> => {
-  const current = await userRepo.getParentAuthRecord(userId)
-  if (!current) throw new Error('User not found')
-  if (current.parentEmail && current.parentPasswordHash) {
-    throw new Error('Parent account is already configured')
-  }
+  const current = await parentRepo.getById(parentId)
+  if (current) throw new Error('Parent account is already configured')
   const passwordHash = await hashPassword(password)
-  await userRepo.upsertParentCredentials(userId, email, passwordHash)
+  await parentRepo.upsertCredentials(parentId, email, passwordHash)
 }
 
 export type LoginResult =
@@ -282,47 +288,47 @@ export const loginWithParentPassword = async (
   email: string,
   password: string
 ): Promise<LoginResult> => {
-  const record = await userRepo.getByParentEmail(email)
-  if (!record?.parentPasswordHash) return { status: 'no-account' }
+  const record = await parentRepo.getByEmail(email)
+  if (!record?.passwordHash) return { status: 'no-account' }
 
-  if (isLockedOut(record.parentLoginAttempts, record.parentLoginLockedUntil)) {
+  if (isLockedOut(record.loginAttempts, record.loginLockedUntil)) {
     return {
       status: 'locked',
-      lockoutSeconds: getLockoutSecondsRemaining(record.parentLoginLockedUntil),
+      lockoutSeconds: getLockoutSecondsRemaining(record.loginLockedUntil),
     }
   }
 
-  const valid = await comparePassword(password, record.parentPasswordHash)
+  const valid = await comparePassword(password, record.passwordHash)
   if (!valid) {
-    const newAttempts = record.parentLoginAttempts + 1
+    const newAttempts = record.loginAttempts + 1
     const shouldLock = newAttempts >= MAX_PARENT_LOGIN_ATTEMPTS
     const lockUntil = shouldLock
       ? new Date(Date.now() + PARENT_LOGIN_LOCKOUT_SECONDS * 1000)
       : undefined
-    await userRepo.recordFailedParentLogin(record.id, lockUntil)
+    await parentRepo.recordFailedLogin(record.id, lockUntil)
     if (shouldLock) {
       return { status: 'locked', lockoutSeconds: getLockoutSecondsRemaining(lockUntil ?? null) }
     }
     return { status: 'wrong-password' }
   }
 
-  await userRepo.resetParentLoginAttempts(record.id)
+  await parentRepo.resetLoginAttempts(record.id)
   return { status: 'ok', userId: record.id }
 }
 
-/** Returns PIN status for the given user. */
+/** Returns PIN status for the given parent. */
 export const getPinRecord = async (
-  userId: string
+  parentId: string
 ): Promise<{ hasPin: boolean; attempts: number; lockedUntil: Date | null } | null> => {
-  const pin = await userRepo.getPin(userId)
+  const pin = await parentRepo.getPin(parentId)
   if (!pin) return null
   return { hasPin: Boolean(pin.hash), attempts: pin.attempts, lockedUntil: pin.lockedUntil }
 }
 
 /** Hashes and persists a new parent PIN. */
-export const savePin = async (userId: string, rawPin: string): Promise<void> => {
+export const savePin = async (parentId: string, rawPin: string): Promise<void> => {
   const hash = await hashPin(rawPin)
-  await userRepo.savePin(userId, hash)
+  await parentRepo.savePin(parentId, hash)
 }
 
 export type PinVerifyResult =
@@ -333,10 +339,10 @@ export type PinVerifyResult =
 
 /** Full PIN verification flow with atomic lockout. */
 export const verifyPin = async (
-  userId: string,
+  parentId: string,
   rawPin: string
 ): Promise<PinVerifyResult> => {
-  const pinRecord = await userRepo.getPin(userId)
+  const pinRecord = await parentRepo.getPin(parentId)
   if (!pinRecord?.hash) return { status: 'not-configured' }
 
   if (isLockedOut(pinRecord.attempts, pinRecord.lockedUntil)) {
@@ -345,8 +351,8 @@ export const verifyPin = async (
 
   const valid = await comparePin(rawPin, pinRecord.hash)
   if (!valid) {
-    const { attempts: newAttempts, lockedUntil } = await userRepo.atomicFailedPinAttempt(
-      userId, MAX_PIN_ATTEMPTS, PIN_LOCKOUT_SECONDS
+    const { attempts: newAttempts, lockedUntil } = await parentRepo.atomicFailedPinAttempt(
+      parentId, MAX_PIN_ATTEMPTS, PIN_LOCKOUT_SECONDS
     )
     if (newAttempts >= MAX_PIN_ATTEMPTS) {
       return { status: 'locked', lockoutSeconds: getLockoutSecondsRemaining(lockedUntil) }
@@ -354,14 +360,14 @@ export const verifyPin = async (
     return { status: 'wrong' }
   }
 
-  await userRepo.resetPinAttempts(userId)
+  await parentRepo.resetPinAttempts(parentId)
   return { status: 'ok' }
 }
 
 /** Hashes and persists a new kid unlock pattern. */
-export const saveKidPattern = async (userId: string, rawPattern: string): Promise<void> => {
+export const saveKidPattern = async (studentId: string, rawPattern: string): Promise<void> => {
   const hash = await hashKidPattern(rawPattern)
-  await userRepo.saveKidPattern(userId, hash)
+  await studentRepo.saveKidPattern(studentId, hash)
 }
 
 export type KidPatternVerifyResult =
@@ -372,10 +378,10 @@ export type KidPatternVerifyResult =
 
 /** Full kid pattern verification flow with lockout. */
 export const verifyKidUnlockPattern = async (
-  userId: string,
+  studentId: string,
   rawPattern: string
 ): Promise<KidPatternVerifyResult> => {
-  const record = await userRepo.getParentAuthRecord(userId)
+  const record = await studentRepo.getKidPatternRecord(studentId)
   if (!record?.kidPatternHash) return { status: 'not-configured' }
 
   if (isLockedOut(record.kidPatternAttempts, record.kidPatternLockedUntil)) {
@@ -392,13 +398,13 @@ export const verifyKidUnlockPattern = async (
     const lockUntil = shouldLock
       ? new Date(Date.now() + KID_PATTERN_LOCKOUT_SECONDS * 1000)
       : undefined
-    await userRepo.recordFailedKidPatternAttempt(userId, lockUntil)
+    await studentRepo.recordFailedKidPatternAttempt(studentId, lockUntil)
     if (shouldLock) {
       return { status: 'locked', lockoutSeconds: getLockoutSecondsRemaining(lockUntil ?? null) }
     }
     return { status: 'wrong' }
   }
 
-  await userRepo.resetKidPatternAttempts(userId)
+  await studentRepo.resetKidPatternAttempts(studentId)
   return { status: 'ok' }
 }

@@ -2,14 +2,14 @@ import 'server-only'
 
 import * as screenTimeRepo from '@/server/repositories/screen-time.repository'
 
-export const addScreenTime = (userId: string, secs: number) =>
-  screenTimeRepo.addScreenTime(userId, secs)
+export const addScreenTime = (studentId: string, secs: number) =>
+  screenTimeRepo.addScreenTime(studentId, secs)
 
-export const getScreenTimeToday = (userId: string) =>
-  screenTimeRepo.getScreenTimeToday(userId)
+export const getScreenTimeToday = (studentId: string) =>
+  screenTimeRepo.getScreenTimeToday(studentId)
 
-export const getScreenTimeLimit = (userId: string) =>
-  screenTimeRepo.getScreenTimeLimit(userId)
+export const getScreenTimeLimit = (studentId: string) =>
+  screenTimeRepo.getScreenTimeLimit(studentId)
 
-export const setScreenTimeLimit = (userId: string, limitMins: number) =>
-  screenTimeRepo.setScreenTimeLimit(userId, limitMins)
+export const setScreenTimeLimit = (studentId: string, limitMins: number) =>
+  screenTimeRepo.setScreenTimeLimit(studentId, limitMins)

@@ -28,7 +28,7 @@ export async function PATCH(req: Request, { params }: Params) {
       if (mergedEnd <= mergedStart) return badRequest('Giờ kết thúc phải sau giờ bắt đầu')
     }
 
-    await scheduleService.updatePeriod({ ...parsed.data, userId: DEFAULT_USER_ID })
+    await scheduleService.updatePeriod({ ...parsed.data, studentId: DEFAULT_USER_ID })
     return ok({ saved: true })
   } catch {
     return serverError('Failed to update period')

@@ -15,8 +15,8 @@ export interface GradeRecord {
 }
 
 /** Fetches all subject grades for a user from the database. */
-export const getReportCard = async (userId: string): Promise<GradeRecord[]> => {
-  const rows = await db.subjectGrade.findMany({ where: { userId } })
+export const getReportCard = async (studentId: string): Promise<GradeRecord[]> => {
+  const rows = await db.subjectGrade.findMany({ where: { studentId } })
   return rows.map((r) => ({
     subjectId: r.subjectId,
     score: r.score,
@@ -27,19 +27,19 @@ export const getReportCard = async (userId: string): Promise<GradeRecord[]> => {
 }
 
 /** Creates or updates a single subject grade record for a user. */
-export const upsertGrade = async (userId: string, data: GradeRecord): Promise<void> => {
+export const upsertGrade = async (studentId: string, data: GradeRecord): Promise<void> => {
   const badgeForDb = data.badge.replace('-', '_') as 'excellent' | 'good' | 'needs_practice'
   await db.subjectGrade.upsert({
     where: {
-      userId_subjectId_semester_academicYear: {
-        userId,
+      studentId_subjectId_semester_academicYear: {
+        studentId,
         subjectId: data.subjectId,
         semester: data.semester,
         academicYear: data.academicYear,
       },
     },
     create: {
-      userId,
+      studentId,
       subjectId: data.subjectId,
       score: data.score,
       badge: badgeForDb,

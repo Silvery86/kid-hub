@@ -11,16 +11,16 @@ import {
   createParentRefreshToken,
   hashTokenForStorage,
 } from '@/server/services/auth.service'
-import * as userRepo from '@/server/repositories/user.repository'
+import * as parentRepo from '@/server/repositories/parent.repository'
 import { PARENT_ACCESS_TTL_SECONDS, PARENT_REFRESH_TTL_SECONDS } from '@/lib/constants'
 
-const issueParentSessionCookies = async (userId: string): Promise<void> => {
-  const accessToken = await createParentAccessToken(userId)
-  const refreshToken = await createParentRefreshToken(userId)
+const issueParentSessionCookies = async (parentId: string): Promise<void> => {
+  const accessToken = await createParentAccessToken(parentId)
+  const refreshToken = await createParentRefreshToken(parentId)
   const refreshHash = await hashTokenForStorage(refreshToken)
   const refreshExpiresAt = new Date(Date.now() + PARENT_REFRESH_TTL_SECONDS * 1000)
 
-  await userRepo.saveRefreshToken(userId, refreshHash, refreshExpiresAt)
+  await parentRepo.saveRefreshToken(parentId, refreshHash, refreshExpiresAt)
 
   const cookieStore = await cookies()
   cookieStore.set(PARENT_ACCESS_COOKIE, accessToken, {
@@ -58,11 +58,11 @@ export const requireParentSession = async (): Promise<{ userId: string }> => {
   const refreshSession = await verifyParentRefreshToken(refreshToken)
   if (!refreshSession) throw new Error('Unauthorized')
 
-  const record = await userRepo.getParentAuthRecord(refreshSession.userId)
-  if (!record?.refreshTokenHash || !record.refreshTokenExpiresAt) throw new Error('Unauthorized')
-  if (record.refreshTokenExpiresAt.getTime() <= Date.now()) throw new Error('Unauthorized')
+  const stored = await parentRepo.getActiveRefreshToken(refreshSession.userId)
+  if (!stored) throw new Error('Unauthorized')
+  if (stored.expiresAt.getTime() <= Date.now()) throw new Error('Unauthorized')
 
-  const validRefresh = await compareStoredTokenHash(refreshToken, record.refreshTokenHash)
+  const validRefresh = await compareStoredTokenHash(refreshToken, stored.tokenHash)
   if (!validRefresh) throw new Error('Unauthorized')
 
   await issueParentSessionCookies(refreshSession.userId)

@@ -9,7 +9,7 @@ import type { DayOfWeek, ClassPeriod, DailySchedule, DailyHomework } from '@/typ
 // ── Input types ──────────────────────────────────────────────
 
 export interface CreatePeriodInput {
-  userId: string
+  studentId: string
   day: DayOfWeek
   periodNumber?: number
   eventType?: 'SCHOOL_PERIOD' | 'EXTRA_CLASS'
@@ -23,7 +23,7 @@ export interface CreatePeriodInput {
 
 export interface UpdatePeriodInput {
   id: string
-  userId: string
+  studentId: string
   subjectId?: string
   startTime?: string
   endTime?: string
@@ -33,7 +33,7 @@ export interface UpdatePeriodInput {
 }
 
 export interface CreateDailyHomeworkInput {
-  userId: string
+  studentId: string
   date: string
   subjectId: string
   label: string
@@ -88,9 +88,9 @@ const toDailyHomework = (row: {
 // ── School period queries ────────────────────────────────────
 
 /** Retrieves the full weekly SCHOOL_PERIOD schedule grouped by day. */
-export const getWeeklySchedule = async (userId: string): Promise<DailySchedule[]> => {
+export const getWeeklySchedule = async (studentId: string): Promise<DailySchedule[]> => {
   const rows = await db.classPeriod.findMany({
-    where: { userId, eventType: 'SCHOOL_PERIOD' },
+    where: { studentId, eventType: 'SCHOOL_PERIOD' },
     orderBy: [{ day: 'asc' }, { periodNumber: 'asc' }],
   })
 
@@ -106,11 +106,11 @@ export const getWeeklySchedule = async (userId: string): Promise<DailySchedule[]
 
 /** Retrieves SCHOOL_PERIOD schedule for a specific day. */
 export const getDaySchedule = async (
-  userId: string,
+  studentId: string,
   day: DayOfWeek
 ): Promise<DailySchedule | null> => {
   const rows = await db.classPeriod.findMany({
-    where: { userId, day, eventType: 'SCHOOL_PERIOD' },
+    where: { studentId, day, eventType: 'SCHOOL_PERIOD' },
     orderBy: { periodNumber: 'asc' },
   })
   if (rows.length === 0) return null
@@ -120,10 +120,10 @@ export const getDaySchedule = async (
 /** Retrieves the stored time range for a single period owned by the user. */
 export const getPeriodTimes = async (
   id: string,
-  userId: string
+  studentId: string
 ): Promise<{ startTime: string; endTime: string } | null> =>
   db.classPeriod.findFirst({
-    where: { id, userId },
+    where: { id, studentId },
     select: { startTime: true, endTime: true },
   })
 
@@ -131,7 +131,7 @@ export const getPeriodTimes = async (
 export const createPeriod = async (data: CreatePeriodInput): Promise<string> => {
   const row = await db.classPeriod.create({
     data: {
-      userId: data.userId,
+      studentId: data.studentId,
       day: data.day,
       periodNumber: data.periodNumber ?? null,
       eventType: data.eventType ?? 'SCHOOL_PERIOD',
@@ -149,7 +149,7 @@ export const createPeriod = async (data: CreatePeriodInput): Promise<string> => 
 /** Updates an existing class period record by its ID. */
 export const updatePeriod = async (data: UpdatePeriodInput): Promise<void> => {
   await db.classPeriod.update({
-    where: { id: data.id, userId: data.userId },
+    where: { id: data.id, studentId: data.studentId },
     data: {
       ...(data.subjectId ? { subjectId: data.subjectId } : {}),
       ...(data.startTime ? { startTime: data.startTime } : {}),
@@ -162,28 +162,28 @@ export const updatePeriod = async (data: UpdatePeriodInput): Promise<void> => {
 }
 
 /** Deletes a class period record by its ID. */
-export const deletePeriod = async (id: string, userId: string): Promise<void> => {
-  await db.classPeriod.delete({ where: { id, userId } })
+export const deletePeriod = async (id: string, studentId: string): Promise<void> => {
+  await db.classPeriod.delete({ where: { id, studentId } })
 }
 
 // ── Evening extra class queries ──────────────────────────────
 
 /** Retrieves all EXTRA_CLASS entries for a given day, sorted by startTime. */
 export const getEveningBlocks = async (
-  userId: string,
+  studentId: string,
   day: DayOfWeek
 ): Promise<ClassPeriod[]> => {
   const rows = await db.classPeriod.findMany({
-    where: { userId, day, eventType: 'EXTRA_CLASS' },
+    where: { studentId, day, eventType: 'EXTRA_CLASS' },
     orderBy: [{ sortOrder: 'asc' }, { startTime: 'asc' }],
   })
   return rows.map(toClassPeriod)
 }
 
 /** Retrieves ALL EXTRA_CLASS entries for a user, grouped by day. */
-export const getAllEveningBlocks = async (userId: string): Promise<DailySchedule[]> => {
+export const getAllEveningBlocks = async (studentId: string): Promise<DailySchedule[]> => {
   const rows = await db.classPeriod.findMany({
-    where: { userId, eventType: 'EXTRA_CLASS' },
+    where: { studentId, eventType: 'EXTRA_CLASS' },
     orderBy: [{ day: 'asc' }, { sortOrder: 'asc' }, { startTime: 'asc' }],
   })
   const byDay = new Map<DayOfWeek, ClassPeriod[]>()
@@ -197,11 +197,11 @@ export const getAllEveningBlocks = async (userId: string): Promise<DailySchedule
 
 /** Returns periodIds that have an ExtraClassOverride for the given date. */
 export const getOverridesForDate = async (
-  userId: string,
+  studentId: string,
   date: string
 ): Promise<string[]> => {
   const rows = await db.extraClassOverride.findMany({
-    where: { userId, date },
+    where: { studentId, date },
     select: { periodId: true },
   })
   return rows.map((r) => r.periodId)
@@ -210,22 +210,22 @@ export const getOverridesForDate = async (
 /** Creates a per-date cancellation override for an extra class. */
 export const createOverride = async (
   periodId: string,
-  userId: string,
+  studentId: string,
   date: string,
   reason?: string
 ): Promise<void> => {
   await db.$transaction(async (tx) => {
-    // The (periodId, date) unique carries no userId, so the upsert on its own would
+    // The (periodId, date) unique carries no studentId, so the upsert on its own would
     // let a caller cancel a class period belonging to someone else.
     const owned = await tx.classPeriod.findFirst({
-      where: { id: periodId, userId },
+      where: { id: periodId, studentId },
       select: { id: true },
     })
     if (!owned) throw new Error('Class period not found')
 
     await tx.extraClassOverride.upsert({
       where: { periodId_date: { periodId, date } },
-      create: { periodId, userId, date, reason: reason ?? null },
+      create: { periodId, studentId, date, reason: reason ?? null },
       update: { reason: reason ?? null },
     })
   })
@@ -234,21 +234,21 @@ export const createOverride = async (
 /** Removes a per-date override (un-cancels a class). */
 export const deleteOverride = async (
   periodId: string,
-  userId: string,
+  studentId: string,
   date: string
 ): Promise<void> => {
-  await db.extraClassOverride.deleteMany({ where: { periodId, userId, date } })
+  await db.extraClassOverride.deleteMany({ where: { periodId, studentId, date } })
 }
 
 // ── Daily homework queries ───────────────────────────────────
 
 /** Retrieves all one-off homework items for a specific date. */
 export const getDailyHomework = async (
-  userId: string,
+  studentId: string,
   date: string
 ): Promise<DailyHomework[]> => {
   const rows = await db.dailyHomework.findMany({
-    where: { userId, date },
+    where: { studentId, date },
     orderBy: { createdAt: 'asc' },
   })
   return rows.map(toDailyHomework)
@@ -260,7 +260,7 @@ export const createDailyHomework = async (
 ): Promise<string> => {
   const row = await db.dailyHomework.create({
     data: {
-      userId: data.userId,
+      studentId: data.studentId,
       date: data.date,
       subjectId: data.subjectId,
       label: data.label,
@@ -274,11 +274,11 @@ export const createDailyHomework = async (
 /** Toggles isDone on a daily homework item. Returns the updated record. */
 export const toggleDailyHomeworkDone = async (
   id: string,
-  userId: string,
+  studentId: string,
   isDone: boolean
 ): Promise<DailyHomework> => {
   const row = await db.dailyHomework.update({
-    where: { id, userId },
+    where: { id, studentId },
     data: {
       isDone,
       doneAt: isDone ? new Date() : null,
@@ -288,13 +288,13 @@ export const toggleDailyHomeworkDone = async (
 }
 
 /** Deletes a daily homework item by ID. */
-export const deleteDailyHomework = async (id: string, userId: string): Promise<void> => {
-  await db.dailyHomework.delete({ where: { id, userId } })
+export const deleteDailyHomework = async (id: string, studentId: string): Promise<void> => {
+  await db.dailyHomework.delete({ where: { id, studentId } })
 }
 
 /** Counts how many EXTRA_CLASS blocks a user has on a given day. */
 export const countEveningBlocks = async (
-  userId: string,
+  studentId: string,
   day: DayOfWeek
 ): Promise<number> =>
-  db.classPeriod.count({ where: { userId, day, eventType: 'EXTRA_CLASS' } })
+  db.classPeriod.count({ where: { studentId, day, eventType: 'EXTRA_CLASS' } })

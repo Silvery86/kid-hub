@@ -32,7 +32,7 @@ export async function POST(req: Request) {
 
     const id = await scheduleService.createPeriod({
       ...data,
-      userId: DEFAULT_USER_ID,
+      studentId: DEFAULT_USER_ID,
       day,
       eventType: 'EXTRA_CLASS',
     })

@@ -55,25 +55,25 @@ export const sortDays = (days: DailySchedule[]): DailySchedule[] =>
 
 // ── DB-backed schedule operations ────────────────────────────────────────────
 
-export const getWeeklySchedule = (userId: string) => scheduleRepo.getWeeklySchedule(userId)
-export const getDaySchedule = (userId: string, day: DayOfWeek) => scheduleRepo.getDaySchedule(userId, day)
-export const getAllEveningBlocks = (userId: string) => scheduleRepo.getAllEveningBlocks(userId)
-export const getEveningBlocks = (userId: string, day: DayOfWeek) => scheduleRepo.getEveningBlocks(userId, day)
-export const getOverridesForDate = (userId: string, date: string) => scheduleRepo.getOverridesForDate(userId, date)
-export const getDailyHomework = (userId: string, date: string) => scheduleRepo.getDailyHomework(userId, date)
-export const countEveningBlocks = (userId: string, day: DayOfWeek) => scheduleRepo.countEveningBlocks(userId, day)
+export const getWeeklySchedule = (studentId: string) => scheduleRepo.getWeeklySchedule(studentId)
+export const getDaySchedule = (studentId: string, day: DayOfWeek) => scheduleRepo.getDaySchedule(studentId, day)
+export const getAllEveningBlocks = (studentId: string) => scheduleRepo.getAllEveningBlocks(studentId)
+export const getEveningBlocks = (studentId: string, day: DayOfWeek) => scheduleRepo.getEveningBlocks(studentId, day)
+export const getOverridesForDate = (studentId: string, date: string) => scheduleRepo.getOverridesForDate(studentId, date)
+export const getDailyHomework = (studentId: string, date: string) => scheduleRepo.getDailyHomework(studentId, date)
+export const countEveningBlocks = (studentId: string, day: DayOfWeek) => scheduleRepo.countEveningBlocks(studentId, day)
 export const createPeriod = (data: scheduleRepo.CreatePeriodInput) => scheduleRepo.createPeriod(data)
-export const getPeriodTimes = (id: string, userId: string) => scheduleRepo.getPeriodTimes(id, userId)
+export const getPeriodTimes = (id: string, studentId: string) => scheduleRepo.getPeriodTimes(id, studentId)
 export const updatePeriod = (data: scheduleRepo.UpdatePeriodInput) => scheduleRepo.updatePeriod(data)
-export const deletePeriod = (id: string, userId: string) => scheduleRepo.deletePeriod(id, userId)
-export const createOverride = (periodId: string, userId: string, date: string, reason?: string) =>
-  scheduleRepo.createOverride(periodId, userId, date, reason)
-export const deleteOverride = (periodId: string, userId: string, date: string) =>
-  scheduleRepo.deleteOverride(periodId, userId, date)
-export const getDailyHomeworkForDate = (userId: string, date: string) => scheduleRepo.getDailyHomework(userId, date)
+export const deletePeriod = (id: string, studentId: string) => scheduleRepo.deletePeriod(id, studentId)
+export const createOverride = (periodId: string, studentId: string, date: string, reason?: string) =>
+  scheduleRepo.createOverride(periodId, studentId, date, reason)
+export const deleteOverride = (periodId: string, studentId: string, date: string) =>
+  scheduleRepo.deleteOverride(periodId, studentId, date)
+export const getDailyHomeworkForDate = (studentId: string, date: string) => scheduleRepo.getDailyHomework(studentId, date)
 export const createDailyHomework = (data: scheduleRepo.CreateDailyHomeworkInput) =>
   scheduleRepo.createDailyHomework(data)
-export const toggleDailyHomeworkDone = (id: string, userId: string, isDone: boolean) =>
-  scheduleRepo.toggleDailyHomeworkDone(id, userId, isDone)
-export const deleteDailyHomework = (id: string, userId: string) =>
-  scheduleRepo.deleteDailyHomework(id, userId)
+export const toggleDailyHomeworkDone = (id: string, studentId: string, isDone: boolean) =>
+  scheduleRepo.toggleDailyHomeworkDone(id, studentId, isDone)
+export const deleteDailyHomework = (id: string, studentId: string) =>
+  scheduleRepo.deleteDailyHomework(id, studentId)

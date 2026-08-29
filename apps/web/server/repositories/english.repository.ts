@@ -9,7 +9,7 @@ export { addUserPoints } from '@/server/repositories/progress.repository'
 
 /** Persists a completed English mini-game session to the database. */
 export const saveEnglishProgress = async (data: {
-  userId: string
+  studentId: string
   minigame: EnglishGameType
   level: DifficultyLevel
   correctCount: number
@@ -22,7 +22,7 @@ export const saveEnglishProgress = async (data: {
 }): Promise<void> => {
   await db.englishProgress.create({
     data: {
-      userId: data.userId,
+      studentId: data.studentId,
       minigame: data.minigame,
       level: data.level,
       correctCount: data.correctCount,
@@ -38,12 +38,12 @@ export const saveEnglishProgress = async (data: {
 
 /** Returns the best score record for an English mini-game + level, or null if never played. */
 export const getEnglishBestScore = async (
-  userId: string,
+  studentId: string,
   minigame: EnglishGameType,
   level: DifficultyLevel
 ): Promise<{ starsEarned: number; score: number } | null> => {
   const progress = await db.userProgress.findUnique({
-    where: { userId },
+    where: { studentId },
     select: { id: true },
   })
   if (!progress) return null
@@ -63,16 +63,16 @@ export const getEnglishBestScore = async (
 
 /** Upserts the best score for an English mini-game + level — only updates if the new score is better. */
 export const upsertEnglishBestScore = async (
-  userId: string,
+  studentId: string,
   minigame: EnglishGameType,
   level: DifficultyLevel,
   score: number,
   starsEarned: number
 ): Promise<void> => {
   const progress = await db.userProgress.upsert({
-    where: { userId },
+    where: { studentId },
     create: {
-      userId,
+      studentId,
       totalPoints: 0,
       currentStreak: 0,
       lastActiveDate: new Date().toISOString().split('T')[0]!,
