@@ -68,7 +68,8 @@ export const updatePeriod = (data: scheduleRepo.UpdatePeriodInput) => scheduleRe
 export const deletePeriod = (id: string, userId: string) => scheduleRepo.deletePeriod(id, userId)
 export const createOverride = (periodId: string, userId: string, date: string, reason?: string) =>
   scheduleRepo.createOverride(periodId, userId, date, reason)
-export const deleteOverride = (periodId: string, date: string) => scheduleRepo.deleteOverride(periodId, date)
+export const deleteOverride = (periodId: string, userId: string, date: string) =>
+  scheduleRepo.deleteOverride(periodId, userId, date)
 export const getDailyHomeworkForDate = (userId: string, date: string) => scheduleRepo.getDailyHomework(userId, date)
 export const createDailyHomework = (data: scheduleRepo.CreateDailyHomeworkInput) =>
   scheduleRepo.createDailyHomework(data)

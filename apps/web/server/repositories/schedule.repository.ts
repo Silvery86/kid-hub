@@ -214,16 +214,30 @@ export const createOverride = async (
   date: string,
   reason?: string
 ): Promise<void> => {
-  await db.extraClassOverride.upsert({
-    where: { periodId_date: { periodId, date } },
-    create: { periodId, userId, date, reason: reason ?? null },
-    update: { reason: reason ?? null },
+  await db.$transaction(async (tx) => {
+    // The (periodId, date) unique carries no userId, so the upsert on its own would
+    // let a caller cancel a class period belonging to someone else.
+    const owned = await tx.classPeriod.findFirst({
+      where: { id: periodId, userId },
+      select: { id: true },
+    })
+    if (!owned) throw new Error('Class period not found')
+
+    await tx.extraClassOverride.upsert({
+      where: { periodId_date: { periodId, date } },
+      create: { periodId, userId, date, reason: reason ?? null },
+      update: { reason: reason ?? null },
+    })
   })
 }
 
 /** Removes a per-date override (un-cancels a class). */
-export const deleteOverride = async (periodId: string, date: string): Promise<void> => {
-  await db.extraClassOverride.deleteMany({ where: { periodId, date } })
+export const deleteOverride = async (
+  periodId: string,
+  userId: string,
+  date: string
+): Promise<void> => {
+  await db.extraClassOverride.deleteMany({ where: { periodId, userId, date } })
 }
 
 // ── Daily homework queries ───────────────────────────────────

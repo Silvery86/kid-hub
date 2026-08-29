@@ -106,7 +106,7 @@ export type ParentEmailAuthRecord = {
 
 /** Finds the single household user by parent email. */
 export const getByParentEmail = async (email: string): Promise<ParentEmailAuthRecord | null> => {
-  const record = await db.user.findFirst({
+  const record = await db.user.findUnique({
     where: { parentEmail: email },
     select: {
       id: true,
@@ -120,7 +120,7 @@ export const getByParentEmail = async (email: string): Promise<ParentEmailAuthRe
       kidPatternAttempts: true,
       kidPatternLockedUntil: true,
     },
-  } as Prisma.UserFindFirstArgs)
+  } as Prisma.UserFindUniqueArgs)
   return record as ParentEmailAuthRecord | null
 }
 

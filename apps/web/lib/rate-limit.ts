@@ -104,6 +104,33 @@ export function getLoginRateLimiter(): Ratelimit | null {
   return _loginLimiter
 }
 
+// Per-EMAIL limiter for parent password login, complementing the per-IP limiters
+// above. IP alone is not enough: a household behind CGNAT shares one address, so a
+// stranger guessing one account's password can lock everybody else out, while an
+// attacker on many IPs can grind a single account unthrottled. Keyed on the
+// normalised email, 5 attempts / 300 s — slower than the per-IP window because a
+// legitimate person retrying their own password does not need more.
+let _loginEmailLimiter: Ratelimit | null | undefined
+
+export function getLoginEmailRateLimiter(): Ratelimit | null {
+  if (_loginEmailLimiter !== undefined) return _loginEmailLimiter
+
+  const creds = readUpstashCredentials('parent login per-email gate')
+  if (!creds) {
+    _loginEmailLimiter = null
+    return null
+  }
+
+  _loginEmailLimiter = new Ratelimit({
+    redis: new Redis(creds),
+    limiter: Ratelimit.slidingWindow(5, '300 s'),
+    analytics: false,
+    prefix: 'kid-hub:login-email',
+  })
+
+  return _loginEmailLimiter
+}
+
 // Singleton for the kid-facing game-save routes (/api/v1/{math,english} POST),
 // which — like /api/v1/auth/login — are outside the middleware matcher. Game
 // saves are more frequent than logins but still bounded per IP: 30 / 60 s.

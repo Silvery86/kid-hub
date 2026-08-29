@@ -39,7 +39,7 @@ export async function DELETE(req: Request, { params }: Params) {
   if (!id || !date.success) return badRequest()
 
   try {
-    await scheduleService.deleteOverride(id, date.data)
+    await scheduleService.deleteOverride(id, DEFAULT_USER_ID, date.data)
     return ok({ restored: true })
   } catch {
     return serverError('Failed to restore class')

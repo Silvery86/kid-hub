@@ -33,6 +33,7 @@ import {
   PARENT_ACCESS_COOKIE,
   PARENT_REFRESH_COOKIE,
 } from '@/server/services/auth.service'
+import { checkRateLimit, getLoginEmailRateLimiter } from '@/lib/rate-limit'
 import type { ActionVoidResult, AuthActionResult } from '@/types'
 import {
   DEFAULT_USER_ID,
@@ -137,6 +138,18 @@ export const parentLoginAction = async (
   const parsedPassword = ParentPasswordSchema.safeParse(password)
   if (!parsedPassword.success) {
     return { success: false, error: parsedPassword.error.issues[0]?.message ?? 'Validation error' }
+  }
+
+  // Per-account limit. The middleware limiter keyed on IP cannot see which account a
+  // Server Action payload targets, so this is the only place the email is available.
+  const rl = await checkRateLimit(getLoginEmailRateLimiter(), parsedEmail.data)
+  if (rl && !rl.success) {
+    return {
+      success: false,
+      error: 'Quá nhiều lần thử đăng nhập',
+      isLocked: true,
+      lockoutSeconds: Math.ceil((rl.reset - Date.now()) / 1000),
+    }
   }
 
   try {

@@ -259,7 +259,7 @@ export const restoreExtraClassAction = async (
 ): Promise<ActionVoidResult> => {
   try {
     await requireParentSession()
-    await scheduleService.deleteOverride(periodId, date)
+    await scheduleService.deleteOverride(periodId, DEFAULT_USER_ID, date)
     revalidatePath('/schedule')
     return { success: true }
   } catch (err) {
