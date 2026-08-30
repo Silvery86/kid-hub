@@ -14,6 +14,7 @@ import bcrypt from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
 import type { KidSession, ParentRefreshSession, ParentSession } from '@/types'
 import * as parentRepo from '@/server/repositories/parent.repository'
+import * as parentStudentRepo from '@/server/repositories/parent-student.repository'
 import * as studentRepo from '@/server/repositories/student.repository'
 import {
   KID_PATTERN_LENGTH,
@@ -116,24 +117,32 @@ export const calcLockoutExpiry = (): Date =>
   new Date(Date.now() + PIN_LOCKOUT_SECONDS * 1000)
 
 /** Create a short-lived signed JWT parent access token. */
-export const createParentAccessToken = async (userId: string): Promise<string> =>
-  new SignJWT({ userId, typ: 'parent-access' })
+export const createParentAccessToken = async (parentId: string): Promise<string> =>
+  new SignJWT({ parentId, typ: 'parent-access' })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(`${PARENT_ACCESS_TTL_SECONDS}s`)
     .sign(getJwtSecret())
 
-/** Create a long-lived signed JWT parent refresh token. */
-export const createParentRefreshToken = async (userId: string): Promise<string> =>
-  new SignJWT({ userId, typ: 'parent-refresh' })
+/**
+ * Create a long-lived signed JWT parent refresh token.
+ *
+ * `tokenId` addresses the refresh_tokens row this token belongs to, which is
+ * what lets one device be revoked without touching the others.
+ */
+export const createParentRefreshToken = async (
+  parentId: string,
+  tokenId: string
+): Promise<string> =>
+  new SignJWT({ parentId, tokenId, typ: 'parent-refresh' })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(`${PARENT_REFRESH_TTL_SECONDS}s`)
     .sign(getJwtSecret())
 
-/** Create a signed JWT for kid app unlock session. */
-export const createKidSessionToken = async (userId: string): Promise<string> =>
-  new SignJWT({ userId, typ: 'kid-session' })
+/** Create a signed JWT for kid app unlock session, scoped to one student. */
+export const createKidSessionToken = async (studentId: string): Promise<string> =>
+  new SignJWT({ studentId, typ: 'kid-session' })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(`${KID_SESSION_TTL_SECONDS}s`)
@@ -147,8 +156,8 @@ export const verifyParentAccessToken = async (token: string): Promise<ParentSess
   try {
     const { payload } = await jwtVerify(token, getJwtSecret())
     if (payload.typ !== 'parent-access') return null
-    if (typeof payload.userId !== 'string' || typeof payload.exp !== 'number') return null
-    return { userId: payload.userId, expiresAt: payload.exp * 1000 }
+    if (typeof payload.parentId !== 'string' || typeof payload.exp !== 'number') return null
+    return { parentId: payload.parentId, expiresAt: payload.exp * 1000 }
   } catch {
     return null
   }
@@ -161,8 +170,13 @@ export const verifyParentRefreshToken = async (
   try {
     const { payload } = await jwtVerify(token, getJwtSecret())
     if (payload.typ !== 'parent-refresh') return null
-    if (typeof payload.userId !== 'string' || typeof payload.exp !== 'number') return null
-    return { userId: payload.userId, expiresAt: payload.exp * 1000 }
+    if (typeof payload.parentId !== 'string' || typeof payload.tokenId !== 'string') return null
+    if (typeof payload.exp !== 'number') return null
+    return {
+      parentId: payload.parentId,
+      tokenId: payload.tokenId,
+      expiresAt: payload.exp * 1000,
+    }
   } catch {
     return null
   }
@@ -173,8 +187,8 @@ export const verifyKidSessionToken = async (token: string): Promise<KidSession |
   try {
     const { payload } = await jwtVerify(token, getJwtSecret())
     if (payload.typ !== 'kid-session') return null
-    if (typeof payload.userId !== 'string' || typeof payload.exp !== 'number') return null
-    return { userId: payload.userId, expiresAt: payload.exp * 1000 }
+    if (typeof payload.studentId !== 'string' || typeof payload.exp !== 'number') return null
+    return { studentId: payload.studentId, expiresAt: payload.exp * 1000 }
   } catch {
     return null
   }
@@ -211,13 +225,18 @@ export {
  * and returns both tokens for the action layer to set as cookies.
  */
 export const createParentSession = async (
-  parentId: string
+  parentId: string,
+  deviceLabel?: string
 ): Promise<{ accessToken: string; refreshToken: string }> => {
   const accessToken = await createParentAccessToken(parentId)
-  const refreshToken = await createParentRefreshToken(parentId)
-  const refreshHash = await hashTokenForStorage(refreshToken)
   const refreshExpiresAt = new Date(Date.now() + PARENT_REFRESH_TTL_SECONDS * 1000)
-  await parentRepo.saveRefreshToken(parentId, refreshHash, refreshExpiresAt)
+
+  // The row is created first because its id has to travel inside the token, and
+  // the hash of that token then has to go back into the same row.
+  const row = await parentRepo.createRefreshToken(parentId, '', refreshExpiresAt, deviceLabel)
+  const refreshToken = await createParentRefreshToken(parentId, row.id)
+  await parentRepo.setRefreshTokenHash(row.id, await hashTokenForStorage(refreshToken))
+
   return { accessToken, refreshToken }
 }
 
@@ -227,20 +246,37 @@ export const createParentSession = async (
  */
 export const validateRefreshToken = async (
   refreshToken: string
-): Promise<string | null> => {
+): Promise<{ parentId: string; tokenId: string } | null> => {
   const session = await verifyParentRefreshToken(refreshToken)
   if (!session) return null
-  const stored = await parentRepo.getActiveRefreshToken(session.userId)
+
+  const stored = await parentRepo.getRefreshTokenById(session.tokenId)
   if (!stored) return null
+  if (stored.revokedAt) return null
+  if (stored.parentId !== session.parentId) return null
   if (stored.expiresAt.getTime() <= Date.now()) return null
+
   const valid = await compareStoredTokenHash(refreshToken, stored.tokenHash)
-  return valid ? session.userId : null
+  if (!valid) return null
+
+  // The account gate runs here too, not only at login. Without this, suspending
+  // a parent leaves them signed in for as long as they keep rotating.
+  const parent = await parentRepo.getById(session.parentId)
+  if (!parent || parent.status !== 'ACTIVE') return null
+
+  await parentRepo.touchRefreshToken(stored.id)
+  return { parentId: session.parentId, tokenId: stored.id }
 }
 
-/** Clears the persisted refresh token for the userId resolved from the token. */
+/** Revokes the single device session the given refresh token belongs to. */
 export const revokeRefreshToken = async (refreshToken: string): Promise<void> => {
   const session = await verifyParentRefreshToken(refreshToken)
-  if (session) await parentRepo.clearRefreshTokens(session.userId)
+  if (session) await parentRepo.revokeRefreshToken(session.tokenId)
+}
+
+/** Revokes every live session for a parent. */
+export const revokeAllForParent = async (parentId: string): Promise<void> => {
+  await parentRepo.revokeAllForParent(parentId)
 }
 
 /**
@@ -266,7 +302,32 @@ export const getParentStatus = async (
  * Registers parent credentials on first setup.
  * Throws if an account is already configured.
  */
+/**
+ * Submits a signup application. Open to anyone, but it mints NO session: the
+ * account is PENDING until an admin approves it.
+ *
+ * The student row is deliberately not created here — otherwise the students
+ * table fills with children of accounts that will never be approved. The intake
+ * is parked on the parent row and materialised inside `approveParent`.
+ */
 export const registerParent = async (
+  email: string,
+  password: string,
+  firstStudent: { name: string; gradeLevel: number }
+): Promise<{ parentId: string; status: 'PENDING' }> => {
+  const existing = await parentRepo.getByEmail(email)
+  if (existing) throw new Error('Email already registered')
+  const passwordHash = await hashPassword(password)
+  const created = await parentRepo.createPending(email, passwordHash, firstStudent)
+  return { parentId: created.id, status: 'PENDING' }
+}
+
+/**
+ * Bootstrap path for a deployment that has no accounts yet: creates the founding
+ * parent directly as ACTIVE and admin, because an approval queue with nobody able
+ * to approve is a deadlock. Used by first-run setup only.
+ */
+export const registerFoundingParent = async (
   parentId: string,
   email: string,
   password: string
@@ -277,11 +338,114 @@ export const registerParent = async (
   await parentRepo.upsertCredentials(parentId, email, passwordHash)
 }
 
+// ── Account approval (admin) ─────────────────────────────────────────────────
+
+export type AccountGateResult =
+  | { ok: true }
+  | { ok: false; reason: 'pending' | 'rejected' | 'suspended'; note?: string }
+
+/**
+ * The single account-state gate. Called from BOTH login and refresh — a gate
+ * that only runs at login lets a suspended parent keep working until their
+ * access token expires.
+ */
+export const assertAccountActive = (parent: {
+  status: string
+  reviewNote?: string | null
+}): AccountGateResult => {
+  switch (parent.status) {
+    case 'ACTIVE':
+      return { ok: true }
+    case 'PENDING':
+      return { ok: false, reason: 'pending' }
+    case 'REJECTED':
+      return { ok: false, reason: 'rejected', note: parent.reviewNote ?? undefined }
+    default:
+      return { ok: false, reason: 'suspended' }
+  }
+}
+
+/** Approves an applicant: activates them and materialises their first student. */
+export const approveParent = async (adminId: string, parentId: string): Promise<void> => {
+  const parent = await parentRepo.getById(parentId)
+  if (!parent) throw new Error('Account not found')
+  if (parent.status === 'ACTIVE') return
+
+  const payload = (await parentRepo.getSignupPayload(parentId)) as
+    | { name: string; gradeLevel: number }
+    | null
+
+  if (payload?.name) {
+    const student = await studentRepo.create(payload.name, payload.gradeLevel ?? 1)
+    await parentStudentRepo.link(parentId, student.id, 'OWNER')
+  }
+
+  await parentRepo.setStatus(parentId, 'ACTIVE', { approvedById: adminId })
+}
+
+/** Rejects an applicant. Their credentials stay, so the email cannot be re-used. */
+export const rejectParent = async (
+  _adminId: string,
+  parentId: string,
+  note?: string
+): Promise<void> => {
+  await parentRepo.setStatus(parentId, 'REJECTED', { reviewNote: note })
+  await parentRepo.revokeAllForParent(parentId)
+}
+
+/**
+ * Suspends an approved account. Revoking here rather than waiting for token
+ * expiry is what makes suspension take effect immediately.
+ */
+export const suspendParent = async (
+  _adminId: string,
+  parentId: string,
+  note?: string
+): Promise<void> => {
+  const parent = await parentRepo.getById(parentId)
+  if (parent?.isAdmin && (await parentRepo.countAdmins()) <= 1) {
+    throw new Error('Cannot suspend the last admin')
+  }
+  await parentRepo.setStatus(parentId, 'SUSPENDED', { reviewNote: note })
+  await parentRepo.revokeAllForParent(parentId)
+}
+
+/** Lists accounts awaiting review. */
+export const listPendingParents = () => parentRepo.listByStatus('PENDING')
+
+/** True when this parent may act on the admin surface. */
+export const isAdmin = async (parentId: string): Promise<boolean> => {
+  const parent = await parentRepo.getById(parentId)
+  return Boolean(parent?.isAdmin && parent.status === 'ACTIVE')
+}
+
+// ── Students ─────────────────────────────────────────────────────────────────
+
+/** Lists the students this parent is linked to. */
+export const listStudentsForParent = (parentId: string) =>
+  parentStudentRepo.listStudentsForParent(parentId)
+
+/** True when this parent may touch this student's data. */
+export const canAccessStudent = (parentId: string, studentId: string) =>
+  parentStudentRepo.isLinked(parentId, studentId)
+
+/** Creates a student and links it to the parent as OWNER. */
+export const createStudent = async (
+  parentId: string,
+  name: string,
+  gradeLevel: number
+): Promise<{ id: string }> => {
+  const student = await studentRepo.create(name, gradeLevel)
+  await parentStudentRepo.link(parentId, student.id, 'OWNER')
+  return { id: student.id }
+}
+
 export type LoginResult =
-  | { status: 'ok'; userId: string }
+  | { status: 'ok'; parentId: string }
   | { status: 'no-account' }
   | { status: 'wrong-password' }
   | { status: 'locked'; lockoutSeconds: number }
+  | { status: 'not-active'; reason: 'pending' | 'rejected' | 'suspended'; note?: string }
 
 /** Full parent login flow: credential lookup, lockout check, and attempt tracking. */
 export const loginWithParentPassword = async (
@@ -313,7 +477,13 @@ export const loginWithParentPassword = async (
   }
 
   await parentRepo.resetLoginAttempts(record.id)
-  return { status: 'ok', userId: record.id }
+
+  // The account gate runs AFTER the password check, so an unapproved account
+  // cannot be told apart from a wrong password by anyone who does not hold it.
+  const gate = assertAccountActive(record)
+  if (!gate.ok) return { status: 'not-active', reason: gate.reason, note: gate.note }
+
+  return { status: 'ok', parentId: record.id }
 }
 
 /** Returns PIN status for the given parent. */

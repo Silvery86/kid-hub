@@ -15,6 +15,13 @@ export const DEFAULT_USER_ID = 'khoi-default-user'
  */
 export const DEFAULT_PARENT_ID = `parent-${DEFAULT_USER_ID}`
 
+/**
+ * Which student the parent is currently looking at. A UI preference, not an
+ * authority: the join table decides what they may actually read. Deliberately
+ * kept out of the access token so a revoked link cannot be outlived by a claim.
+ */
+export const ACTIVE_STUDENT_COOKIE = 'active_student'
+
 // ── Schedule ─────────────────────────────────────────────────
 
 // DAYS_OF_WEEK, SCHOOL_DAYS and DAY_LABELS are owned by @kid-hub/shared

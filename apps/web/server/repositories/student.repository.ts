@@ -23,6 +23,14 @@ export const getById = async (studentId: string) => {
   return db.student.findUnique({ where: { id: studentId } })
 }
 
+/** Creates a student. The caller must link it to a parent in the same transaction. */
+export const create = async (name: string, gradeLevel: number) => {
+  return db.student.create({
+    data: { name, gradeLevel },
+    select: { id: true, name: true, gradeLevel: true },
+  })
+}
+
 /** Gets or creates the seeded student (single-household bootstrap). */
 export const getOrCreateDefaultStudent = async (
   id: string,

@@ -7,6 +7,9 @@
  */
 
 import { db } from '@/lib/db'
+import { Prisma } from '@prisma/client'
+
+export type AccountStatus = 'PENDING' | 'ACTIVE' | 'REJECTED' | 'SUSPENDED'
 
 export interface ParentAuthRecord {
   id: string
@@ -14,8 +17,17 @@ export interface ParentAuthRecord {
   passwordHash: string
   loginAttempts: number
   loginLockedUntil: Date | null
-  status: 'PENDING' | 'ACTIVE' | 'REJECTED' | 'SUSPENDED'
+  status: AccountStatus
   isAdmin: boolean
+  reviewNote: string | null
+}
+
+export interface StoredRefreshToken {
+  id: string
+  parentId: string
+  tokenHash: string
+  expiresAt: Date
+  revokedAt: Date | null
 }
 
 const AUTH_FIELDS = {
@@ -26,6 +38,7 @@ const AUTH_FIELDS = {
   loginLockedUntil: true,
   status: true,
   isAdmin: true,
+  reviewNote: true,
 } as const
 
 // ── Account lookup ───────────────────────────────────────────
@@ -44,6 +57,62 @@ export const getByEmail = async (email: string): Promise<ParentAuthRecord | null
 export const exists = async (parentId: string): Promise<boolean> => {
   const row = await db.parent.findUnique({ where: { id: parentId }, select: { id: true } })
   return row !== null
+}
+
+/** Reads a pending applicant's held signup intake. */
+export const getSignupPayload = async (parentId: string): Promise<unknown> => {
+  const row = await db.parent.findUnique({
+    where: { id: parentId },
+    select: { signupPayload: true },
+  })
+  return row?.signupPayload ?? null
+}
+
+/** Lists accounts in one state, oldest application first. */
+export const listByStatus = async (status: AccountStatus) => {
+  return db.parent.findMany({
+    where: { status },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true, email: true, displayName: true, status: true, createdAt: true },
+  })
+}
+
+/** Creates a new applicant. Always PENDING — approval is the only way to ACTIVE. */
+export const createPending = async (
+  email: string,
+  passwordHash: string,
+  signupPayload: { name: string; gradeLevel: number }
+): Promise<{ id: string }> => {
+  return db.parent.create({
+    data: { email, passwordHash, status: 'PENDING', signupPayload },
+    select: { id: true },
+  })
+}
+
+/** Moves an account to a new state, recording who decided and why. */
+export const setStatus = async (
+  parentId: string,
+  status: AccountStatus,
+  opts: { approvedById?: string; reviewNote?: string } = {}
+): Promise<void> => {
+  const data: Prisma.ParentUncheckedUpdateInput = {
+    status,
+    reviewNote: opts.reviewNote ?? null,
+    ...(status === 'ACTIVE'
+      ? {
+          approvedAt: new Date(),
+          approvedById: opts.approvedById ?? null,
+          // Prisma needs its own sentinel to write SQL NULL into a Json column.
+          signupPayload: Prisma.DbNull,
+        }
+      : {}),
+  }
+  await db.parent.update({ where: { id: parentId }, data })
+}
+
+/** How many admins exist. Guards against removing the last one. */
+export const countAdmins = async (): Promise<number> => {
+  return db.parent.count({ where: { isAdmin: true, status: 'ACTIVE' } })
 }
 
 /** Creates or updates the credentials on a parent row. */
@@ -166,33 +235,57 @@ export const atomicFailedPinAttempt = async (
 }
 
 // ── Refresh tokens ───────────────────────────────────────────
-// The table holds one row per device. Until the per-device session work lands,
-// these helpers keep the previous single-token behaviour: saving replaces.
+// One row per signed-in device. The row id travels in the refresh JWT as
+// `tokenId`, which is what makes revoking a single device possible.
 
-/** Replaces this parent's stored refresh token. */
-export const saveRefreshToken = async (
+/** Records a new device session. Returns the row id for the token claim. */
+export const createRefreshToken = async (
   parentId: string,
   tokenHash: string,
-  expiresAt: Date
-): Promise<void> => {
-  await db.$transaction([
-    db.refreshToken.deleteMany({ where: { parentId } }),
-    db.refreshToken.create({ data: { parentId, tokenHash, expiresAt } }),
-  ])
-}
-
-/** Returns the parent's live refresh token, or null when there is none. */
-export const getActiveRefreshToken = async (
-  parentId: string
-): Promise<{ tokenHash: string; expiresAt: Date } | null> => {
-  return db.refreshToken.findFirst({
-    where: { parentId, revokedAt: null },
-    orderBy: { createdAt: 'desc' },
-    select: { tokenHash: true, expiresAt: true },
+  expiresAt: Date,
+  deviceLabel?: string
+): Promise<{ id: string }> => {
+  return db.refreshToken.create({
+    data: { parentId, tokenHash, expiresAt, deviceLabel: deviceLabel ?? null },
+    select: { id: true },
   })
 }
 
-/** Clears persisted refresh token state on parent sign out. */
-export const clearRefreshTokens = async (parentId: string): Promise<void> => {
-  await db.refreshToken.deleteMany({ where: { parentId } })
+/** Stores the hash of the token minted for a row that was created empty. */
+export const setRefreshTokenHash = async (tokenId: string, tokenHash: string): Promise<void> => {
+  await db.refreshToken.update({ where: { id: tokenId }, data: { tokenHash } })
+}
+
+/** Reads one device session by its row id. */
+export const getRefreshTokenById = async (
+  tokenId: string
+): Promise<StoredRefreshToken | null> => {
+  return db.refreshToken.findUnique({
+    where: { id: tokenId },
+    select: { id: true, parentId: true, tokenHash: true, expiresAt: true, revokedAt: true },
+  })
+}
+
+/** Marks one device session revoked. Sign-out and device management both use it. */
+export const revokeRefreshToken = async (tokenId: string): Promise<void> => {
+  await db.refreshToken.updateMany({
+    where: { id: tokenId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  })
+}
+
+/** Revokes every live session for a parent — suspension and "sign out everywhere". */
+export const revokeAllForParent = async (parentId: string): Promise<void> => {
+  await db.refreshToken.updateMany({
+    where: { parentId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  })
+}
+
+/** Stamps last use, so the device list can show something meaningful. */
+export const touchRefreshToken = async (tokenId: string): Promise<void> => {
+  await db.refreshToken.updateMany({
+    where: { id: tokenId },
+    data: { lastUsedAt: new Date() },
+  })
 }

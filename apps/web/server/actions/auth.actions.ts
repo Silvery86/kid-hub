@@ -19,7 +19,7 @@ import {
   getParentStatus,
   getPinRecord,
   loginWithParentPassword,
-  registerParent,
+  registerFoundingParent,
   revokeRefreshToken,
   savePin,
   saveKidPattern,
@@ -77,26 +77,33 @@ const issueParentSessionCookies = async (parentId: string): Promise<void> => {
   cookieStore.set(PARENT_REFRESH_COOKIE, refreshToken, PARENT_REFRESH_COOKIE_OPTIONS)
 }
 
-const ensureParentSession = async (): Promise<{ ok: boolean; userId?: string }> => {
+const ensureParentSession = async (): Promise<{ ok: boolean; parentId?: string }> => {
   const cookieStore = await cookies()
   const accessToken = cookieStore.get(PARENT_ACCESS_COOKIE)?.value
 
   if (accessToken) {
     const accessSession = await verifyParentAccessToken(accessToken)
-    if (accessSession) return { ok: true, userId: accessSession.userId }
+    if (accessSession) return { ok: true, parentId: accessSession.parentId }
   }
 
   const refreshToken = cookieStore.get(PARENT_REFRESH_COOKIE)?.value
   if (!refreshToken) return { ok: false }
 
-  const userId = await validateRefreshToken(refreshToken)
-  if (!userId) return { ok: false }
+  const validated = await validateRefreshToken(refreshToken)
+  if (!validated) return { ok: false }
 
-  await issueParentSessionCookies(userId)
-  return { ok: true, userId }
+  await issueParentSessionCookies(validated.parentId)
+  return { ok: true, parentId: validated.parentId }
 }
 
-/** Registers parent account credentials for first-time setup. */
+/**
+ * Registers the founding parent on a deployment that has none.
+ *
+ * Open signup with admin approval (`registerParent` in the service) is a
+ * different flow with a different screen, and is wired up with the parent UI.
+ * This action stays the first-run bootstrap: without it there would be no admin
+ * able to approve anyone.
+ */
 export const registerParentAccountAction = async (
   email: string,
   password: string
@@ -111,7 +118,7 @@ export const registerParentAccountAction = async (
   }
 
   try {
-    await registerParent(DEFAULT_PARENT_ID, parsedEmail.data, parsedPassword.data)
+    await registerFoundingParent(DEFAULT_PARENT_ID, parsedEmail.data, parsedPassword.data)
     await issueParentSessionCookies(DEFAULT_PARENT_ID)
     return { success: true }
   } catch (err) {
@@ -123,6 +130,13 @@ export const registerParentAccountAction = async (
     return { success: false, error: 'Failed to register parent account' }
   }
 }
+
+/** Vietnamese copy for each blocked account state (§7.6). */
+const ACCOUNT_STATE_MESSAGE = {
+  pending: 'Tài khoản đang chờ duyệt',
+  rejected: 'Tài khoản đã bị từ chối',
+  suspended: 'Tài khoản đã bị vô hiệu hóa',
+} as const
 
 /**
  * Parent login with account/password.
@@ -169,7 +183,10 @@ export const parentLoginAction = async (
         lockoutSeconds: result.lockoutSeconds,
       }
     }
-    await issueParentSessionCookies(result.userId)
+    if (result.status === 'not-active') {
+      return { success: false, error: ACCOUNT_STATE_MESSAGE[result.reason] }
+    }
+    await issueParentSessionCookies(result.parentId)
     return { success: true }
   } catch {
     return { success: false, error: 'Login failed' }

@@ -49,10 +49,16 @@ export async function POST(req: Request) {
       { status: 429 },
     )
   }
+  if (result.status === 'not-active') {
+    return NextResponse.json(
+      { success: false, error: result.reason, note: result.note },
+      { status: 403 },
+    )
+  }
   if (result.status !== 'ok') {
     return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 })
   }
 
-  const { accessToken, refreshToken } = await createParentSession(result.userId)
+  const { accessToken, refreshToken } = await createParentSession(result.parentId)
   return NextResponse.json({ success: true, accessToken, refreshToken })
 }

@@ -50,17 +50,19 @@ export interface ParentPin {
 }
 
 export interface ParentSession {
-  userId: string
+  parentId: string
   expiresAt: number // Unix timestamp ms
 }
 
 export interface ParentRefreshSession {
-  userId: string
+  parentId: string
+  /** Addresses the refresh_tokens row, so one device can be revoked on its own. */
+  tokenId: string
   expiresAt: number // Unix timestamp ms
 }
 
 export interface KidSession {
-  userId: string
+  studentId: string
   expiresAt: number // Unix timestamp ms
 }
 

@@ -36,6 +36,18 @@ const isKidAppSurfacePath = (pathname: string): boolean => {
 const isParentPublicPath = (pathname: string): boolean =>
   pathname === '/parent/login' || pathname === '/parent/pin'
 
+/**
+ * D1: the kid unlock screen names the students on this device, so it is only
+ * reachable with a live parent session. No session → the parent signs in first.
+ */
+const hasParentSession = async (request: NextRequest): Promise<boolean> => {
+  const accessToken = request.cookies.get(PARENT_ACCESS_COOKIE)?.value
+  if (accessToken && (await verifyToken(accessToken, 'parent-access'))) return true
+
+  const refreshToken = request.cookies.get(PARENT_REFRESH_COOKIE)?.value
+  return Boolean(refreshToken && (await verifyToken(refreshToken, 'parent-refresh')))
+}
+
 const isParentProtectedPath = (pathname: string): boolean =>
   pathname === '/parent' ||
   (pathname.startsWith('/parent/') && !isParentPublicPath(pathname))
@@ -49,22 +61,28 @@ const getSecret = (): Uint8Array => {
   return new TextEncoder().encode(secret)
 }
 
+/**
+ * The subject claim is named per token type: parent tokens carry `parentId`,
+ * the kid session carries `studentId`. Keep this in step with auth.service —
+ * nothing here is type-checked against it.
+ */
 const verifyToken = async (
   token: string,
   type: 'parent-access' | 'parent-refresh' | 'kid-session'
-): Promise<{ userId: string } | null> => {
+): Promise<{ subjectId: string } | null> => {
   try {
     const { payload } = await jwtVerify(token, getSecret())
     if (payload.typ !== type) return null
-    if (typeof payload.userId !== 'string') return null
-    return { userId: payload.userId }
+    const claim = type === 'kid-session' ? payload.studentId : payload.parentId
+    if (typeof claim !== 'string') return null
+    return { subjectId: claim }
   } catch {
     return null
   }
 }
 
-const createParentAccessToken = async (userId: string): Promise<string> =>
-  new SignJWT({ userId, typ: 'parent-access' })
+const createParentAccessToken = async (parentId: string): Promise<string> =>
+  new SignJWT({ parentId, typ: 'parent-access' })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(`${PARENT_ACCESS_TTL_SECONDS}s`)
@@ -79,6 +97,14 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
 async function _handle(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl
+
+  // ── Kid unlock: parent session required (D1) ─────────────────────────────
+  if (pathname === '/kid-unlock') {
+    if (!(await hasParentSession(request))) {
+      return NextResponse.redirect(new URL('/parent/login', request.url))
+    }
+    return NextResponse.next()
+  }
 
   // ── Child app protection: require kid unlock session ────────────────────
   if (isKidAppSurfacePath(pathname)) {
@@ -147,7 +173,7 @@ async function _handle(request: NextRequest): Promise<NextResponse> {
       // the new cookie. Genuine refresh-token rotation (new hash persisted + old
       // token revoked) happens only in Node contexts: requireParentSession
       // (server/lib/auth-guard.ts) and the REST /api/v1/auth/refresh route.
-      const newAccessToken = await createParentAccessToken(refreshSession.userId)
+      const newAccessToken = await createParentAccessToken(refreshSession.subjectId)
       const response = NextResponse.next()
       response.cookies.set(PARENT_ACCESS_COOKIE, newAccessToken, {
         httpOnly: true,
