@@ -7,7 +7,9 @@ export const SESSION_COOKIE = 'parent_access'
  * The server must be running with the same SESSION_SECRET for the cookie to be accepted.
  * Requires SESSION_SECRET to be set in .env.local (loaded by playwright.config.ts).
  */
-export async function createSessionToken(userId = 'khoi-default-user'): Promise<string> {
+export async function createSessionToken(
+  parentId = 'parent-khoi-default-user'
+): Promise<string> {
   const secret = process.env.SESSION_SECRET
   if (!secret || secret.length < 32) {
     throw new Error(
@@ -15,7 +17,7 @@ export async function createSessionToken(userId = 'khoi-default-user'): Promise<
     )
   }
   const key = new TextEncoder().encode(secret)
-  return new SignJWT({ userId, typ: 'parent-access' })
+  return new SignJWT({ parentId, typ: 'parent-access' })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('15m')
