@@ -1,13 +1,20 @@
 import { NextResponse } from 'next/server'
-import { DEFAULT_USER_ID } from '@/lib/constants'
 import * as homeworkService from '@/server/services/homework.service'
+
+import { guardStudentApp } from '@/app/api/v1/_lib/guard'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+type Params = { params: Promise<{ studentId: string }> }
+
+export async function GET(req: Request, { params }: Params) {
+  const { studentId } = await params
+  const denied = await guardStudentApp(req, studentId)
+  if (denied) return denied
+
   try {
     const data = await homeworkService.getTodayHomework(
-      DEFAULT_USER_ID,
+      studentId,
       homeworkService.todayDateKey(),
     )
     return NextResponse.json({ success: true, data })

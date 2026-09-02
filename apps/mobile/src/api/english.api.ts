@@ -1,10 +1,10 @@
 // english.api.ts — persist an English session, read best scores (via @kid-hub/api-client).
 import type { SaveEnglishProgressInput, GameSaveResult, GameBestScore } from '@kid-hub/shared'
 
-import { apiClient } from './http'
+import { studentApi } from './http'
 
-export const saveEnglishProgress = (input: SaveEnglishProgressInput): Promise<GameSaveResult> =>
-  apiClient.saveEnglishProgress(input)
+export const saveEnglishProgress = async (input: SaveEnglishProgressInput): Promise<GameSaveResult> =>
+  (await studentApi()).saveEnglishProgress(input)
 
-export const getEnglishBestScores = (): Promise<GameBestScore[]> =>
-  apiClient.getEnglishBestScores()
+export const getEnglishBestScores = async (): Promise<GameBestScore[]> =>
+  (await studentApi()).getEnglishBestScores()

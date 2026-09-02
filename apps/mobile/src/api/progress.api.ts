@@ -1,6 +1,6 @@
 // progress.api.ts — GET the kid's points, streak and badge progress.
 import type { ProgressSummary } from '@kid-hub/shared'
 
-import { apiClient } from './http'
+import { studentApi } from './http'
 
-export const getProgress = (): Promise<ProgressSummary> => apiClient.getProgress()
+export const getProgress = async (): Promise<ProgressSummary> => (await studentApi()).getProgress()

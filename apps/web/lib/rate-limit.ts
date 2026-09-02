@@ -131,6 +131,30 @@ export function getLoginEmailRateLimiter(): Ratelimit | null {
   return _loginEmailLimiter
 }
 
+// Open signup makes /api/v1/auth/register the one endpoint an unauthenticated
+// stranger can reach that writes a row. Without a limit the approval queue is a
+// spam target, so it is deliberately the tightest window in the file.
+let _registerLimiter: Ratelimit | null | undefined
+
+export function getRegisterRateLimiter(): Ratelimit | null {
+  if (_registerLimiter !== undefined) return _registerLimiter
+
+  const creds = readUpstashCredentials('open signup /api/v1/auth/register')
+  if (!creds) {
+    _registerLimiter = null
+    return null
+  }
+
+  _registerLimiter = new Ratelimit({
+    redis: new Redis(creds),
+    limiter: Ratelimit.slidingWindow(3, '3600 s'),
+    analytics: false,
+    prefix: 'kid-hub:register',
+  })
+
+  return _registerLimiter
+}
+
 // Singleton for the kid-facing game-save routes (/api/v1/{math,english} POST),
 // which — like /api/v1/auth/login — are outside the middleware matcher. Game
 // saves are more frequent than logins but still bounded per IP: 30 / 60 s.

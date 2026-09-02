@@ -1,9 +1,9 @@
 // schedule.api.ts — GET today's schedule view (via @kid-hub/api-client).
 import type { TodayView, WeekView } from '@kid-hub/shared'
 
-import { apiClient } from './http'
+import { studentApi } from './http'
 
-export const getSchedule = (): Promise<TodayView> => apiClient.getSchedule()
+export const getSchedule = async (): Promise<TodayView> => (await studentApi()).getSchedule()
 
 /** The whole timetable — the schedule screen's day tabs need more than today. */
-export const getWeekSchedule = (): Promise<WeekView> => apiClient.getWeekSchedule()
+export const getWeekSchedule = async (): Promise<WeekView> => (await studentApi()).getWeekSchedule()

@@ -1,19 +1,26 @@
 import { NextResponse } from 'next/server'
-import { DEFAULT_USER_ID } from '@/lib/constants'
 import { getWeeklySchedule, getAllEveningBlocks } from '@/server/services/schedule.service'
 
+import { guardStudentApp } from '@/app/api/v1/_lib/guard'
+
 export const dynamic = 'force-dynamic'
+
+type Params = { params: Promise<{ studentId: string }> }
 
 /**
  * Mobile's counterpart to what the web schedule page reads through
  * getScheduleAction + getAllEveningBlocksAction. The day tabs need the whole
  * week, which GET /api/v1/schedule (TodayView) cannot supply.
  */
-export async function GET() {
+export async function GET(req: Request, { params }: Params) {
+  const { studentId } = await params
+  const denied = await guardStudentApp(req, studentId)
+  if (denied) return denied
+
   try {
     const [days, eveningBlocks] = await Promise.all([
-      getWeeklySchedule(DEFAULT_USER_ID),
-      getAllEveningBlocks(DEFAULT_USER_ID),
+      getWeeklySchedule(studentId),
+      getAllEveningBlocks(studentId),
     ])
     return NextResponse.json({ success: true, data: { days, eveningBlocks } })
   } catch {

@@ -1,36 +1,48 @@
 import { NextResponse } from 'next/server'
 import { KidPatternSchema } from '@kid-hub/shared'
-import { DEFAULT_PARENT_ID, DEFAULT_USER_ID } from '@/lib/constants'
 import { checkRateLimit, getPinRateLimiter } from '@/lib/rate-limit'
-import { getParentStatus, verifyKidUnlockPattern } from '@/server/services/auth.service'
+import { createKidSessionToken, verifyKidUnlockPattern } from '@/server/services/auth.service'
+import * as studentRepo from '@/server/repositories/student.repository'
+import { guardStudent } from '@/app/api/v1/_lib/guard'
 
 export const dynamic = 'force-dynamic'
 
+type Params = { params: Promise<{ studentId: string }> }
+
 /**
- * Mobile's kid unlock gate.
+ * Kid unlock, scoped to one student.
  *
- * Unlike the web action this issues no session: mobile authenticates with the
- * Bearer token from parent login, and /api/v1/* is outside the middleware
- * matcher, so a kid pattern cannot gate API access there. It gates the UI. The
- * parts that must not live on the device — the pattern hash, the attempt count
- * and the lockout — stay here.
+ * The parent authenticates the device; the child then enters the pattern and the
+ * device receives a kid token that reaches only this student's data. The parts
+ * that must not live on the device — the pattern hash, the attempt count and the
+ * lockout — stay here.
  */
 
 /** Whether a pattern has been configured, so the screen can explain itself. */
-export async function GET() {
+export async function GET(req: Request, { params }: Params) {
+  const { studentId } = await params
+  const denied = await guardStudent(req, studentId)
+  if (denied) return denied
+
   try {
-    const { hasKidPatternSet } = await getParentStatus(DEFAULT_PARENT_ID, DEFAULT_USER_ID)
-    return NextResponse.json({ success: true, data: { hasKidPatternSet } })
+    const record = await studentRepo.getKidPatternRecord(studentId)
+    return NextResponse.json({
+      success: true,
+      data: { hasKidPatternSet: Boolean(record?.kidPatternHash) },
+    })
   } catch {
     return NextResponse.json({ success: false, error: 'Failed to read status' }, { status: 500 })
   }
 }
 
-export async function POST(req: Request) {
-  // HTTP-layer rate limit by IP — the middleware limiter does not cover /api/*.
-  // Shares the PIN limiter: both are short secrets guarding the same household.
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? '127.0.0.1'
-  const rl = await checkRateLimit(getPinRateLimiter(), ip)
+export async function POST(req: Request, { params }: Params) {
+  const { studentId } = await params
+  const denied = await guardStudent(req, studentId)
+  if (denied) return denied
+
+  // Rate limit per student, not per IP: this stops an attacker burning another
+  // household's pattern attempts from many addresses.
+  const rl = await checkRateLimit(getPinRateLimiter(), `kid-session:${studentId}`)
   if (rl && !rl.success) {
     return NextResponse.json(
       { success: false, error: 'Too many attempts' },
@@ -52,23 +64,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: 'Invalid unlock pattern' }, { status: 400 })
   }
 
-  const result = await verifyKidUnlockPattern(DEFAULT_USER_ID, parsed.data)
+  const result = await verifyKidUnlockPattern(studentId, parsed.data)
 
   if (result.status === 'not-configured') {
-    return NextResponse.json(
-      { success: true, data: { status: 'not-configured' } },
-      { status: 200 },
-    )
+    return NextResponse.json({ success: true, data: { status: 'not-configured' } })
   }
   if (result.status === 'locked') {
-    return NextResponse.json(
-      { success: true, data: { status: 'locked', lockoutSeconds: result.lockoutSeconds } },
-      { status: 200 },
-    )
+    return NextResponse.json({
+      success: true,
+      data: { status: 'locked', lockoutSeconds: result.lockoutSeconds },
+    })
   }
   if (result.status === 'wrong') {
-    return NextResponse.json({ success: true, data: { status: 'wrong' } }, { status: 200 })
+    return NextResponse.json({ success: true, data: { status: 'wrong' } })
   }
 
-  return NextResponse.json({ success: true, data: { status: 'ok' } })
+  // The pattern held: hand back a token scoped to this student alone, which the
+  // kid screens send instead of the parent's. It reaches no parent endpoint.
+  const kidToken = await createKidSessionToken(studentId)
+  return NextResponse.json({ success: true, data: { status: 'ok', kidToken } })
 }

@@ -13,6 +13,7 @@ import {
   type ScreenTime,
 } from '@kid-hub/shared'
 import type { HttpTransport } from '../http'
+import { studentPath } from './paths'
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -21,39 +22,55 @@ export const verifyParentPin = async (http: HttpTransport, pin: string): Promise
 
 // ── Kid access ───────────────────────────────────────────────────────────────
 
-export const getKidAccessSettings = async (http: HttpTransport): Promise<KidAccessSettings> =>
-  KidAccessSettingsSchema.parse(await http.get('/kid-access'))
+export const getKidAccessSettings = async (
+  http: HttpTransport,
+  studentId: string
+): Promise<KidAccessSettings> =>
+  KidAccessSettingsSchema.parse(await http.get(studentPath(studentId, '/kid-access')))
 
 export const saveKidAccessSettings = async (
   http: HttpTransport,
+  studentId: string,
   settings: Record<string, boolean>
 ): Promise<MutationAck> =>
-  MutationAckSchema.parse(await http.put('/kid-access', { settings }))
+  MutationAckSchema.parse(await http.put(studentPath(studentId, '/kid-access'), { settings }))
 
-export const setKidPattern = async (http: HttpTransport, pattern: string): Promise<MutationAck> =>
-  MutationAckSchema.parse(await http.put('/kid-access/pattern', { pattern }))
+export const setKidPattern = async (
+  http: HttpTransport,
+  studentId: string,
+  pattern: string
+): Promise<MutationAck> =>
+  MutationAckSchema.parse(await http.put(studentPath(studentId, '/kid-access/pattern'), { pattern }))
 
 // ── Screen time and activity ─────────────────────────────────────────────────
 
-export const getScreenTime = async (http: HttpTransport): Promise<ScreenTime> =>
-  ScreenTimeSchema.parse(await http.get('/screen-time'))
+export const getScreenTime = async (
+  http: HttpTransport,
+  studentId: string
+): Promise<ScreenTime> =>
+  ScreenTimeSchema.parse(await http.get(studentPath(studentId, '/screen-time')))
 
 export const setScreenTimeLimit = async (
   http: HttpTransport,
+  studentId: string,
   limitMins: number
-): Promise<MutationAck> => MutationAckSchema.parse(await http.put('/screen-time', { limitMins }))
+): Promise<MutationAck> =>
+  MutationAckSchema.parse(await http.put(studentPath(studentId, '/screen-time'), { limitMins }))
 
 export const recordScreenTime = async (
   http: HttpTransport,
+  studentId: string,
   seconds: number
-): Promise<MutationAck> => MutationAckSchema.parse(await http.post('/screen-time', { seconds }))
+): Promise<MutationAck> =>
+  MutationAckSchema.parse(await http.post(studentPath(studentId, '/screen-time'), { seconds }))
 
 export const getRecentActivity = async (
   http: HttpTransport,
+  studentId: string,
   limit?: number
 ): Promise<ActivityItem[]> =>
   ActivityItemArraySchema.parse(
-    await http.get(`/activity${limit ? `?limit=${limit}` : ''}`)
+    await http.get(studentPath(studentId, `/activity${limit ? `?limit=${limit}` : ''}`))
   )
 
 // ── Grades ───────────────────────────────────────────────────────────────────
@@ -67,46 +84,80 @@ export interface UpsertGradeInput {
 
 export const upsertGrade = async (
   http: HttpTransport,
+  studentId: string,
   input: UpsertGradeInput
-): Promise<MutationAck> => MutationAckSchema.parse(await http.put('/grades', input))
+): Promise<MutationAck> =>
+  MutationAckSchema.parse(await http.put(studentPath(studentId, '/grades'), input))
 
 // ── Schedule writes ──────────────────────────────────────────────────────────
 
-export const createPeriod = async (http: HttpTransport, input: unknown): Promise<MutationAck> =>
-  MutationAckSchema.parse(await http.post('/schedule/periods', input))
+export const createPeriod = async (
+  http: HttpTransport,
+  studentId: string,
+  input: unknown
+): Promise<MutationAck> =>
+  MutationAckSchema.parse(await http.post(studentPath(studentId, '/schedule/periods'), input))
 
 export const updatePeriod = async (
   http: HttpTransport,
+  studentId: string,
   id: string,
   input: unknown
 ): Promise<MutationAck> =>
-  MutationAckSchema.parse(await http.patch(`/schedule/periods/${id}`, input))
+  MutationAckSchema.parse(
+    await http.patch(studentPath(studentId, `/schedule/periods/${id}`), input)
+  )
 
-export const deletePeriod = async (http: HttpTransport, id: string): Promise<MutationAck> =>
-  MutationAckSchema.parse(await http.delete(`/schedule/periods/${id}`))
+export const deletePeriod = async (
+  http: HttpTransport,
+  studentId: string,
+  id: string
+): Promise<MutationAck> =>
+  MutationAckSchema.parse(await http.delete(studentPath(studentId, `/schedule/periods/${id}`)))
 
-export const createExtraClass = async (http: HttpTransport, input: unknown): Promise<MutationAck> =>
-  MutationAckSchema.parse(await http.post('/schedule/extra-classes', input))
+export const createExtraClass = async (
+  http: HttpTransport,
+  studentId: string,
+  input: unknown
+): Promise<MutationAck> =>
+  MutationAckSchema.parse(
+    await http.post(studentPath(studentId, '/schedule/extra-classes'), input)
+  )
 
 export const cancelExtraClass = async (
   http: HttpTransport,
+  studentId: string,
   id: string,
   date: string,
   reason?: string
 ): Promise<MutationAck> =>
   MutationAckSchema.parse(
-    await http.post(`/schedule/extra-classes/${id}/cancel`, { date, reason })
+    await http.post(studentPath(studentId, `/schedule/extra-classes/${id}/cancel`), {
+      date,
+      reason,
+    })
   )
 
 export const restoreExtraClass = async (
   http: HttpTransport,
+  studentId: string,
   id: string,
   date: string
 ): Promise<MutationAck> =>
-  MutationAckSchema.parse(await http.delete(`/schedule/extra-classes/${id}/cancel?date=${date}`))
+  MutationAckSchema.parse(
+    await http.delete(studentPath(studentId, `/schedule/extra-classes/${id}/cancel?date=${date}`))
+  )
 
-export const addDailyHomework = async (http: HttpTransport, input: unknown): Promise<MutationAck> =>
-  MutationAckSchema.parse(await http.post('/schedule/homework', input))
+export const addDailyHomework = async (
+  http: HttpTransport,
+  studentId: string,
+  input: unknown
+): Promise<MutationAck> =>
+  MutationAckSchema.parse(await http.post(studentPath(studentId, '/schedule/homework'), input))
 
-export const deleteDailyHomework = async (http: HttpTransport, id: string): Promise<MutationAck> =>
-  MutationAckSchema.parse(await http.delete(`/schedule/homework/${id}`))
+export const deleteDailyHomework = async (
+  http: HttpTransport,
+  studentId: string,
+  id: string
+): Promise<MutationAck> =>
+  MutationAckSchema.parse(await http.delete(studentPath(studentId, `/schedule/homework/${id}`)))

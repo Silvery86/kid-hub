@@ -1,12 +1,19 @@
 import { NextResponse } from 'next/server'
-import { DEFAULT_USER_ID } from '@/lib/constants'
 import { getUserProgress } from '@/server/services/user.service'
+
+import { guardStudentApp } from '@/app/api/v1/_lib/guard'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+type Params = { params: Promise<{ studentId: string }> }
+
+export async function GET(req: Request, { params }: Params) {
+  const { studentId } = await params
+  const denied = await guardStudentApp(req, studentId)
+  if (denied) return denied
+
   try {
-    const progress = await getUserProgress(DEFAULT_USER_ID)
+    const progress = await getUserProgress(studentId)
     if (!progress) {
       return NextResponse.json({ success: true, data: null })
     }

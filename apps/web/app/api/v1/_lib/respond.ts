@@ -4,6 +4,10 @@ import { NextResponse } from 'next/server'
 export const unauthorized = () =>
   NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
 
+/** 403 for a caller who IS authenticated but is not linked to this student. */
+export const forbidden = () =>
+  NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
+
 /** 400 for a payload that fails its Zod schema. */
 export const badRequest = (error = 'Invalid input') =>
   NextResponse.json({ success: false, error }, { status: 400 })

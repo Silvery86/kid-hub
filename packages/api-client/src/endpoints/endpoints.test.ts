@@ -16,6 +16,8 @@ import {
   verifyParentPin,
 } from './parent'
 
+const S = 'student-1'
+
 /** Transport stub that returns a fixed payload for every verb. */
 const stub = (payload: unknown): HttpTransport => ({
   get: async () => payload as never,
@@ -24,6 +26,23 @@ const stub = (payload: unknown): HttpTransport => ({
   patch: async () => payload as never,
   delete: async () => payload as never,
 })
+
+/** Transport stub that records the path it was asked for. */
+const spy = () => {
+  const paths: string[] = []
+  const record = async (path: string) => {
+    paths.push(path)
+    return undefined as never
+  }
+  const http: HttpTransport = {
+    get: record,
+    post: record,
+    put: record,
+    patch: record,
+    delete: record,
+  }
+  return { http, paths }
+}
 
 describe('api-client validates valid responses through', () => {
   it('getSchedule returns a parsed TodayView', async () => {
@@ -34,34 +53,34 @@ describe('api-client validates valid responses through', () => {
       cancelledIds: [],
       homework: [],
     }
-    await expect(getSchedule(stub(view))).resolves.toEqual(view)
+    await expect(getSchedule(stub(view), S)).resolves.toEqual(view)
   })
 
   it('getGrades returns a parsed ReportCard', async () => {
     const card = { userId: 'u', grades: [], averageScore: 0 }
-    await expect(getGrades(stub(card))).resolves.toEqual(card)
+    await expect(getGrades(stub(card), S)).resolves.toEqual(card)
   })
 
   it('getTodayHomework returns a parsed HomeworkItem[]', async () => {
     const items = [
       { periodId: 'h1', subjectId: 'math', homeworkNote: 'x', startTime: '', isDone: false },
     ]
-    await expect(getTodayHomework(stub(items))).resolves.toEqual(items)
+    await expect(getTodayHomework(stub(items), S)).resolves.toEqual(items)
   })
 
   it('getMathBestScores / getEnglishBestScores return parsed GameBestScore[]', async () => {
     const scores = [
       { gameType: 'math', level: 1, score: 10, starsEarned: 1, achievedAt: '2026-08-04T00:00:00.000Z' },
     ]
-    await expect(getMathBestScores(stub(scores))).resolves.toEqual(scores)
+    await expect(getMathBestScores(stub(scores), S)).resolves.toEqual(scores)
     const eng = [{ ...scores[0], gameType: 'english' }]
-    await expect(getEnglishBestScores(stub(eng))).resolves.toEqual(eng)
+    await expect(getEnglishBestScores(stub(eng), S)).resolves.toEqual(eng)
   })
 
   it('saveMathProgress / saveEnglishProgress return a parsed GameSaveResult', async () => {
     const result = { starsEarned: 2, score: 120, pointsEarned: 40, isNewBest: true }
     await expect(
-      saveMathProgress(stub(result), {
+      saveMathProgress(stub(result), S, {
         minigame: 'addition',
         level: 1,
         correctCount: 8,
@@ -70,7 +89,7 @@ describe('api-client validates valid responses through', () => {
       })
     ).resolves.toEqual(result)
     await expect(
-      saveEnglishProgress(stub(result), {
+      saveEnglishProgress(stub(result), S, {
         minigame: 'alphabet',
         level: 1,
         correctCount: 8,
@@ -81,24 +100,50 @@ describe('api-client validates valid responses through', () => {
   })
 })
 
+describe('every student-scoped fetcher names its student in the path', () => {
+  // The failure this guards against is silent: a fetcher that drops the segment
+  // still compiles, still parses, and returns the wrong child's data.
+  it.each([
+    ['getSchedule', (h: HttpTransport) => getSchedule(h, S)],
+    ['getGrades', (h: HttpTransport) => getGrades(h, S)],
+    ['getTodayHomework', (h: HttpTransport) => getTodayHomework(h, S)],
+    ['getMathBestScores', (h: HttpTransport) => getMathBestScores(h, S)],
+    ['getEnglishBestScores', (h: HttpTransport) => getEnglishBestScores(h, S)],
+    ['getScreenTime', (h: HttpTransport) => getScreenTime(h, S)],
+    ['getRecentActivity', (h: HttpTransport) => getRecentActivity(h, S)],
+    ['getKidAccessSettings', (h: HttpTransport) => getKidAccessSettings(h, S)],
+  ])('%s requests /students/:id/…', async (_name, call) => {
+    const { http, paths } = spy()
+    await call(http).catch(() => undefined) // the stub returns nothing; the path is the assertion
+    expect(paths).toHaveLength(1)
+    expect(paths[0]).toMatch(new RegExp(`^/students/${S}/`))
+  })
+
+  it('escapes an id that would otherwise change the path', async () => {
+    const { http, paths } = spy()
+    await getSchedule(http, 'a/../b').catch(() => undefined)
+    expect(paths[0]).toBe('/students/a%2F..%2Fb/schedule')
+  })
+})
+
 describe('api-client throws on malformed responses', () => {
   it('getSchedule throws when homework is not an array', async () => {
     const bad = { date: '2026-08-04', schoolPeriods: [], eveningBlocks: [], cancelledIds: [], homework: {} }
-    await expect(getSchedule(stub(bad))).rejects.toThrow()
+    await expect(getSchedule(stub(bad), S)).rejects.toThrow()
   })
 
   it('getGrades throws when averageScore is missing', async () => {
-    await expect(getGrades(stub({ userId: 'u', grades: [] }))).rejects.toThrow()
+    await expect(getGrades(stub({ userId: 'u', grades: [] }), S)).rejects.toThrow()
   })
 
   it('getMathBestScores throws when a score level is out of range', async () => {
     const bad = [{ gameType: 'math', level: 9, score: 10, starsEarned: 1, achievedAt: 'x' }]
-    await expect(getMathBestScores(stub(bad))).rejects.toThrow()
+    await expect(getMathBestScores(stub(bad), S)).rejects.toThrow()
   })
 
   it('saveMathProgress throws when the result shape is wrong', async () => {
     await expect(
-      saveMathProgress(stub({ score: 'not-a-number' }), {
+      saveMathProgress(stub({ score: 'not-a-number' }), S, {
         minigame: 'addition',
         level: 1,
         correctCount: 8,
@@ -114,22 +159,22 @@ describe('api-client throws on malformed responses', () => {
 describe('api-client validates the parent surface', () => {
   it('getScreenTime returns a parsed ScreenTime', async () => {
     const data = { usedSecs: 900, limitMins: 120 }
-    await expect(getScreenTime(stub(data))).resolves.toEqual(data)
+    await expect(getScreenTime(stub(data), S)).resolves.toEqual(data)
   })
 
   it('getScreenTime throws when the server drops limitMins', async () => {
-    await expect(getScreenTime(stub({ usedSecs: 900 }))).rejects.toThrow()
+    await expect(getScreenTime(stub({ usedSecs: 900 }), S)).rejects.toThrow()
   })
 
   it('getRecentActivity accepts a null iconKey', async () => {
     const rows = [
       { id: 'a1', type: 'HOMEWORK_DONE', label: 'Toán', iconKey: null, createdAt: '2026-08-22' },
     ]
-    await expect(getRecentActivity(stub(rows))).resolves.toEqual(rows)
+    await expect(getRecentActivity(stub(rows), S)).resolves.toEqual(rows)
   })
 
   it('getKidAccessSettings accepts null for "never customised"', async () => {
-    await expect(getKidAccessSettings(stub(null))).resolves.toBeNull()
+    await expect(getKidAccessSettings(stub(null), S)).resolves.toBeNull()
   })
 
   it('verifyParentPin rejects a status the client does not know', async () => {

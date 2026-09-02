@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type APIRequestContext } from '@playwright/test'
+import { createSessionToken } from '../fixtures/auth'
 import {
   HomeworkItemArraySchema,
   ProgressSummarySchema,
@@ -14,44 +15,83 @@ import {
 // (C2), so a server-side shape change that the contract types missed fails the
 // test at the exact endpoint instead of silently breaking the mobile client.
 //
-// Read + homework-done routes are kid-facing (no auth, matching their Server Actions).
-// Auth routes are exercised through negative paths plus one full happy-path flow.
+// Every student-scoped route now names its student in the path and is guarded,
+// so the read tests sign in first. Auth routes are exercised through negative
+// paths plus one full happy-path flow.
 
 // Seeded parent credentials (prisma/seed.ts). Override via env in other environments.
 const PARENT_EMAIL = process.env.TEST_PARENT_EMAIL ?? 'giang8692@gmail.com'
 const PARENT_PASSWORD = process.env.TEST_PARENT_PASSWORD ?? 'Giang@123'
 
-test.describe('API v1 — kid-facing read routes', () => {
-  // GET /api/v1/homework/today
-  test('GET /homework/today matches HomeworkItem[] contract', async ({ request }) => {
-    const res = await request.get('/api/v1/homework/today')
+test.describe.configure({ mode: 'serial' })
+
+type Session = { accessToken: string; studentId: string }
+let sessionPromise: Promise<Session | null> | null = null
+
+/**
+ * A parent session for tests that are not about logging in.
+ *
+ * The token is signed locally with the same SESSION_SECRET the server verifies,
+ * rather than obtained from POST /auth/login. That endpoint is rate-limited to
+ * 5/60s per IP by design, and a suite that spends that budget on setup starves
+ * the handful of tests that are genuinely about login — and then cascades into
+ * skips that look like passes.
+ */
+function session(request: APIRequestContext): Promise<Session | null> {
+  sessionPromise ??= buildSession(request)
+  return sessionPromise
+}
+
+async function buildSession(request: APIRequestContext): Promise<Session | null> {
+  const accessToken = await createSessionToken()
+  const me = await request.get('/api/v1/parents/me', {
+    headers: { authorization: `Bearer ${accessToken}` },
+  })
+  if (me.status() !== 200) return null
+  const { data } = await me.json()
+  const studentId = data.students[0]?.id
+  return studentId ? { accessToken, studentId } : null
+}
+
+test.describe('API v1 — student-scoped read routes', () => {
+  let auth: { accessToken: string; studentId: string } | null = null
+  let headers: Record<string, string> = {}
+
+  test.beforeAll(async ({ request }) => {
+    auth = await session(request)
+    if (auth) headers = { authorization: `Bearer ${auth.accessToken}` }
+  })
+
+  test.beforeEach(() => {
+    test.skip(!auth, 'Seeded household unavailable in this environment')
+  })
+
+  test('GET homework/today matches HomeworkItem[] contract', async ({ request }) => {
+    const res = await request.get(`/api/v1/students/${auth!.studentId}/homework/today`, { headers })
     expect(res.status()).toBe(200)
     const body = await res.json()
     expect(body.success).toBe(true)
     expect(() => HomeworkItemArraySchema.parse(body.data)).not.toThrow()
   })
 
-  // GET /api/v1/schedule
-  test('GET /schedule matches TodayView contract', async ({ request }) => {
-    const res = await request.get('/api/v1/schedule')
+  test('GET schedule matches TodayView contract', async ({ request }) => {
+    const res = await request.get(`/api/v1/students/${auth!.studentId}/schedule`, { headers })
     expect(res.status()).toBe(200)
     const body = await res.json()
     expect(body.success).toBe(true)
     expect(() => TodayViewSchema.parse(body.data)).not.toThrow()
   })
 
-  // GET /api/v1/grades
-  test('GET /grades matches ReportCard contract', async ({ request }) => {
-    const res = await request.get('/api/v1/grades')
+  test('GET grades matches ReportCard contract', async ({ request }) => {
+    const res = await request.get(`/api/v1/students/${auth!.studentId}/grades`, { headers })
     expect(res.status()).toBe(200)
     const body = await res.json()
     expect(body.success).toBe(true)
     expect(() => ReportCardSchema.parse(body.data)).not.toThrow()
   })
 
-  // GET /api/v1/progress
-  test('GET /progress matches the progress-summary contract (or null)', async ({ request }) => {
-    const res = await request.get('/api/v1/progress')
+  test('GET progress matches the progress-summary contract (or null)', async ({ request }) => {
+    const res = await request.get(`/api/v1/students/${auth!.studentId}/progress`, { headers })
     expect(res.status()).toBe(200)
     const body = await res.json()
     expect(body.success).toBe(true)
@@ -59,16 +99,53 @@ test.describe('API v1 — kid-facing read routes', () => {
   })
 })
 
-test.describe('API v1 — homework write route', () => {
-  // POST /api/v1/homework/[id]/done
-  // markDone() does a Prisma update keyed on { id, userId }; a non-existent id throws
-  // (P2025) which the route maps to 500 — so this exercises the route without mutating
-  // any real homework record.
-  test('POST /homework/[id]/done with unknown id responds with 500 JSON', async ({ request }) => {
-    const res = await request.post('/api/v1/homework/__nonexistent-period-id__/done')
-    expect(res.status()).toBe(500)
-    const body = await res.json()
-    expect(body.success).toBe(false)
+/**
+ * The tenancy probe. These eight routes shipped with no authentication at all;
+ * a live check that they now refuse both an anonymous caller and an authenticated
+ * parent asking about a student they are not linked to is the point of the phase.
+ */
+test.describe('API v1 — student-scoped routes refuse the wrong caller', () => {
+  const FORMERLY_OPEN = [
+    'homework/today',
+    'schedule',
+    'schedule/week',
+    'progress',
+    'profile',
+    'grades',
+    'math',
+    'english',
+  ]
+
+  let auth: { accessToken: string; studentId: string } | null = null
+
+  test.beforeAll(async ({ request }) => {
+    auth = await session(request)
+  })
+
+  for (const path of FORMERLY_OPEN) {
+    test(`GET ${path} is 401 without a token`, async ({ request }) => {
+      test.skip(!auth, 'Seeded household unavailable in this environment')
+      const res = await request.get(`/api/v1/students/${auth!.studentId}/${path}`)
+      expect(res.status()).toBe(401)
+    })
+
+    test(`GET ${path} is 403 for a student the caller is not linked to`, async ({ request }) => {
+      test.skip(!auth, 'Seeded household unavailable in this environment')
+      const res = await request.get(`/api/v1/students/some-other-household/${path}`, {
+        headers: { authorization: `Bearer ${auth!.accessToken}` },
+      })
+      expect(res.status()).toBe(403)
+    })
+  }
+
+  test('the parent PIN route still rejects an anonymous caller', async ({ request }) => {
+    const res = await request.post('/api/v1/auth/pin', { data: { pin: '1234' } })
+    expect(res.status()).toBe(401)
+  })
+
+  test('the admin surface rejects a non-admin caller', async ({ request }) => {
+    const res = await request.get('/api/v1/admin/parents')
+    expect(res.status()).toBe(401)
   })
 })
 
@@ -130,7 +207,7 @@ test.describe('API v1 — auth happy-path flow', () => {
     const loginRes = await request.post('/api/v1/auth/login', {
       data: { email: PARENT_EMAIL, password: PARENT_PASSWORD },
     })
-    test.skip(loginRes.status() !== 200, 'Seeded parent account unavailable in this environment')
+    test.skip(loginRes.status() !== 200, 'Seeded household unavailable in this environment')
 
     const login = await loginRes.json()
     expect(login.success).toBe(true)

@@ -1,14 +1,21 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { DEFAULT_USER_ID } from '@/lib/constants'
 import { SaveEnglishProgressSchema } from '@kid-hub/shared'
 import { checkRateLimit, getGameSaveRateLimiter } from '@/lib/rate-limit'
 import { saveEnglishSession } from '@/server/services/english.service'
 import { getUserProgress } from '@/server/services/user.service'
 
+import { guardStudentApp } from '@/app/api/v1/_lib/guard'
+
 export const dynamic = 'force-dynamic'
 
+type Params = { params: Promise<{ studentId: string }> }
+
 /** POST /api/v1/english — persist a completed English session (kid-facing, IP rate-limited). */
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest, { params }: Params) {
+  const { studentId } = await params
+  const denied = await guardStudentApp(req, studentId)
+  if (denied) return denied
+
   // HTTP-layer rate limit by IP — the middleware limiter does not cover /api/*.
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? '127.0.0.1'
   const rl = await checkRateLimit(getGameSaveRateLimiter(), ip)
@@ -31,7 +38,7 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ success: false, error: 'Invalid input' }, { status: 400 })
     }
-    const data = await saveEnglishSession(DEFAULT_USER_ID, parsed.data)
+    const data = await saveEnglishSession(studentId, parsed.data)
     return NextResponse.json({ success: true, data })
   } catch {
     return NextResponse.json({ success: false, error: 'Failed to save session' }, { status: 500 })
@@ -39,9 +46,13 @@ export async function POST(req: NextRequest) {
 }
 
 /** GET /api/v1/english — the household's English best scores as GameBestScore[]. */
-export async function GET() {
+export async function GET(req: Request, { params }: Params) {
+  const { studentId } = await params
+  const denied = await guardStudentApp(req, studentId)
+  if (denied) return denied
+
   try {
-    const progress = await getUserProgress(DEFAULT_USER_ID)
+    const progress = await getUserProgress(studentId)
     const data = (progress?.bestScores ?? []).filter((s) => s.gameType === 'english')
     return NextResponse.json({ success: true, data })
   } catch {

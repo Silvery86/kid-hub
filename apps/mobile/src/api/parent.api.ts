@@ -8,41 +8,41 @@ import type {
   ScreenTime,
 } from '@kid-hub/shared'
 
-import { apiClient } from './http'
+import { apiClient, studentApi } from './http'
 
-export const verifyParentPin = (pin: string): Promise<PinVerify> => apiClient.verifyParentPin(pin)
+export const verifyParentPin = async (pin: string): Promise<PinVerify> => apiClient.verifyParentPin(pin)
 
-export const getKidAccessSettings = (): Promise<KidAccessSettings> =>
-  apiClient.getKidAccessSettings()
+export const getKidAccessSettings = async (): Promise<KidAccessSettings> =>
+  (await studentApi()).getKidAccessSettings()
 
-export const saveKidAccessSettings = (settings: Record<string, boolean>): Promise<MutationAck> =>
-  apiClient.saveKidAccessSettings(settings)
+export const saveKidAccessSettings = async (settings: Record<string, boolean>): Promise<MutationAck> =>
+  (await studentApi()).saveKidAccessSettings(settings)
 
-export const setKidPattern = (pattern: string): Promise<MutationAck> =>
-  apiClient.setKidPattern(pattern)
+export const setKidPattern = async (pattern: string): Promise<MutationAck> =>
+  (await studentApi()).setKidPattern(pattern)
 
-export const getScreenTime = (): Promise<ScreenTime> => apiClient.getScreenTime()
+export const getScreenTime = async (): Promise<ScreenTime> => (await studentApi()).getScreenTime()
 
-export const setScreenTimeLimit = (limitMins: number): Promise<MutationAck> =>
-  apiClient.setScreenTimeLimit(limitMins)
+export const setScreenTimeLimit = async (limitMins: number): Promise<MutationAck> =>
+  (await studentApi()).setScreenTimeLimit(limitMins)
 
-export const getRecentActivity = (limit?: number): Promise<ActivityItem[]> =>
-  apiClient.getRecentActivity(limit)
+export const getRecentActivity = async (limit?: number): Promise<ActivityItem[]> =>
+  (await studentApi()).getRecentActivity(limit)
 
-export const upsertGrade = (input: {
+export const upsertGrade = async (input: {
   subjectId: string
   score: number
   semester: 1 | 2
   academicYear: string
-}): Promise<MutationAck> => apiClient.upsertGrade(input)
+}): Promise<MutationAck> => (await studentApi()).upsertGrade(input)
 
-export const createPeriod = (input: unknown): Promise<MutationAck> => apiClient.createPeriod(input)
-export const updatePeriod = (id: string, input: unknown): Promise<MutationAck> =>
-  apiClient.updatePeriod(id, input)
-export const deletePeriod = (id: string): Promise<MutationAck> => apiClient.deletePeriod(id)
-export const createExtraClass = (input: unknown): Promise<MutationAck> =>
-  apiClient.createExtraClass(input)
-export const addDailyHomework = (input: unknown): Promise<MutationAck> =>
-  apiClient.addDailyHomework(input)
-export const deleteDailyHomework = (id: string): Promise<MutationAck> =>
-  apiClient.deleteDailyHomework(id)
+export const createPeriod = async (input: unknown): Promise<MutationAck> => (await studentApi()).createPeriod(input)
+export const updatePeriod = async (id: string, input: unknown): Promise<MutationAck> =>
+  (await studentApi()).updatePeriod(id, input)
+export const deletePeriod = async (id: string): Promise<MutationAck> => (await studentApi()).deletePeriod(id)
+export const createExtraClass = async (input: unknown): Promise<MutationAck> =>
+  (await studentApi()).createExtraClass(input)
+export const addDailyHomework = async (input: unknown): Promise<MutationAck> =>
+  (await studentApi()).addDailyHomework(input)
+export const deleteDailyHomework = async (id: string): Promise<MutationAck> =>
+  (await studentApi()).deleteDailyHomework(id)

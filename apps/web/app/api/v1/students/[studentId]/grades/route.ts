@@ -1,17 +1,23 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { calculateBadge } from '@kid-hub/shared'
-import { DEFAULT_USER_ID } from '@/lib/constants'
-import { requireParentApi } from '@/server/lib/api-auth'
 import { getReportCard, buildReportCard, upsertGrade } from '@/server/services/grades.service'
-import { badRequest, ok, serverError, unauthorized } from '../_lib/respond'
+import { badRequest, ok, serverError } from '@/app/api/v1/_lib/respond'
+
+import { guardStudent, guardStudentApp } from '@/app/api/v1/_lib/guard'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+type Params = { params: Promise<{ studentId: string }> }
+
+export async function GET(req: Request, { params }: Params) {
+  const { studentId } = await params
+  const denied = await guardStudentApp(req, studentId)
+  if (denied) return denied
+
   try {
-    const grades = await getReportCard(DEFAULT_USER_ID)
-    return NextResponse.json({ success: true, data: buildReportCard(DEFAULT_USER_ID, grades) })
+    const grades = await getReportCard(studentId)
+    return NextResponse.json({ success: true, data: buildReportCard(studentId, grades) })
   } catch {
     return NextResponse.json({ success: false, error: 'Failed to fetch grades' }, { status: 500 })
   }
@@ -26,8 +32,10 @@ const UpsertGradeSchema = z.object({
 })
 
 /** Records one subject's score for a semester. Parent-only. */
-export async function PUT(req: Request) {
-  if (!(await requireParentApi(req))) return unauthorized()
+export async function PUT(req: Request, { params }: Params) {
+  const { studentId } = await params
+  const denied = await guardStudent(req, studentId)
+  if (denied) return denied
 
   const parsed = UpsertGradeSchema.safeParse(await req.json().catch(() => null))
   if (!parsed.success) return badRequest(parsed.error.issues[0]?.message ?? 'Invalid input')
@@ -35,7 +43,7 @@ export async function PUT(req: Request) {
   try {
     // The tier is derived, never taken from the caller.
     const badge = calculateBadge(parsed.data.score)
-    await upsertGrade(DEFAULT_USER_ID, { ...parsed.data, badge })
+    await upsertGrade(studentId, { ...parsed.data, badge })
     return ok({ saved: true })
   } catch {
     return serverError('Failed to save grade')

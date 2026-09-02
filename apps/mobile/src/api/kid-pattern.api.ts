@@ -1,9 +1,9 @@
 // kid-pattern.api.ts — the kid unlock gate (via @kid-hub/api-client).
 import type { KidPatternStatus, KidPatternVerify } from '@kid-hub/shared'
 
-import { apiClient } from './http'
+import { studentApi } from './http'
 
-export const getKidPatternStatus = (): Promise<KidPatternStatus> => apiClient.getKidPatternStatus()
+export const getKidPatternStatus = async (): Promise<KidPatternStatus> => (await studentApi()).getKidPatternStatus()
 
-export const verifyKidPattern = (pattern: string): Promise<KidPatternVerify> =>
-  apiClient.verifyKidPattern(pattern)
+export const verifyKidPattern = async (pattern: string): Promise<KidPatternVerify> =>
+  (await studentApi()).verifyKidPattern(pattern)

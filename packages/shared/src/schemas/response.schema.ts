@@ -132,13 +132,17 @@ export const KidPatternStatusSchema = z.object({
 })
 
 /**
- * POST /api/v1/auth/kid-pattern — the outcome of one attempt.
+ * POST /api/v1/students/:studentId/kid-session — the outcome of one attempt.
  * A wrong pattern is a successful request with a 'wrong' result, not an HTTP
  * error: the client renders all four outcomes the same way.
+ *
+ * `kidToken` is present only on 'ok'. It is scoped to this one student and is
+ * what the kid screens send instead of the parent's token.
  */
 export const KidPatternVerifySchema = z.object({
   status: z.enum(['ok', 'wrong', 'locked', 'not-configured']),
   lockoutSeconds: z.number().optional(),
+  kidToken: z.string().optional(),
 })
 
 /** GET /api/v1/kid-profile — the kid's display name and grade. */

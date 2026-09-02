@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { DEFAULT_USER_ID } from '@/lib/constants'
 import {
   jsDateToDayOfWeek,
   buildTodayView,
@@ -9,19 +8,27 @@ import {
   getDailyHomework,
 } from '@/server/services/schedule.service'
 
+import { guardStudentApp } from '@/app/api/v1/_lib/guard'
+
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+type Params = { params: Promise<{ studentId: string }> }
+
+export async function GET(req: Request, { params }: Params) {
+  const { studentId } = await params
+  const denied = await guardStudentApp(req, studentId)
+  if (denied) return denied
+
   try {
     const today = new Date()
     const date = today.toISOString().split('T')[0]!
     const dow = jsDateToDayOfWeek(today)
 
     const [schoolResult, eveningBlocks, cancelledIds, homework] = await Promise.all([
-      dow ? getDaySchedule(DEFAULT_USER_ID, dow) : Promise.resolve(null),
-      dow ? getEveningBlocks(DEFAULT_USER_ID, dow) : Promise.resolve([]),
-      getOverridesForDate(DEFAULT_USER_ID, date),
-      getDailyHomework(DEFAULT_USER_ID, date),
+      dow ? getDaySchedule(studentId, dow) : Promise.resolve(null),
+      dow ? getEveningBlocks(studentId, dow) : Promise.resolve([]),
+      getOverridesForDate(studentId, date),
+      getDailyHomework(studentId, date),
     ])
 
     const data = buildTodayView(

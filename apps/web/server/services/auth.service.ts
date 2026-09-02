@@ -410,8 +410,29 @@ export const suspendParent = async (
   await parentRepo.revokeAllForParent(parentId)
 }
 
+/** Lists accounts in one state, newest application last. */
+export const listParentsByStatus = (status: parentRepo.AccountStatus) =>
+  parentRepo.listByStatus(status)
+
 /** Lists accounts awaiting review. */
 export const listPendingParents = () => parentRepo.listByStatus('PENDING')
+
+/**
+ * The signed-in parent's own profile. Deliberately a narrow projection — the
+ * repository record carries the password hash, which must never leave here.
+ */
+export const getParentProfile = async (
+  parentId: string
+): Promise<{ id: string; email: string; isAdmin: boolean; status: string } | null> => {
+  const parent = await parentRepo.getById(parentId)
+  if (!parent) return null
+  return {
+    id: parent.id,
+    email: parent.email,
+    isAdmin: parent.isAdmin,
+    status: parent.status,
+  }
+}
 
 /** True when this parent may act on the admin surface. */
 export const isAdmin = async (parentId: string): Promise<boolean> => {
