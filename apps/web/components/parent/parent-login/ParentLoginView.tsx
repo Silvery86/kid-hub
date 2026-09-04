@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation'
 import {
   checkParentPinAction,
   checkParentSessionAction,
-  clearParentAccessAction,
+  clearParentPinAction,
   parentLoginAction,
   registerParentAccountAction,
   setPinAction,
 } from '@/server/actions/auth.actions'
+import { loginScreenNext } from '@/lib/parent-routing'
 import { ParentPinKeypad, type ParentPinKeypadSize } from '@/components/parent/parent-pin/ParentPinKeypad'
 import {
   ParentLoginStepIndicator,
@@ -61,16 +62,17 @@ export function ParentLoginView() {
         checkParentSessionAction(),
         checkParentPinAction(),
       ])
-      if (hasSession && hasPin) {
-        router.replace('/parent')
+      const next = loginScreenNext({ hasSession, hasPin, hasAccount: hasParentAccount })
+      if (next.kind === 'redirect') {
+        router.replace(next.to)
         return
       }
-      if (hasSession && !hasPin) {
+      if (next.kind === 'welcome') {
         setStep('welcome')
         setIsReady(true)
         return
       }
-      setIsSignup(!hasParentAccount)
+      setIsSignup(next.signup)
       setIsReady(true)
     })()
   }, [router])
@@ -98,6 +100,14 @@ export function ParentLoginView() {
       const signupResult = await registerParentAccountAction(email, password)
       setIsSubmitting(false)
       if (!signupResult.success) {
+        // The account was created since this screen loaded — most likely the
+        // page was open before setup finished. Switch to login rather than
+        // leaving the parent stuck on a form that can never succeed.
+        if (signupResult.error === 'ACCOUNT_EXISTS') {
+          setIsSignup(false)
+          setError('Tài khoản đã tồn tại. Vui lòng đăng nhập.')
+          return
+        }
         setError(signupResult.error ?? 'Không thể tạo tài khoản')
         return
       }
@@ -116,7 +126,7 @@ export function ParentLoginView() {
 
     const { hasPin } = await checkParentPinAction()
     if (hasPin) {
-      await clearParentAccessAction()
+      await clearParentPinAction()
       router.replace('/parent/pin')
       return
     }

@@ -32,7 +32,7 @@ export const useGrades = (): UseGradesResult => {
     const total = withBadges.reduce((sum, g) => sum + g.score, 0)
     const averageScore =
       withBadges.length > 0 ? Math.round((total / withBadges.length) * 10) / 10 : 0
-    return { userId: 'khoi', grades: withBadges, averageScore }
+    return { studentId: 'khoi', grades: withBadges, averageScore }
   }, [grades])
 
   return { reportCard, setGrades }

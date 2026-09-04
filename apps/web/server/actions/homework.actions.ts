@@ -1,7 +1,7 @@
 'use server'
 
+import { requireKidSession, resolveStudentContext } from '@/server/lib/auth-guard'
 import { revalidatePath } from 'next/cache'
-import { DEFAULT_USER_ID } from '@/lib/constants'
 import * as homeworkService from '@/server/services/homework.service'
 import { todayDateKey } from '@/server/services/homework.service'
 import { addUserPoints, updateStreak } from '@/server/services/progress.service'
@@ -12,7 +12,8 @@ import { recordActivity } from '@/server/services/activity.service'
 export const getTodayHomeworkAction = async (): Promise<ActionResult<HomeworkItem[]>> => {
   try {
     // DailyHomework is keyed by date only — no day-of-week filter needed, works on weekends too.
-    const data = await homeworkService.getTodayHomework(DEFAULT_USER_ID, todayDateKey())
+    const studentId = await resolveStudentContext()
+    const data = await homeworkService.getTodayHomework(studentId, todayDateKey())
     return { success: true, data }
   } catch {
     return { success: false, error: 'Failed to fetch homework' }
@@ -22,10 +23,11 @@ export const getTodayHomeworkAction = async (): Promise<ActionResult<HomeworkIte
 /** Marks a homework period as done for today. No auth required — kid-facing. */
 export const markHomeworkDoneAction = async (periodId: string): Promise<ActionVoidResult> => {
   try {
-    await homeworkService.markDone(periodId, DEFAULT_USER_ID, todayDateKey())
-    await updateStreak(DEFAULT_USER_ID)
-    await addUserPoints(DEFAULT_USER_ID, 10)
-    void recordActivity(DEFAULT_USER_ID, 'HOMEWORK_DONE', 'Bài tập hôm nay', '📝')
+    const { studentId } = await requireKidSession()
+    await homeworkService.markDone(periodId, studentId, todayDateKey())
+    await updateStreak(studentId)
+    await addUserPoints(studentId, 10)
+    void recordActivity(studentId, 'HOMEWORK_DONE', 'Bài tập hôm nay', '📝')
     revalidatePath('/homework')
     revalidatePath('/dashboard')
     return { success: true }

@@ -101,7 +101,7 @@ describe('response schemas accept valid wire payloads', () => {
 
   it('ReportCardSchema parses a report card', () => {
     const payload: ReportCard = {
-      userId: 'khoi-default-user',
+      studentId: 'khoi-default-user',
       averageScore: 8.5,
       grades: [
         { subjectId: 'math', score: 9, badge: 'excellent', semester: 1, academicYear: '2025-2026' },
@@ -144,7 +144,7 @@ describe('response schemas reject malformed payloads', () => {
   })
 
   it('rejects a report card missing averageScore', () => {
-    const bad = { userId: 'u', grades: [] }
+    const bad = { studentId: 'u', grades: [] }
     expect(ReportCardSchema.safeParse(bad).success).toBe(false)
   })
 

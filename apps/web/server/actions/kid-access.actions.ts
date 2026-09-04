@@ -1,18 +1,17 @@
 'use server'
 
 import { z } from 'zod'
-import { requireParentSession } from '@/server/lib/auth-guard'
+import { resolveActiveStudent } from '@/server/lib/auth-guard'
 import { getKidAccessSettings, saveKidAccessSettings } from '@/server/services/user.service'
 import { fetchRecentActivity } from '@/server/services/activity.service'
 import type { ActivityEventRow } from '@/server/services/activity.service'
-import { DEFAULT_USER_ID } from '@/lib/constants'
 import type { ActionResult, ActionVoidResult } from '@/types'
 
 /** Returns saved feature toggle state. Null means the parent hasn't customised yet — use defaults. */
 export const getKidAccessSettingsAction = async (): Promise<ActionResult<Record<string, boolean> | null>> => {
   try {
-    await requireParentSession()
-    const settings = await getKidAccessSettings(DEFAULT_USER_ID)
+    const studentId = await resolveActiveStudent()
+    const settings = await getKidAccessSettings(studentId)
     return { success: true, data: settings }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to load settings'
@@ -34,8 +33,8 @@ export const getRecentActivityAction = async (
   limit = 10
 ): Promise<ActionResult<ActivityItem[]>> => {
   try {
-    await requireParentSession()
-    const rows: ActivityEventRow[] = await fetchRecentActivity(DEFAULT_USER_ID, limit)
+    const studentId = await resolveActiveStudent()
+    const rows: ActivityEventRow[] = await fetchRecentActivity(studentId, limit)
     return {
       success: true,
       data: rows.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() })),
@@ -52,10 +51,10 @@ const SettingsSchema = z.record(z.string(), z.boolean())
 /** Persists the full toggle state map to the database. */
 export const saveKidAccessSettingsAction = async (settings: unknown): Promise<ActionVoidResult> => {
   try {
-    await requireParentSession()
+    const studentId = await resolveActiveStudent()
     const parsed = SettingsSchema.safeParse(settings)
     if (!parsed.success) return { success: false, error: 'Invalid settings format' }
-    await saveKidAccessSettings(DEFAULT_USER_ID, parsed.data)
+    await saveKidAccessSettings(studentId, parsed.data)
     return { success: true }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to save settings'

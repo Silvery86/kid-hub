@@ -102,16 +102,37 @@ export const resolveActiveStudent = async (): Promise<string> => {
   return first.id
 }
 
+/** The kid session if one is present and valid, else null. Never throws. */
+const tryKidSession = async (): Promise<{ studentId: string } | null> => {
+  const cookieStore = await cookies()
+  const token = cookieStore.get(KID_SESSION_COOKIE)?.value
+  if (!token) return null
+
+  const session = await verifyKidSessionToken(token)
+  return session ? { studentId: session.studentId } : null
+}
+
 /**
  * The kid-side session. Scoped to one student and carrying no parent identity,
  * so a child cannot reach parent endpoints with it.
  */
 export const requireKidSession = async (): Promise<{ studentId: string }> => {
-  const cookieStore = await cookies()
-  const token = cookieStore.get(KID_SESSION_COOKIE)?.value
-  if (!token) throw new Error('Unauthorized')
-
-  const session = await verifyKidSessionToken(token)
+  const session = await tryKidSession()
   if (!session) throw new Error('Unauthorized')
-  return { studentId: session.studentId }
+  return session
+}
+
+/**
+ * Which student THIS request is about, from either side of the app.
+ *
+ * The dashboard and the parent's schedule page read the same actions, so those
+ * actions cannot assume one caller or the other. A kid session names its own
+ * student; a parent falls back to the one they are currently looking at. With
+ * neither, this throws — it is the server-action counterpart of
+ * `requireStudentActorApi` on the REST side.
+ */
+export const resolveStudentContext = async (): Promise<string> => {
+  const kid = await tryKidSession()
+  if (kid) return kid.studentId
+  return resolveActiveStudent()
 }

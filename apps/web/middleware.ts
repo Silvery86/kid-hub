@@ -16,6 +16,7 @@ import {
   KID_SESSION_COOKIE,
   PARENT_ACCESS_COOKIE,
   PARENT_ACCESS_TTL_SECONDS,
+  PARENT_PIN_COOKIE,
   PARENT_REFRESH_COOKIE,
 } from '@/lib/constants'
 
@@ -68,7 +69,7 @@ const getSecret = (): Uint8Array => {
  */
 const verifyToken = async (
   token: string,
-  type: 'parent-access' | 'parent-refresh' | 'kid-session'
+  type: 'parent-access' | 'parent-refresh' | 'kid-session' | 'parent-pin'
 ): Promise<{ subjectId: string } | null> => {
   try {
     const { payload } = await jwtVerify(token, getSecret())
@@ -95,32 +96,55 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   return response
 }
 
+/**
+ * The PIN proof is valid for one visit to parent mode. Any matched route outside
+ * /parent drops it, so coming back through the sidebar — or by typing /parent —
+ * asks for the PIN again. Without this the proof would outlive the visit and the
+ * gate would be a formality, which is what it used to be.
+ */
+const dropPinProof = (response: NextResponse): NextResponse => {
+  response.cookies.delete(PARENT_PIN_COOKIE)
+  return response
+}
+
 async function _handle(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl
+  const leavingParentMode =
+    !pathname.startsWith('/parent') && request.cookies.has(PARENT_PIN_COOKIE)
 
   // ── Kid unlock: parent session required (D1) ─────────────────────────────
   if (pathname === '/kid-unlock') {
     if (!(await hasParentSession(request))) {
       return NextResponse.redirect(new URL('/parent/login', request.url))
     }
-    return NextResponse.next()
+    return leavingParentMode ? dropPinProof(NextResponse.next()) : NextResponse.next()
   }
 
   // ── Child app protection: require kid unlock session ────────────────────
   if (isKidAppSurfacePath(pathname)) {
+    // D1 applies for the whole visit, not just at unlock: a kid session exists
+    // only because a parent authorised this device, so it cannot outlive that
+    // authorisation. Without this the cookie is a standalone 12-hour pass that
+    // survives the parent signing out.
+    if (!(await hasParentSession(request))) {
+      const response = NextResponse.redirect(new URL('/parent/login', request.url))
+      response.cookies.delete(KID_SESSION_COOKIE)
+      return dropPinProof(response)
+    }
+
     const kidToken = request.cookies.get(KID_SESSION_COOKIE)?.value
     if (!kidToken) {
-      return NextResponse.redirect(new URL('/kid-unlock', request.url))
+      return dropPinProof(NextResponse.redirect(new URL('/kid-unlock', request.url)))
     }
 
     const kidSession = await verifyToken(kidToken, 'kid-session')
     if (kidSession) {
-      return NextResponse.next()
+      return leavingParentMode ? dropPinProof(NextResponse.next()) : NextResponse.next()
     }
 
     const response = NextResponse.redirect(new URL('/kid-unlock', request.url))
     response.cookies.delete(KID_SESSION_COOKIE)
-    return response
+    return dropPinProof(response)
   }
 
   // ── Public parent auth routes (login + PIN gate) ─────────────────────────
@@ -152,10 +176,17 @@ async function _handle(request: NextRequest): Promise<NextResponse> {
     return NextResponse.next()
   }
 
+  // Parent mode needs BOTH: a session (who) and a PIN proof for this visit.
+  // The session alone was never enough — parent_refresh outlives any clearing of
+  // the access cookie, so middleware would simply mint a new one.
+  const pinToken = request.cookies.get(PARENT_PIN_COOKIE)?.value
+  const pinOk = pinToken ? await verifyToken(pinToken, 'parent-pin') : null
+
   const accessToken = request.cookies.get(PARENT_ACCESS_COOKIE)?.value
   if (accessToken) {
     const accessSession = await verifyToken(accessToken, 'parent-access')
     if (accessSession) {
+      if (!pinOk) return NextResponse.redirect(new URL('/parent/pin', request.url))
       return NextResponse.next()
     }
   }
@@ -173,6 +204,7 @@ async function _handle(request: NextRequest): Promise<NextResponse> {
       // the new cookie. Genuine refresh-token rotation (new hash persisted + old
       // token revoked) happens only in Node contexts: requireParentSession
       // (server/lib/auth-guard.ts) and the REST /api/v1/auth/refresh route.
+      if (!pinOk) return NextResponse.redirect(new URL('/parent/pin', request.url))
       const newAccessToken = await createParentAccessToken(refreshSession.subjectId)
       const response = NextResponse.next()
       response.cookies.set(PARENT_ACCESS_COOKIE, newAccessToken, {

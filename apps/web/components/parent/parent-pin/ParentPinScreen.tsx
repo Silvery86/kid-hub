@@ -8,6 +8,8 @@ import {
   checkParentSessionAction,
   verifyPinAction,
 } from '@/server/actions/auth.actions'
+import { pinScreenDestination } from '@/lib/parent-routing'
+
 import { ParentPinHero } from './ParentPinHero'
 import { ParentPinKeypad, type ParentPinKeypadSize } from './ParentPinKeypad'
 
@@ -45,12 +47,9 @@ export function ParentPinScreen() {
         checkParentSessionAction(),
         checkParentPinAction(),
       ])
-      if (hasSession) {
-        router.replace('/parent')
-        return
-      }
-      if (!hasPin) {
-        router.replace('/parent/login')
+      const destination = pinScreenDestination({ hasSession, hasPin })
+      if (destination) {
+        router.replace(destination)
         return
       }
       setIsReady(true)

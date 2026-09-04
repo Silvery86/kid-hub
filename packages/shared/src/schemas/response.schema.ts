@@ -164,7 +164,7 @@ export const HomeworkItemArraySchema = z.array(HomeworkItemSchema)
 
 /** GET /api/v1/grades — ReportCard. */
 export const ReportCardSchema = z.object({
-  userId: z.string(),
+  studentId: z.string(),
   grades: z.array(SubjectGradeSchema),
   averageScore: z.number(),
 })

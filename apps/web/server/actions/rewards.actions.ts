@@ -5,9 +5,9 @@
  * Callable from homework checkboxes, game completions, and any future reward trigger.
  */
 
+import { requireKidSession } from '@/server/lib/auth-guard'
 import { z } from 'zod'
 import { addUserPoints } from '@/server/services/progress.service'
-import { DEFAULT_USER_ID } from '@/lib/constants'
 import type { ActionResult } from '@/types'
 
 export const awardPointsAction = async (
@@ -16,7 +16,8 @@ export const awardPointsAction = async (
   const parsed = z.number().int().min(1).max(50).safeParse(points)
   if (!parsed.success) return { success: false, error: 'Invalid points value' }
   try {
-    const newTotal = await addUserPoints(DEFAULT_USER_ID, parsed.data)
+    const { studentId } = await requireKidSession()
+    const newTotal = await addUserPoints(studentId, parsed.data)
     return { success: true, data: { newTotal } }
   } catch {
     return { success: false, error: 'Failed to award points' }

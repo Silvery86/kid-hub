@@ -12,7 +12,7 @@ export interface SubjectGrade {
 }
 
 export interface ReportCard {
-  userId: string
+  studentId: string
   grades: SubjectGrade[]
   averageScore: number
 }

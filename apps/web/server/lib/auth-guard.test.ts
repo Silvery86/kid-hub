@@ -39,6 +39,7 @@ import {
   requireParentSession,
   requireStudentAccess,
   resolveActiveStudent,
+  resolveStudentContext,
 } from './auth-guard'
 
 const PARENT = 'parent-1'
@@ -170,5 +171,47 @@ describe('requireKidSession', () => {
   it('does not accept a parent access cookie as a kid session', async () => {
     signedIn()
     await expect(requireKidSession()).rejects.toThrow('Unauthorized')
+  })
+})
+
+describe('resolveStudentContext', () => {
+  // The dashboard and the parent's schedule page call the same actions, so the
+  // action layer cannot assume which side is asking.
+
+  it('prefers the kid session, which names its own student', async () => {
+    signedIn()
+    cookieJar.set('kid_session', 'kid-token')
+    vi.mocked(verifyKidSessionToken).mockResolvedValue({
+      studentId: STUDENT_B,
+      expiresAt: Date.now() + 1000,
+    })
+
+    await expect(resolveStudentContext()).resolves.toBe(STUDENT_B)
+    // A kid session settles it outright — the parent's active student is not
+    // consulted, so a child cannot be shown a sibling's data by a stale cookie.
+    expect(listStudentsForParent).not.toHaveBeenCalled()
+  })
+
+  it('falls back to the parent’s active student with no kid session', async () => {
+    signedIn()
+    cookieJar.set('active_student', STUDENT_A)
+    vi.mocked(canAccessStudent).mockResolvedValue(true)
+
+    await expect(resolveStudentContext()).resolves.toBe(STUDENT_A)
+  })
+
+  it('ignores an invalid kid cookie rather than trusting it', async () => {
+    signedIn()
+    cookieJar.set('kid_session', 'tampered')
+    vi.mocked(verifyKidSessionToken).mockResolvedValue(null)
+    vi.mocked(listStudentsForParent).mockResolvedValue([
+      { id: STUDENT_A, name: 'A', gradeLevel: 1, avatarUrl: null, role: 'OWNER' },
+    ] as never)
+
+    await expect(resolveStudentContext()).resolves.toBe(STUDENT_A)
+  })
+
+  it('throws when neither side is signed in', async () => {
+    await expect(resolveStudentContext()).rejects.toThrow('Unauthorized')
   })
 })

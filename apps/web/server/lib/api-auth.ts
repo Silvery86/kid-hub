@@ -56,11 +56,13 @@ export const requireStudentApi = async (
 }
 
 /**
- * Read access to a student's data, from either side of the app: a parent linked
- * to that student, OR a kid session whose own studentId matches. This is the
- * guard for the routes the kid app calls, which today have no guard at all.
+ * Access to a student's own data from either side of the app: a parent linked to
+ * that student, OR a kid session whose own studentId matches.
+ *
+ * Not read-only — the kid app writes here too (game saves, homework marked done,
+ * screen-time ticks). "Actor" is which of the two is calling, not what they may do.
  */
-export const requireStudentReadApi = async (
+export const requireStudentActorApi = async (
   req: Request,
   studentId: string
 ): Promise<{ actor: 'parent' | 'kid' } | null> => {

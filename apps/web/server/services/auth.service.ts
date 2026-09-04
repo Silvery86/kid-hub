@@ -27,6 +27,8 @@ import {
   PARENT_ACCESS_COOKIE,
   PARENT_ACCESS_TTL_SECONDS,
   PARENT_LOGIN_LOCKOUT_SECONDS,
+  PARENT_PIN_COOKIE,
+  PARENT_PIN_TTL_SECONDS,
   PARENT_REFRESH_COOKIE,
   PARENT_REFRESH_TTL_SECONDS,
   PIN_LENGTH,
@@ -140,6 +142,17 @@ export const createParentRefreshToken = async (
     .setExpirationTime(`${PARENT_REFRESH_TTL_SECONDS}s`)
     .sign(getJwtSecret())
 
+/**
+ * Create the proof that the PIN was entered. Short-lived and never persisted
+ * server-side: it asserts one thing — this browser answered the PIN challenge.
+ */
+export const createParentPinToken = async (parentId: string): Promise<string> =>
+  new SignJWT({ parentId, typ: 'parent-pin' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(`${PARENT_PIN_TTL_SECONDS}s`)
+    .sign(getJwtSecret())
+
 /** Create a signed JWT for kid app unlock session, scoped to one student. */
 export const createKidSessionToken = async (studentId: string): Promise<string> =>
   new SignJWT({ studentId, typ: 'kid-session' })
@@ -213,6 +226,7 @@ export const verifySessionToken = verifyParentAccessToken
 export {
   PARENT_ACCESS_COOKIE as SESSION_COOKIE,
   PARENT_ACCESS_COOKIE,
+  PARENT_PIN_COOKIE,
   PARENT_REFRESH_COOKIE,
   KID_SESSION_COOKIE,
 }
@@ -280,22 +294,21 @@ export const revokeAllForParent = async (parentId: string): Promise<void> => {
 }
 
 /**
- * Returns account and kid-pattern existence flags. The two flags now live on two
- * different rows — credentials on the parent, the unlock pattern on the student —
- * so both ids are needed.
+ * Whether this parent has credentials configured.
+ *
+ * Was one function returning both this and the kid-pattern flag, which forced
+ * every caller to supply a student id even when asking a question purely about
+ * the account — impossible for a parent who has no students yet.
  */
-export const getParentStatus = async (
-  parentId: string,
-  studentId: string
-): Promise<{ hasParentAccount: boolean; hasKidPatternSet: boolean }> => {
-  const [parent, student] = await Promise.all([
-    parentRepo.getById(parentId),
-    studentRepo.getKidPatternRecord(studentId),
-  ])
-  return {
-    hasParentAccount: Boolean(parent?.email && parent.passwordHash),
-    hasKidPatternSet: Boolean(student?.kidPatternHash),
-  }
+export const hasParentAccount = async (parentId: string): Promise<boolean> => {
+  const parent = await parentRepo.getById(parentId)
+  return Boolean(parent?.email && parent.passwordHash)
+}
+
+/** Whether this student has an unlock pattern configured. */
+export const hasKidPatternSet = async (studentId: string): Promise<boolean> => {
+  const student = await studentRepo.getKidPatternRecord(studentId)
+  return Boolean(student?.kidPatternHash)
 }
 
 /**

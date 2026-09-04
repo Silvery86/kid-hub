@@ -7,11 +7,10 @@
 
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
-import { requireParentSession } from '@/server/lib/auth-guard'
+import { resolveActiveStudent, resolveStudentContext } from '@/server/lib/auth-guard'
 import { calculateBadge, buildReportCard, getReportCard, upsertGrade } from '@/server/services/grades.service'
 import { getUserById } from '@/server/services/user.service'
 import type { ReportCard, ActionResult, ActionVoidResult } from '@/types'
-import { DEFAULT_USER_ID } from '@/lib/constants'
 
 const UpsertGradeSchema = z.object({
   subjectId: z.string().min(1),
@@ -20,14 +19,14 @@ const UpsertGradeSchema = z.object({
   academicYear: z.string().regex(/^\d{4}-\d{4}$/),
 })
 
-/** Retrieves the full report card for the default user. */
+/** Retrieves the full report card for the student this request is about. */
 export const getReportCardAction = async (): Promise<ActionResult<ReportCard>> => {
   try {
-    const userId = DEFAULT_USER_ID
-    const user = await getUserById(userId)
-    if (!user) return { success: true, data: { userId, grades: [], averageScore: 0 } }
-    const grades = await getReportCard(userId)
-    return { success: true, data: buildReportCard(userId, grades) }
+    const studentId = await resolveStudentContext()
+    const student = await getUserById(studentId)
+    if (!student) return { success: true, data: { studentId, grades: [], averageScore: 0 } }
+    const grades = await getReportCard(studentId)
+    return { success: true, data: buildReportCard(studentId, grades) }
   } catch {
     return { success: false, error: 'Failed to fetch report card' }
   }
@@ -36,14 +35,14 @@ export const getReportCardAction = async (): Promise<ActionResult<ReportCard>> =
 /** Creates or updates a subject grade entry. Revalidates grades and dashboard paths. */
 export const upsertGradeAction = async (input: unknown): Promise<ActionVoidResult> => {
   try {
-    await requireParentSession()
+    const studentId = await resolveActiveStudent()
     const parsed = UpsertGradeSchema.safeParse(input)
     if (!parsed.success) {
       return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
     }
     const data = parsed.data
     const badge = calculateBadge(data.score)
-    await upsertGrade(DEFAULT_USER_ID, { ...data, badge })
+    await upsertGrade(studentId, { ...data, badge })
     revalidatePath('/grades')
     revalidatePath('/dashboard')
     return { success: true }

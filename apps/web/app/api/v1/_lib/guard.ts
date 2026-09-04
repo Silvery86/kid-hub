@@ -1,4 +1,4 @@
-import { requireParentApi, requireStudentApi, requireStudentReadApi } from '@/server/lib/api-auth'
+import { requireParentApi, requireStudentApi, requireStudentActorApi } from '@/server/lib/api-auth'
 
 import { forbidden, unauthorized } from './respond'
 
@@ -30,6 +30,6 @@ export const guardStudentApp = async (
   req: Request,
   studentId: string
 ): Promise<Response | null> => {
-  if (await requireStudentReadApi(req, studentId)) return null
+  if (await requireStudentActorApi(req, studentId)) return null
   return (await requireParentApi(req)) ? forbidden() : unauthorized()
 }

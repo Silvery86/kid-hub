@@ -23,7 +23,7 @@ export const enrichWithBadges = (grades: Omit<SubjectGrade, 'badge'>[]): Subject
 
 /** Build a full ReportCard from raw grade data. */
 export const buildReportCard = (studentId: string, grades: SubjectGrade[]): ReportCard => ({
-  userId: studentId,
+  studentId,
   grades,
   averageScore: calculateAverage(grades),
 })

@@ -338,17 +338,6 @@ function ScheduleHeader({
             </button>
           </div>
         ) : null}
-        <Link
-          href="/parent"
-          className={
-            compact
-              ? 'grid size-10 place-items-center rounded-xl bg-white text-lg shadow-sm'
-              : 'rounded-full bg-schedule px-4 py-2.5 text-sm font-extrabold text-white shadow-[0_8px_20px_-10px_var(--color-schedule)]'
-          }
-          title="Sửa lịch (Bố mẹ)"
-        >
-          {compact ? '✏️' : '✏️ Sửa lịch'}
-        </Link>
       </div>
     </div>
   )

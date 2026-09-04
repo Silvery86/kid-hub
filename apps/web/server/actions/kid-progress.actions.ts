@@ -1,8 +1,7 @@
 'use server'
 
-import { requireParentSession } from '@/server/lib/auth-guard'
+import { resolveActiveStudent, resolveStudentContext } from '@/server/lib/auth-guard'
 import { getUserById, getUserProgress } from '@/server/services/user.service'
-import { DEFAULT_USER_ID } from '@/lib/constants'
 import type { ActionResult } from '@/types'
 
 export interface KidProfile {
@@ -13,7 +12,8 @@ export interface KidProfile {
 /** Kid display profile (name + grade). No auth required — kid-facing. */
 export const getKidProfileAction = async (): Promise<ActionResult<KidProfile | null>> => {
   try {
-    const user = await getUserById(DEFAULT_USER_ID)
+    const studentId = await resolveStudentContext()
+    const user = await getUserById(studentId)
     if (!user) return { success: true, data: null }
     return { success: true, data: { name: user.name, gradeLevel: user.gradeLevel } }
   } catch {
@@ -32,8 +32,8 @@ export interface KidProgressData {
 
 export const getKidProgressAction = async (): Promise<ActionResult<KidProgressData | null>> => {
   try {
-    await requireParentSession()
-    const progress = await getUserProgress(DEFAULT_USER_ID)
+    const studentId = await resolveActiveStudent()
+    const progress = await getUserProgress(studentId)
     if (!progress) return { success: true, data: null }
 
     const mathBestStars = progress.bestScores

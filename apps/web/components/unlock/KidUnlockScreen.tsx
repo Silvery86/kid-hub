@@ -15,7 +15,12 @@ const TILES = [
   { id: '6', emoji: '🎈', label: 'Balloon' },
 ] as const
 
-export function KidUnlockScreen() {
+/**
+ * `studentId` is resolved on the server and passed in: the unlock screen is only
+ * reachable with a parent session (D1), so which child is being unlocked is a
+ * decision the server already made.
+ */
+export function KidUnlockScreen({ studentId }: { studentId: string }) {
   const router = useRouter()
   const [entered, setEntered] = useState('')
   const [error, setError] = useState('')
@@ -25,7 +30,7 @@ export function KidUnlockScreen() {
   const [needsSetup, setNeedsSetup] = useState(false)
 
   useEffect(() => {
-    checkKidSessionAction().then(({ hasSession, hasKidPatternSet }) => {
+    checkKidSessionAction(studentId).then(({ hasSession, hasKidPatternSet }) => {
       if (hasSession) {
         router.replace('/dashboard')
         return
@@ -58,7 +63,7 @@ export function KidUnlockScreen() {
 
   const submitPattern = async (pattern: string) => {
     setIsSubmitting(true)
-    const result = await verifyKidPatternAction(pattern)
+    const result = await verifyKidPatternAction(studentId, pattern)
     setIsSubmitting(false)
 
     if (result.success) {

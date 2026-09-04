@@ -22,7 +22,7 @@ import {
   requireAdminApi,
   requireParentApi,
   requireStudentApi,
-  requireStudentReadApi,
+  requireStudentActorApi,
 } from './api-auth'
 
 const PARENT = 'parent-1'
@@ -90,14 +90,14 @@ describe('requireStudentApi', () => {
   })
 })
 
-describe('requireStudentReadApi', () => {
+describe('requireStudentActorApi', () => {
   it('admits a linked parent', async () => {
     vi.mocked(verifyParentAccessToken).mockResolvedValue({
       parentId: PARENT,
       expiresAt: Date.now() + 1000,
     })
     vi.mocked(canAccessStudent).mockResolvedValue(true)
-    await expect(requireStudentReadApi(withBearer('t'), STUDENT_A)).resolves.toEqual({
+    await expect(requireStudentActorApi(withBearer('t'), STUDENT_A)).resolves.toEqual({
       actor: 'parent',
     })
   })
@@ -108,7 +108,7 @@ describe('requireStudentReadApi', () => {
       expiresAt: Date.now() + 1000,
     })
     vi.mocked(canAccessStudent).mockResolvedValue(false)
-    await expect(requireStudentReadApi(withBearer('t'), STUDENT_B)).resolves.toBeNull()
+    await expect(requireStudentActorApi(withBearer('t'), STUDENT_B)).resolves.toBeNull()
   })
 
   it('admits a kid session for its OWN student', async () => {
@@ -116,7 +116,7 @@ describe('requireStudentReadApi', () => {
       studentId: STUDENT_A,
       expiresAt: Date.now() + 1000,
     })
-    await expect(requireStudentReadApi(withBearer('kid'), STUDENT_A)).resolves.toEqual({
+    await expect(requireStudentActorApi(withBearer('kid'), STUDENT_A)).resolves.toEqual({
       actor: 'kid',
     })
   })
@@ -126,14 +126,14 @@ describe('requireStudentReadApi', () => {
       studentId: STUDENT_A,
       expiresAt: Date.now() + 1000,
     })
-    await expect(requireStudentReadApi(withBearer('kid'), STUDENT_B)).resolves.toBeNull()
+    await expect(requireStudentActorApi(withBearer('kid'), STUDENT_B)).resolves.toBeNull()
     // The link table is not even consulted — a kid token carries no parent.
     expect(canAccessStudent).not.toHaveBeenCalled()
   })
 
   it('refuses an anonymous request', async () => {
     await expect(
-      requireStudentReadApi(new Request('https://kid.hub/api/v1/x'), STUDENT_A)
+      requireStudentActorApi(new Request('https://kid.hub/api/v1/x'), STUDENT_A)
     ).resolves.toBeNull()
   })
 })

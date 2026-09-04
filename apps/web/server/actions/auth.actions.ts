@@ -16,7 +16,9 @@ import { cookies } from 'next/headers'
 import {
   createParentSession,
   createKidSessionToken,
-  getParentStatus,
+  createParentPinToken,
+  hasKidPatternSet,
+  hasParentAccount,
   getPinRecord,
   loginWithParentPassword,
   registerFoundingParent,
@@ -31,13 +33,14 @@ import {
   verifyPin,
   KID_SESSION_COOKIE,
   PARENT_ACCESS_COOKIE,
+  PARENT_PIN_COOKIE,
   PARENT_REFRESH_COOKIE,
 } from '@/server/services/auth.service'
 import { checkRateLimit, getLoginEmailRateLimiter } from '@/lib/rate-limit'
+import { requireStudentAccess, resolveActiveStudent } from '@/server/lib/auth-guard'
 import type { ActionVoidResult, AuthActionResult } from '@/types'
 import {
   DEFAULT_PARENT_ID,
-  DEFAULT_USER_ID,
   KID_SESSION_TTL_SECONDS,
   PARENT_ACCESS_TTL_SECONDS,
   PARENT_REFRESH_TTL_SECONDS,
@@ -124,7 +127,7 @@ export const registerParentAccountAction = async (
   } catch (err) {
     const msg = err instanceof Error ? err.message : ''
     if (msg === 'Parent account is already configured') {
-      return { success: false, error: msg }
+      return { success: false, error: 'ACCOUNT_EXISTS' }
     }
     if (msg === 'User not found') return { success: false, error: msg }
     return { success: false, error: 'Failed to register parent account' }
@@ -200,17 +203,31 @@ export const refreshParentSessionAction = async (): Promise<ActionVoidResult> =>
   return { success: true }
 }
 
-/** Checks whether there is a valid server-side parent session. */
+/**
+ * Whether there is a valid server-side parent session, and whether an account
+ * exists at all.
+ *
+ * `hasParentAccount` is null when the question could not be answered — a database
+ * outage, say. It used to report `false` in that case, which put the login screen
+ * into "create your account" mode and invited the parent to register an account
+ * that already existed. Not knowing and knowing there is none are different
+ * answers and the caller has to be able to tell them apart.
+ */
 export const checkParentSessionAction = async (): Promise<{
   hasSession: boolean
-  hasParentAccount: boolean
+  hasParentAccount: boolean | null
 }> => {
+  let hasSession = false
   try {
-    const session = await ensureParentSession()
-    const { hasParentAccount } = await getParentStatus(DEFAULT_PARENT_ID, DEFAULT_USER_ID)
-    return { hasSession: session.ok, hasParentAccount }
+    hasSession = (await ensureParentSession()).ok
   } catch {
-    return { hasSession: false, hasParentAccount: false }
+    hasSession = false
+  }
+
+  try {
+    return { hasSession, hasParentAccount: await hasParentAccount(DEFAULT_PARENT_ID) }
+  } catch {
+    return { hasSession, hasParentAccount: null }
   }
 }
 
@@ -224,7 +241,8 @@ export const setKidPatternAction = async (pattern: string): Promise<ActionVoidRe
   if (!session.ok) return { success: false, error: 'Unauthorized' }
 
   try {
-    await saveKidPattern(DEFAULT_USER_ID, parsed.data)
+    const studentId = await resolveActiveStudent()
+    await saveKidPattern(studentId, parsed.data)
     return { success: true }
   } catch {
     return { success: false, error: 'Failed to save kid unlock pattern' }
@@ -232,14 +250,20 @@ export const setKidPatternAction = async (pattern: string): Promise<ActionVoidRe
 }
 
 /** Verifies kid unlock pattern and mints a kid session cookie on success. */
-export const verifyKidPatternAction = async (pattern: string): Promise<AuthActionResult> => {
+export const verifyKidPatternAction = async (
+  studentId: string,
+  pattern: string
+): Promise<AuthActionResult> => {
   const parsed = KidPatternSchema.safeParse(pattern)
   if (!parsed.success) {
     return { success: false, error: 'Invalid unlock pattern' }
   }
 
   try {
-    const result = await verifyKidUnlockPattern(DEFAULT_USER_ID, parsed.data)
+    // D1: /kid-unlock needs a parent session, so the caller must be linked to
+    // the student they are unlocking — a pattern alone names no household.
+    await requireStudentAccess(studentId)
+    const result = await verifyKidUnlockPattern(studentId, parsed.data)
     if (result.status === 'not-configured') {
       return { success: false, error: 'Kid unlock is not configured yet' }
     }
@@ -254,7 +278,7 @@ export const verifyKidPatternAction = async (pattern: string): Promise<AuthActio
     if (result.status === 'wrong') {
       return { success: false, error: 'Incorrect unlock pattern' }
     }
-    const kidToken = await createKidSessionToken(DEFAULT_USER_ID)
+    const kidToken = await createKidSessionToken(studentId)
     const cookieStore = await cookies()
     cookieStore.set(KID_SESSION_COOKIE, kidToken, KID_SESSION_COOKIE_OPTIONS)
     return { success: true }
@@ -264,16 +288,15 @@ export const verifyKidPatternAction = async (pattern: string): Promise<AuthActio
 }
 
 /** Checks kid session status and whether kid unlock pattern is configured. */
-export const checkKidSessionAction = async (): Promise<{
-  hasSession: boolean
-  hasKidPatternSet: boolean
-}> => {
+export const checkKidSessionAction = async (
+  studentId: string
+): Promise<{ hasSession: boolean; hasKidPatternSet: boolean }> => {
   try {
     const cookieStore = await cookies()
     const token = cookieStore.get(KID_SESSION_COOKIE)?.value
     const hasSession = token ? (await verifyKidSessionToken(token)) !== null : false
-    const { hasKidPatternSet } = await getParentStatus(DEFAULT_PARENT_ID, DEFAULT_USER_ID)
-    return { hasSession, hasKidPatternSet }
+    await requireStudentAccess(studentId)
+    return { hasSession, hasKidPatternSet: await hasKidPatternSet(studentId) }
   } catch {
     return { hasSession: false, hasKidPatternSet: false }
   }
@@ -287,6 +310,11 @@ export const signOutParentAction = async (): Promise<ActionVoidResult> => {
     if (refresh) await revokeRefreshToken(refresh)
     cookieStore.delete(PARENT_ACCESS_COOKIE)
     cookieStore.delete(PARENT_REFRESH_COOKIE)
+    cookieStore.delete(PARENT_PIN_COOKIE)
+    // The kid session was authorised by this parent session (D1). Leaving it
+    // behind means signing out ends parent mode while the child's dashboard —
+    // their name, schedule and grades — stays open on the device for hours.
+    cookieStore.delete(KID_SESSION_COOKIE)
     return { success: true }
   } catch {
     return { success: false, error: 'Sign out failed' }
@@ -314,11 +342,11 @@ export const checkParentPinAction = async (): Promise<{ hasPin: boolean }> => {
   }
 }
 
-/** Clears short-lived parent access cookie so PIN verification is required. */
-export const clearParentAccessAction = async (): Promise<{ success: boolean }> => {
+/** Drops the PIN proof, so the next entry into parent mode asks for it again. */
+export const clearParentPinAction = async (): Promise<{ success: boolean }> => {
   try {
     const cookieStore = await cookies()
-    cookieStore.delete(PARENT_ACCESS_COOKIE)
+    cookieStore.delete(PARENT_PIN_COOKIE)
     return { success: true }
   } catch {
     return { success: false }
@@ -336,6 +364,17 @@ export const setPinAction = async (pin: string): Promise<ActionVoidResult> => {
 
   try {
     await savePin(DEFAULT_PARENT_ID, parsed.data)
+
+    // Creating and confirming the PIN already proves knowledge of it, so mint
+    // the proof here. Without this the parent would type the PIN a third time
+    // to walk through the door they just finished building.
+    const cookieStore = await cookies()
+    cookieStore.set(PARENT_PIN_COOKIE, await createParentPinToken(DEFAULT_PARENT_ID), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    })
     return { success: true }
   } catch {
     return { success: false, error: 'Failed to save PIN' }
@@ -369,6 +408,17 @@ export const verifyPinAction = async (pin: string): Promise<AuthActionResult> =>
       return { success: false, error: 'Incorrect PIN', isWrong: true }
     }
     await issueParentSessionCookies(DEFAULT_PARENT_ID)
+
+    // The proof that this browser answered the PIN. A session cookie with no
+    // maxAge: it dies with the tab, and the middleware drops it as soon as the
+    // browser visits a kid route, so returning to parent mode asks again.
+    const cookieStore = await cookies()
+    cookieStore.set(PARENT_PIN_COOKIE, await createParentPinToken(DEFAULT_PARENT_ID), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    })
     return { success: true }
   } catch {
     return { success: false, error: 'PIN verification failed' }

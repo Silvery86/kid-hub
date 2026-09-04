@@ -53,9 +53,23 @@ export const PARENT_ACCESS_COOKIE = 'parent_access'
 export const PARENT_REFRESH_COOKIE = 'parent_refresh'
 export const KID_SESSION_COOKIE = 'kid_session'
 
+/**
+ * Proof that the PIN was entered for THIS visit to parent mode.
+ *
+ * A session cookie with no maxAge, dropped by the middleware the moment the
+ * browser touches a kid route. Without it the PIN was only a client-side
+ * redirect: parent_refresh survived, middleware minted a fresh access token,
+ * and anyone holding the device walked into parent mode.
+ */
+export const PARENT_PIN_COOKIE = 'parent_pin'
+
 export const PARENT_ACCESS_TTL_SECONDS = 15 * 60
 export const PARENT_REFRESH_TTL_SECONDS = 30 * 24 * 60 * 60
 export const KID_SESSION_TTL_SECONDS = 12 * 60 * 60
+
+/** Upper bound on one PIN entry. The cookie is normally dropped long before
+ *  this, on the first kid route the browser visits. */
+export const PARENT_PIN_TTL_SECONDS = 30 * 60
 
 export const KID_PATTERN_SYMBOLS = ['1', '2', '3', '4', '5', '6'] as const
 export const MAX_KID_PATTERN_ATTEMPTS = 5

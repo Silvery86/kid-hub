@@ -57,7 +57,7 @@ describe('api-client validates valid responses through', () => {
   })
 
   it('getGrades returns a parsed ReportCard', async () => {
-    const card = { userId: 'u', grades: [], averageScore: 0 }
+    const card = { studentId: 'u', grades: [], averageScore: 0 }
     await expect(getGrades(stub(card), S)).resolves.toEqual(card)
   })
 
@@ -133,7 +133,7 @@ describe('api-client throws on malformed responses', () => {
   })
 
   it('getGrades throws when averageScore is missing', async () => {
-    await expect(getGrades(stub({ userId: 'u', grades: [] }), S)).rejects.toThrow()
+    await expect(getGrades(stub({ studentId: 'u', grades: [] }), S)).rejects.toThrow()
   })
 
   it('getMathBestScores throws when a score level is out of range', async () => {
