@@ -9,6 +9,7 @@ import {
   verifyKidSessionToken,
   canAccessStudent,
   createParentSession,
+  isAdmin,
   listStudentsForParent,
   validateRefreshToken,
 } from '@/server/services/auth.service'
@@ -66,6 +67,17 @@ export const requireParentSession = async (): Promise<{ parentId: string }> => {
 
   await issueParentSessionCookies(validated.parentId)
   return { parentId: validated.parentId }
+}
+
+/**
+ * The admin surface. A parent session is not enough — the flag is read from the
+ * database on every call, never from a token claim, so revoking admin takes
+ * effect on the next request rather than the next sign-in.
+ */
+export const requireAdminSession = async (): Promise<{ parentId: string }> => {
+  const { parentId } = await requireParentSession()
+  if (!(await isAdmin(parentId))) throw new Error('Forbidden')
+  return { parentId }
 }
 
 /**

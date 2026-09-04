@@ -35,7 +35,11 @@ const isKidAppSurfacePath = (pathname: string): boolean => {
 }
 
 const isParentPublicPath = (pathname: string): boolean =>
-  pathname === '/parent/login' || pathname === '/parent/pin'
+  pathname === '/parent/login' ||
+  pathname === '/parent/pin' ||
+  // Signup is open (D4): an applicant has no session yet, so the registration
+  // screen has to be reachable without one.
+  pathname === '/parent/register'
 
 /**
  * D1: the kid unlock screen names the students on this device, so it is only

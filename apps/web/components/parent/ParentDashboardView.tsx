@@ -19,10 +19,15 @@ export function ParentDashboardView({
   initialSchedule,
   initialGrades,
   todayView,
+  studentName,
 }: {
   initialSchedule: DailySchedule[]
   initialGrades: SubjectGrade[]
   todayView: TodayView | null
+  /** The student this view is about. With more than one child, a hard-coded
+   *  name would label the wrong data. The admin surface is offered by the
+   *  sidebar, not here. */
+  studentName: string
 }) {
   const [, setScheduleSave] = useState<ParentSaveState | null>(null)
   const [gradesSave, setGradesSave] = useState<ParentSaveState | null>(null)
@@ -136,7 +141,7 @@ export function ParentDashboardView({
       <div className="inline-flex items-center gap-2 rounded-pill bg-white px-3 py-1.5 shadow-sm">
         <span className="grid size-7 place-items-center rounded-full bg-amber-100">🧒</span>
         <div className="leading-tight">
-          <p className="text-xs font-black text-text-primary">Khôi</p>
+          <p className="text-xs font-black text-text-primary">{studentName}</p>
           <p className="text-[10px] font-bold text-text-muted">Lớp 1A</p>
         </div>
       </div>
@@ -163,7 +168,7 @@ export function ParentDashboardView({
           </button>
           <div>
             <h2 className="text-base font-black text-text-primary md:text-lg">Lịch học</h2>
-            <p className="text-xs font-bold text-text-secondary">Thêm, sửa, xóa tiết học của Khôi</p>
+            <p className="text-xs font-bold text-text-secondary">Thêm, sửa, xóa tiết học của {studentName}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -213,13 +218,13 @@ export function ParentDashboardView({
       <section className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-text-primary">Parent Mode</h1>
-          <p className="mt-1 text-sm font-bold text-text-secondary">Tổng quan về việc học của Khôi</p>
+          <p className="mt-1 text-sm font-bold text-text-secondary">Tổng quan về việc học của {studentName}</p>
         </div>
         <div className="hidden items-center gap-2 md:flex">
           <div className="inline-flex items-center gap-2 rounded-pill bg-white px-3 py-1.5 shadow-sm">
             <span className="grid size-7 place-items-center rounded-full bg-amber-100">🧒</span>
             <div className="leading-tight">
-              <p className="text-xs font-black text-text-primary">Khôi</p>
+              <p className="text-xs font-black text-text-primary">{studentName}</p>
               <p className="text-[10px] font-bold text-text-muted">Lớp 1A</p>
             </div>
           </div>
@@ -244,7 +249,7 @@ export function ParentDashboardView({
           <div className="flex min-w-0 items-center gap-3">
             <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-white/20 text-2xl">🧒</div>
             <div className="min-w-0">
-              <h2 className="truncate text-2xl font-black leading-none">Khôi</h2>
+              <h2 className="truncate text-2xl font-black leading-none">{studentName}</h2>
               <p className="mt-1 text-sm font-bold text-white/90">Lớp 1A · 6 tuổi</p>
             </div>
           </div>
@@ -381,7 +386,7 @@ export function ParentDashboardView({
     <div className="flex gap-2">
       <div className="inline-flex items-center gap-1.5 rounded-pill bg-white px-2 py-1 shadow-sm">
         <span className="grid size-6 place-items-center rounded-full bg-amber-100">🧒</span>
-        <span className="text-xs font-black text-text-primary">Khôi</span>
+        <span className="text-xs font-black text-text-primary">{studentName}</span>
       </div>
       <button
         type="button"
@@ -445,7 +450,7 @@ export function ParentDashboardView({
           <div className="flex items-center justify-between gap-2">
             <div>
               <h1 className="text-xl font-black tracking-tight text-text-primary">Parent Mode</h1>
-              <p className="text-xs font-bold text-text-secondary">Tổng quan về việc học của Khôi</p>
+              <p className="text-xs font-bold text-text-secondary">Tổng quan về việc học của {studentName}</p>
             </div>
             {mobileActions}
           </div>

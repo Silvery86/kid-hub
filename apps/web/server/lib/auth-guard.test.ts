@@ -21,6 +21,7 @@ vi.mock('@/server/services/auth.service', () => ({
   verifyParentAccessToken: vi.fn(),
   verifyKidSessionToken: vi.fn(),
   canAccessStudent: vi.fn(),
+  isAdmin: vi.fn(),
   createParentSession: vi.fn(),
   listStudentsForParent: vi.fn(),
   validateRefreshToken: vi.fn(),
@@ -28,6 +29,7 @@ vi.mock('@/server/services/auth.service', () => ({
 
 import {
   canAccessStudent,
+  isAdmin,
   createParentSession,
   listStudentsForParent,
   validateRefreshToken,
@@ -35,6 +37,7 @@ import {
   verifyParentAccessToken,
 } from '@/server/services/auth.service'
 import {
+  requireAdminSession,
   requireKidSession,
   requireParentSession,
   requireStudentAccess,
@@ -213,5 +216,34 @@ describe('resolveStudentContext', () => {
 
   it('throws when neither side is signed in', async () => {
     await expect(resolveStudentContext()).rejects.toThrow('Unauthorized')
+  })
+})
+
+describe('requireAdminSession', () => {
+  it('admits an admin', async () => {
+    signedIn()
+    vi.mocked(isAdmin).mockResolvedValue(true)
+    await expect(requireAdminSession()).resolves.toEqual({ parentId: PARENT })
+  })
+
+  it('refuses an ordinary parent with Forbidden, not Unauthorized', async () => {
+    signedIn()
+    vi.mocked(isAdmin).mockResolvedValue(false)
+    await expect(requireAdminSession()).rejects.toThrow('Forbidden')
+  })
+
+  it('refuses an anonymous caller before asking about admin at all', async () => {
+    await expect(requireAdminSession()).rejects.toThrow('Unauthorized')
+    expect(isAdmin).not.toHaveBeenCalled()
+  })
+
+  it('reads the flag from the service on every call, never from a claim', async () => {
+    // Revoking admin has to take effect on the next request, not the next
+    // sign-in, so the answer cannot be cached in the token.
+    signedIn()
+    vi.mocked(isAdmin).mockResolvedValue(true)
+    await requireAdminSession()
+    await requireAdminSession()
+    expect(isAdmin).toHaveBeenCalledTimes(2)
   })
 })

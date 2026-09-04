@@ -9,9 +9,25 @@ const NAV = [
   { href: '/parent?view=schedule', label: 'Lịch học', icon: '📅', view: 'schedule' as const },
   { href: '/parent?view=grades', label: 'Điểm số', icon: '⭐', view: 'grades' as const },
   { href: '/parent/kid-access', label: 'Truy cập', icon: '🛡️', view: 'access' as const },
+  { href: '/parent/students', label: 'Các bé', icon: '👧', view: 'students' as const },
 ]
 
-export function ParentSidebarNav() {
+/** Admin-only. Hidden rather than shown-and-refused: the actions guard it, this
+ *  just avoids offering a door that would slam. */
+const ADMIN_NAV = {
+  href: '/parent/admin/approvals',
+  label: 'Duyệt tài khoản',
+  icon: '✅',
+  view: 'approvals' as const,
+}
+
+export function ParentSidebarNav({
+  studentName = 'bé',
+  isAdmin = false,
+}: {
+  studentName?: string
+  isAdmin?: boolean
+}) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const currentView = searchParams.get('view')
@@ -27,11 +43,11 @@ export function ParentSidebarNav() {
           </div>
         </div>
         <div className="text-[15px] font-black text-slate-800">Parent Mode</div>
-        <div className="mt-0.5 text-[11px] font-bold text-slate-400">Quản lý của Khôi</div>
+        <div className="mt-0.5 text-[11px] font-bold text-slate-400">Quản lý của {studentName}</div>
       </div>
 
       <nav className="flex flex-1 flex-col gap-1">
-        {NAV.map((item) => {
+        {[...NAV, ...(isAdmin ? [ADMIN_NAV] : [])].map((item) => {
           const active = item.view === 'access'
             ? pathname.startsWith('/parent/kid-access')
             : pathname === '/parent' &&

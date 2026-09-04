@@ -15,12 +15,25 @@ const TILES = [
   { id: '6', emoji: '🎈', label: 'Balloon' },
 ] as const
 
+export interface UnlockableStudent {
+  id: string
+  name: string
+}
+
 /**
- * `studentId` is resolved on the server and passed in: the unlock screen is only
- * reachable with a parent session (D1), so which child is being unlocked is a
- * decision the server already made.
+ * `studentId` is resolved on the server: the unlock screen is only reachable
+ * with a parent session (D1), so which child is being unlocked starts as a
+ * decision the server already made. With more than one child the picker lets
+ * the household correct it before the pattern is entered.
  */
-export function KidUnlockScreen({ studentId }: { studentId: string }) {
+export function KidUnlockScreen({
+  studentId: initialStudentId,
+  students = [],
+}: {
+  studentId: string
+  students?: UnlockableStudent[]
+}) {
+  const [studentId, setStudentId] = useState(initialStudentId)
   const router = useRouter()
   const [entered, setEntered] = useState('')
   const [error, setError] = useState('')
@@ -35,12 +48,12 @@ export function KidUnlockScreen({ studentId }: { studentId: string }) {
         router.replace('/dashboard')
         return
       }
-      if (!hasKidPatternSet) {
-        setNeedsSetup(true)
-        setError('Bố mẹ chưa thiết lập mã mở khóa. Vui lòng vào Parent Mode.')
-      }
+      // Each child has their own pattern, so this has to be re-checked when the
+      // picker changes the student — not only on first mount.
+      setNeedsSetup(!hasKidPatternSet)
+      setError(hasKidPatternSet ? '' : 'Bố mẹ chưa thiết lập mã mở khóa. Vui lòng vào Parent Mode.')
     })
-  }, [router])
+  }, [router, studentId])
 
   useEffect(() => {
     if (!isLocked || lockoutSeconds <= 0) return
@@ -107,6 +120,31 @@ export function KidUnlockScreen({ studentId }: { studentId: string }) {
           </p>
           <p className="mt-3 text-sm font-extrabold text-math-light">{hint}</p>
         </div>
+
+        {students.length > 1 ? (
+          <div className="mb-5 flex flex-wrap justify-center gap-2">
+            {students.map((student) => (
+              <button
+                key={student.id}
+                type="button"
+                onClick={() => {
+                  setStudentId(student.id)
+                  setEntered('')
+                  setError('')
+                }}
+                aria-pressed={student.id === studentId}
+                className={cn(
+                  'rounded-full px-4 py-2 text-sm font-black transition-colors',
+                  student.id === studentId
+                    ? 'bg-white text-slate-800'
+                    : 'bg-white/15 text-white hover:bg-white/25'
+                )}
+              >
+                {student.name}
+              </button>
+            ))}
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-3 gap-3">
           {TILES.map((tile) => (
