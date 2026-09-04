@@ -97,15 +97,20 @@ export interface KidProfile {
   gradeLevel: number
 }
 
-/** GET /api/v1/auth/kid-pattern — whether a parent has configured the pattern. */
+/** GET /api/v1/students/:studentId/kid-session — whether a pattern is configured. */
 export interface KidPatternStatus {
   hasKidPatternSet: boolean
 }
 
-/** POST /api/v1/auth/kid-pattern — the outcome of one unlock attempt. */
+/** POST /api/v1/students/:studentId/kid-session — the outcome of one attempt. */
 export interface KidPatternVerify {
   status: 'ok' | 'wrong' | 'locked' | 'not-configured'
   lockoutSeconds?: number
+  /**
+   * Present only on 'ok'. Scoped to this one student and carrying no parent
+   * identity, so the client can act as the child rather than as the parent.
+   */
+  kidToken?: string
 }
 
 /** POST /api/v1/auth/pin — the outcome of one PIN attempt. */

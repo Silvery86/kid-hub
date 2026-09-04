@@ -2,20 +2,23 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { getTodayHomework, markHomeworkDone } from '@/api/homework.api'
-
-const todayKey = ['homework', 'today'] as const
+import { useStudentKey } from '@/hooks/use-student'
 
 export function useTodayHomework() {
+  const { studentId, enabled } = useStudentKey()
   return useQuery({
-    queryKey: todayKey,
+    queryKey: ['homework', 'today', studentId],
     queryFn: getTodayHomework,
+    enabled,
   })
 }
 
 export function useMarkHomeworkDone() {
   const queryClient = useQueryClient()
+  const { studentId } = useStudentKey()
   return useMutation({
     mutationFn: (periodId: string) => markHomeworkDone(periodId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: todayKey }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['homework', 'today', studentId] }),
   })
 }

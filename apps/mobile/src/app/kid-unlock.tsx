@@ -1,10 +1,8 @@
 // Kid unlock — web's /kid-unlock (components/unlock/KidUnlockScreen.tsx).
 //
-// Web's version issues a KID_SESSION_COOKIE that its middleware enforces. Mobile
-// cannot do that: the API is Bearer-token authenticated and /api/v1/* is outside
-// the middleware matcher, so the token already grants access before a pattern is
-// entered. This gates the UI instead — see hooks/use-kid-gate.ts — while the
-// hash, the attempt counter and the lockout stay on the server.
+// A correct pattern now returns a kid token scoped to this one student, which
+// the transport sends in place of the parent's while kid mode is on. The hash,
+// the attempt counter and the lockout stay on the server.
 import { KID_PATTERN_LENGTH, tokens } from '@kid-hub/shared'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
@@ -77,7 +75,15 @@ export default function KidUnlockScreen() {
       const result = await verifyKidPattern(pattern)
 
       if (result.status === 'ok') {
-        unlock()
+        // No token means the server refused to scope this session; treat it as a
+        // failure rather than unlocking on the parent's credential.
+        if (!result.kidToken) {
+          setError('Không mở khóa được. Thử lại nhé!')
+          setEntered('')
+          setErrorCount((c) => c + 1)
+          return
+        }
+        unlock(result.kidToken)
         router.replace('/(tabs)/dashboard')
         return
       }

@@ -1,18 +1,24 @@
-// use-kid-gate.ts — whether the kid unlock screen has been cleared this launch.
+// use-kid-gate.ts — the kid session on mobile.
 //
-// This is a UI gate, not an auth boundary. Mobile authenticates with the Bearer
-// token from parent login and /api/v1/* sits outside the middleware matcher, so
-// a pattern cannot gate API access the way web's KID_SESSION_COOKIE does. What
-// must not live on the device — the pattern hash, the attempt count and the
-// lockout — stays behind POST /api/v1/auth/kid-pattern.
+// This used to be a UI gate only: mobile authenticated with the parent's Bearer
+// token, so entering the pattern changed what was on screen and nothing else.
+// The server now issues a kid token scoped to one student, and the transport
+// sends that token while the app is in kid mode — so the pattern is a real
+// boundary, and a child's screens cannot reach a parent endpoint.
 //
-// Deliberately not persisted: the gate should close again on a cold start.
-import { createContext, createElement, useCallback, useContext, useMemo, useState } from 'react'
+// The token is persisted, but the gate is not: a cold start shows the pattern
+// screen again even though the token is still valid, which is the behaviour a
+// parent expects from handing over a locked device.
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
+
+import { setActor } from '@/api/client'
+import { clearKidToken, setKidToken } from '@/lib/secure-store'
 
 interface KidGateValue {
   isUnlocked: boolean
-  unlock: () => void
+  /** Stores the kid token and switches the transport to it. */
+  unlock: (kidToken?: string) => void
   lock: () => void
 }
 
@@ -21,10 +27,28 @@ const KidGateContext = createContext<KidGateValue | null>(null)
 export function KidGateProvider({ children }: { children: ReactNode }) {
   const [isUnlocked, setIsUnlocked] = useState(false)
 
-  const unlock = useCallback(() => setIsUnlocked(true), [])
-  const lock = useCallback(() => setIsUnlocked(false), [])
+  const unlock = useCallback((kidToken?: string) => {
+    if (kidToken) void setKidToken(kidToken)
+    setActor('kid')
+    setIsUnlocked(true)
+  }, [])
 
-  const value = useMemo<KidGateValue>(() => ({ isUnlocked, unlock, lock }), [isUnlocked, unlock, lock])
+  const lock = useCallback(() => {
+    void clearKidToken()
+    setActor('parent')
+    setIsUnlocked(false)
+  }, [])
+
+  // A cold start begins locked, so the transport must not still be holding a
+  // kid token from the previous run.
+  useEffect(() => {
+    setActor('parent')
+  }, [])
+
+  const value = useMemo<KidGateValue>(
+    () => ({ isUnlocked, unlock, lock }),
+    [isUnlocked, unlock, lock]
+  )
 
   return createElement(KidGateContext.Provider, { value }, children)
 }

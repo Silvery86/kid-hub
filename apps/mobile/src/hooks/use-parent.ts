@@ -5,20 +5,28 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import * as parentApi from '@/api/parent.api'
+import { useStudentKey } from '@/hooks/use-student'
 
-const KID_ACCESS_KEY = ['parent', 'kid-access'] as const
-const SCREEN_TIME_KEY = ['parent', 'screen-time'] as const
-const ACTIVITY_KEY = ['parent', 'activity'] as const
+// Every one of these is about a specific child, so the id belongs in the key.
+const kidAccessKey = (studentId: string | null) => ['parent', 'kid-access', studentId] as const
+const screenTimeKey = (studentId: string | null) => ['parent', 'screen-time', studentId] as const
+const activityKey = (studentId: string | null) => ['parent', 'activity', studentId] as const
 
 export function useKidAccessSettings() {
-  return useQuery({ queryKey: KID_ACCESS_KEY, queryFn: parentApi.getKidAccessSettings })
+  const { studentId, enabled } = useStudentKey()
+  return useQuery({
+    queryKey: kidAccessKey(studentId),
+    queryFn: parentApi.getKidAccessSettings,
+    enabled,
+  })
 }
 
 export function useSaveKidAccessSettings() {
   const qc = useQueryClient()
+  const { studentId } = useStudentKey()
   return useMutation({
     mutationFn: (settings: Record<string, boolean>) => parentApi.saveKidAccessSettings(settings),
-    onSuccess: () => qc.invalidateQueries({ queryKey: KID_ACCESS_KEY }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: kidAccessKey(studentId) }),
   })
 }
 
@@ -27,21 +35,25 @@ export function useSetKidPattern() {
 }
 
 export function useScreenTime() {
-  return useQuery({ queryKey: SCREEN_TIME_KEY, queryFn: parentApi.getScreenTime })
+  const { studentId, enabled } = useStudentKey()
+  return useQuery({ queryKey: screenTimeKey(studentId), queryFn: parentApi.getScreenTime, enabled })
 }
 
 export function useSetScreenTimeLimit() {
   const qc = useQueryClient()
+  const { studentId } = useStudentKey()
   return useMutation({
     mutationFn: (limitMins: number) => parentApi.setScreenTimeLimit(limitMins),
-    onSuccess: () => qc.invalidateQueries({ queryKey: SCREEN_TIME_KEY }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: screenTimeKey(studentId) }),
   })
 }
 
 export function useRecentActivity(limit = 10) {
+  const { studentId, enabled } = useStudentKey()
   return useQuery({
-    queryKey: [...ACTIVITY_KEY, limit],
+    queryKey: [...activityKey(studentId), limit],
     queryFn: () => parentApi.getRecentActivity(limit),
+    enabled,
   })
 }
 

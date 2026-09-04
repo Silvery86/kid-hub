@@ -5,6 +5,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useQuery } from '@tanstack/react-query'
 import type { GameBestScore, GameType } from '@kid-hub/shared'
 
+import { useStudentKey } from '@/hooks/use-student'
 import { StarRating } from '@/components/ui/star-rating'
 
 export interface HubGameMeta<Id extends string> {
@@ -31,7 +32,12 @@ export function GameHub<Id extends string>({
   onSelect: (id: Id) => void
   onExit: () => void
 }) {
-  const { data } = useQuery({ queryKey: ['best-scores', gameType], queryFn: fetchBestScores })
+  const { studentId, enabled } = useStudentKey()
+  const { data } = useQuery({
+    queryKey: ['best-scores', gameType, studentId],
+    queryFn: fetchBestScores,
+    enabled,
+  })
   const bestStars = (id: string): number =>
     data?.find((b) => b.gameType === gameType && b.subType === id)?.starsEarned ?? 0
 

@@ -8,6 +8,7 @@ import { Redirect, useRouter } from 'expo-router'
 import { useState } from 'react'
 import { ScrollView, Text, View } from 'react-native'
 
+import { StudentSwitcher } from '@/components/parent/student-switcher'
 import { GradesManager } from '@/components/parent/grades-manager'
 import { ScheduleManager } from '@/components/parent/schedule-manager'
 import { SegmentedControl, type Segment } from '@/components/parent/segmented-control'
@@ -73,6 +74,8 @@ export default function ParentDashboard() {
             Thoát
           </KidButton>
         </View>
+
+        <StudentSwitcher />
 
         <SegmentedControl segments={SEGMENTS} active={view} onChange={setView} />
 

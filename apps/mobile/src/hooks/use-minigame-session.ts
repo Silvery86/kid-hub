@@ -16,6 +16,7 @@ import type {
 
 import { useGameSession } from '@/hooks/use-game-session'
 import { useGameAudio, type SoundKey } from '@/hooks/use-game-audio'
+import { useStudentKey } from '@/hooks/use-student'
 
 /** Common save payload; the caller appends its `minigame` discriminator. */
 export interface GameSaveBase {
@@ -62,8 +63,9 @@ export function useMinigameSession({
   const { play } = useGameAudio()
   const queryClient = useQueryClient()
 
-  const bestKey = useMemo(() => ['best-scores', gameType] as const, [gameType])
-  const bestQuery = useQuery({ queryKey: bestKey, queryFn: fetchBestScores })
+  const { studentId, enabled } = useStudentKey()
+  const bestKey = useMemo(() => ['best-scores', gameType, studentId] as const, [gameType, studentId])
+  const bestQuery = useQuery({ queryKey: bestKey, queryFn: fetchBestScores, enabled })
 
   const isProcessing = useRef(false)
   const savedRef = useRef(false)

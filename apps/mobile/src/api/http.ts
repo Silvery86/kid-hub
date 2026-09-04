@@ -10,6 +10,8 @@ import {
   type StudentClient,
 } from '@kid-hub/api-client'
 
+import { getStoredActiveStudent, storeActiveStudent } from '@/lib/secure-store'
+
 import { api } from './client'
 
 const axiosTransport: HttpTransport = {
@@ -46,10 +48,11 @@ export const apiClient = createApiClient(axiosTransport)
 let activeStudentId: string | null = null
 let resolving: Promise<string> | null = null
 
-/** Switches the student every subsequent scoped call is about. */
+/** Switches the student every subsequent scoped call is about, and remembers it. */
 export const setActiveStudent = (id: string | null): void => {
   activeStudentId = id
   resolving = null
+  if (id) void storeActiveStudent(id)
 }
 
 export const getActiveStudentId = (): string | null => activeStudentId
@@ -59,11 +62,18 @@ const resolveActiveStudent = async (): Promise<string> => {
   // Single-flight, like the token refresh: several screens mount at once and
   // must not each fetch the student list.
   resolving ??= (async () => {
+    // Last choice first, so a relaunch shows the same child rather than
+    // silently snapping back to whichever one happens to be first.
+    const remembered = await getStoredActiveStudent()
     const students = await apiClient.listStudents()
-    const first = students[0]
-    if (!first) throw new Error('This account has no students yet')
-    activeStudentId = first.id
-    return first.id
+    const match = remembered ? students.find((s) => s.id === remembered) : undefined
+    // A remembered id the account can no longer reach — an un-shared child —
+    // falls back rather than failing every request.
+    const chosen = match ?? students[0]
+    if (!chosen) throw new Error('This account has no students yet')
+    activeStudentId = chosen.id
+    void storeActiveStudent(chosen.id)
+    return chosen.id
   })()
   return resolving
 }

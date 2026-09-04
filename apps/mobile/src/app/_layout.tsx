@@ -10,6 +10,7 @@ import { lockPortrait } from '@/lib/screen-orientation';
 import { AuthProvider } from '@/hooks/use-auth';
 import { KidGateProvider } from '@/hooks/use-kid-gate';
 import { ParentGateProvider } from '@/hooks/use-parent-gate';
+import { StudentProvider } from '@/hooks/use-student';
 
 import '@/global.css';
 
@@ -77,8 +78,11 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <KidGateProvider>
-          <ParentGateProvider>
+        {/* Inside the query client: it resolves the active student through a
+            query so the id is cached, and every scoped key depends on it. */}
+        <StudentProvider>
+          <KidGateProvider>
+            <ParentGateProvider>
             <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
               <OrientationGuardrail />
               <Stack screenOptions={{ headerShown: false }}>
@@ -91,8 +95,9 @@ export default function RootLayout() {
                 <Stack.Screen name="parent" />
               </Stack>
             </ThemeProvider>
-          </ParentGateProvider>
-        </KidGateProvider>
+            </ParentGateProvider>
+          </KidGateProvider>
+        </StudentProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

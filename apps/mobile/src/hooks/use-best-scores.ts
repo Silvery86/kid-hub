@@ -7,12 +7,14 @@ import type { GameBestScore } from '@kid-hub/shared'
 
 import { getEnglishBestScores } from '@/api/english.api'
 import { getMathBestScores } from '@/api/math.api'
+import { useStudentKey } from '@/hooks/use-student'
 
 export function useBestScores() {
+  const { studentId, enabled } = useStudentKey()
   const results = useQueries({
     queries: [
-      { queryKey: ['best-scores', 'math'], queryFn: getMathBestScores },
-      { queryKey: ['best-scores', 'english'], queryFn: getEnglishBestScores },
+      { queryKey: ['best-scores', 'math', studentId], queryFn: getMathBestScores, enabled },
+      { queryKey: ['best-scores', 'english', studentId], queryFn: getEnglishBestScores, enabled },
     ],
   })
 
