@@ -10,6 +10,7 @@ const NAV = [
   { href: '/parent?view=grades', label: 'Điểm số', icon: '⭐', view: 'grades' as const },
   { href: '/parent/kid-access', label: 'Truy cập', icon: '🛡️', view: 'access' as const },
   { href: '/parent/students', label: 'Các bé', icon: '👧', view: 'students' as const },
+  { href: '/parent/devices', label: 'Thiết bị', icon: '📱', view: 'devices' as const },
 ]
 
 /** Admin-only. Hidden rather than shown-and-refused: the actions guard it, this

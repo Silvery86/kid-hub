@@ -282,6 +282,40 @@ export const revokeAllForParent = async (parentId: string): Promise<void> => {
   })
 }
 
+export interface DeviceRow {
+  id: string
+  deviceLabel: string | null
+  createdAt: Date
+  lastUsedAt: Date
+  expiresAt: Date
+}
+
+/** The parent's live sessions, most recently used first. */
+export const listDevices = async (parentId: string): Promise<DeviceRow[]> => {
+  return db.refreshToken.findMany({
+    where: { parentId, revokedAt: null, expiresAt: { gt: new Date() } },
+    orderBy: { lastUsedAt: 'desc' },
+    select: { id: true, deviceLabel: true, createdAt: true, lastUsedAt: true, expiresAt: true },
+  })
+}
+
+/**
+ * Revokes one device, scoped to its owner.
+ *
+ * parentId is part of the WHERE rather than checked beforehand: a row id alone
+ * must never be enough to sign out somebody else's device.
+ */
+export const revokeDeviceForParent = async (
+  tokenId: string,
+  parentId: string
+): Promise<boolean> => {
+  const result = await db.refreshToken.updateMany({
+    where: { id: tokenId, parentId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  })
+  return result.count === 1
+}
+
 /** Stamps last use, so the device list can show something meaningful. */
 export const touchRefreshToken = async (tokenId: string): Promise<void> => {
   await db.refreshToken.updateMany({

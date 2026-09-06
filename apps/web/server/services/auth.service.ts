@@ -14,6 +14,7 @@ import bcrypt from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
 import type { KidSession, ParentRefreshSession, ParentSession } from '@/types'
 import * as parentRepo from '@/server/repositories/parent.repository'
+import * as inviteRepo from '@/server/repositories/invite.repository'
 import * as parentStudentRepo from '@/server/repositories/parent-student.repository'
 import * as studentRepo from '@/server/repositories/student.repository'
 import {
@@ -205,6 +206,41 @@ export const verifyKidSessionToken = async (token: string): Promise<KidSession |
   } catch {
     return null
   }
+}
+
+/**
+ * A short, human-recognisable device name from a User-Agent string.
+ *
+ * Not parsing: the goal is only for a parent to tell their phone from their
+ * laptop in the device list, and a wrong guess there is cosmetic. Anything
+ * unrecognised stays null rather than showing a UA string to a person.
+ */
+export const deviceLabelFrom = (userAgent: string | null): string | undefined => {
+  if (!userAgent) return undefined
+  const platform = /iPhone|iPad/i.test(userAgent)
+    ? 'iOS'
+    : /Android/i.test(userAgent)
+      ? 'Android'
+      : /Macintosh|Mac OS/i.test(userAgent)
+        ? 'Mac'
+        : /Windows/i.test(userAgent)
+          ? 'Windows'
+          : /Linux/i.test(userAgent)
+            ? 'Linux'
+            : null
+  if (!platform) return undefined
+
+  const browser = /Edg\//i.test(userAgent)
+    ? 'Edge'
+    : /Chrome\//i.test(userAgent)
+      ? 'Chrome'
+      : /Safari\//i.test(userAgent)
+        ? 'Safari'
+        : /Firefox\//i.test(userAgent)
+          ? 'Firefox'
+          : null
+
+  return browser ? `${browser} · ${platform}` : platform
 }
 
 /** One-way hash helper used for storing refresh tokens server-side. */
@@ -462,6 +498,124 @@ export const listStudentsForParent = (parentId: string) =>
 /** True when this parent may touch this student's data. */
 export const canAccessStudent = (parentId: string, studentId: string) =>
   parentStudentRepo.isLinked(parentId, studentId)
+
+// ── Second-parent invites ────────────────────────────────────────────────────
+
+/** How long a code stays redeemable. Long enough to send, short enough to matter. */
+const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000
+
+/** Unambiguous alphabet: no O/0, I/1, or similar, since these get read aloud. */
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+const CODE_LENGTH = 8
+
+/**
+ * A code with ~40 bits of entropy, drawn from the CSPRNG rather than Math.random.
+ * Rejection sampling keeps the distribution flat — taking a modulus of a byte
+ * would quietly favour the first eight letters of the alphabet.
+ */
+const generateInviteCode = (): string => {
+  const chars: string[] = []
+  while (chars.length < CODE_LENGTH) {
+    const bytes = new Uint8Array(CODE_LENGTH)
+    crypto.getRandomValues(bytes)
+    for (const byte of bytes) {
+      if (chars.length === CODE_LENGTH) break
+      if (byte >= 256 - (256 % CODE_ALPHABET.length)) continue
+      chars.push(CODE_ALPHABET[byte % CODE_ALPHABET.length]!)
+    }
+  }
+  return chars.join('')
+}
+
+/**
+ * Raises an invite for a student the caller owns. The raw code is returned ONCE
+ * and never stored; only its hash is persisted, so a database read cannot
+ * recover a live invite.
+ */
+export const createInvite = async (
+  parentId: string,
+  studentId: string,
+  email?: string
+): Promise<{ code: string; expiresAt: Date }> => {
+  if (!(await parentStudentRepo.isLinked(parentId, studentId))) {
+    throw new Error('Forbidden')
+  }
+
+  const code = generateInviteCode()
+  const expiresAt = new Date(Date.now() + INVITE_TTL_MS)
+  await inviteRepo.create({
+    studentId,
+    invitedById: parentId,
+    codeHash: await hashSecret(code),
+    email: email?.trim().toLowerCase(),
+    expiresAt,
+  })
+  return { code, expiresAt }
+}
+
+export type AcceptInviteResult =
+  | { status: 'ok'; studentId: string }
+  | { status: 'invalid' }
+  | { status: 'already-linked' }
+  | { status: 'wrong-account' }
+
+/**
+ * Redeems a code, linking the caller to the student as GUARDIAN.
+ *
+ * Every candidate is compared even after a match is found, so the time taken
+ * does not depend on which invite matched — a loop that returned early would
+ * leak the position of a valid code across repeated attempts.
+ */
+export const acceptInvite = async (
+  parentId: string,
+  rawCode: string
+): Promise<AcceptInviteResult> => {
+  const code = rawCode.trim().toUpperCase()
+  const candidates = await inviteRepo.listRedeemable()
+
+  let matched: (typeof candidates)[number] | null = null
+  for (const invite of candidates) {
+    if (await verifySecret(code, invite.codeHash)) matched ??= invite
+  }
+  if (!matched) return { status: 'invalid' }
+
+  if (matched.email) {
+    const parent = await parentRepo.getById(parentId)
+    if (!parent || parent.email.toLowerCase() !== matched.email) {
+      return { status: 'wrong-account' }
+    }
+  }
+
+  if (await parentStudentRepo.isLinked(parentId, matched.studentId)) {
+    return { status: 'already-linked' }
+  }
+
+  // Claim the invite first: if the row was already taken, the link must not be
+  // made. Doing it the other way round would let one code link two accounts.
+  if (!(await inviteRepo.markAccepted(matched.id, parentId))) return { status: 'invalid' }
+
+  await parentStudentRepo.link(parentId, matched.studentId, 'GUARDIAN')
+  return { status: 'ok', studentId: matched.studentId }
+}
+
+/** Invites raised for a student the caller owns. Codes are not recoverable. */
+export const listInvitesForStudent = async (parentId: string, studentId: string) => {
+  if (!(await parentStudentRepo.isLinked(parentId, studentId))) throw new Error('Forbidden')
+  return inviteRepo.listForStudent(studentId)
+}
+
+/** Withdraws an unredeemed invite the caller raised. */
+export const revokeInvite = (parentId: string, inviteId: string) =>
+  inviteRepo.revoke(inviteId, parentId)
+
+// ── Devices ──────────────────────────────────────────────────────────────────
+
+/** The parent's live sessions. */
+export const listDevices = (parentId: string) => parentRepo.listDevices(parentId)
+
+/** Signs out one device. Returns false when the row is not this parent's. */
+export const revokeDevice = (parentId: string, tokenId: string) =>
+  parentRepo.revokeDeviceForParent(tokenId, parentId)
 
 /** Creates a student and links it to the parent as OWNER. */
 export const createStudent = async (

@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import {
   PARENT_ACCESS_COOKIE,
   PARENT_REFRESH_COOKIE,
@@ -9,6 +9,7 @@ import {
   verifyKidSessionToken,
   canAccessStudent,
   createParentSession,
+  deviceLabelFrom,
   isAdmin,
   listStudentsForParent,
   validateRefreshToken,
@@ -20,7 +21,11 @@ import {
 } from '@/lib/constants'
 
 const issueParentSessionCookies = async (parentId: string): Promise<void> => {
-  const { accessToken, refreshToken } = await createParentSession(parentId)
+  const requestHeaders = await headers()
+  const { accessToken, refreshToken } = await createParentSession(
+    parentId,
+    deviceLabelFrom(requestHeaders.get('user-agent'))
+  )
 
   const cookieStore = await cookies()
   cookieStore.set(PARENT_ACCESS_COOKIE, accessToken, {

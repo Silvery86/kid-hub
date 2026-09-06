@@ -6,6 +6,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const cookieJar = new Map<string, string>()
 vi.mock('next/headers', () => ({
+  // Session rotation reads the User-Agent to label the device row.
+  headers: async () => new Headers({ 'user-agent': 'Mozilla/5.0 (Macintosh) Chrome/120' }),
   cookies: async () => ({
     get: (name: string) =>
       cookieJar.has(name) ? { name, value: cookieJar.get(name) } : undefined,
@@ -22,6 +24,7 @@ vi.mock('@/server/services/auth.service', () => ({
   verifyKidSessionToken: vi.fn(),
   canAccessStudent: vi.fn(),
   isAdmin: vi.fn(),
+  deviceLabelFrom: () => 'Chrome · Mac',
   createParentSession: vi.fn(),
   listStudentsForParent: vi.fn(),
   validateRefreshToken: vi.fn(),

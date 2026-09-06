@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
+import { createInviteAction } from '@/server/actions/invites.actions'
 import {
   createStudentAction,
   setActiveStudentAction,
@@ -23,6 +24,8 @@ export function StudentsView({
   const [gradeLevel, setGradeLevel] = useState(1)
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // The code exists in the clear exactly once — here. Nothing can show it again.
+  const [invite, setInvite] = useState<{ studentId: string; code: string } | null>(null)
 
   const add = useCallback(async () => {
     if (isSubmitting) return
@@ -40,6 +43,17 @@ export function StudentsView({
     setGradeLevel(1)
     router.refresh()
   }, [name, gradeLevel, isSubmitting, router])
+
+  const inviteFor = useCallback(async (studentId: string) => {
+    setError('')
+    setInvite(null)
+    const result = await createInviteAction({ studentId })
+    if (!result.success) {
+      setError(result.error ?? 'Không tạo được mã mời')
+      return
+    }
+    setInvite({ studentId, code: result.data.code })
+  }, [])
 
   const switchTo = useCallback(
     async (studentId: string) => {
@@ -97,19 +111,39 @@ export function StudentsView({
                   {student.role === 'GUARDIAN' ? ' · được chia sẻ' : ''}
                 </p>
               </div>
-              {isActive ? (
-                <span className="shrink-0 rounded-xl bg-blue-500 px-3.5 py-2 text-xs font-black text-white">
-                  Đang xem
-                </span>
-              ) : (
+              <div className="flex shrink-0 items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => void switchTo(student.id)}
-                  className="shrink-0 rounded-xl bg-slate-100 px-3.5 py-2 text-xs font-black text-slate-600 transition-colors hover:bg-slate-200"
+                  onClick={() => void inviteFor(student.id)}
+                  className="rounded-xl bg-emerald-50 px-3.5 py-2 text-xs font-black text-emerald-700 transition-colors hover:bg-emerald-100"
                 >
-                  Chọn bé này
+                  Mời phụ huynh
                 </button>
-              )}
+                {isActive ? (
+                  <span className="rounded-xl bg-blue-500 px-3.5 py-2 text-xs font-black text-white">
+                    Đang xem
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void switchTo(student.id)}
+                    className="rounded-xl bg-slate-100 px-3.5 py-2 text-xs font-black text-slate-600 transition-colors hover:bg-slate-200"
+                  >
+                    Chọn bé này
+                  </button>
+                )}
+              </div>
+
+              {invite?.studentId === student.id ? (
+                <div className="w-full rounded-xl bg-emerald-50 px-4 py-3">
+                  <p className="m-0 text-xs font-bold text-emerald-700">
+                    Gửi mã này cho phụ huynh còn lại. Mã chỉ hiện một lần và có hạn 7 ngày.
+                  </p>
+                  <p className="m-0 mt-1.5 font-mono text-lg font-black tracking-[0.2em] text-emerald-900">
+                    {invite.code}
+                  </p>
+                </div>
+              ) : null}
             </li>
           )
         })}

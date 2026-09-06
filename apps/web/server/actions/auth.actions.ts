@@ -12,10 +12,11 @@ import {
   KidPatternSchema,
   ParentPinSchema,
 } from '@kid-hub/shared'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { z } from 'zod'
 import {
   createParentSession,
+  deviceLabelFrom,
   createKidSessionToken,
   createParentPinToken,
   hasKidPatternSet,
@@ -76,7 +77,13 @@ const KID_SESSION_COOKIE_OPTIONS = {
 }
 
 const issueParentSessionCookies = async (parentId: string): Promise<void> => {
-  const { accessToken, refreshToken } = await createParentSession(parentId)
+  // Labelled so the device list is something a parent can act on rather than a
+  // column of "unknown".
+  const requestHeaders = await headers()
+  const { accessToken, refreshToken } = await createParentSession(
+    parentId,
+    deviceLabelFrom(requestHeaders.get('user-agent'))
+  )
   const cookieStore = await cookies()
   cookieStore.set(PARENT_ACCESS_COOKIE, accessToken, PARENT_ACCESS_COOKIE_OPTIONS)
   cookieStore.set(PARENT_REFRESH_COOKIE, refreshToken, PARENT_REFRESH_COOKIE_OPTIONS)

@@ -98,6 +98,17 @@ describe('every /api/v1 route is accounted for', () => {
     }
   )
 
+  it.each(routes.filter((r) => r.startsWith('invites/')))(
+    '%s requires a parent session in every handler',
+    (rel) => {
+      // An invite names a student, but the caller is a parent — creating one is
+      // authorised by the link, redeeming one creates the link.
+      for (const { method, body } of handlerBodies(source(rel))) {
+        expect(body, `${rel} ${method} has no parent guard`).toContain(PARENT_GUARD)
+      }
+    }
+  )
+
   it.each(routes.filter((r) => r.startsWith('parents/')))(
     '%s requires a parent session in every handler',
     (rel) => {
@@ -122,7 +133,7 @@ describe('every /api/v1 route is accounted for', () => {
 
   it('no route outside students/, admin/, parents/ and auth/ exists unreviewed', () => {
     const stray = routes.filter(
-      (r) => !/^(students|admin|parents|auth)\//.test(r)
+      (r) => !/^(students|admin|parents|auth|invites)\//.test(r)
     )
     expect(stray, `unclassified routes: ${stray.join(', ')}`).toEqual([])
   })

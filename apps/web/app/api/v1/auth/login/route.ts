@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import type { RateLimitResult } from '@/lib/rate-limit'
 import { checkRateLimit, getLoginEmailRateLimiter, getLoginRateLimiter } from '@/lib/rate-limit'
-import { loginWithParentPassword, createParentSession } from '@/server/services/auth.service'
+import {
+  createParentSession,
+  deviceLabelFrom,
+  loginWithParentPassword,
+} from '@/server/services/auth.service'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,6 +63,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 })
   }
 
-  const { accessToken, refreshToken } = await createParentSession(result.parentId)
+  const { accessToken, refreshToken } = await createParentSession(
+    result.parentId,
+    deviceLabelFrom(req.headers.get('user-agent')),
+  )
   return NextResponse.json({ success: true, accessToken, refreshToken })
 }
