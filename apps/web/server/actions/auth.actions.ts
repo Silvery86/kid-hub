@@ -20,7 +20,7 @@ import {
   createKidSessionToken,
   createParentPinToken,
   hasKidPatternSet,
-  hasParentAccount,
+  hasAnyParentAccount,
   getPinRecord,
   loginWithParentPassword,
   registerFoundingParent,
@@ -43,7 +43,6 @@ import { checkRateLimit, getLoginEmailRateLimiter } from '@/lib/rate-limit'
 import { requireStudentAccess, resolveActiveStudent } from '@/server/lib/auth-guard'
 import type { ActionVoidResult, AuthActionResult } from '@/types'
 import {
-  DEFAULT_PARENT_ID,
   KID_SESSION_TTL_SECONDS,
   PARENT_ACCESS_TTL_SECONDS,
   PARENT_REFRESH_TTL_SECONDS,
@@ -130,8 +129,8 @@ export const registerParentAccountAction = async (
   }
 
   try {
-    await registerFoundingParent(DEFAULT_PARENT_ID, parsedEmail.data, parsedPassword.data)
-    await issueParentSessionCookies(DEFAULT_PARENT_ID)
+    const { parentId } = await registerFoundingParent(parsedEmail.data, parsedPassword.data)
+    await issueParentSessionCookies(parentId)
     return { success: true }
   } catch (err) {
     const msg = err instanceof Error ? err.message : ''
@@ -273,7 +272,7 @@ export const checkParentSessionAction = async (): Promise<{
   }
 
   try {
-    return { hasSession, hasParentAccount: await hasParentAccount(DEFAULT_PARENT_ID) }
+    return { hasSession, hasParentAccount: await hasAnyParentAccount() }
   } catch {
     return { hasSession, hasParentAccount: null }
   }
@@ -383,7 +382,9 @@ export const signOutKidAction = async (): Promise<ActionVoidResult> => {
 /** Whether the household has a parent PIN configured. */
 export const checkParentPinAction = async (): Promise<{ hasPin: boolean }> => {
   try {
-    const record = await getPinRecord(DEFAULT_PARENT_ID)
+    const session = await ensureParentSession()
+    if (!session.parentId) return { hasPin: false }
+    const record = await getPinRecord(session.parentId)
     return { hasPin: record?.hasPin ?? false }
   } catch {
     return { hasPin: false }
@@ -408,16 +409,16 @@ export const setPinAction = async (pin: string): Promise<ActionVoidResult> => {
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Invalid PIN' }
   }
   const session = await ensureParentSession()
-  if (!session.ok) return { success: false, error: 'Unauthorized' }
+  if (!session.ok || !session.parentId) return { success: false, error: 'Unauthorized' }
 
   try {
-    await savePin(DEFAULT_PARENT_ID, parsed.data)
+    await savePin(session.parentId, parsed.data)
 
     // Creating and confirming the PIN already proves knowledge of it, so mint
     // the proof here. Without this the parent would type the PIN a third time
     // to walk through the door they just finished building.
     const cookieStore = await cookies()
-    cookieStore.set(PARENT_PIN_COOKIE, await createParentPinToken(DEFAULT_PARENT_ID), {
+    cookieStore.set(PARENT_PIN_COOKIE, await createParentPinToken(session.parentId), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -439,8 +440,11 @@ export const verifyPinAction = async (pin: string): Promise<AuthActionResult> =>
     return { success: false, error: 'Invalid PIN' }
   }
 
+  const session = await ensureParentSession()
+  if (!session.ok || !session.parentId) return { success: false, error: 'Unauthorized' }
+
   try {
-    const result = await verifyPin(DEFAULT_PARENT_ID, parsed.data)
+    const result = await verifyPin(session.parentId, parsed.data)
     if (result.status === 'not-configured') {
       return { success: false, error: 'PIN is not configured yet' }
     }
@@ -455,13 +459,13 @@ export const verifyPinAction = async (pin: string): Promise<AuthActionResult> =>
     if (result.status === 'wrong') {
       return { success: false, error: 'Incorrect PIN', isWrong: true }
     }
-    await issueParentSessionCookies(DEFAULT_PARENT_ID)
+    await issueParentSessionCookies(session.parentId)
 
     // The proof that this browser answered the PIN. A session cookie with no
     // maxAge: it dies with the tab, and the middleware drops it as soon as the
     // browser visits a kid route, so returning to parent mode asks again.
     const cookieStore = await cookies()
-    cookieStore.set(PARENT_PIN_COOKIE, await createParentPinToken(DEFAULT_PARENT_ID), {
+    cookieStore.set(PARENT_PIN_COOKIE, await createParentPinToken(session.parentId), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

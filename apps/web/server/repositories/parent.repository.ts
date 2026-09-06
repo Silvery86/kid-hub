@@ -77,6 +77,29 @@ export const listByStatus = async (status: AccountStatus) => {
   })
 }
 
+/** Whether this deployment has any parent account at all. */
+export const anyExists = async (): Promise<boolean> => {
+  const count = await db.parent.count({ take: 1 })
+  return count > 0
+}
+
+/**
+ * Creates the founding parent, ACTIVE and admin, with a generated id.
+ *
+ * The id used to be derived from a fixed constant so the rest of the app could
+ * address it without a session. Nothing needs that any more, and a real id keeps
+ * a second deployment from colliding with the first.
+ */
+export const createFounding = async (
+  email: string,
+  passwordHash: string
+): Promise<{ id: string }> => {
+  return db.parent.create({
+    data: { email, passwordHash, status: 'ACTIVE', isAdmin: true, approvedAt: new Date() },
+    select: { id: true },
+  })
+}
+
 /** Creates a new applicant. Always PENDING — approval is the only way to ACTIVE. */
 export const createPending = async (
   email: string,

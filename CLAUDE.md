@@ -7,9 +7,20 @@ Read it fully before starting any task.
 
 ## Project Overview
 
-Kid Hub is a Next.js 16 (App Router) family dashboard for a single household:
-one parent account (PIN-protected) and one kid profile. Stack:
-React 19 · Tailwind CSS v4 · Prisma 7 · PostgreSQL · Server Actions · Playwright (planned).
+Kid Hub is a Next.js 16 (App Router) family dashboard for **many households**.
+Parents sign up openly and an admin approves them; each parent manages one or
+more students, and a student can be shared with a second parent by invite. Stack:
+React 19 · Tailwind CSS v4 · Prisma 7 · PostgreSQL · Server Actions · Playwright.
+
+**The two questions, kept apart.** Nearly every auth bug in this codebase came
+from conflating them:
+
+1. *Who is calling?* → `parentId` (or `studentId` for a kid session), from the JWT.
+2. *May they touch this student?* → a `parent_students` row, from the database.
+
+A token never answers the second question. Parent mode additionally requires a
+PIN proof for the visit (`parent_pin`), which the middleware drops the moment the
+browser touches a kid route.
 
 Route groups: `(dashboard)` (kid view), `(games)` (math + English), `(parent)` (parent management).
 
@@ -84,9 +95,9 @@ Stability risks and priority fix list: `docs/architecture/stability-plan.md`
 
 | Layer | Directory | One-line rule |
 |---|---|---|
-| Repository | `server/repositories/` | Prisma only, no logic, userId in every mutation WHERE |
+| Repository | `server/repositories/` | Prisma only, no logic, **studentId or parentId in every mutation WHERE** |
 | Service | `server/services/` | `server-only`, pure functions, all business rules |
-| Action | `server/actions/` | `requireParentSession` + Zod + orchestrate only |
+| Action | `server/actions/` | a guard + Zod + orchestrate only — never a hard-coded id |
 | Lib | `lib/` | Pure utils, safe for client and server |
 | Hook | `hooks/` | Client-only, calls actions, manages optimistic state |
 | UI primitive | `components/ui/` | Reusable, no domain knowledge |
@@ -94,6 +105,7 @@ Stability risks and priority fix list: `docs/architecture/stability-plan.md`
 | Page | `app/<route-group>/<route>/page.tsx` | Server Component, fetches data, passes as props |
 | Tokens | `app/globals.css` `@theme {}` | Only place for design tokens |
 | Tests | `e2e/<domain>/` | Playwright, `data-testid` selectors, no sleep() |
+| Unit tests | `**/*.test.ts` | vitest (`pnpm -C apps/web test`); route coverage is enforced |
 
 ---
 
@@ -117,6 +129,16 @@ When acting as a specific role, read your role file before starting any task.
 1. ~~`docker-compose.yml` line 31 — `SESSION_SECRET` not set; JWTs forgeable in dev~~ — **FIXED / stale** (2026-08-04, B1). The compose file moved to `apps/web/docker-compose.yml` in the Phase 3 monorepo migration; it now loads `SESSION_SECRET` (and the other secrets) via `env_file: .env.local` (line 29–30) rather than leaving it unset. `SESSION_SECRET` is present (≥ 32 chars) in the untracked `.env`/`.env.local`, injected in CI from GitHub secrets (`ci.yml`), and set on the production target (Vercel — see `docs/deployment-setup.md §2.3`). JWT forgery was already precluded by item 2: `getSecret()` throws when `SESSION_SECRET` is missing or < 32 chars, so there is no silent fallback.
 2. ~~`middleware.ts` silent secret fallback~~ — **FIXED** (2026-05-02, TASK-001)
 3. ~~No HTTP-layer rate limiting on `verifyPinAction`~~ — **FIXED** (2026-07-05, Phase 5 §15). Web PIN/login Server Action POSTs are limited in `middleware.ts` (`getPinRateLimiter`, 10/60 s); the mobile REST path `/api/v1/auth/login` (outside the middleware matcher) is limited by `getLoginRateLimiter` (5/60 s) in `lib/rate-limit.ts`.
+4. ~~Eight kid-data REST routes with no authentication of any kind~~ — **FIXED** (2026-09-04, MULTI_AUTH phase 3). `math`, `english`, `progress`, `kid-profile`, `homework/today`, `homework/[id]/done`, `schedule` and `schedule/week` now sit under `/api/v1/students/[studentId]/` behind `guardStudentApp`. `app/api/v1/route-coverage.test.ts` fails the build on any handler that loses its guard, so this cannot recur through review alone.
+5. ~~The parent PIN was a client-side redirect, not a gate~~ — **FIXED** (2026-09-04). `parent_refresh` survived clearing the access cookie and middleware minted a new one, so `/parent` was reachable without the PIN. Entering it now mints a `parent-pin` token that middleware requires and drops on any kid route.
+6. ~~A kid session outlived the parent session that authorised it~~ — **FIXED** (2026-09-04). Signing out left `kid_session` valid for 12 hours; both sign-out and every kid route now end it.
+
+### Known gaps (not blockers)
+
+- The browser E2E specs cannot run on WSL until `libnss3 libnspr4 libasound2t64`
+  are installed; `pnpm -C apps/web test:e2e` currently exercises the API only.
+- No email is sent on signup, approval or rejection — the admin checks
+  `/parent/admin/approvals`, the applicant retries login.
 
 ---
 
@@ -124,7 +146,11 @@ When acting as a specific role, read your role file before starting any task.
 
 | Need | Location |
 |---|---|
-| Auth guard (actions) | `server/lib/auth-guard.ts` → `requireParentSession()` |
+| Who is calling (cookies) | `server/lib/auth-guard.ts` → `requireParentSession()` |
+| May they touch this student | `server/lib/auth-guard.ts` → `requireStudentAccess()` |
+| Which student is this request about | `server/lib/auth-guard.ts` → `resolveStudentContext()` |
+| Admin surface | `server/lib/auth-guard.ts` → `requireAdminSession()` |
+| Same, for REST handlers | `app/api/v1/_lib/guard.ts` → `guardStudent()` / `guardStudentApp()` |
 | Badge calculation | `lib/grading.ts` → `calculateBadge()` |
 | Schedule time parsing | `lib/schedule-utils.ts` → `parseTimeToMinutes()` |
 | Academic year | `lib/constants.ts` → `CURRENT_ACADEMIC_YEAR` |
@@ -135,7 +161,12 @@ When acting as a specific role, read your role file before starting any task.
 ## What NOT to do (enforced by code review)
 
 - Copy-paste `requireParentSession` — import it from `server/lib/auth-guard.ts`
-- Hard-code `'2025-2026'` or `'khoi'` — use constants
+- Hard-code `'2025-2026'` or a student/parent id — resolve it from the session.
+  `DEFAULT_USER_ID` and `DEFAULT_PARENT_ID` are gone; do not reintroduce them
+- Add a route under `app/api/v1/students/`, `admin/`, `parents/` or `invites/`
+  without a guard — `route-coverage.test.ts` fails the build, per handler
+- Put a student id in a JWT claim — the join table is the only authority
+- Name a contract field `userId` when it means a student
 - Add tokens to `:root` — use `@theme {}` only
 - Put business logic in an action — put it in the service
 - Import from `server/` inside a hook or component — crashes the client bundle

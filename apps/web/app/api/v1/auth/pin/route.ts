@@ -1,5 +1,4 @@
 import { ParentPinSchema } from '@kid-hub/shared'
-import { DEFAULT_PARENT_ID } from '@/lib/constants'
 import { checkRateLimit, getPinRateLimiter } from '@/lib/rate-limit'
 import { requireParentApi } from '@/server/lib/api-auth'
 import { verifyPin } from '@/server/services/auth.service'
@@ -18,7 +17,8 @@ export const dynamic = 'force-dynamic'
  * Outcomes come back as data, not HTTP errors — the screen renders all of them.
  */
 export async function POST(req: Request) {
-  if (!(await requireParentApi(req))) return unauthorized()
+  const parent = await requireParentApi(req)
+  if (!parent) return unauthorized()
 
   // Same limiter the web Server Action path uses in middleware.ts.
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? '127.0.0.1'
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
   if (!parsed.success) return badRequest('Invalid PIN')
 
   try {
-    const result = await verifyPin(DEFAULT_PARENT_ID, parsed.data)
+    const result = await verifyPin(parent.parentId, parsed.data)
     if (result.status === 'locked') {
       return ok({ status: 'locked' as const, lockoutSeconds: result.lockoutSeconds })
     }

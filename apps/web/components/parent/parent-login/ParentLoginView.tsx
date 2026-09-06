@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   checkParentPinAction,
@@ -252,9 +253,18 @@ export function ParentLoginView() {
                   ? 'Tạo tài khoản'
                   : 'Đăng nhập'}
             </button>
-            <p className="text-center text-xs font-bold text-slate-600">
-              Lần đầu đăng nhập? Hãy tạo mã PIN sau khi xác thực.
-            </p>
+            {isSignup ? (
+              <p className="text-center text-xs font-bold text-slate-600">
+                Lần đầu đăng nhập? Hãy tạo mã PIN sau khi xác thực.
+              </p>
+            ) : (
+              <p className="text-center text-xs font-bold text-slate-400">
+                Chưa có tài khoản?{' '}
+                <Link href="/parent/register" className="font-black text-blue-400 underline">
+                  Đăng ký
+                </Link>
+              </p>
+            )}
           </div>
         ) : null}
 

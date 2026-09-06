@@ -330,16 +330,13 @@ export const revokeAllForParent = async (parentId: string): Promise<void> => {
 }
 
 /**
- * Whether this parent has credentials configured.
+ * Whether this deployment has been set up at all.
  *
- * Was one function returning both this and the kid-pattern flag, which forced
- * every caller to supply a student id even when asking a question purely about
- * the account — impossible for a parent who has no students yet.
+ * The login screen asks this to decide between offering sign-in and offering
+ * first-run setup. It used to ask whether one hard-coded id existed, which
+ * answered a different question the moment a second account could exist.
  */
-export const hasParentAccount = async (parentId: string): Promise<boolean> => {
-  const parent = await parentRepo.getById(parentId)
-  return Boolean(parent?.email && parent.passwordHash)
-}
+export const hasAnyParentAccount = (): Promise<boolean> => parentRepo.anyExists()
 
 /** Whether this student has an unlock pattern configured. */
 export const hasKidPatternSet = async (studentId: string): Promise<boolean> => {
@@ -375,16 +372,19 @@ export const registerParent = async (
  * Bootstrap path for a deployment that has no accounts yet: creates the founding
  * parent directly as ACTIVE and admin, because an approval queue with nobody able
  * to approve is a deadlock. Used by first-run setup only.
+ *
+ * Guarded on "any account exists" rather than on one known id: the point is that
+ * this door closes once the deployment has an owner, whoever that turned out
+ * to be.
  */
 export const registerFoundingParent = async (
-  parentId: string,
   email: string,
   password: string
-): Promise<void> => {
-  const current = await parentRepo.getById(parentId)
-  if (current) throw new Error('Parent account is already configured')
+): Promise<{ parentId: string }> => {
+  if (await parentRepo.anyExists()) throw new Error('Parent account is already configured')
   const passwordHash = await hashPassword(password)
-  await parentRepo.upsertCredentials(parentId, email, passwordHash)
+  const created = await parentRepo.createFounding(email, passwordHash)
+  return { parentId: created.id }
 }
 
 // ── Account approval (admin) ─────────────────────────────────────────────────
