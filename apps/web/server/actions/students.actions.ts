@@ -10,6 +10,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
+import { StudentIntakeSchema } from '@kid-hub/shared'
 import { z } from 'zod'
 import { ACTIVE_STUDENT_COOKIE } from '@/lib/constants'
 import { requireParentSession, requireStudentAccess, resolveActiveStudent } from '@/server/lib/auth-guard'
@@ -47,10 +48,9 @@ export const getParentContextAction = async (): Promise<{
   }
 }
 
-const CreateStudentSchema = z.object({
-  name: z.string().trim().min(1, 'Vui lòng nhập tên').max(60, 'Tên quá dài'),
-  gradeLevel: z.number().int().min(1, 'Lớp từ 1 đến 12').max(12, 'Lớp từ 1 đến 12'),
-})
+// Same definition the signup form validates against, so "what the server will
+// accept" has exactly one answer.
+const CreateStudentSchema = StudentIntakeSchema
 
 /** The students this parent may act for, plus which one is active. */
 export const listStudentsAction = async (): Promise<

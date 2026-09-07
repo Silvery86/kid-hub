@@ -1,9 +1,31 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { RegisterSchema } from '@kid-hub/shared'
 
 import { applyForAccountAction } from '@/server/actions/auth.actions'
+
+type FieldName = 'email' | 'password' | 'student.name' | 'student.gradeLevel'
+
+/** A field turns rose only once its error is actually being shown. */
+const fieldClass = (invalid: boolean): string =>
+  [
+    'h-11 w-full rounded-[14px] border-2 px-4 text-sm font-bold text-white outline-none',
+    'md:h-[54px] md:text-base',
+    invalid
+      ? 'border-rose-500/70 bg-rose-500/10 focus:border-rose-400'
+      : 'border-white/10 bg-white/5 focus:border-blue-400',
+  ].join(' ')
+
+function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null
+  return (
+    <p id={id} role="alert" className="text-xs font-bold text-rose-400">
+      {message}
+    </p>
+  )
+}
 
 /**
  * Open signup. Ends on a waiting screen, never a session: the account is created
@@ -23,10 +45,47 @@ export function RegisterView() {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  /** Fields the user has finished with. Errors stay hidden until then. */
+  const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>({})
+  const [attempted, setAttempted] = useState(false)
+
+  /**
+   * Validated against the same schema the Server Action uses, so the form can
+   * never accept something the server will reject — or reject something it
+   * would have accepted.
+   */
+  const fieldErrors = useMemo(() => {
+    const result = RegisterSchema.safeParse({
+      email,
+      password,
+      student: { name: childName, gradeLevel },
+    })
+    if (result.success) return {} as Partial<Record<FieldName, string>>
+
+    const errors: Partial<Record<FieldName, string>> = {}
+    for (const issue of result.error.issues) {
+      const key = issue.path.join('.') as FieldName
+      // First issue per field: later ones are usually consequences of the first.
+      errors[key] ??= issue.message
+    }
+    return errors
+  }, [email, password, childName, gradeLevel])
+
+  const isValid = Object.keys(fieldErrors).length === 0
+
+  // Nagging someone mid-word is worse than no validation at all, so an error
+  // only appears once they have left the field or tried to submit.
+  const errorFor = (field: FieldName): string | undefined =>
+    touched[field] || attempted ? fieldErrors[field] : undefined
+
+  const markTouched = (field: FieldName) => setTouched((t) => ({ ...t, [field]: true }))
 
   const handleSubmit = useCallback(async () => {
     if (isSubmitting) return
+    setAttempted(true)
     setError('')
+    if (!isValid) return
+
     setIsSubmitting(true)
 
     const result = await applyForAccountAction(email, password, {
@@ -40,7 +99,7 @@ export function RegisterView() {
       return
     }
     setSubmitted(true)
-  }, [email, password, childName, gradeLevel, isSubmitting])
+  }, [email, password, childName, gradeLevel, isSubmitting, isValid])
 
   if (submitted) {
     return (
@@ -91,10 +150,14 @@ export function RegisterView() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => markTouched('email')}
                 disabled={isSubmitting}
                 placeholder="email@example.com"
-                className="h-11 w-full rounded-[14px] border-2 border-white/10 bg-white/5 px-4 text-sm font-bold text-white outline-none focus:border-blue-400 md:h-[54px] md:text-base"
+                aria-invalid={Boolean(errorFor('email'))}
+                aria-describedby={errorFor('email') ? 'register-email-error' : undefined}
+                className={fieldClass(Boolean(errorFor('email')))}
               />
+              <FieldError id="register-email-error" message={errorFor('email')} />
             </label>
 
             <label className="flex flex-col gap-1.5">
@@ -107,9 +170,12 @@ export function RegisterView() {
                   autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onBlur={() => markTouched('password')}
                   disabled={isSubmitting}
                   placeholder="Tối thiểu 8 ký tự"
-                  className="h-11 w-full rounded-[14px] border-2 border-white/10 bg-white/5 px-4 pr-11 text-sm font-bold text-white outline-none focus:border-blue-400 md:h-[54px] md:text-base"
+                  aria-invalid={Boolean(errorFor('password'))}
+                  aria-describedby={errorFor('password') ? 'register-password-error' : undefined}
+                  className={`${fieldClass(Boolean(errorFor('password')))} pr-11`}
                 />
                 <button
                   type="button"
@@ -120,6 +186,7 @@ export function RegisterView() {
                   {showPassword ? '🙈' : '👁️'}
                 </button>
               </div>
+              <FieldError id="register-password-error" message={errorFor('password')} />
             </label>
 
             <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
@@ -131,12 +198,15 @@ export function RegisterView() {
                   type="text"
                   value={childName}
                   onChange={(e) => setChildName(e.target.value)}
+                  onBlur={() => markTouched('student.name')}
                   disabled={isSubmitting}
                   placeholder="Tên của bé"
+                  aria-invalid={Boolean(errorFor('student.name'))}
+                  aria-describedby={errorFor('student.name') ? 'register-child-error' : undefined}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') void handleSubmit()
                   }}
-                  className="h-11 min-w-0 flex-1 rounded-[14px] border-2 border-white/10 bg-white/5 px-4 text-sm font-bold text-white outline-none focus:border-blue-400 md:h-[54px] md:text-base"
+                  className={`${fieldClass(Boolean(errorFor('student.name')))} min-w-0 flex-1`}
                 />
                 <select
                   value={gradeLevel}
@@ -152,6 +222,7 @@ export function RegisterView() {
                   ))}
                 </select>
               </div>
+              <FieldError id="register-child-error" message={errorFor('student.name')} />
             </fieldset>
           </div>
 
@@ -160,7 +231,7 @@ export function RegisterView() {
           <button
             type="button"
             onClick={() => void handleSubmit()}
-            disabled={isSubmitting}
+            disabled={isSubmitting || (attempted && !isValid)}
             className="w-full rounded-full border-4 border-blue-800 bg-blue-500 py-3 text-base font-black text-white shadow-lg shadow-blue-500/50 disabled:opacity-60 md:py-3.5"
           >
             {isSubmitting ? 'Đang gửi...' : 'Gửi đăng ký'}

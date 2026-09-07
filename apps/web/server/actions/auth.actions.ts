@@ -9,11 +9,11 @@
 import {
   ParentEmailSchema,
   ParentPasswordSchema,
+  StudentIntakeSchema,
   KidPatternSchema,
   ParentPinSchema,
 } from '@kid-hub/shared'
 import { cookies, headers } from 'next/headers'
-import { z } from 'zod'
 import {
   createParentSession,
   deviceLabelFrom,
@@ -142,11 +142,6 @@ export const registerParentAccountAction = async (
   }
 }
 
-const ApplicationSchema = z.object({
-  name: z.string().trim().min(1, 'Vui lòng nhập tên của bé').max(60, 'Tên quá dài'),
-  gradeLevel: z.number().int().min(1, 'Lớp từ 1 đến 12').max(12, 'Lớp từ 1 đến 12'),
-})
-
 /**
  * Open signup (D4). Creates a PENDING application and mints NO session — the
  * caller must send the applicant to a waiting screen, not into the app. The
@@ -165,7 +160,7 @@ export const applyForAccountAction = async (
   if (!parsedPassword.success) {
     return { success: false, error: parsedPassword.error.issues[0]?.message ?? 'Mật khẩu không hợp lệ' }
   }
-  const parsedStudent = ApplicationSchema.safeParse(student)
+  const parsedStudent = StudentIntakeSchema.safeParse(student)
   if (!parsedStudent.success) {
     return { success: false, error: parsedStudent.error.issues[0]?.message ?? 'Dữ liệu không hợp lệ' }
   }

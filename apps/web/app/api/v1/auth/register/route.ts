@@ -1,19 +1,9 @@
 import { NextResponse } from 'next/server'
-import { z } from 'zod'
-import { ParentEmailSchema, ParentPasswordSchema } from '@kid-hub/shared'
+import { RegisterSchema } from '@kid-hub/shared'
 import { checkRateLimit, getRegisterRateLimiter } from '@/lib/rate-limit'
 import { registerParent } from '@/server/services/auth.service'
 
 export const dynamic = 'force-dynamic'
-
-const RegisterSchema = z.object({
-  email: ParentEmailSchema,
-  password: ParentPasswordSchema,
-  student: z.object({
-    name: z.string().trim().min(1).max(60),
-    gradeLevel: z.number().int().min(1).max(12),
-  }),
-})
 
 /**
  * Open signup. Deliberately returns NO tokens: the account is created PENDING
