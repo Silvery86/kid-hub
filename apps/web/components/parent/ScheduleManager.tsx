@@ -11,6 +11,7 @@ import { Plus, Trash2, Check, AlertCircle, Moon, BookOpen } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import type { DailyHomework, DailySchedule, DayOfWeek } from '@/types'
 import { SCHOOL_DAYS, DAY_LABELS, MAX_EVENING_BLOCKS_PER_DAY } from '@/lib/constants'
+import { canEditDatedEntry, canEditRecurringEntry } from '@/lib/schedule-locks'
 import { SUBJECTS } from '@/lib/data/subjects'
 import { ICON_MAP } from '@/lib/icons'
 import {
@@ -121,14 +122,6 @@ const localTodayIso = (): string => {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 }
 
-const isPastIsoDate = (isoDate: string, todayIso: string): boolean => isoDate < todayIso
-const isFutureIsoDate = (isoDate: string, todayIso: string): boolean => isoDate > todayIso
-const parseTimeToMinutes = (time: string): number => {
-  const [hhRaw, mmRaw] = time.split(':')
-  const hh = Number(hhRaw)
-  const mm = Number(mmRaw)
-  return hh * 60 + mm
-}
 
 const mergeSchedules = (school: DailySchedule[], evening: DailySchedule[]): DailySchedule[] =>
   ALL_DAYS.map((day) => {
@@ -226,39 +219,14 @@ export const ScheduleManager = ({
   const [hwSaved, setHwSaved] = useState(false)
   const [hwPending, startHwTransition] = useTransition()
   const todayIso = localTodayIso()
-  const now = new Date()
-  const nowMinutes = now.getHours() * 60 + now.getMinutes()
   const selectedHomeworkDate = weekDates?.[homeworkDay]
     ? ddMmToIsoDate(weekDates[homeworkDay])
     : hwDraft.date
-  const selectedSchoolDate = weekDates?.[activeDay] ? ddMmToIsoDate(weekDates[activeDay]) : todayIso
-  const selectedEveningDate = weekDates?.[eveningDay] ? ddMmToIsoDate(weekDates[eveningDay]) : todayIso
-  const schoolAddLocked = readOnly || isPastIsoDate(selectedSchoolDate, todayIso)
-  const eveningAddLocked = readOnly || isPastIsoDate(selectedEveningDate, todayIso)
-  const homeworkAddLocked = readOnly || isPastIsoDate(selectedHomeworkDate, todayIso)
-  const schoolTimeLocked =
-    !schoolAddLocked &&
-    !isFutureIsoDate(selectedSchoolDate, todayIso) &&
-    parseTimeToMinutes(schoolDraft.startTime) <= nowMinutes
-  const eveningTimeLocked =
-    !eveningAddLocked &&
-    !isFutureIsoDate(selectedEveningDate, todayIso) &&
-    parseTimeToMinutes(eveningForm.startTime) <= nowMinutes
-  const canDeleteClassByTime = (selectedDate: string, startTime: string, endTime: string): boolean => {
-    if (isPastIsoDate(selectedDate, todayIso)) return false
-    if (isFutureIsoDate(selectedDate, todayIso)) return true
-    const startMinutes = parseTimeToMinutes(startTime)
-    const endMinutes = parseTimeToMinutes(endTime)
-    if (Number.isNaN(startMinutes) || Number.isNaN(endMinutes)) return true
 
-    // Overnight block (e.g. 23:00 -> 00:30) should remain deletable until next-day end.
-    if (endMinutes <= startMinutes) {
-      if (nowMinutes < startMinutes) return true
-      return endMinutes + 24 * 60 > nowMinutes
-    }
-
-    return endMinutes > nowMinutes
-  }
+  // School periods and extra classes are recurring weekly templates — no date,
+  // so no date lock. Homework carries a real date and keeps the rule.
+  const canEditPeriods = !readOnly && canEditRecurringEntry()
+  const homeworkAddLocked = readOnly || !canEditDatedEntry(selectedHomeworkDate, todayIso)
 
   const loadHomeworkByDay = useCallback(async (day: DayOfWeek, date: string) => {
     const result = await getDailyHomeworkByDateAction(date)
@@ -360,11 +328,7 @@ export const ScheduleManager = ({
   // ── Evening extra class handler ─────────────────────────────
 
   const handleAddEvening = () => {
-    if (eveningAddLocked) return
-    if (eveningTimeLocked) {
-      setEveningError('Không thể thêm buổi học với giờ bắt đầu đã qua')
-      return
-    }
+    if (!canEditPeriods) return
     setEveningError(null)
     startEveningTransition(async () => {
       const result = await createExtraClassAction({
@@ -423,11 +387,7 @@ export const ScheduleManager = ({
   const homeworkItems = homeworkByDay[homeworkDay] ?? []
 
   const handleAddSchoolClass = () => {
-    if (schoolAddLocked) return
-    if (schoolTimeLocked) {
-      setError('Không thể thêm tiết học với giờ bắt đầu đã qua')
-      return
-    }
+    if (!canEditPeriods) return
     setError(null)
     startTransition(async () => {
       const nextPeriodNumber =
@@ -604,13 +564,9 @@ export const ScheduleManager = ({
               <KidButton
                 variant="primary"
                 onClick={handleAddSchoolClass}
-                isDisabled={isPending || schoolAddLocked || schoolTimeLocked}
+                isDisabled={isPending || !canEditPeriods}
                 className="ml-auto min-h-10 gap-1 px-4 text-sm">
-                {schoolAddLocked ? (
-                  'Đã qua ngày'
-                ) : schoolTimeLocked ? (
-                  'Đã qua giờ'
-                ) : isSaved ? (
+                {isSaved ? (
                   <><Check size={16} /> Đã thêm!</>
                 ) : (
                   <><Plus size={16} /> {isPending ? 'Đang thêm...' : 'Thêm'}</>
@@ -635,7 +591,7 @@ export const ScheduleManager = ({
                   <span className="text-slate-300">–</span>
                   <span>{period.endTime}</span>
                 </div>
-                {!readOnly && canDeleteClassByTime(selectedSchoolDate, period.startTime, period.endTime) && (
+                {canEditPeriods && (
                   <button
                     onClick={() => handleDeleteSchoolClass(period)}
                     aria-label="Xóa tiết học"
@@ -727,15 +683,9 @@ export const ScheduleManager = ({
                 <KidButton
                   variant="primary"
                   onClick={handleAddEvening}
-                  isDisabled={eveningPending || eveningAddLocked || eveningTimeLocked}
+                  isDisabled={eveningPending || !canEditPeriods}
                   className="ml-auto min-h-10 gap-1 px-4 text-sm">
-                  {eveningAddLocked ? (
-                    'Đã qua ngày'
-                  ) : eveningTimeLocked ? (
-                    'Đã qua giờ'
-                  ) : (
-                    <><Plus size={16} /> {eveningPending ? 'Đang lưu...' : 'Thêm'}</>
-                  )}
+                  <><Plus size={16} /> {eveningPending ? 'Đang lưu...' : 'Thêm'}</>
                 </KidButton>
               </div>
             </div>
@@ -760,7 +710,7 @@ export const ScheduleManager = ({
                     <span className="text-slate-300">–</span>
                     <span>{period.endTime}</span>
                   </div>
-                  {!readOnly && canDeleteClassByTime(selectedEveningDate, period.startTime, period.endTime) && (
+                  {canEditPeriods && (
                     <button
                       onClick={() => handleDeleteEveningClass(period)}
                       aria-label="Xóa buổi tối"
