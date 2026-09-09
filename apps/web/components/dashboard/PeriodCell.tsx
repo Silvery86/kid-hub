@@ -49,7 +49,7 @@ export const PeriodCell = ({ period, isNow, compact = false, mini = false, onCli
     <button
       type="button"
       onClick={onClick}
-      title={`${subject.name} · ${period.startTime}–${period.endTime}`}
+      title={`${subject.name}${period.note ? ` (${period.note})` : ''} · ${period.startTime}–${period.endTime}`}
       className="relative flex touch-manipulation flex-col items-start justify-between overflow-hidden text-left transition-transform active:scale-[0.98]"
       style={{
         background: bg,
@@ -74,6 +74,9 @@ export const PeriodCell = ({ period, isNow, compact = false, mini = false, onCli
             </span>
             <span className={cnText(compact)}>{subject.name}</span>
           </div>
+          {!compact && period.note ? (
+            <span className="w-full truncate text-[10px] font-bold opacity-75">{period.note}</span>
+          ) : null}
           {!compact && (
             <span className="text-[11px] font-extrabold opacity-85">{period.startTime}</span>
           )}

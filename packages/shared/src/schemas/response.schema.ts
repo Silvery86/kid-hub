@@ -36,6 +36,7 @@ export const ClassPeriodSchema = z.object({
   periodNumber: z.number().int().optional(),
   eventType: EventTypeSchema.optional(),
   subjectId: z.string(),
+  note: z.string().optional(),
   startTime: z.string(),
   endTime: z.string(),
   roomNumber: z.string().optional(),

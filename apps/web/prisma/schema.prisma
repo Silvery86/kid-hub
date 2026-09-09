@@ -194,6 +194,7 @@ model ClassPeriod {
   periodNumber Int?      // 1–10 for SCHOOL_PERIOD; null for EXTRA_CLASS
   eventType    EventType @default(SCHOOL_PERIOD)
   subjectId    String    // References SUBJECTS constant in lib/data/subjects.ts
+  note         String?   @db.VarChar(40) // lesson variant, e.g. "Học vần", "Tập viết"
   startTime    String    // "HH:MM" 24-hour format
   endTime      String    // "HH:MM" 24-hour format
   roomNumber   String?

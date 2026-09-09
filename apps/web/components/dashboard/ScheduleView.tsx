@@ -511,7 +511,10 @@ function TodayAccentCard({
                 >
                   {p.periodNumber}
                 </div>
-                <span className="min-w-0 flex-1 truncate text-xs font-extrabold">{subject?.name}</span>
+                <span className="min-w-0 flex-1 truncate text-xs font-extrabold">
+                  {subject?.name}
+                  {p.note ? <span className="font-bold opacity-75"> · {p.note}</span> : null}
+                </span>
                 <span className="text-[11px] font-extrabold opacity-85">{p.startTime}</span>
               </div>
             )
@@ -567,6 +570,9 @@ function PeriodDetailCard({
         {dayLabel} · Tiết {period.periodNumber}
       </p>
       <p className="mt-1 text-[32px] font-black leading-tight tracking-tight">{subjectName}</p>
+      {period.note ? (
+        <p className="mt-0.5 text-sm font-extrabold opacity-90">{period.note}</p>
+      ) : null}
       <p className="mt-1 text-sm font-bold opacity-90">
         {period.startTime} – {period.endTime} · {duration} phút
       </p>

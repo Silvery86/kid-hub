@@ -19,6 +19,8 @@ export interface ClassPeriod {
   periodNumber?: number   // 1–10 for SCHOOL_PERIOD; absent for EXTRA_CLASS
   eventType?: EventType
   subjectId: string
+  /** Lesson variant as the timetable prints it: "Học vần", "Tập viết", "Ôn tập". */
+  note?: string
   startTime: string       // "HH:MM" 24-hour format
   endTime: string         // "HH:MM" 24-hour format
   roomNumber?: string

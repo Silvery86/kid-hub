@@ -22,6 +22,7 @@ export const CreatePeriodSchema = z
     day: DaySchema,
     periodNumber: z.number().int().min(1).max(10),
     subjectId: z.string().min(1),
+    note: z.string().trim().max(40, 'Ghi chú tối đa 40 ký tự').optional(),
     startTime: TimeSchema,
     endTime: TimeSchema,
     roomNumber: z.string().optional(),
@@ -45,6 +46,7 @@ export const UpdatePeriodSchema = z
   .object({
     id: z.string().min(1),
     subjectId: z.string().min(1).optional(),
+    note: z.string().trim().max(40, 'Ghi chú tối đa 40 ký tự').optional(),
     startTime: TimeSchema.optional(),
     endTime: TimeSchema.optional(),
     roomNumber: z.string().optional(),

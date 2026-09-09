@@ -35,6 +35,7 @@ type EditablePeriod = {
   periodNumber?: number | null
   eventType?: 'SCHOOL_PERIOD' | 'EXTRA_CLASS'
   subjectId: string
+  note?: string
   startTime: string
   endTime: string
   iconKey?: string
@@ -62,6 +63,7 @@ type HomeworkListItem = {
 
 type SchoolDraft = {
   subjectId: string
+  note: string
   startTime: string
   endTime: string
 }
@@ -83,6 +85,7 @@ const buildEditableSchedule = (schedule: DailySchedule[]): EditableSchedule =>
       periodNumber: p.periodNumber,
       eventType: p.eventType,
       subjectId: p.subjectId,
+      ...(p.note ? { note: p.note } : {}),
       startTime: p.startTime,
       endTime: p.endTime,
     }))
@@ -185,6 +188,7 @@ export const ScheduleManager = ({
   )
   const [schoolDraft, setSchoolDraft] = useState<SchoolDraft>({
     subjectId: 'math',
+    note: '',
     startTime: '07:30',
     endTime: '08:10',
   })
@@ -323,6 +327,7 @@ export const ScheduleManager = ({
             const result = await updatePeriodAction({
               id: period.dbId,
               subjectId: period.subjectId,
+              note: period.note ?? '',
               startTime: period.startTime,
               endTime: period.endTime,
             })
@@ -332,6 +337,7 @@ export const ScheduleManager = ({
               day,
               periodNumber: period.periodNumber,
               subjectId: period.subjectId,
+              ...(period.note ? { note: period.note } : {}),
               startTime: period.startTime,
               endTime: period.endTime,
             })
@@ -430,6 +436,7 @@ export const ScheduleManager = ({
         day: activeDay,
         periodNumber: nextPeriodNumber,
         subjectId: schoolDraft.subjectId,
+        note: schoolDraft.note,
         startTime: schoolDraft.startTime,
         endTime: schoolDraft.endTime,
       })
@@ -440,7 +447,7 @@ export const ScheduleManager = ({
 
       await refreshScheduleData()
       router.refresh()
-      setSchoolDraft((prev) => ({ ...prev, subjectId: prev.subjectId }))
+      setSchoolDraft((prev) => ({ ...prev, note: '' }))
       setIsSaved(true)
       setTimeout(() => setIsSaved(false), 1500)
     })
@@ -573,6 +580,15 @@ export const ScheduleManager = ({
                 {SUBJECTS.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
               <input
+                type="text"
+                value={schoolDraft.note}
+                onChange={(e) => setSchoolDraft((d) => ({ ...d, note: e.target.value }))}
+                maxLength={40}
+                placeholder="Học vần, Tập viết..."
+                aria-label="Nội dung tiết học"
+                className="w-40 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none"
+              />
+              <input
                 type="time"
                 value={schoolDraft.startTime}
                 onChange={(e) => setSchoolDraft((d) => ({ ...d, startTime: e.target.value }))}
@@ -610,6 +626,9 @@ export const ScheduleManager = ({
               <div key={period.tempId} className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/40 p-2.5">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-extrabold text-slate-700">{subject?.name ?? period.subjectId}</p>
+                  {period.note ? (
+                    <p className="truncate text-xs font-bold text-slate-400">{period.note}</p>
+                  ) : null}
                 </div>
                 <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs font-bold text-slate-600">
                   <span>{period.startTime}</span>

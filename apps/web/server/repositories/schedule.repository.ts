@@ -14,6 +14,7 @@ export interface CreatePeriodInput {
   periodNumber?: number
   eventType?: 'SCHOOL_PERIOD' | 'EXTRA_CLASS'
   subjectId: string
+  note?: string
   startTime: string
   endTime: string
   roomNumber?: string
@@ -25,6 +26,7 @@ export interface UpdatePeriodInput {
   id: string
   studentId: string
   subjectId?: string
+  note?: string
   startTime?: string
   endTime?: string
   roomNumber?: string
@@ -48,6 +50,7 @@ const toClassPeriod = (row: {
   periodNumber: number | null
   eventType: string
   subjectId: string
+  note: string | null
   startTime: string
   endTime: string
   roomNumber: string | null
@@ -58,6 +61,7 @@ const toClassPeriod = (row: {
   ...(row.periodNumber != null ? { periodNumber: row.periodNumber } : {}),
   eventType: row.eventType as ClassPeriod['eventType'],
   subjectId: row.subjectId,
+  ...(row.note ? { note: row.note } : {}),
   startTime: row.startTime,
   endTime: row.endTime,
   ...(row.roomNumber ? { roomNumber: row.roomNumber } : {}),
@@ -136,6 +140,7 @@ export const createPeriod = async (data: CreatePeriodInput): Promise<string> => 
       periodNumber: data.periodNumber ?? null,
       eventType: data.eventType ?? 'SCHOOL_PERIOD',
       subjectId: data.subjectId,
+      note: data.note || null,
       startTime: data.startTime,
       endTime: data.endTime,
       roomNumber: data.roomNumber ?? null,
@@ -152,6 +157,7 @@ export const updatePeriod = async (data: UpdatePeriodInput): Promise<void> => {
     where: { id: data.id, studentId: data.studentId },
     data: {
       ...(data.subjectId ? { subjectId: data.subjectId } : {}),
+      ...(data.note !== undefined ? { note: data.note || null } : {}),
       ...(data.startTime ? { startTime: data.startTime } : {}),
       ...(data.endTime ? { endTime: data.endTime } : {}),
       ...(data.roomNumber !== undefined ? { roomNumber: data.roomNumber } : {}),
