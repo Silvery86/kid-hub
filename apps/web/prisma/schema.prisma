@@ -69,6 +69,12 @@ model Student {
   name                  String
   gradeLevel            Int       @default(1)
   avatarUrl             String?
+  /// Class identity as the printed thời khóa biểu heads it: "1A1",
+  /// GVCN and their number. All optional — a household that never fills
+  /// them in simply sees no header.
+  className             String?   @db.VarChar(20)
+  teacherName           String?   @db.VarChar(80)
+  teacherPhone          String?   @db.VarChar(20)
   kidPatternHash        String?
   kidPatternAttempts    Int       @default(0)
   kidPatternLockedUntil DateTime?

@@ -54,3 +54,23 @@ export const KidPatternSchema = z
 export const ParentPinSchema = z
   .string()
   .regex(/^\d{4}$/, `PIN must be exactly ${PIN_LENGTH} digits`)
+
+// ── Class identity ───────────────────────────────────────────
+// The header block of a printed thời khóa biểu. Every field optional: a parent
+// who only knows the class name should not be blocked on a phone number.
+
+export const ClassNameSchema = z.string().trim().max(20, 'Tên lớp quá dài')
+export const TeacherNameSchema = z.string().trim().max(80, 'Tên giáo viên quá dài')
+/** Vietnamese numbers, entered as digits with optional spaces/dots or a +84 prefix. */
+export const TeacherPhoneSchema = z
+  .string()
+  .trim()
+  .max(20, 'Số điện thoại quá dài')
+  .refine((v) => v === '' || /^(\+?\d[\d\s.]{7,17}\d)$/.test(v), 'Số điện thoại chưa đúng')
+
+export const ClassIdentitySchema = z.object({
+  studentId: z.string().min(1),
+  className: ClassNameSchema.optional(),
+  teacherName: TeacherNameSchema.optional(),
+  teacherPhone: TeacherPhoneSchema.optional(),
+})

@@ -766,3 +766,11 @@ export const verifyKidUnlockPattern = async (
   await studentRepo.resetKidPatternAttempts(studentId)
   return { status: 'ok' }
 }
+
+/** Class identity from the printed timetable header. Pure passthrough — no rules. */
+export const updateClassIdentity = (
+  studentId: string,
+  data: studentRepo.ClassIdentityInput
+) => studentRepo.updateClassIdentity(studentId, data)
+
+export const getClassIdentity = (studentId: string) => studentRepo.getClassIdentity(studentId)

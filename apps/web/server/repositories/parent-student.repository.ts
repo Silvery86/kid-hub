@@ -24,7 +24,17 @@ export const listStudentsForParent = async (parentId: string) => {
     orderBy: { createdAt: 'asc' },
     select: {
       role: true,
-      student: { select: { id: true, name: true, gradeLevel: true, avatarUrl: true } },
+      student: {
+        select: {
+          id: true,
+          name: true,
+          gradeLevel: true,
+          avatarUrl: true,
+          className: true,
+          teacherName: true,
+          teacherPhone: true,
+        },
+      },
     },
   })
   return rows.map((row) => ({ ...row.student, role: row.role }))

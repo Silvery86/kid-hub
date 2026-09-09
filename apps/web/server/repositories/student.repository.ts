@@ -145,3 +145,41 @@ export const upsertUserProgress = async (
     update: data,
   })
 }
+
+/** Class identity fields from the printed timetable header. */
+export interface ClassIdentityInput {
+  className?: string
+  teacherName?: string
+  teacherPhone?: string
+}
+
+/**
+ * Writes the class identity. An empty string clears the field rather than
+ * storing "", so a parent can remove a value they entered by mistake.
+ */
+export const updateClassIdentity = async (
+  studentId: string,
+  data: ClassIdentityInput
+): Promise<void> => {
+  await db.student.update({
+    where: { id: studentId },
+    data: {
+      ...(data.className !== undefined ? { className: data.className || null } : {}),
+      ...(data.teacherName !== undefined ? { teacherName: data.teacherName || null } : {}),
+      ...(data.teacherPhone !== undefined ? { teacherPhone: data.teacherPhone || null } : {}),
+    },
+  })
+}
+
+/** The header block of the printed timetable, for whichever student is on screen. */
+export const getClassIdentity = async (studentId: string) =>
+  db.student.findUnique({
+    where: { id: studentId },
+    select: {
+      name: true,
+      gradeLevel: true,
+      className: true,
+      teacherName: true,
+      teacherPhone: true,
+    },
+  })

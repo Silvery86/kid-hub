@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { createInviteAction } from '@/server/actions/invites.actions'
 import {
   createStudentAction,
+  updateClassIdentityAction,
   setActiveStudentAction,
   type StudentSummary,
 } from '@/server/actions/students.actions'
@@ -26,6 +27,8 @@ export function StudentsView({
   const [isSubmitting, setIsSubmitting] = useState(false)
   // The code exists in the clear exactly once — here. Nothing can show it again.
   const [invite, setInvite] = useState<{ studentId: string; code: string } | null>(null)
+  /** Which student's class-identity form is open. Only one at a time. */
+  const [editing, setEditing] = useState<string | null>(null)
 
   const add = useCallback(async () => {
     if (isSubmitting) return
@@ -114,6 +117,13 @@ export function StudentsView({
               <div className="flex shrink-0 items-center gap-2">
                 <button
                   type="button"
+                  onClick={() => setEditing((id) => (id === student.id ? null : student.id))}
+                  className="rounded-xl bg-slate-100 px-3.5 py-2 text-xs font-black text-slate-600 transition-colors hover:bg-slate-200"
+                >
+                  {student.className ? `Lớp ${student.className}` : 'Thông tin lớp'}
+                </button>
+                <button
+                  type="button"
                   onClick={() => void inviteFor(student.id)}
                   className="rounded-xl bg-emerald-50 px-3.5 py-2 text-xs font-black text-emerald-700 transition-colors hover:bg-emerald-100"
                 >
@@ -133,6 +143,16 @@ export function StudentsView({
                   </button>
                 )}
               </div>
+
+              {editing === student.id ? (
+                <ClassIdentityForm
+                  student={student}
+                  onDone={() => {
+                    setEditing(null)
+                    router.refresh()
+                  }}
+                />
+              ) : null}
 
               {invite?.studentId === student.id ? (
                 <div className="w-full rounded-xl bg-emerald-50 px-4 py-3">
@@ -181,6 +201,99 @@ export function StudentsView({
           </button>
         </div>
       </section>
+    </div>
+  )
+}
+
+/**
+ * The header block of a printed thời khóa biểu, per child.
+ *
+ * Every field is optional and saved together: a parent who only knows the class
+ * name should not be blocked on a phone number they have to go and find.
+ */
+function ClassIdentityForm({
+  student,
+  onDone,
+}: {
+  student: StudentSummary
+  onDone: () => void
+}) {
+  const [className, setClassName] = useState(student.className ?? '')
+  const [teacherName, setTeacherName] = useState(student.teacherName ?? '')
+  const [teacherPhone, setTeacherPhone] = useState(student.teacherPhone ?? '')
+  const [error, setError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+
+  const save = async () => {
+    if (isSaving) return
+    setError('')
+    setIsSaving(true)
+    const result = await updateClassIdentityAction({
+      studentId: student.id,
+      className,
+      teacherName,
+      teacherPhone,
+    })
+    setIsSaving(false)
+    if (!result.success) {
+      setError(result.error ?? 'Không lưu được thông tin lớp')
+      return
+    }
+    onDone()
+  }
+
+  const field =
+    'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none'
+
+  return (
+    <div className="flex w-full flex-col gap-2 rounded-xl bg-slate-50 px-4 py-3">
+      <div className="grid gap-2 sm:grid-cols-3">
+        <label className="flex flex-col gap-1">
+          <span className="text-[11px] font-extrabold tracking-wide text-slate-400 uppercase">Lớp</span>
+          <input
+            type="text" maxLength={20} className={field}
+            value={className}
+            onChange={(e) => setClassName(e.target.value)}
+            placeholder="1A1"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[11px] font-extrabold tracking-wide text-slate-400 uppercase">GVCN</span>
+          <input
+            type="text" maxLength={80} className={field}
+            value={teacherName}
+            onChange={(e) => setTeacherName(e.target.value)}
+            placeholder="Nguyễn Thị..."
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[11px] font-extrabold tracking-wide text-slate-400 uppercase">Số điện thoại</span>
+          <input
+            type="tel" maxLength={20} className={field}
+            value={teacherPhone}
+            onChange={(e) => setTeacherPhone(e.target.value)}
+            placeholder="0375197591"
+          />
+        </label>
+      </div>
+      {error ? <p className="m-0 text-xs font-bold text-red-600">{error}</p> : null}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => void save()}
+          disabled={isSaving}
+          className="rounded-xl bg-blue-500 px-3.5 py-2 text-xs font-black text-white disabled:opacity-60"
+        >
+          {isSaving ? 'Đang lưu...' : 'Lưu'}
+        </button>
+        <button
+          type="button"
+          onClick={onDone}
+          className="rounded-xl bg-slate-200 px-3.5 py-2 text-xs font-black text-slate-600"
+        >
+          Đóng
+        </button>
+      </div>
     </div>
   )
 }

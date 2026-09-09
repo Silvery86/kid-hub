@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { DayList } from '@/components/dashboard/DayList'
 import { DayRail } from '@/components/dashboard/DayRail'
+import { ClassHeader } from '@/components/dashboard/ClassHeader'
 import { DayTabs } from '@/components/dashboard/DayTabs'
 import { SubjectLegend } from '@/components/dashboard/SubjectLegend'
 import { WeekGrid } from '@/components/dashboard/WeekGrid'
@@ -31,6 +32,12 @@ interface ScheduleViewProps {
   allEveningBlocks?: DailySchedule[]
   /** Today's non-lesson slots — ra chơi, ăn trưa, giờ tan học. */
   todayBellSlots?: BellSlot[]
+  /** Header block from the printed sheet. Null until a parent fills it in. */
+  classIdentity?: {
+    className: string | null
+    teacherName: string | null
+    teacherPhone: string | null
+  } | null
 }
 
 /**
@@ -101,6 +108,7 @@ export const ScheduleView = ({
   initialSchedule,
   allEveningBlocks = [],
   todayBellSlots = [],
+  classIdentity = null,
 }: ScheduleViewProps) => {
   const weeklySchedule = useMemo(() => ({ weekStartDate: '', days: initialSchedule }), [initialSchedule])
   const { allDays, todayDow, currentPeriod, todaySchedule } = useSchedule(weeklySchedule)
@@ -161,6 +169,7 @@ export const ScheduleView = ({
           onNextWeek={() => setWeekOffset((o) => o + 1)}
           onThisWeek={() => setWeekOffset(0)}
         />
+        {classIdentity ? <ClassHeader {...classIdentity} /> : null}
         <DayTabs activeDay={activeDay} todayDow={displayTodayDow} onChange={setActiveDay} compact dateByDay={weekDates} />
         <DaySummaryCard
           dayLabel={DAY_LABELS[activeDay]}
@@ -190,6 +199,7 @@ export const ScheduleView = ({
           onNextWeek={() => setWeekOffset((o) => o + 1)}
           onThisWeek={() => setWeekOffset(0)}
         />
+        {classIdentity ? <ClassHeader {...classIdentity} /> : null}
         <div className="min-h-0 flex-1 overflow-auto">
           <WeekGrid
             days={schoolDays}
@@ -237,6 +247,7 @@ export const ScheduleView = ({
             onNextWeek={() => setWeekOffset((o) => o + 1)}
             onThisWeek={() => setWeekOffset(0)}
           />
+          {classIdentity ? <ClassHeader {...classIdentity} /> : null}
 
           <div className="min-h-0 flex-1 overflow-auto md:landscape:hidden">
             <WeekGrid

@@ -10,11 +10,22 @@
 
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
-import { StudentIntakeSchema } from '@kid-hub/shared'
+import { ClassIdentitySchema, StudentIntakeSchema } from '@kid-hub/shared'
 import { z } from 'zod'
 import { ACTIVE_STUDENT_COOKIE } from '@/lib/constants'
-import { requireParentSession, requireStudentAccess, resolveActiveStudent } from '@/server/lib/auth-guard'
-import { createStudent, isAdmin, listStudentsForParent } from '@/server/services/auth.service'
+import {
+  requireParentSession,
+  requireStudentAccess,
+  resolveActiveStudent,
+  resolveStudentContext,
+} from '@/server/lib/auth-guard'
+import {
+  createStudent,
+  isAdmin,
+  getClassIdentity,
+  listStudentsForParent,
+  updateClassIdentity,
+} from '@/server/services/auth.service'
 import { getUserById } from '@/server/services/user.service'
 import type { ActionResult, ActionVoidResult } from '@/types'
 
@@ -23,6 +34,10 @@ export interface StudentSummary {
   name: string
   gradeLevel: number
   avatarUrl: string | null
+  /** Header of the printed timetable: "1A1", GVCN, their number. */
+  className: string | null
+  teacherName: string | null
+  teacherPhone: string | null
   role: 'OWNER' | 'GUARDIAN'
 }
 
@@ -110,5 +125,56 @@ export const setActiveStudentAction = async (studentId: string): Promise<ActionV
     const msg = err instanceof Error ? err.message : ''
     if (msg === 'Forbidden') return { success: false, error: 'Bạn không có quyền với bé này' }
     return { success: false, error: 'Không đổi được bé' }
+  }
+}
+
+/**
+ * Saves the class identity printed at the head of a timetable.
+ *
+ * Guarded by requireStudentAccess, not just a parent session: the studentId
+ * arrives from the client, and a parent session alone says nothing about which
+ * children this parent may touch.
+ */
+export const updateClassIdentityAction = async (input: unknown): Promise<ActionVoidResult> => {
+  const parsed = ClassIdentitySchema.safeParse(input)
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message ?? 'Dữ liệu không hợp lệ' }
+  }
+
+  try {
+    const { studentId, ...identity } = parsed.data
+    await requireStudentAccess(studentId)
+    await updateClassIdentity(studentId, identity)
+    revalidatePath('/parent/students')
+    revalidatePath('/parent')
+    revalidatePath('/schedule')
+    return { success: true }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : ''
+    if (msg === 'Forbidden') return { success: false, error: 'Bạn không có quyền với bé này' }
+    return { success: false, error: 'Không lưu được thông tin lớp' }
+  }
+}
+
+export interface ClassIdentity {
+  name: string
+  gradeLevel: number
+  className: string | null
+  teacherName: string | null
+  teacherPhone: string | null
+}
+
+/**
+ * Reads the class identity for whichever student is on screen.
+ *
+ * Uses resolveStudentContext so the kid surface works from a kid session, not
+ * just a parent's active-student cookie.
+ */
+export const getClassIdentityAction = async (): Promise<ActionResult<ClassIdentity | null>> => {
+  try {
+    const studentId = await resolveStudentContext()
+    return { success: true, data: await getClassIdentity(studentId) }
+  } catch {
+    return { success: false, error: 'Không tải được thông tin lớp' }
   }
 }

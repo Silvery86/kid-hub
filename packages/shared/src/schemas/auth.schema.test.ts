@@ -7,7 +7,12 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { RegisterSchema, StudentIntakeSchema } from './auth.schema'
+import {
+  ClassIdentitySchema,
+  RegisterSchema,
+  StudentIntakeSchema,
+  TeacherPhoneSchema,
+} from './auth.schema'
 
 const valid = {
   email: 'me@example.com',
@@ -89,5 +94,47 @@ describe('RegisterSchema', () => {
 
   it('trims the child name rather than storing the padding', () => {
     expect(StudentIntakeSchema.parse({ name: '  Khôi  ', gradeLevel: 2 }).name).toBe('Khôi')
+  })
+})
+
+describe('TeacherPhoneSchema', () => {
+  it('accepts a Vietnamese mobile number as printed', () => {
+    expect(TeacherPhoneSchema.safeParse('0375197591').success).toBe(true)
+  })
+
+  it('accepts spaced and dotted forms, and +84', () => {
+    for (const value of ['037 519 7591', '037.519.7591', '+84375197591']) {
+      expect(TeacherPhoneSchema.safeParse(value).success, value).toBe(true)
+    }
+  })
+
+  it('accepts empty, because the field is optional and clearable', () => {
+    expect(TeacherPhoneSchema.safeParse('').success).toBe(true)
+  })
+
+  it('rejects letters and too-short numbers', () => {
+    for (const value of ['gọi cô', '12345', '037-519-7591x']) {
+      expect(TeacherPhoneSchema.safeParse(value).success, value).toBe(false)
+    }
+  })
+})
+
+describe('ClassIdentitySchema', () => {
+  it('needs only a studentId — a parent may know the class but not the phone', () => {
+    expect(ClassIdentitySchema.safeParse({ studentId: 's1' }).success).toBe(true)
+    expect(
+      ClassIdentitySchema.safeParse({ studentId: 's1', className: '1A1' }).success
+    ).toBe(true)
+  })
+
+  it('rejects a class name past the column width', () => {
+    expect(
+      ClassIdentitySchema.safeParse({ studentId: 's1', className: 'x'.repeat(21) }).success
+    ).toBe(false)
+  })
+
+  it('trims, so a stray space does not become the stored value', () => {
+    const parsed = ClassIdentitySchema.safeParse({ studentId: 's1', className: '  1A1  ' })
+    expect(parsed.success && parsed.data.className).toBe('1A1')
   })
 })
