@@ -107,3 +107,32 @@ export const SaveBellScheduleSchema = z.object({
   rules: BellRulesSchema,
   anchors: BellAnchorsSchema.optional(),
 })
+
+// ── Week-at-a-time save ──────────────────────────────────────
+
+export const WeekCellSchema = z.object({
+  day: DaySchema,
+  periodNumber: z.number().int().min(1).max(20),
+  subjectId: z.string().min(1),
+  note: z.string().trim().max(40, 'Ghi chú tối đa 40 ký tự').optional(),
+})
+
+export const SaveWeekScheduleSchema = z.object({
+  cells: z.array(WeekCellSchema).max(140),
+}).superRefine((value, ctx) => {
+  // Two cells claiming one slot would violate the unique constraint mid-write
+  // and roll the whole week back. Catch it before the transaction opens.
+  const seen = new Set<string>()
+  for (const cell of value.cells) {
+    const key = `${cell.day}-${cell.periodNumber}`
+    if (seen.has(key)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['cells'],
+        message: `Trùng tiết ${cell.periodNumber} trong cùng một ngày`,
+      })
+      return
+    }
+    seen.add(key)
+  }
+})

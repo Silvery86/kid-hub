@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useMemo, useState } from 'react'
-import type { DailySchedule, SubjectGrade, TodayView } from '@/types'
+import type { BellSlot, DailySchedule, SubjectGrade, TodayView } from '@/types'
 import { cn } from '@/lib/utils'
 import { formatWeekSubtitleForOffset, getWeekDates } from '@/lib/schedule-display'
 import { getSubjectById } from '@/lib/data/subjects'
@@ -19,17 +19,19 @@ export function ParentDashboardView({
   initialSchedule,
   initialGrades,
   todayView,
+  bellSlots = [],
   studentName,
 }: {
   initialSchedule: DailySchedule[]
   initialGrades: SubjectGrade[]
   todayView: TodayView | null
+  /** Period times for the week grid. Empty until a bell schedule exists. */
+  bellSlots?: BellSlot[]
   /** The student this view is about. With more than one child, a hard-coded
    *  name would label the wrong data. The admin surface is offered by the
    *  sidebar, not here. */
   studentName: string
 }) {
-  const [, setScheduleSave] = useState<ParentSaveState | null>(null)
   const [gradesSave, setGradesSave] = useState<ParentSaveState | null>(null)
   const [weekOffset, setWeekOffset] = useState(0)
   const { progress } = useUserProgress()
@@ -86,10 +88,6 @@ export function ParentDashboardView({
     }
     return items.slice(0, 5)
   }, [todayView])
-
-  const onScheduleSaveState = useCallback((state: ParentSaveState) => {
-    setScheduleSave(state)
-  }, [])
 
   const onGradesSaveState = useCallback((state: ParentSaveState) => {
     setGradesSave(state)
@@ -179,10 +177,10 @@ export function ParentDashboardView({
       <div className="min-h-0 flex-1">
         <ScheduleManager
           initialSchedule={initialSchedule}
+          bellSlots={bellSlots}
           embedded
           readOnly={isPastWeek}
           weekDates={weekDates}
-          onSaveStateChange={onScheduleSaveState}
         />
       </div>
     </section>

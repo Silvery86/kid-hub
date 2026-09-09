@@ -304,3 +304,66 @@ export const countEveningBlocks = async (
   day: DayOfWeek
 ): Promise<number> =>
   db.classPeriod.count({ where: { studentId, day, eventType: 'EXTRA_CLASS' } })
+
+// ── Week-at-a-time save ──────────────────────────────────────
+
+export interface WeekWriteRow {
+  day: DayOfWeek
+  periodNumber: number
+  subjectId: string
+  note?: string
+  startTime: string
+  endTime: string
+}
+
+/**
+ * Applies a whole week in ONE transaction.
+ *
+ * Previously the parent screen issued one Server Action per period — 35 serial
+ * round-trips for a full timetable, each re-running the guard, Zod and
+ * revalidatePath. A failure at period 20 left 19 rows written with no rollback
+ * and an error that did not say where it stopped. Here the week either lands or
+ * it does not.
+ *
+ * Deletes run first so a subject moving into a slot that another row is leaving
+ * cannot collide with the unique constraint mid-write.
+ */
+export const replaceWeeklySchedule = async (
+  studentId: string,
+  created: WeekWriteRow[],
+  updated: (WeekWriteRow & { id: string })[],
+  deletedIds: string[]
+): Promise<void> => {
+  await db.$transaction(async (tx) => {
+    if (deletedIds.length > 0) {
+      await tx.classPeriod.deleteMany({ where: { id: { in: deletedIds }, studentId } })
+    }
+
+    for (const row of updated) {
+      await tx.classPeriod.updateMany({
+        where: { id: row.id, studentId },
+        data: {
+          subjectId: row.subjectId,
+          note: row.note || null,
+          startTime: row.startTime,
+          endTime: row.endTime,
+        },
+      })
+    }
+
+    if (created.length > 0) {
+      await tx.classPeriod.createMany({
+        data: created.map((row) => ({
+          studentId,
+          day: row.day,
+          periodNumber: row.periodNumber,
+          eventType: 'SCHOOL_PERIOD' as const,
+          subjectId: row.subjectId,
+          note: row.note || null,
+          startTime: row.startTime,
+          endTime: row.endTime,
+        })),
+      })
+    }
+  })
+}

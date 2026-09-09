@@ -28,6 +28,8 @@ import {
   UpdatePeriodSchema,
   AddDailyHomeworkSchema,
   SaveBellScheduleSchema,
+  SaveWeekScheduleSchema,
+  diffWeek,
   findRuleIssues,
   generateSlots,
 } from '@kid-hub/shared'
@@ -407,6 +409,60 @@ export const saveBellScheduleAction = async (input: unknown): Promise<ActionVoid
     return { success: true }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to save bell schedule'
+    if (msg === 'Unauthorized') return { success: false, error: 'Unauthorized' }
+    return { success: false, error: msg }
+  }
+}
+
+/**
+ * Saves the whole week in one transaction.
+ *
+ * Times are never sent by the client — they come from the stored bell schedule,
+ * which is the point of entering rules once. A household with no bell schedule
+ * is told to set one rather than being asked for 70 clock times.
+ */
+export const saveWeeklyScheduleAction = async (input: unknown): Promise<ActionVoidResult> => {
+  try {
+    const studentId = await resolveActiveStudent()
+    const parsed = SaveWeekScheduleSchema.safeParse(input)
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
+    }
+
+    const bell = await scheduleService.getBellSchedule(studentId)
+    if (!bell) {
+      return { success: false, error: 'Hãy thiết lập khung giờ tiết học trước' }
+    }
+
+    const current = await scheduleService.getWeeklySchedule(studentId)
+    const diff = diffWeek(current, parsed.data.cells)
+
+    // Resolving here rather than in the repository keeps the write layer free of
+    // business rules, and surfaces a cell the bell schedule cannot place.
+    const withTimes = <T extends { day: DayOfWeek; periodNumber: number }>(cell: T) => {
+      const times = scheduleService.resolveSlotTimes(bell.slots, cell.periodNumber, cell.day)
+      return times ? { ...cell, ...times } : null
+    }
+
+    const created = diff.created.map(withTimes)
+    const updated = diff.updated.map(withTimes)
+    if (created.includes(null) || updated.includes(null)) {
+      return { success: false, error: 'Khung giờ chưa có tiết này — hãy cập nhật khung giờ' }
+    }
+
+    await scheduleService.replaceWeeklySchedule(
+      studentId,
+      created as NonNullable<(typeof created)[number]>[],
+      updated as NonNullable<(typeof updated)[number]>[],
+      diff.deleted
+    )
+
+    revalidatePath('/dashboard')
+    revalidatePath('/schedule')
+    revalidatePath('/parent')
+    return { success: true }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Failed to save weekly schedule'
     if (msg === 'Unauthorized') return { success: false, error: 'Unauthorized' }
     return { success: false, error: msg }
   }

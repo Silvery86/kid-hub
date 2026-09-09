@@ -6,17 +6,16 @@
  * Quick-Add Homework.
  */
 
-import { useState, useCallback, useTransition, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useTransition } from 'react'
 import { Plus, Trash2, Check, AlertCircle, Moon, BookOpen } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import type { DailyHomework, DailySchedule, DayOfWeek } from '@/types'
-import { SCHOOL_DAYS, DAY_LABELS, MAX_EVENING_BLOCKS_PER_DAY } from '@/lib/constants'
+import type { BellSlot, DailyHomework, DailySchedule, DayOfWeek } from '@/types'
+import { DAY_LABELS, MAX_EVENING_BLOCKS_PER_DAY } from '@/lib/constants'
 import { canEditDatedEntry, canEditRecurringEntry } from '@/lib/schedule-locks'
+import { WeekGrid } from '@/components/parent/schedule/WeekGrid'
 import { SUBJECTS } from '@/lib/data/subjects'
 import { ICON_MAP } from '@/lib/icons'
 import {
-  createPeriodAction,
-  updatePeriodAction,
   deletePeriodAction,
   getScheduleAction,
   getAllEveningBlocksAction,
@@ -60,13 +59,6 @@ type HomeworkListItem = {
   iconKey: string
   points: number
   isDone: boolean
-}
-
-type SchoolDraft = {
-  subjectId: string
-  note: string
-  startTime: string
-  endTime: string
 }
 
 type ActiveTab = 'school' | 'evening' | 'homework'
@@ -156,22 +148,22 @@ export interface ParentSaveState {
 
 interface ScheduleManagerProps {
   initialSchedule: DailySchedule[]
+  /** Period times for the week grid. Empty until a bell schedule exists. */
+  bellSlots?: BellSlot[]
   embedded?: boolean
   readOnly?: boolean
   weekDates?: Record<DayOfWeek, string>
-  onSaveStateChange?: (state: ParentSaveState) => void
 }
 
 export const ScheduleManager = ({
   initialSchedule,
+  bellSlots = [],
   embedded: _embedded = false,
   readOnly = false,
   weekDates,
-  onSaveStateChange,
 }: ScheduleManagerProps) => {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<ActiveTab>('school')
-  const [activeDay, setActiveDay] = useState<DayOfWeek>('monday')
   const [eveningDay, setEveningDay] = useState<DayOfWeek>('monday')
   const [homeworkDay, setHomeworkDay] = useState<DayOfWeek>('monday')
 
@@ -179,15 +171,6 @@ export const ScheduleManager = ({
   const [editable, setEditable] = useState<EditableSchedule>(() =>
     buildEditableSchedule(initialSchedule)
   )
-  const [schoolDraft, setSchoolDraft] = useState<SchoolDraft>({
-    subjectId: 'math',
-    note: '',
-    startTime: '07:30',
-    endTime: '08:10',
-  })
-  const [isSaved, setIsSaved] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [isPending, startTransition] = useTransition()
   const referenceDbIdsRef = useRef<Set<string>>(extractDbIds(initialSchedule))
 
   // Evening extra class state
@@ -246,10 +229,7 @@ export const ScheduleManager = ({
       getScheduleAction(),
       getAllEveningBlocksAction(),
     ])
-    if (!schoolResult.success) {
-      setError(schoolResult.error ?? 'Không thể tải thời khóa biểu')
-      return
-    }
+    if (!schoolResult.success) return
     if (!eveningResult.success) {
       setEveningError(eveningResult.error ?? 'Không thể tải buổi học tối')
       return
@@ -258,72 +238,6 @@ export const ScheduleManager = ({
     setEditable(buildEditableSchedule(merged))
     referenceDbIdsRef.current = extractDbIds(merged)
   }, [])
-
-  // ── School period handlers ──────────────────────────────────
-
-  const handleDeletePeriod = useCallback((day: DayOfWeek, tempId: string) => {
-    setEditable((prev) => ({
-      ...prev,
-      [day]: (prev[day] ?? []).filter((p) => p.tempId !== tempId),
-    }))
-  }, [])
-
-  const handleSave = useCallback(() => {
-    setError(null)
-    startTransition(async () => {
-      const currentDbIds = new Set(
-        SCHOOL_DAYS.flatMap((day) =>
-          (editable[day] ?? [])
-            .filter((p) => p.periodNumber != null)
-            .map((p) => p.dbId)
-            .filter(Boolean) as string[]
-        )
-      )
-      const deletedIds = [...referenceDbIdsRef.current].filter((id) => !currentDbIds.has(id))
-      const deleteResults = await Promise.all(deletedIds.map((id) => deletePeriodAction(id)))
-      const deleteError = deleteResults.find((r) => !r.success)
-      if (deleteError) { setError(deleteError.error ?? 'Không thể xóa tiết học'); return }
-
-      for (const day of SCHOOL_DAYS) {
-        const periods = [...(editable[day] ?? [])]
-          .filter((p) => p.periodNumber != null)
-          .sort((a, b) => a.startTime.localeCompare(b.startTime))
-          .map((p, i) => ({ ...p, periodNumber: i + 1 }))
-
-        for (const period of periods) {
-          if (period.dbId) {
-            const result = await updatePeriodAction({
-              id: period.dbId,
-              subjectId: period.subjectId,
-              note: period.note ?? '',
-              startTime: period.startTime,
-              endTime: period.endTime,
-            })
-            if (!result.success) { setError(result.error ?? 'Không thể cập nhật tiết học'); return }
-          } else {
-            const result = await createPeriodAction({
-              day,
-              periodNumber: period.periodNumber,
-              subjectId: period.subjectId,
-              ...(period.note ? { note: period.note } : {}),
-              startTime: period.startTime,
-              endTime: period.endTime,
-            })
-            if (!result.success) { setError(result.error ?? 'Không thể tạo tiết học'); return }
-          }
-        }
-      }
-
-      await refreshScheduleData()
-      router.refresh()
-      setIsSaved(true)
-      setTimeout(() => setIsSaved(false), 2500)
-    })
-  }, [editable, refreshScheduleData, router])
-
-  useEffect(() => {
-    if (!readOnly) onSaveStateChange?.({ save: handleSave, isPending, isSaved })
-  }, [readOnly, onSaveStateChange, isPending, isSaved, handleSave])
 
   // ── Evening extra class handler ─────────────────────────────
 
@@ -377,59 +291,10 @@ export const ScheduleManager = ({
     void loadHomeworkByDay(dow, nextDate)
   }
 
-  const activePeriods = editable[activeDay] ?? []
-  const sortedActivePeriods = [...activePeriods]
-    .filter((period) => period.periodNumber != null)
-    .sort((a, b) => a.startTime.localeCompare(b.startTime))
   const eveningPeriods = [...(editable[eveningDay] ?? [])]
     .filter((period) => period.periodNumber == null)
     .sort((a, b) => a.startTime.localeCompare(b.startTime))
   const homeworkItems = homeworkByDay[homeworkDay] ?? []
-
-  const handleAddSchoolClass = () => {
-    if (!canEditPeriods) return
-    setError(null)
-    startTransition(async () => {
-      const nextPeriodNumber =
-        ((editable[activeDay] ?? []).filter((period) => period.periodNumber != null).length ?? 0) + 1
-      const result = await createPeriodAction({
-        day: activeDay,
-        periodNumber: nextPeriodNumber,
-        subjectId: schoolDraft.subjectId,
-        note: schoolDraft.note,
-        startTime: schoolDraft.startTime,
-        endTime: schoolDraft.endTime,
-      })
-      if (!result.success) {
-        setError(result.error ?? 'Không thể thêm tiết học')
-        return
-      }
-
-      await refreshScheduleData()
-      router.refresh()
-      setSchoolDraft((prev) => ({ ...prev, note: '' }))
-      setIsSaved(true)
-      setTimeout(() => setIsSaved(false), 1500)
-    })
-  }
-
-  const handleDeleteSchoolClass = (period: EditablePeriod) => {
-    if (readOnly) return
-    setError(null)
-    startTransition(async () => {
-      if (!period.dbId) {
-        handleDeletePeriod(activeDay, period.tempId)
-        return
-      }
-      const result = await deletePeriodAction(period.dbId)
-      if (!result.success) {
-        setError(result.error ?? 'Không thể xóa tiết học')
-        return
-      }
-      await refreshScheduleData()
-      router.refresh()
-    })
-  }
 
   const handleDeleteEveningClass = (period: EditablePeriod) => {
     if (readOnly || !period.dbId) return
@@ -497,118 +362,20 @@ export const ScheduleManager = ({
 
       {/* ── School periods tab ── */}
       {activeTab === 'school' && (
-        <div className="flex flex-1 flex-col gap-4 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 md:p-4">
+        <div className="flex flex-1 flex-col gap-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 md:p-4">
           <div className="flex items-center justify-between">
             <p className="text-xs font-extrabold tracking-wide text-slate-400 uppercase">Thời khóa biểu</p>
-            <span className="text-xs font-bold text-slate-400">{DAY_LABELS[activeDay]}</span>
+            <span className="text-xs font-bold text-slate-400">Cả tuần</span>
           </div>
-
-          {error && (
-            <div className="flex items-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
-              <AlertCircle size={16} /> {error}
-            </div>
-          )}
-
-          {/* Day tabs */}
-          <div className="flex gap-1 rounded-2xl bg-slate-100 p-1">
-            {SCHOOL_DAYS.map((dow) => (
-              <button
-                key={dow}
-                onClick={() => setActiveDay(dow)}
-                className={cn(
-                  'flex-1 rounded-xl py-1.5 text-sm font-bold transition-colors',
-                  activeDay === dow ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                )}
-              >
-                <div>{DAY_LABELS[dow].replace('Thứ ', '')}</div>
-                {weekDates?.[dow] ? (
-                  <div className={cn('text-[10px] font-semibold leading-tight', activeDay === dow ? 'text-blue-400' : 'text-slate-400')}>
-                    {weekDates[dow]}
-                  </div>
-                ) : null}
-              </button>
-            ))}
-          </div>
-
-          {!readOnly && (
-            <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-slate-50/70 p-3">
-              <select
-                value={schoolDraft.subjectId}
-                onChange={(e) => setSchoolDraft((d) => ({ ...d, subjectId: e.target.value }))}
-                className="min-w-[180px] flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none"
-              >
-                {SUBJECTS.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-              <input
-                type="text"
-                value={schoolDraft.note}
-                onChange={(e) => setSchoolDraft((d) => ({ ...d, note: e.target.value }))}
-                maxLength={40}
-                placeholder="Học vần, Tập viết..."
-                aria-label="Nội dung tiết học"
-                className="w-40 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none"
-              />
-              <input
-                type="time"
-                value={schoolDraft.startTime}
-                onChange={(e) => setSchoolDraft((d) => ({ ...d, startTime: e.target.value }))}
-                className="w-28 rounded-xl border border-slate-200 bg-white px-2 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none"
-              />
-              <span className="text-sm font-bold text-slate-400">–</span>
-              <input
-                type="time"
-                value={schoolDraft.endTime}
-                onChange={(e) => setSchoolDraft((d) => ({ ...d, endTime: e.target.value }))}
-                className="w-28 rounded-xl border border-slate-200 bg-white px-2 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none"
-              />
-              <KidButton
-                variant="primary"
-                onClick={handleAddSchoolClass}
-                isDisabled={isPending || !canEditPeriods}
-                className="ml-auto min-h-10 gap-1 px-4 text-sm">
-                {isSaved ? (
-                  <><Check size={16} /> Đã thêm!</>
-                ) : (
-                  <><Plus size={16} /> {isPending ? 'Đang thêm...' : 'Thêm'}</>
-                )}
-              </KidButton>
-            </div>
-          )}
-
-          <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
-            {sortedActivePeriods.map((period) => {
-              const subject = SUBJECTS.find((s) => s.id === period.subjectId)
-              return (
-              <div key={period.tempId} className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/40 p-2.5">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-extrabold text-slate-700">{subject?.name ?? period.subjectId}</p>
-                  {period.note ? (
-                    <p className="truncate text-xs font-bold text-slate-400">{period.note}</p>
-                  ) : null}
-                </div>
-                <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs font-bold text-slate-600">
-                  <span>{period.startTime}</span>
-                  <span className="text-slate-300">–</span>
-                  <span>{period.endTime}</span>
-                </div>
-                {canEditPeriods && (
-                  <button
-                    onClick={() => handleDeleteSchoolClass(period)}
-                    aria-label="Xóa tiết học"
-                    className="flex min-h-10 min-w-10 items-center justify-center rounded-xl p-2 text-red-400 hover:bg-red-50 hover:text-red-600"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                )}
-              </div>
-              )
-            })}
-            {sortedActivePeriods.length === 0 ? (
-              <p className="py-6 text-center text-sm font-bold text-slate-400">Chưa có tiết học hôm nay</p>
-            ) : null}
-          </div>
+          <WeekGrid
+            initialSchedule={initialSchedule}
+            bellSlots={bellSlots}
+            readOnly={readOnly}
+            onSaved={() => router.refresh()}
+          />
         </div>
       )}
+
 
       {/* ── Evening extra classes tab ── */}
       {activeTab === 'evening' && (

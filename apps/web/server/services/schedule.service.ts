@@ -111,3 +111,12 @@ export const resolveSlotTimes = (
   )
   return slot ? { startTime: slot.startTime, endTime: slot.endTime } : null
 }
+
+export type { WeekWriteRow } from '@/server/repositories/schedule.repository'
+
+export const replaceWeeklySchedule = (
+  studentId: string,
+  created: scheduleRepo.WeekWriteRow[],
+  updated: (scheduleRepo.WeekWriteRow & { id: string })[],
+  deletedIds: string[]
+) => scheduleRepo.replaceWeeklySchedule(studentId, created, updated, deletedIds)
