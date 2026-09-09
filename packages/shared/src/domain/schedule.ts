@@ -2,7 +2,7 @@
 // Persistence stays in apps/web/server/services/schedule.service.ts, which
 // re-exports these so existing web callers are unaffected.
 
-import type { ClassPeriod, DailyHomework, TimeBand, TodayView } from '../types'
+import type { BellSlot, ClassPeriod, DailyHomework, TimeBand, TodayView } from '../types'
 import { parseTimeToMinutes } from './time'
 
 /**
@@ -45,7 +45,8 @@ export const buildTodayView = (
   schoolPeriods: ClassPeriod[],
   eveningBlocks: ClassPeriod[],
   cancelledIds: string[],
-  homework: DailyHomework[]
+  homework: DailyHomework[],
+  bellSlots?: BellSlot[]
 ): TodayView => ({
   date,
   schoolPeriods: [...schoolPeriods].sort(
@@ -54,4 +55,5 @@ export const buildTodayView = (
   eveningBlocks: filterCancelledSlots(eveningBlocks, cancelledIds),
   cancelledIds,
   homework,
+  ...(bellSlots && bellSlots.length > 0 ? { bellSlots } : {}),
 })

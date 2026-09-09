@@ -6,6 +6,7 @@ import {
   getEveningBlocks,
   getOverridesForDate,
   getDailyHomework,
+  getBellSchedule,
 } from '@/server/services/schedule.service'
 
 import { guardStudentApp } from '@/app/api/v1/_lib/guard'
@@ -24,12 +25,17 @@ export async function GET(req: Request, { params }: Params) {
     const date = today.toISOString().split('T')[0]!
     const dow = jsDateToDayOfWeek(today)
 
-    const [schoolResult, eveningBlocks, cancelledIds, homework] = await Promise.all([
+    const [schoolResult, eveningBlocks, cancelledIds, homework, bell] = await Promise.all([
       dow ? getDaySchedule(studentId, dow) : Promise.resolve(null),
       dow ? getEveningBlocks(studentId, dow) : Promise.resolve([]),
       getOverridesForDate(studentId, date),
       getDailyHomework(studentId, date),
+      getBellSchedule(studentId),
     ])
+
+    const todayBellSlots = (bell?.slots ?? []).filter(
+      (slot) => slot.kind !== 'PERIOD' && (!dow || slot.days.includes(dow)),
+    )
 
     const data = buildTodayView(
       date,
@@ -37,6 +43,7 @@ export async function GET(req: Request, { params }: Params) {
       eveningBlocks,
       cancelledIds,
       homework,
+      todayBellSlots,
     )
     return NextResponse.json({ success: true, data })
   } catch {

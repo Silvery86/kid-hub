@@ -2,12 +2,15 @@
 import 'server-only'
 
 import type {
+  BellRules,
+  BellSlot,
   ClassPeriod,
   DailySchedule,
   WeeklySchedule,
   DayOfWeek,
 } from '@/types'
 import { DAYS_OF_WEEK } from '@/lib/constants'
+import * as bellRepo from '@/server/repositories/bell-schedule.repository'
 import * as scheduleRepo from '@/server/repositories/schedule.repository'
 export type { CreatePeriodInput, UpdatePeriodInput, CreateDailyHomeworkInput } from '@/server/repositories/schedule.repository'
 
@@ -77,3 +80,34 @@ export const toggleDailyHomeworkDone = (id: string, studentId: string, isDone: b
   scheduleRepo.toggleDailyHomeworkDone(id, studentId, isDone)
 export const deleteDailyHomework = (id: string, studentId: string) =>
   scheduleRepo.deleteDailyHomework(id, studentId)
+
+// ── Bell schedule ────────────────────────────────────────────
+
+export type { StoredBellSchedule } from '@/server/repositories/bell-schedule.repository'
+
+export const getBellSchedule = (studentId: string) => bellRepo.getBellSchedule(studentId)
+
+export const saveBellSchedule = (
+  studentId: string,
+  rules: BellRules,
+  slots: BellSlot[],
+  presetKey?: string
+) => bellRepo.saveBellSchedule(studentId, rules, slots, presetKey)
+
+/**
+ * The times a numbered tiết runs on a given day, from the stored bell schedule.
+ *
+ * This is what lets the week grid stop asking for times: a parent picks a
+ * subject for tiết 3 on Thursday, and the period is written with the times the
+ * bell schedule already knows.
+ */
+export const resolveSlotTimes = (
+  slots: BellSlot[],
+  periodNumber: number,
+  day: DayOfWeek
+): { startTime: string; endTime: string } | null => {
+  const slot = slots.find(
+    (s) => s.kind === 'PERIOD' && s.periodNumber === periodNumber && s.days.includes(day)
+  )
+  return slot ? { startTime: slot.startTime, endTime: slot.endTime } : null
+}

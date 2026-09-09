@@ -81,6 +81,7 @@ model Student {
   parents             ParentStudent[]
   invites             StudentInvite[]
   periods             ClassPeriod[]
+  bellSchedule        BellSchedule?
   grades              SubjectGrade[]
   progress            UserProgress?
   mathProgress        MathProgress[]
@@ -178,6 +179,62 @@ enum DayOfWeek {
   friday
   saturday
   sunday
+}
+
+/// A slot in the school's daily bell schedule. PERIOD is a numbered tiết and the
+/// only kind that accepts a subject; BREAK is ra chơi; ROUTINE is everything else
+/// the day contains — arrival, ăn trưa & ngủ, the guided hour.
+enum SlotKind {
+  PERIOD
+  BREAK
+  ROUTINE
+}
+
+/// The bell rules a school publishes, kept so the timeline can be regenerated
+/// when a parent corrects one of them. Routines are not stored here: they are
+/// authored directly as ROUTINE slots, since nothing derives them.
+model BellSchedule {
+  id                     String   @id @default(cuid())
+  studentId              String   @unique
+  student                Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  presetKey              String?  @db.VarChar(40)
+  periodMinutes          Int      @default(35)
+  transitionMinutes      Int      @default(5)
+  morningStart           String   @db.VarChar(5)
+  morningPeriods         Int      @default(4)
+  morningRecessAfter     Int?
+  morningRecessStart     String?  @db.VarChar(5)
+  morningRecessMinutes   Int?
+  afternoonStart         String?  @db.VarChar(5)
+  afternoonPeriods       Int      @default(0)
+  afternoonRecessAfter   Int?
+  afternoonRecessStart   String?  @db.VarChar(5)
+  afternoonRecessMinutes Int?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  slots BellSlot[]
+
+  @@map("bell_schedules")
+}
+
+/// One row of the day timeline. `days` carries the per-weekday variation —
+/// Friday omits the guided hour — so no weekday needs special-casing in code.
+model BellSlot {
+  id           String       @id @default(cuid())
+  scheduleId   String
+  schedule     BellSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  kind         SlotKind
+  periodNumber Int? // set only when kind = PERIOD
+  label        String?      @db.VarChar(40)
+  startTime    String       @db.VarChar(5)
+  endTime      String       @db.VarChar(5)
+  days         DayOfWeek[]
+  /// False once a parent hand-edits the slot, so regenerating will not clobber it.
+  isGenerated  Boolean      @default(true)
+
+  @@index([scheduleId])
+  @@map("bell_slots")
 }
 
 /// EventType distinguishes recurring school classes from recurring extra classes.

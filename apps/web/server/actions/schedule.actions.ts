@@ -20,12 +20,16 @@ import { recordActivity } from '@/server/services/activity.service'
 import { checkAndAwardStreakBadges } from '@/server/services/rewards.service'
 import { getSubjectById } from '@/lib/data/subjects'
 import type { DayOfWeek, DailyHomework, DailySchedule, TodayView, ActionResult, ActionVoidResult } from '@/types'
+import type { StoredBellSchedule } from '@/server/services/schedule.service'
 import { MAX_EVENING_BLOCKS_PER_DAY } from '@/lib/constants'
 import {
   CreatePeriodSchema,
   CreateExtraClassSchema,
   UpdatePeriodSchema,
   AddDailyHomeworkSchema,
+  SaveBellScheduleSchema,
+  findRuleIssues,
+  generateSlots,
 } from '@kid-hub/shared'
 
 // Named schemas (CreatePeriodSchema, CreateExtraClassSchema, UpdatePeriodSchema,
@@ -72,19 +76,27 @@ export const getTodayViewAction = async (): Promise<ActionResult<TodayView>> => 
     const date = todayStr()
     const dow = jsDateToDayOfWeek(today)
 
-    const [schoolResult, eveningBlocks, cancelledIds, homework] = await Promise.all([
+    const [schoolResult, eveningBlocks, cancelledIds, homework, bell] = await Promise.all([
       dow ? scheduleService.getDaySchedule(studentId, dow) : Promise.resolve(null),
       dow ? scheduleService.getEveningBlocks(studentId, dow) : Promise.resolve([]),
       scheduleService.getOverridesForDate(studentId, date),
       scheduleService.getDailyHomework(studentId, date),
+      scheduleService.getBellSchedule(studentId),
     ])
+
+    // Only the non-lesson slots: the periods themselves already arrive as
+    // ClassPeriods carrying their own times.
+    const todayBellSlots = (bell?.slots ?? []).filter(
+      (slot) => slot.kind !== 'PERIOD' && (!dow || slot.days.includes(dow))
+    )
 
     const todayView = buildTodayView(
       date,
       schoolResult?.periods ?? [],
       eveningBlocks,
       cancelledIds,
-      homework
+      homework,
+      todayBellSlots
     )
     return { success: true, data: todayView }
   } catch {
@@ -343,6 +355,58 @@ export const deleteDailyHomeworkAction = async (id: string): Promise<ActionVoidR
     return { success: true }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to delete homework'
+    if (msg === 'Unauthorized') return { success: false, error: 'Unauthorized' }
+    return { success: false, error: msg }
+  }
+}
+
+// ── Bell schedule mutations ───────────────────────────────────
+
+/** Reads the stored bell schedule for the active student, or null if unset. */
+export const getBellScheduleAction = async (): Promise<ActionResult<StoredBellSchedule | null>> => {
+  try {
+    const studentId = await resolveActiveStudent()
+    return { success: true, data: await scheduleService.getBellSchedule(studentId) }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Failed to load bell schedule'
+    if (msg === 'Unauthorized') return { success: false, error: 'Unauthorized' }
+    return { success: false, error: msg }
+  }
+}
+
+/**
+ * Saves the school's bell rules and the timeline derived from them.
+ *
+ * Rules that cannot produce a sane timeline are rejected with the generator's
+ * own explanation rather than silently clamped — a recess anchored before its
+ * period ends means the parent mistyped a rule, and only they know which.
+ */
+export const saveBellScheduleAction = async (input: unknown): Promise<ActionVoidResult> => {
+  try {
+    const studentId = await resolveActiveStudent()
+    const parsed = SaveBellScheduleSchema.safeParse(input)
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
+    }
+    const { rules, presetKey } = parsed.data
+
+    const issues = findRuleIssues(rules)
+    if (issues.length > 0) {
+      return { success: false, error: issues[0]!.message }
+    }
+
+    await scheduleService.saveBellSchedule(
+      studentId,
+      rules,
+      generateSlots(rules),
+      presetKey
+    )
+    revalidatePath('/dashboard')
+    revalidatePath('/schedule')
+    revalidatePath('/parent')
+    return { success: true }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Failed to save bell schedule'
     if (msg === 'Unauthorized') return { success: false, error: 'Unauthorized' }
     return { success: false, error: msg }
   }

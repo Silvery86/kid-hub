@@ -24,11 +24,59 @@ import {
   schoolPeriodsOnly,
 } from '@/lib/schedule-display'
 import { DAYS_OF_WEEK } from '@/lib/constants'
-import type { ClassPeriod, DailySchedule, DayOfWeek } from '@/types'
+import type { BellSlot, ClassPeriod, DailySchedule, DayOfWeek } from '@/types'
 
 interface ScheduleViewProps {
   initialSchedule: DailySchedule[]
   allEveningBlocks?: DailySchedule[]
+  /** Today's non-lesson slots — ra chơi, ăn trưa, giờ tan học. */
+  todayBellSlots?: BellSlot[]
+}
+
+/**
+ * The day around the lessons. For a first grader this is most of it: when they
+ * arrive, when they can play, when they eat, when they go home. Before the bell
+ * schedule existed the app showed seven lessons and nothing between them, and
+ * could not answer "khi nào con được ra chơi?".
+ */
+function DayRhythm({ slots }: { slots: BellSlot[] }) {
+  if (slots.length === 0) return null
+  const dismissal = slots.reduce<string | null>(
+    (latest, s) => (latest == null || s.endTime > latest ? s.endTime : latest),
+    null
+  )
+  return (
+    <div className="rounded-[22px] bg-white p-4 shadow-sm">
+      <div className="mb-2.5 flex items-baseline justify-between gap-2">
+        <p className="text-[11px] font-extrabold tracking-wider text-text-muted uppercase">
+          Nhịp ngày hôm nay
+        </p>
+        {dismissal ? (
+          <p className="text-[11px] font-extrabold text-text-secondary">
+            Tan học {dismissal}
+          </p>
+        ) : null}
+      </div>
+      <ul className="flex flex-col gap-1.5">
+        {slots.map((slot, i) => (
+          <li
+            key={`${slot.startTime}-${i}`}
+            className="flex items-center gap-2.5 rounded-[14px] bg-slate-50 px-3 py-2"
+          >
+            <span className="text-base leading-none" aria-hidden="true">
+              {slot.kind === 'BREAK' ? '🤸' : '🍜'}
+            </span>
+            <span className="min-w-0 flex-1 truncate text-xs font-extrabold text-text-primary">
+              {slot.label ?? (slot.kind === 'BREAK' ? 'Ra chơi' : 'Hoạt động')}
+            </span>
+            <span className="shrink-0 text-[11px] font-extrabold text-text-secondary">
+              {slot.startTime} – {slot.endTime}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
 }
 
 const parseTimeToMinutes = (time: string): number => {
@@ -49,7 +97,11 @@ interface SelectedCell {
   period: ClassPeriod
 }
 
-export const ScheduleView = ({ initialSchedule, allEveningBlocks = [] }: ScheduleViewProps) => {
+export const ScheduleView = ({
+  initialSchedule,
+  allEveningBlocks = [],
+  todayBellSlots = [],
+}: ScheduleViewProps) => {
   const weeklySchedule = useMemo(() => ({ weekStartDate: '', days: initialSchedule }), [initialSchedule])
   const { allDays, todayDow, currentPeriod, todaySchedule } = useSchedule(weeklySchedule)
   const schoolDays = useMemo(() => schoolDaysFromSchedule(allDays), [allDays])
@@ -246,6 +298,8 @@ export const ScheduleView = ({ initialSchedule, allEveningBlocks = [] }: Schedul
                 subjectIcon={selectedSubject.icon}
               />
             ) : null}
+
+            {isCurrentWeek ? <DayRhythm slots={todayBellSlots} /> : null}
 
             <div className="rounded-[22px] bg-white p-4 shadow-sm">
               <p className="mb-2.5 text-[11px] font-extrabold uppercase tracking-wider text-text-muted">

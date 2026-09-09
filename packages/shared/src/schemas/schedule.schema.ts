@@ -62,3 +62,48 @@ export const AddDailyHomeworkSchema = z.object({
   iconKey: z.string().max(30).optional(),
   points: z.number().int().min(1).max(50).optional(),
 })
+
+// ── Bell schedule ────────────────────────────────────────────
+// The rules a school publishes, validated on the way in. Structural sanity
+// (a recess anchored before its period ends) is checked separately by
+// findRuleIssues, which can explain the problem in terms of the timeline.
+
+export const BellRecessSchema = z.object({
+  afterPeriod: z.number().int().min(1).max(20),
+  start: TimeSchema,
+  minutes: z.number().int().min(1).max(120),
+  label: z.string().trim().max(40).optional(),
+})
+
+export const BellSessionSchema = z.object({
+  start: TimeSchema,
+  periods: z.number().int().min(0).max(12),
+  recess: BellRecessSchema.optional(),
+})
+
+export const BellRoutineSchema = z.object({
+  label: z.string().trim().min(1, 'Cần đặt tên cho hoạt động').max(40),
+  startTime: TimeSchema,
+  endTime: TimeSchema,
+  days: z.array(DaySchema).min(1, 'Chọn ít nhất một ngày'),
+})
+
+export const BellRulesSchema = z.object({
+  periodMinutes: z.number().int().min(5, 'Mỗi tiết tối thiểu 5 phút').max(120),
+  transitionMinutes: z.number().int().min(0).max(60),
+  morning: BellSessionSchema,
+  afternoon: BellSessionSchema.optional(),
+  routines: z.array(BellRoutineSchema).max(10),
+})
+
+export const BellAnchorsSchema = z.object({
+  morningEnd: TimeSchema.optional(),
+  afternoonEnd: TimeSchema.optional(),
+  dismissal: z.record(DaySchema, TimeSchema).optional(),
+})
+
+export const SaveBellScheduleSchema = z.object({
+  presetKey: z.string().max(40).optional(),
+  rules: BellRulesSchema,
+  anchors: BellAnchorsSchema.optional(),
+})

@@ -30,6 +30,18 @@ export const EventTypeSchema = z.enum(['SCHOOL_PERIOD', 'EXTRA_CLASS'])
 
 // ── Building blocks ──────────────────────────────────────────────────────────
 
+/** BellSlot — one row of the derived day timeline. See ../types/schedule. */
+export const BellSlotSchema = z.object({
+  id: z.string().optional(),
+  kind: z.enum(['PERIOD', 'BREAK', 'ROUTINE']),
+  periodNumber: z.number().int().optional(),
+  label: z.string().optional(),
+  startTime: z.string(),
+  endTime: z.string(),
+  days: z.array(DaySchema),
+  isGenerated: z.boolean(),
+})
+
 /** ClassPeriod — matches the ClassPeriod interface in ../types/schedule. */
 export const ClassPeriodSchema = z.object({
   id: z.string().optional(),
@@ -72,6 +84,7 @@ export const TodayViewSchema = z.object({
   date: z.string(),
   schoolPeriods: z.array(ClassPeriodSchema),
   eveningBlocks: z.array(ClassPeriodSchema),
+  bellSlots: z.array(BellSlotSchema).optional(),
   cancelledIds: z.array(z.string()),
   homework: z.array(DailyHomeworkSchema),
 })

@@ -12,6 +12,96 @@ export type DayOfWeek =
   | 'sunday'
 
 export type EventType = 'SCHOOL_PERIOD' | 'EXTRA_CLASS'
+
+// ── Bell schedule ────────────────────────────────────────────
+// The school's published rules, and the day timeline derived from them.
+// See docs/SCHEDULE_PARENT_IMP.md §6.
+
+/**
+ * PERIOD is a numbered tiết and the only kind that accepts a subject.
+ * BREAK is ra chơi. ROUTINE is everything else a school day contains —
+ * arrival, ăn trưa & ngủ, the guided hour — which is most of a first
+ * grader's day and was previously unrepresentable.
+ */
+export type SlotKind = 'PERIOD' | 'BREAK' | 'ROUTINE'
+
+export interface BellSlot {
+  id?: string
+  kind: SlotKind
+  /** Set only when kind is PERIOD. Numbered across the whole day, not per session. */
+  periodNumber?: number
+  /** Shown for BREAK and ROUTINE; a PERIOD is labelled by its subject instead. */
+  label?: string
+  startTime: string
+  endTime: string
+  /** Which weekdays this slot occurs on. Friday omits the guided hour, hence per-slot. */
+  days: DayOfWeek[]
+  /** False once a parent has hand-edited it, so regenerating will not clobber the fix. */
+  isGenerated: boolean
+}
+
+/** A recess, pinned to the clock time the school published rather than an offset. */
+export interface BellRecess {
+  /** The (global) period number this recess follows. */
+  afterPeriod: number
+  /** Absolute start, e.g. "09:30" — absorbs whatever slack the school leaves. */
+  start: string
+  minutes: number
+  label?: string
+}
+
+export interface BellSession {
+  /** When the first period of this session begins, e.g. "08:10". */
+  start: string
+  periods: number
+  recess?: BellRecess
+}
+
+export interface BellRoutine {
+  label: string
+  startTime: string
+  endTime: string
+  days: DayOfWeek[]
+}
+
+/** Everything a school publishes about its day, in the shape it publishes it. */
+export interface BellRules {
+  periodMinutes: number
+  /** Gap between consecutive periods for the children to swap books. */
+  transitionMinutes: number
+  morning: BellSession
+  /** Absent for a morning-only school. */
+  afternoon?: BellSession
+  routines: BellRoutine[]
+}
+
+/**
+ * The clock times the school also published, used to check the derived timeline.
+ * Every field optional: a parent supplies whichever their school stated.
+ */
+export interface BellAnchors {
+  /** "Tan học buổi sáng" — when the last morning period should end. */
+  morningEnd?: string
+  /** When the last afternoon period should end. */
+  afternoonEnd?: string
+  /** "Giờ tan học", per day — the end of the last slot on that day. */
+  dismissal?: Partial<Record<DayOfWeek, string>>
+}
+
+/** A derived time that missed one of the school's stated anchors. */
+export interface AnchorMismatch {
+  label: string
+  expected: string
+  actual: string
+  /** actual − expected, in minutes. Negative means the day ends early. */
+  deltaMinutes: number
+}
+
+/** A rule set that cannot produce a sane timeline. */
+export interface RuleIssue {
+  field: string
+  message: string
+}
 export type TimeBand = 'morning' | 'afternoon' | 'evening'
 
 export interface ClassPeriod {
@@ -72,6 +162,12 @@ export interface TodayView {
   eveningBlocks: ClassPeriod[]   // EXTRA_CLASS entries, cancelled ones filtered out
   cancelledIds: string[]         // periodIds skipped today via ExtraClassOverride
   homework: DailyHomework[]
+  /**
+   * Today's non-lesson slots — ra chơi, ăn trưa & ngủ, giờ tan học. Optional so
+   * a household that has not set a bell schedule, and an older mobile build,
+   * both keep working.
+   */
+  bellSlots?: BellSlot[]
 }
 
 export interface Subject {
