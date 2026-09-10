@@ -7,6 +7,7 @@
 import { ParentBottomNav } from '@/components/parent/ParentBottomNav'
 import { ParentSidebarNav } from '@/components/parent/ParentSidebarNav'
 import { UserProgressProviderWrapper } from '@/components/layout/UserProgressProviderWrapper'
+import { Toaster } from '@/components/ui/Toaster'
 import { Suspense } from 'react'
 
 import { getParentContextAction } from '@/server/actions/students.actions'
@@ -29,6 +30,9 @@ export default async function ParentLayout({ children }: { children: React.React
       <Suspense fallback={null}>
         <ParentBottomNav />
       </Suspense>
+      {/* Sibling of the page, not a wrapper: the toast store is module-level, so
+          nothing here needs to provide context to {children}. */}
+      <Toaster shell="parent" />
     </UserProgressProviderWrapper>
   )
 }

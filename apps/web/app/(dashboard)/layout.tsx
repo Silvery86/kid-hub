@@ -4,6 +4,7 @@ import { AppSidebar } from '@/components/layout/AppSidebar'
 import { UserProgressProviderWrapper } from '@/components/layout/UserProgressProviderWrapper'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { ScreenTimeTracker } from '@/components/kid/ScreenTimeTracker'
+import { Toaster } from '@/components/ui/Toaster'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -18,6 +19,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <ErrorBoundary section="dashboard">{children}</ErrorBoundary>
         </div>
       </div>
+      <Toaster shell="kid" />
     </UserProgressProviderWrapper>
   )
 }
