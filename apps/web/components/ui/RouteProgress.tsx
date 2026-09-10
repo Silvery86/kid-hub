@@ -88,7 +88,10 @@ export const RouteProgress = ({ className }: { className?: string }) => {
       role="progressbar"
       aria-busy="true"
       aria-label="Đang tải trang"
-      className={cn('pointer-events-none absolute inset-x-0 top-0 z-50 h-0.5 bg-surface-muted', className)}
+      // Fixed rather than absolute: mounted in a layout, it would otherwise need
+      // a positioned ancestor that the layouts do not have, and would scroll
+      // away from the top of a long page.
+      className={cn('pointer-events-none fixed inset-x-0 top-0 z-50 h-0.5 bg-surface-muted', className)}
     >
       <div
         className={cn('h-full bg-btn-primary', reduced ? 'w-1/3' : 'animate-route-progress')}
