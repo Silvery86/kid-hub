@@ -4,6 +4,7 @@
  * when a valid session cookie has already been verified.
  */
 
+import { ParentBottomNav } from '@/components/parent/ParentBottomNav'
 import { ParentSidebarNav } from '@/components/parent/ParentSidebarNav'
 import { UserProgressProviderWrapper } from '@/components/layout/UserProgressProviderWrapper'
 import { Suspense } from 'react'
@@ -11,8 +12,9 @@ import { Suspense } from 'react'
 import { getParentContextAction } from '@/server/actions/students.actions'
 
 export default async function ParentLayout({ children }: { children: React.ReactNode }) {
-  // Resolves to safe defaults on the signed-out screens (login, register, pin),
-  // which share this shell but have no session to read.
+  // Sign-in, PIN and registration live in the (parent-auth) group with their own
+  // shell, so every route under this layout has a session. Still resolved
+  // defensively, because a session can expire between render and read.
   const { studentName, isAdmin } = await getParentContextAction()
 
   return (
@@ -21,8 +23,12 @@ export default async function ParentLayout({ children }: { children: React.React
         <Suspense fallback={<div className="hidden w-52 shrink-0 md:flex" />}>
           <ParentSidebarNav studentName={studentName} isAdmin={isAdmin} />
         </Suspense>
-        <div className="min-w-0 flex-1">{children}</div>
+        {/* pb clears the fixed mobile nav; the sidebar takes over from md up. */}
+        <div className="flex min-h-dvh min-w-0 flex-1 flex-col pb-14 md:pb-0">{children}</div>
       </div>
+      <Suspense fallback={null}>
+        <ParentBottomNav />
+      </Suspense>
     </UserProgressProviderWrapper>
   )
 }

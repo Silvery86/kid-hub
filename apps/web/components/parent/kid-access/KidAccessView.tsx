@@ -209,11 +209,14 @@ export function KidAccessView({
   initialToggles,
   screenTime,
   recentActivity,
+  hasKidPattern = false,
 }: {
   kidProgress: KidProgressData | null
   initialToggles: Record<string, boolean>
   screenTime: ScreenTimeData
   recentActivity: ActivityItem[]
+  /** Whether the active student already has an unlock pattern stored. */
+  hasKidPattern?: boolean
 }) {
   const [toggles, setToggles] = useState<Record<string, boolean>>(initialToggles)
   const [, startTransition] = useTransition()
@@ -240,8 +243,11 @@ export function KidAccessView({
   const mainGroups = useMemo(() => <AccessGroups toggles={toggles} onToggle={handleToggle} />, [toggles])
   const compactGroups = useMemo(() => <AccessGroups toggles={toggles} onToggle={handleToggle} compact />, [toggles])
 
+  // Fills the parent layout's column rather than claiming the viewport:
+  // min-h-dvh here would push its own height past the space reserved for the
+  // fixed mobile nav, leaving the bottom of the page under it.
   return (
-    <div className="flex min-h-dvh flex-col bg-slate-50">
+    <div className="flex min-h-0 flex-1 flex-col bg-slate-50">
       {/* Phone */}
       <div className="flex flex-1 flex-col gap-3.5 overflow-y-auto p-3.5 md:hidden">
         <div className="flex items-center justify-between gap-2">
@@ -254,7 +260,7 @@ export function KidAccessView({
         <ScreenTimeCard screenTime={screenTime} compact />
         <RewardCard compact />
         <DifficultyCaps compact />
-        <KidPatternSetup compact />
+        <KidPatternSetup compact initialHasPattern={hasKidPattern} />
         {compactGroups}
         <RecentActivityPanel activities={recentActivity} />
       </div>
@@ -280,7 +286,7 @@ export function KidAccessView({
           </div>
           <aside className="flex flex-col gap-5 overflow-y-auto">
             <DifficultyCaps />
-            <KidPatternSetup />
+            <KidPatternSetup initialHasPattern={hasKidPattern} />
             <div>
               <div className="mb-2 text-xs font-extrabold tracking-wide text-slate-400 uppercase">
                 Tiến độ của Khôi

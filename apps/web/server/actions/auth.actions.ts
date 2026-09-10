@@ -273,6 +273,29 @@ export const checkParentSessionAction = async (): Promise<{
   }
 }
 
+/**
+ * Whether the active student already has an unlock pattern.
+ *
+ * The setup card had no way to ask this, so it opened as "not set" on every
+ * page load and a parent who had already chosen a pattern was told, in effect,
+ * that they had not. Only the boolean crosses the wire — the pattern itself is
+ * a bcrypt hash and is not recoverable, by design.
+ */
+export const getKidPatternStatusAction = async (): Promise<{
+  hasPattern: boolean
+  studentId: string | null
+}> => {
+  const session = await ensureParentSession()
+  if (!session.ok) return { hasPattern: false, studentId: null }
+
+  try {
+    const studentId = await resolveActiveStudent()
+    return { hasPattern: await hasKidPatternSet(studentId), studentId }
+  } catch {
+    return { hasPattern: false, studentId: null }
+  }
+}
+
 /** Stores or updates the kid unlock pattern (requires active parent session). */
 export const setKidPatternAction = async (pattern: string): Promise<ActionVoidResult> => {
   const parsed = KidPatternSchema.safeParse(pattern)
