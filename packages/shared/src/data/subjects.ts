@@ -36,3 +36,27 @@ export const SUBJECTS: readonly Subject[] = [
 
 /** Look up a subject by its ID. Returns undefined if not found. */
 export const getSubjectById = (id: string): Subject | undefined => SUBJECTS.find((s) => s.id === id)
+
+/**
+ * Lesson variants that make sense for a given subject.
+ *
+ * The printed timetable writes "Tiếng Việt — Học vần" because a first-grade
+ * Vietnamese lesson really is one of several distinct things. No other subject
+ * on the 1A1 sheet is broken down that way, and "Đạo đức — Học vần" is simply
+ * wrong.
+ *
+ * These are SUGGESTIONS, not a closed list: D1 (docs/SCHEDULE_PARENT_IMP.md §9)
+ * kept the field free text on purpose, because a fixed enum needs curriculum
+ * knowledge we do not have and breaks at the first school that words things
+ * differently. A parent may still type anything, for any subject — this only
+ * decides what is offered without typing.
+ */
+export const SUBJECT_VARIANTS: Record<string, readonly string[]> = {
+  vietnamese: ['Học vần', 'Tập viết', 'Ôn tập', 'Tập đọc', 'Chính tả', 'Kể chuyện'],
+  math: ['Ôn tập', 'Luyện tập'],
+  experience: ['Chào cờ', 'Sinh hoạt lớp'],
+}
+
+/** Suggested variants for a subject — empty when the subject has no natural ones. */
+export const variantsForSubject = (subjectId: string): readonly string[] =>
+  SUBJECT_VARIANTS[subjectId] ?? []

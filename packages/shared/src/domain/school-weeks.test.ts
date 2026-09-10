@@ -8,7 +8,9 @@ import { describe, expect, it } from 'vitest'
 
 import {
   addWeeks,
+  dateOfWeekday,
   isIsoDate,
+  isPastSchoolDay,
   isPastWeek,
   localIsoDate,
   semesterEndIso,
@@ -134,4 +136,34 @@ describe('isIsoDate', () => {
       expect(isIsoDate(value)).toBe(false)
     }
   )
+})
+
+describe('dateOfWeekday / isPastSchoolDay', () => {
+  const week = '2026-09-07' // a Monday
+
+  it('maps each weekday onto its real date', () => {
+    expect(dateOfWeekday(week, 'monday')).toBe('2026-09-07')
+    expect(dateOfWeekday(week, 'friday')).toBe('2026-09-11')
+    expect(dateOfWeekday(week, 'sunday')).toBe('2026-09-13')
+  })
+
+  it('locks a day that has finished', () => {
+    // Thursday the 10th: Monday and Tuesday are done.
+    expect(isPastSchoolDay(week, 'monday', '2026-09-10')).toBe(true)
+    expect(isPastSchoolDay(week, 'wednesday', '2026-09-10')).toBe(true)
+  })
+
+  it('leaves today open', () => {
+    // A lesson may have ended an hour ago; the parent is still writing up the
+    // day. Locking mid-day would change the grid under their hands.
+    expect(isPastSchoolDay(week, 'thursday', '2026-09-10')).toBe(false)
+  })
+
+  it('leaves the rest of the week open', () => {
+    expect(isPastSchoolDay(week, 'friday', '2026-09-10')).toBe(false)
+  })
+
+  it('treats every day of a future week as open', () => {
+    expect(isPastSchoolDay('2026-09-14', 'monday', '2026-09-10')).toBe(false)
+  })
 })

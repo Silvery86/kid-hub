@@ -8,7 +8,13 @@
 //
 // See docs/SCHEDULE_PARENT_IMP.md §12.2.
 
-import { FIRST_TERM_END_MMDD, MAX_COPY_WEEKS, SECOND_TERM_END_MMDD } from '../constants'
+import {
+  DAYS_OF_WEEK,
+  FIRST_TERM_END_MMDD,
+  MAX_COPY_WEEKS,
+  SECOND_TERM_END_MMDD,
+} from '../constants'
+import type { DayOfWeek } from '../types'
 
 /** "YYYY-MM-DD" — the Monday of a school week, and the key a week is stored under. */
 export type IsoDate = string
@@ -101,3 +107,30 @@ export const semesterEndIso = (iso: IsoDate): IsoDate => {
  */
 export const isPastWeek = (weekStart: IsoDate, currentWeekStart: IsoDate): boolean =>
   weekStart < currentWeekStart
+
+/**
+ * The calendar date a weekday falls on within a given week.
+ *
+ * Once a period belongs to a dated week, "Thứ Hai" stops being an abstract
+ * column heading and becomes a real day that can be in the past — which is what
+ * makes a per-day edit lock meaningful where Phase 2 correctly refused one.
+ */
+export const dateOfWeekday = (weekStart: IsoDate, day: DayOfWeek): IsoDate => {
+  const offset = DAYS_OF_WEEK.indexOf(day)
+  if (offset < 0) return weekStart
+  return formatIsoUtc(new Date(parseIsoUtc(weekStart).getTime() + offset * DAY_MS))
+}
+
+/**
+ * True when a school day has finished.
+ *
+ * Whole days only. A lesson that ended an hour ago still belongs to a day the
+ * parent may be writing up, and locking cells as the clock passes each tiết
+ * would make the grid change under their hands. Today stays open; yesterday
+ * does not — the same rule `canEditDatedEntry` already applies to homework.
+ */
+export const isPastSchoolDay = (
+  weekStart: IsoDate,
+  day: DayOfWeek,
+  todayIso: IsoDate
+): boolean => dateOfWeekday(weekStart, day) < todayIso

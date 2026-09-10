@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { canEditDatedEntry, canEditRecurringEntry, canEditWeek, isPastIsoDate } from './schedule-locks'
+import {
+  canEditDatedEntry,
+  canEditRecurringEntry,
+  canEditSchoolDay,
+  canEditWeek,
+  isPastIsoDate,
+} from './schedule-locks'
 
 describe('canEditRecurringEntry', () => {
   /**
@@ -69,5 +75,21 @@ describe('isPastIsoDate', () => {
 
   it('orders lexically, which is chronological for zero-padded ISO dates', () => {
     expect(isPastIsoDate('2026-09-02', '2026-09-10')).toBe(true)
+  })
+})
+
+describe('canEditSchoolDay', () => {
+  it('blocks a day earlier in the same week', () => {
+    // The regression the PM caught: on Thursday, Monday tiết 4 was still
+    // editable because only whole past WEEKS were locked.
+    expect(canEditSchoolDay('2026-09-07', '2026-09-10')).toBe(false)
+  })
+
+  it('allows today', () => {
+    expect(canEditSchoolDay('2026-09-10', '2026-09-10')).toBe(true)
+  })
+
+  it('allows the rest of the week', () => {
+    expect(canEditSchoolDay('2026-09-11', '2026-09-10')).toBe(true)
   })
 })

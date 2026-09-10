@@ -32,7 +32,10 @@ import {
   weekStartOfToday,
   weekStartsBetween,
   breaksInWeek,
+  dateOfWeekday,
   isWholeWeekOff,
+  localIsoDate,
+  variantsForSubject,
   type BellSlot,
   type DailySchedule,
   type DayOfWeek,
@@ -146,8 +149,16 @@ export function WeekGrid({
   // The week the parent is actually in, so "past" survives the tab being left
   // open across midnight on a Sunday.
   const currentWeek = useMemo(() => weekStartOfToday(), [])
+  const todayIso = useMemo(() => localIsoDate(), [])
   const isPast = isPastWeek(weekStartDate, currentWeek)
   const locked = readOnly || isPast
+
+  // Within an editable week, days that have already happened are still closed:
+  // on Thursday, Monday tiết 4 describes a lesson the child has already sat.
+  const dayIsClosed = useCallback(
+    (day: DayOfWeek) => locked || dateOfWeekday(weekStartDate, day) < todayIso,
+    [locked, weekStartDate, todayIso]
+  )
   const isDirty = JSON.stringify(cells) !== baseline
   const weekBreaks = useMemo(() => breaksInWeek(breaks, weekStartDate), [breaks, weekStartDate])
   const wholeWeekOff = useMemo(() => isWholeWeekOff(breaks, weekStartDate), [breaks, weekStartDate])
@@ -272,6 +283,9 @@ export function WeekGrid({
 
   const selectedValue = selected ? cells[key(selected.day, selected.periodNumber)] : undefined
   const selectedRow = selected ? rows.find((r) => r.periodNumber === selected.periodNumber) : undefined
+  const suggestedVariants = selectedValue?.subjectId
+    ? variantsForSubject(selectedValue.subjectId)
+    : []
   const semesterWeeks = weekStartsBetween(weekStartDate, semesterEndIso(weekStartDate)).length
 
   return (
@@ -335,14 +349,25 @@ export function WeekGrid({
               <th className="w-20 text-left text-[11px] font-extrabold tracking-wide text-slate-400 uppercase">
                 Tiết
               </th>
-              {SCHOOL_DAYS.map((day) => (
-                <th
-                  key={day}
-                  className="text-center text-[11px] font-extrabold tracking-wide text-slate-500 uppercase"
-                >
-                  {DAY_LABELS[day].replace('Thứ ', 'T.')}
-                </th>
-              ))}
+              {SCHOOL_DAYS.map((day) => {
+                const dayDate = dateOfWeekday(weekStartDate, day)
+                return (
+                  <th
+                    key={day}
+                    className={cn(
+                      'text-center text-[11px] font-extrabold tracking-wide uppercase',
+                      dayDate === todayIso
+                        ? 'text-blue-600'
+                        : dayIsClosed(day)
+                          ? 'text-slate-300'
+                          : 'text-slate-500'
+                    )}
+                  >
+                    {DAY_LABELS[day].replace('Thứ ', 'T.')}
+                    <span className="block text-[9px] font-bold">{shortDate(dayDate)}</span>
+                  </th>
+                )
+              })}
             </tr>
           </thead>
           <tbody>
@@ -375,14 +400,19 @@ export function WeekGrid({
                       const subject = value ? getSubjectById(value.subjectId) : undefined
                       const isSelected =
                         selected?.day === day && selected.periodNumber === row.periodNumber
+                      const closed = dayIsClosed(day)
                       return (
                         <td key={day} className="p-0">
                           <button
                             type="button"
-                            disabled={locked}
+                            disabled={closed}
+                            title={closed && !locked ? 'Ngày đã qua — không sửa được' : undefined}
                             onClick={() => setSelected({ day, periodNumber: row.periodNumber })}
                             className={cn(
                               'flex h-full min-h-14 w-full flex-col items-center justify-center gap-0.5 rounded-xl border-2 px-1.5 py-1.5 text-center transition-colors',
+                              // Past days read as finished rather than broken:
+                              // faded, but the lesson stays legible.
+                              closed && !locked ? 'opacity-45' : '',
                               isSelected
                                 ? 'border-blue-500 bg-blue-50'
                                 : subject
@@ -424,7 +454,7 @@ export function WeekGrid({
       {/* Editing happens in a dialog: the grid is tall, and an editor below it
           meant selecting a cell then scrolling away from the cell to fill it. */}
       <FullScreenModal
-        isOpen={Boolean(selected) && !locked}
+        isOpen={Boolean(selected) && !!selected && !dayIsClosed(selected.day)}
         hasCloseButton={false}
         className="flex h-full w-full items-center justify-center p-4"
       >
@@ -449,18 +479,21 @@ export function WeekGrid({
               <select
                 autoFocus
                 value={selectedValue?.subjectId ?? ''}
-                onChange={(e) =>
-                  setCell(
-                    selected.day,
-                    selected.periodNumber,
-                    e.target.value
-                      ? {
-                          subjectId: e.target.value,
-                          ...(selectedValue?.note ? { note: selectedValue.note } : {}),
-                        }
-                      : null
-                  )
-                }
+                onChange={(e) => {
+                  const subjectId = e.target.value
+                  if (!subjectId) {
+                    setCell(selected.day, selected.periodNumber, null)
+                    return
+                  }
+                  // The variant belongs to the subject, not to the slot.
+                  // "Học vần" describes a Tiếng Việt lesson; carrying it across
+                  // to Đạo đức produced "Đạo đức — Học vần", which is nonsense.
+                  const keepNote =
+                    subjectId === selectedValue?.subjectId && selectedValue.note
+                      ? { note: selectedValue.note }
+                      : {}
+                  setCell(selected.day, selected.periodNumber, { subjectId, ...keepNote })
+                }}
                 className="h-12 w-full rounded-xl border-2 border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none"
               >
                 <option value="">— Trống —</option>
@@ -474,6 +507,36 @@ export function WeekGrid({
               <span className="text-xs font-extrabold tracking-wide text-slate-400 uppercase">
                 Nội dung (không bắt buộc)
               </span>
+              {/* Offered, not enforced — D1 kept this field free text so a school
+                  that words things differently is not locked out. The list is
+                  scoped to the subject so Đạo đức is never offered "Học vần". */}
+              {selectedValue?.subjectId && suggestedVariants.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {suggestedVariants.map((variant) => {
+                    const active = selectedValue.note === variant
+                    return (
+                      <button
+                        key={variant}
+                        type="button"
+                        onClick={() =>
+                          setCell(selected.day, selected.periodNumber, {
+                            subjectId: selectedValue.subjectId,
+                            ...(active ? {} : { note: variant }),
+                          })
+                        }
+                        className={cn(
+                          'rounded-full border-2 px-3 py-1.5 text-xs font-black',
+                          active
+                            ? 'border-blue-500 bg-blue-50 text-blue-700'
+                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                        )}
+                      >
+                        {variant}
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : null}
               <input
                 type="text"
                 maxLength={40}

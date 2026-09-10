@@ -44,6 +44,8 @@ import {
   VN_HOLIDAYS_2026_2027,
   findBreakForDate,
   isWholeWeekOff,
+  dateOfWeekday,
+  localIsoDate,
   diffWeek,
   isPastWeek,
   weekStartOfToday,
@@ -501,8 +503,49 @@ export const saveWeeklyScheduleAction = async (input: unknown): Promise<ActionVo
       return { success: false, error: 'Hãy thiết lập khung giờ tiết học trước' }
     }
 
-    const current = await scheduleService.getOwnWeekSchedule(studentId, weekStartDate)
-    const diff = diffWeek(current, cells)
+    // Two diffs, against two different baselines, because they answer two
+    // different questions.
+    const [own, effective] = await Promise.all([
+      scheduleService.getOwnWeekSchedule(studentId, weekStartDate),
+      scheduleService.getWeekSchedule(studentId, weekStartDate),
+    ])
+
+    // What to write: against the week's OWN rows. On an inherited week that is
+    // empty, so the save materialises the week (§12.2).
+    const diff = diffWeek(own, cells)
+
+    // What actually CHANGED: against what the parent was looking at. These
+    // differ on an inherited week, where materialising writes all five days —
+    // including days already past. Creating Monday with the content Monday
+    // already displayed rewrites no history, so checking the write diff here
+    // would make an inherited week impossible to materialise mid-week.
+    const changed = diffWeek(effective.days, cells)
+
+    const dayOfRow = new Map<string, DayOfWeek>()
+    for (const daySchedule of effective.days) {
+      for (const period of daySchedule.periods) {
+        if (period.id) dayOfRow.set(period.id, daySchedule.day)
+      }
+    }
+    const touchedDays = new Set<DayOfWeek>()
+    for (const cell of changed.created) touchedDays.add(cell.day)
+    for (const cell of changed.updated) touchedDays.add(cell.day)
+    for (const id of changed.deleted) {
+      const day = dayOfRow.get(id)
+      if (day) touchedDays.add(day)
+    }
+
+    // A day that has already happened is a record. The week-level check above
+    // only catches whole past weeks; within the current week Monday is still in
+    // the past on Thursday. Enforced here as well as in the grid, because the
+    // grid disabling a cell is a convenience, not a rule.
+    const todayIso = localIsoDate()
+    const blocked = [...touchedDays].filter(
+      (day) => dateOfWeekday(weekStartDate, day) < todayIso
+    )
+    if (blocked.length > 0) {
+      return { success: false, error: 'Ngày đã qua — không thể sửa tiết học' }
+    }
 
     // Resolving here rather than in the repository keeps the write layer free of
     // business rules, and surfaces a cell the bell schedule cannot place.

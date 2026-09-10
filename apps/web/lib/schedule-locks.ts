@@ -52,3 +52,17 @@ export const canEditRecurringEntry = (): boolean => true
  */
 export const canEditWeek = (weekStart: string, currentWeekStart: string): boolean =>
   !isPastIsoDate(weekStart, currentWeekStart)
+
+/**
+ * A single school day inside an editable week.
+ *
+ * The week-level rule (`canEditWeek`) is not enough on its own: on Thursday,
+ * Monday of the same week has already happened, and a parent editing it would
+ * be rewriting a day the child has already lived. Phase 2 refused this rule
+ * because the rows carried no date; Phase 6 gave them one, so it now holds.
+ *
+ * Whole days only — see `isPastSchoolDay` for why the clock does not lock
+ * individual periods as they pass.
+ */
+export const canEditSchoolDay = (dayDateIso: string, todayIso: string): boolean =>
+  !isPastIsoDate(dayDateIso, todayIso)
