@@ -2,6 +2,8 @@
 // One source of truth (src/tokens/tokens.json) → two committed outputs:
 //   • apps/web/app/tokens.generated.css  — the Tailwind v4 `@theme` block
 //   • packages/shared/tailwind-preset.cjs — the mobile NativeWind `theme.extend`
+// `tokens.motion.stagger` is absent from both outputs on purpose — see the note
+// beside the web block below.
 // `tokens.shadows` is deliberately absent from both: web keeps Tailwind's own
 // shadow-{sm,lg,xl} defaults, and mobile reads the block directly from
 // @kid-hub/shared in src/lib/shadows.ts (RN shadows are not class-expressible).
@@ -26,6 +28,14 @@ const themeLines = [
   ...Object.entries(tokens.radius).map(([k, v]) => `  --radius-${k}: ${v};`),
   '',
   ...Object.entries(tokens.spacing).map(([k, v]) => `  --spacing-${k}: ${v};`),
+  '',
+  // Tailwind v4 turns these into duration-* and ease-* utilities on its own.
+  // `motion.stagger` is deliberately absent: it is a unitless number consumed by
+  // JS (hooks/animation/useStagger) and by Reanimated on mobile, so expressing it
+  // as a CSS time here would force every caller to parse it back.
+  ...Object.entries(tokens.motion.duration).map(([k, v]) => `  --duration-${k}: ${v};`),
+  '',
+  ...Object.entries(tokens.motion.ease).map(([k, v]) => `  --ease-${k}: ${v};`),
   '}',
   '',
 ]
@@ -38,6 +48,8 @@ const preset = {
       colors: tokens.colors,
       borderRadius: tokens.radius,
       spacing: tokens.spacing,
+      transitionDuration: tokens.motion.duration,
+      transitionTimingFunction: tokens.motion.ease,
       // One family per loaded face. React Native cannot pick a face out of a
       // family by numeric weight, so weight lives in the class name
       // (font-display-bold) instead of alongside it (font-display font-bold).
