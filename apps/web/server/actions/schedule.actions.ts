@@ -45,7 +45,8 @@ import {
   findBreakForDate,
   isWholeWeekOff,
   dateOfWeekday,
-  localIsoDate,
+  isPeriodClosed,
+  nowInSchoolZone,
   diffWeek,
   isPastWeek,
   weekStartOfToday,
@@ -489,7 +490,7 @@ export const saveWeeklyScheduleAction = async (input: unknown): Promise<ActionVo
     if (!parsed.success) {
       return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
     }
-    const { weekStartDate, cells } = parsed.data
+    const { weekStartDate, applyTo, cells } = parsed.data
 
     // A week that has already happened is a record of what the child did, not a
     // draft. Checked on the server too: the grid hides the button, but the
@@ -521,30 +522,42 @@ export const saveWeeklyScheduleAction = async (input: unknown): Promise<ActionVo
     // would make an inherited week impossible to materialise mid-week.
     const changed = diffWeek(effective.days, cells)
 
-    const dayOfRow = new Map<string, DayOfWeek>()
+    const slotOfRow = new Map<string, { day: DayOfWeek; periodNumber: number }>()
     for (const daySchedule of effective.days) {
       for (const period of daySchedule.periods) {
-        if (period.id) dayOfRow.set(period.id, daySchedule.day)
+        if (period.id && period.periodNumber != null) {
+          slotOfRow.set(period.id, { day: daySchedule.day, periodNumber: period.periodNumber })
+        }
       }
     }
-    const touchedDays = new Set<DayOfWeek>()
-    for (const cell of changed.created) touchedDays.add(cell.day)
-    for (const cell of changed.updated) touchedDays.add(cell.day)
-    for (const id of changed.deleted) {
-      const day = dayOfRow.get(id)
-      if (day) touchedDays.add(day)
-    }
+    const touched: { day: DayOfWeek; periodNumber: number }[] = [
+      ...changed.created.map((c) => ({ day: c.day, periodNumber: c.periodNumber })),
+      ...changed.updated.map((c) => ({ day: c.day, periodNumber: c.periodNumber })),
+      ...changed.deleted.flatMap((id) => {
+        const slot = slotOfRow.get(id)
+        return slot ? [slot] : []
+      }),
+    ]
 
-    // A day that has already happened is a record. The week-level check above
-    // only catches whole past weeks; within the current week Monday is still in
-    // the past on Thursday. Enforced here as well as in the grid, because the
-    // grid disabling a cell is a convenience, not a rule.
-    const todayIso = localIsoDate()
-    const blocked = [...touchedDays].filter(
-      (day) => dateOfWeekday(weekStartDate, day) < todayIso
-    )
-    if (blocked.length > 0) {
-      return { success: false, error: 'Ngày đã qua — không thể sửa tiết học' }
+    // A lesson that has started is a record of what happened, not a plan.
+    // Enforced here as well as in the grid, because the grid disabling a cell is
+    // a convenience and not a rule — and resolved in the school's timezone,
+    // because this process runs in UTC and would otherwise think the afternoon
+    // had not begun.
+    const now = nowInSchoolZone()
+    const blocked = touched.some((slot) => {
+      const times = scheduleService.resolveSlotTimes(bell.slots, slot.periodNumber, slot.day)
+      // A cell the bell schedule cannot place is rejected below on its own terms.
+      if (!times) return false
+      return isPeriodClosed(
+        dateOfWeekday(weekStartDate, slot.day),
+        times.startTime,
+        now.dateIso,
+        now.minutes
+      )
+    })
+    if (blocked) {
+      return { success: false, error: 'Tiết học đã bắt đầu — không thể sửa nữa' }
     }
 
     // Resolving here rather than in the repository keeps the write layer free of
@@ -565,7 +578,8 @@ export const saveWeeklyScheduleAction = async (input: unknown): Promise<ActionVo
       weekStartDate,
       created as NonNullable<(typeof created)[number]>[],
       updated as NonNullable<(typeof updated)[number]>[],
-      diff.deleted
+      diff.deleted,
+      applyTo === 'week'
     )
 
     revalidatePath('/dashboard')

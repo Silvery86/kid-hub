@@ -140,8 +140,17 @@ export const replaceWeeklySchedule = (
   weekStart: string,
   created: scheduleRepo.WeekWriteRow[],
   updated: (scheduleRepo.WeekWriteRow & { id: string })[],
-  deletedIds: string[]
-) => scheduleRepo.replaceWeeklySchedule(studentId, weekStart, created, updated, deletedIds)
+  deletedIds: string[],
+  isWeekException = false
+) =>
+  scheduleRepo.replaceWeeklySchedule(
+    studentId,
+    weekStart,
+    created,
+    updated,
+    deletedIds,
+    isWeekException
+  )
 
 
 // ── School breaks ────────────────────────────────────────────

@@ -138,6 +138,17 @@ export const SaveWeekScheduleSchema = z.object({
   /** Which week these cells belong to. Every save names its week explicitly —
    *  a default here would let a stale tab write into the current week. */
   weekStartDate: WeekStartSchema,
+  /**
+   * How far the save reaches.
+   *
+   * 'week' — this week only; later weeks keep showing the standing timetable.
+   * 'forward' — this becomes the standing timetable from this week onwards.
+   *
+   * Defaults to 'week', which is the safe direction: a save that turns out to
+   * be narrower than intended changes one week, while one that turns out to be
+   * wider rewrites the rest of the term.
+   */
+  applyTo: z.enum(['week', 'forward']).default('week'),
   cells: z.array(WeekCellSchema).max(140),
 }).superRefine((value, ctx) => {
   // Two cells claiming one slot would violate the unique constraint mid-write

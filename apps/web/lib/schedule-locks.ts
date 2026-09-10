@@ -24,6 +24,8 @@
  * test, rather than surviving as an absence inside a 900-line component.
  */
 
+import { isPeriodClosed } from '@kid-hub/shared'
+
 /** True when `isoDate` ("YYYY-MM-DD") falls before `todayIso`. Zero-padded, so lexical order is chronological. */
 export const isPastIsoDate = (isoDate: string, todayIso: string): boolean => isoDate < todayIso
 
@@ -66,3 +68,21 @@ export const canEditWeek = (weekStart: string, currentWeekStart: string): boolea
  */
 export const canEditSchoolDay = (dayDateIso: string, todayIso: string): boolean =>
   !isPastIsoDate(dayDateIso, todayIso)
+
+/**
+ * A single lesson, decided against the classroom clock.
+ *
+ * Finer than `canEditSchoolDay`, which closes whole days. Today's lessons close
+ * one at a time, 15 minutes after each begins: at 17:00 the whole school day is
+ * shut, but at 09:00 only tiết 1 is.
+ *
+ * `nowMinutes` and `todayIso` must both come from `nowInSchoolZone()`. Reading
+ * the process clock instead would let the server — which runs in UTC — believe
+ * the afternoon had not started.
+ */
+export const canEditPeriod = (
+  periodDateIso: string,
+  startTime: string,
+  todayIso: string,
+  nowMinutes: number
+): boolean => !isPeriodClosed(periodDateIso, startTime, todayIso, nowMinutes)

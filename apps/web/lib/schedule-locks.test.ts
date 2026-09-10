@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   canEditDatedEntry,
   canEditRecurringEntry,
+  canEditPeriod,
   canEditSchoolDay,
   canEditWeek,
   isPastIsoDate,
@@ -91,5 +92,25 @@ describe('canEditSchoolDay', () => {
 
   it('allows the rest of the week', () => {
     expect(canEditSchoolDay('2026-09-11', '2026-09-10')).toBe(true)
+  })
+})
+
+describe('canEditPeriod', () => {
+  const today = '2026-09-10'
+
+  it('closes a lesson 15 minutes in', () => {
+    expect(canEditPeriod(today, '13:45', today, 13 * 60 + 59)).toBe(true)
+    expect(canEditPeriod(today, '13:45', today, 14 * 60)).toBe(false)
+  })
+
+  it('leaves later lessons on the same day open', () => {
+    // 09:00: tiết 1 (08:10) is gone, tiết 5 (13:45) is hours away.
+    expect(canEditPeriod(today, '08:10', today, 9 * 60)).toBe(false)
+    expect(canEditPeriod(today, '13:45', today, 9 * 60)).toBe(true)
+  })
+
+  it('closes everything once the school day is over', () => {
+    // The reported case: 17:00, every lesson taught.
+    expect(canEditPeriod(today, '15:15', today, 17 * 60)).toBe(false)
   })
 })

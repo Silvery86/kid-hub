@@ -262,6 +262,17 @@ model ClassPeriod {
   /// constraint added in 20260913000000 enforces that correspondence, which the
   /// PSL cannot express. See docs/SCHEDULE_PARENT_IMP.md §12.5.
   weekStartDate String?  @db.VarChar(10)
+  /// How far this week's timetable reaches.
+  ///
+  /// false — STANDING: this is the timetable from this week onwards, and any
+  ///   later week without rows of its own shows it. The seeded week is standing,
+  ///   so it acts as the default.
+  /// true — EXCEPTION: a one-week change (a test, a school event). It is shown
+  ///   for its own week and never inherited by a later one.
+  ///
+  /// Was absent before 20260916: every saved week became the new source of
+  /// inheritance, so editing one week silently rewrote every later week.
+  isWeekException Boolean @default(false)
   eventType    EventType @default(SCHOOL_PERIOD)
   subjectId    String    // References SUBJECTS constant in lib/data/subjects.ts
   note         String?   @db.VarChar(40) // lesson variant, e.g. "Học vần", "Tập viết"

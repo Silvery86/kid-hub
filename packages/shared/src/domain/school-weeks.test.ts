@@ -11,6 +11,7 @@ import {
   dateOfWeekday,
   isIsoDate,
   isPastSchoolDay,
+  isPeriodClosed,
   isPastWeek,
   localIsoDate,
   semesterEndIso,
@@ -19,6 +20,7 @@ import {
   weeksBetween,
   weekStartsBetween,
 } from './school-weeks'
+import { nowInSchoolZone } from './time'
 
 describe('weekStartOf', () => {
   // 2026-09-14 is a Monday.
@@ -165,5 +167,67 @@ describe('dateOfWeekday / isPastSchoolDay', () => {
 
   it('treats every day of a future week as open', () => {
     expect(isPastSchoolDay('2026-09-14', 'monday', '2026-09-10')).toBe(false)
+  })
+})
+
+describe('isPeriodClosed', () => {
+  const today = '2026-09-10'
+  // Tiết 5 of the 1A1 timetable.
+  const start = '13:45'
+
+  it('is open before the lesson starts', () => {
+    expect(isPeriodClosed(today, start, today, 13 * 60 + 44)).toBe(false)
+  })
+
+  it('is still open during the grace window', () => {
+    // Started, but a parent correcting a typo mid-lesson is legitimate.
+    expect(isPeriodClosed(today, start, today, 13 * 60 + 45)).toBe(false)
+    expect(isPeriodClosed(today, start, today, 13 * 60 + 59)).toBe(false)
+  })
+
+  it('closes exactly 15 minutes after the start', () => {
+    expect(isPeriodClosed(today, start, today, 14 * 60)).toBe(true)
+  })
+
+  it('is closed for the whole of a past day', () => {
+    // Even tiết 1, which on that day was still hours away at this clock time.
+    expect(isPeriodClosed('2026-09-09', '08:10', today, 0)).toBe(true)
+  })
+
+  it('is open for the whole of a future day', () => {
+    // Late tonight, tomorrow morning's tiết 1 is still editable.
+    expect(isPeriodClosed('2026-09-11', '08:10', today, 23 * 60 + 59)).toBe(false)
+  })
+
+  it('reproduces the reported case: 17:00 closes the whole school day', () => {
+    for (const s of ['08:10', '08:50', '09:45', '10:25', '13:45', '14:25', '15:15']) {
+      expect(isPeriodClosed(today, s, today, 17 * 60), s).toBe(true)
+    }
+  })
+
+  it('takes a custom grace window', () => {
+    expect(isPeriodClosed(today, start, today, 13 * 60 + 50, 0)).toBe(true)
+    expect(isPeriodClosed(today, start, today, 13 * 60 + 50, 30)).toBe(false)
+  })
+})
+
+describe('nowInSchoolZone', () => {
+  it('reads the classroom clock, not the process clock', () => {
+    // 10:00 UTC is 17:00 in Ho Chi Minh City — the exact case that made the
+    // server think the school day had not started while the PM watched it end.
+    const at10Utc = new Date('2026-09-10T10:00:00.000Z')
+    expect(nowInSchoolZone(at10Utc)).toEqual({ dateIso: '2026-09-10', minutes: 17 * 60 })
+  })
+
+  it('rolls the date forward when UTC is still on the previous day', () => {
+    // 18:30 UTC is 01:30 the next morning in Vietnam.
+    expect(nowInSchoolZone(new Date('2026-09-10T18:30:00.000Z'))).toEqual({
+      dateIso: '2026-09-11',
+      minutes: 90,
+    })
+  })
+
+  it('reports midnight as 0, not 1440', () => {
+    expect(nowInSchoolZone(new Date('2026-09-10T17:00:00.000Z')).minutes).toBe(0)
   })
 })

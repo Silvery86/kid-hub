@@ -33,8 +33,9 @@ import {
   weekStartsBetween,
   breaksInWeek,
   dateOfWeekday,
+  isPeriodClosed,
   isWholeWeekOff,
-  localIsoDate,
+  nowInSchoolZone,
   variantsForSubject,
   type BellSlot,
   type DailySchedule,
@@ -149,15 +150,40 @@ export function WeekGrid({
   // The week the parent is actually in, so "past" survives the tab being left
   // open across midnight on a Sunday.
   const currentWeek = useMemo(() => weekStartOfToday(), [])
-  const todayIso = useMemo(() => localIsoDate(), [])
   const isPast = isPastWeek(weekStartDate, currentWeek)
   const locked = readOnly || isPast
 
-  // Within an editable week, days that have already happened are still closed:
-  // on Thursday, Monday tiết 4 describes a lesson the child has already sat.
+  // The classroom clock, not the device's and not the server's. Null until
+  // mounted so the server-rendered HTML and the first client render agree;
+  // nothing is time-locked for that one frame, which costs nothing because
+  // editing needs the client anyway.
+  const [now, setNow] = useState<{ dateIso: string; minutes: number } | null>(null)
+  useEffect(() => {
+    const tick = () => setNow(nowInSchoolZone())
+    tick()
+    // A parent can sit on this screen through a lesson boundary.
+    const id = setInterval(tick, 30_000)
+    return () => clearInterval(id)
+  }, [])
+
+  /**
+   * A cell is closed if its whole day has passed, or — today — if its lesson
+   * started more than the grace window ago.
+   */
+  const cellIsClosed = useCallback(
+    (day: DayOfWeek, startTime: string) => {
+      if (locked) return true
+      if (!now) return false
+      return isPeriodClosed(dateOfWeekday(weekStartDate, day), startTime, now.dateIso, now.minutes)
+    },
+    [locked, weekStartDate, now]
+  )
+
+  /** A whole column is closed only when every one of its lessons is. */
   const dayIsClosed = useCallback(
-    (day: DayOfWeek) => locked || dateOfWeekday(weekStartDate, day) < todayIso,
-    [locked, weekStartDate, todayIso]
+    (day: DayOfWeek) =>
+      locked || (rows.length > 0 && rows.every((r) => cellIsClosed(day, r.startTime))),
+    [locked, rows, cellIsClosed]
   )
   const isDirty = JSON.stringify(cells) !== baseline
   const weekBreaks = useMemo(() => breaksInWeek(breaks, weekStartDate), [breaks, weekStartDate])
@@ -198,10 +224,21 @@ export function WeekGrid({
     })
   }, [])
 
-  const handleSave = () => {
+  /**
+   * `week` writes a one-off; `forward` makes this the standing timetable.
+   *
+   * Two buttons rather than a toggle: the difference is the whole term, and a
+   * remembered switch is the kind of thing a parent discovers only afterwards.
+   */
+  const handleSave = (applyTo: 'week' | 'forward') => {
     setError(null)
+    setCopyNote(null)
     startTransition(async () => {
-      const result = await saveWeeklyScheduleAction({ weekStartDate, cells: toPayload(cells) })
+      const result = await saveWeeklyScheduleAction({
+        weekStartDate,
+        applyTo,
+        cells: toPayload(cells),
+      })
       if (!result.success) {
         setError(result.error ?? 'Không lưu được thời khóa biểu')
         return
@@ -356,7 +393,7 @@ export function WeekGrid({
                     key={day}
                     className={cn(
                       'text-center text-[11px] font-extrabold tracking-wide uppercase',
-                      dayDate === todayIso
+                      dayDate === now?.dateIso
                         ? 'text-blue-600'
                         : dayIsClosed(day)
                           ? 'text-slate-300'
@@ -400,13 +437,17 @@ export function WeekGrid({
                       const subject = value ? getSubjectById(value.subjectId) : undefined
                       const isSelected =
                         selected?.day === day && selected.periodNumber === row.periodNumber
-                      const closed = dayIsClosed(day)
+                      const closed = cellIsClosed(day, row.startTime)
                       return (
                         <td key={day} className="p-0">
                           <button
                             type="button"
                             disabled={closed}
-                            title={closed && !locked ? 'Ngày đã qua — không sửa được' : undefined}
+                            title={
+                              closed && !locked
+                                ? 'Tiết này đã bắt đầu — không sửa được nữa'
+                                : undefined
+                            }
                             onClick={() => setSelected({ day, periodNumber: row.periodNumber })}
                             className={cn(
                               'flex h-full min-h-14 w-full flex-col items-center justify-center gap-0.5 rounded-xl border-2 px-1.5 py-1.5 text-center transition-colors',
@@ -454,7 +495,11 @@ export function WeekGrid({
       {/* Editing happens in a dialog: the grid is tall, and an editor below it
           meant selecting a cell then scrolling away from the cell to fill it. */}
       <FullScreenModal
-        isOpen={Boolean(selected) && !!selected && !dayIsClosed(selected.day)}
+        isOpen={
+          Boolean(selected) &&
+          !!selected &&
+          !cellIsClosed(selected.day, selectedRow?.startTime ?? '00:00')
+        }
         hasCloseButton={false}
         className="flex h-full w-full items-center justify-center p-4"
       >
@@ -684,18 +729,29 @@ export function WeekGrid({
             <CopyPlus size={14} /> Đến hết học kỳ
           </button>
 
-          <KidButton
-            variant="primary"
-            onClick={handleSave}
-            isDisabled={isPending || !isDirty}
-            className="ml-auto min-h-11 gap-1.5 px-5"
-          >
-            {saved ? (
-              <><Check size={16} /> Đã lưu!</>
-            ) : (
-              isPending ? 'Đang lưu...' : 'Lưu cả tuần'
-            )}
-          </KidButton>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleSave('forward')}
+              disabled={isPending || !isDirty}
+              title="Dùng làm thời khóa biểu chuẩn cho tuần này và các tuần sau"
+              className="min-h-11 rounded-2xl border-2 border-slate-200 px-4 text-xs font-black text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+            >
+              Áp dụng từ tuần này trở đi
+            </button>
+            <KidButton
+              variant="primary"
+              onClick={() => handleSave('week')}
+              isDisabled={isPending || !isDirty}
+              className="min-h-11 gap-1.5 px-5"
+            >
+              {saved ? (
+                <><Check size={16} /> Đã lưu!</>
+              ) : (
+                isPending ? 'Đang lưu...' : 'Chỉ lưu tuần này'
+              )}
+            </KidButton>
+          </div>
         </div>
       ) : null}
     </div>

@@ -12,8 +12,10 @@ import {
   DAYS_OF_WEEK,
   FIRST_TERM_END_MMDD,
   MAX_COPY_WEEKS,
+  PERIOD_EDIT_GRACE_MINUTES,
   SECOND_TERM_END_MMDD,
 } from '../constants'
+import { parseTimeToMinutes } from './time'
 import type { DayOfWeek } from '../types'
 
 /** "YYYY-MM-DD" — the Monday of a school week, and the key a week is stored under. */
@@ -134,3 +136,26 @@ export const isPastSchoolDay = (
   day: DayOfWeek,
   todayIso: IsoDate
 ): boolean => dateOfWeekday(weekStart, day) < todayIso
+
+/**
+ * True when a single lesson can no longer be edited.
+ *
+ * Three cases, in order: a day already past is closed entirely; a day still
+ * ahead is fully open; and today is decided lesson by lesson — a tiết closes
+ * `graceMinutes` after it starts, because by then it is being taught.
+ *
+ * This is finer than `isPastSchoolDay`, which closes whole days and still
+ * governs everything before today. The two are used together: the day rule
+ * settles the calendar, this one settles the afternoon.
+ */
+export const isPeriodClosed = (
+  periodDateIso: IsoDate,
+  startTime: string,
+  todayIso: IsoDate,
+  nowMinutes: number,
+  graceMinutes: number = PERIOD_EDIT_GRACE_MINUTES
+): boolean => {
+  if (periodDateIso < todayIso) return true
+  if (periodDateIso > todayIso) return false
+  return nowMinutes >= parseTimeToMinutes(startTime) + graceMinutes
+}

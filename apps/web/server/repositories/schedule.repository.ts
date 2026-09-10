@@ -116,10 +116,14 @@ const groupByDay = (rows: PeriodRow[]): DailySchedule[] => {
 /**
  * Which week's rows actually answer for `weekStart`.
  *
- * A week the parent has edited has rows of its own. A week they have not
- * inherits the most recent earlier week — that is what makes a timetable
- * change propagate forward without copying anything (§12.2). Returns null when
- * no timetable has ever been entered.
+ * A week the parent has edited has rows of its own. A week they have not falls
+ * back to the most recent earlier STANDING week — the default timetable.
+ *
+ * Exception weeks are skipped, and that skip is the whole point: before it,
+ * every saved week became the source of inheritance, so changing week 38 for a
+ * single school event silently rewrote 39, 40 and 41 as well (§14).
+ *
+ * Returns null when no timetable has ever been entered.
  */
 export const resolveWeekStart = async (
   studentId: string,
@@ -135,6 +139,7 @@ export const resolveWeekStart = async (
     where: {
       studentId,
       eventType: 'SCHOOL_PERIOD',
+      isWeekException: false,
       weekStartDate: { lt: weekStart },
     },
     orderBy: { weekStartDate: 'desc' },
@@ -429,7 +434,8 @@ export const replaceWeeklySchedule = async (
   weekStart: string,
   created: WeekWriteRow[],
   updated: (WeekWriteRow & { id: string })[],
-  deletedIds: string[]
+  deletedIds: string[],
+  isWeekException = false
 ): Promise<void> => {
   await db.$transaction(async (tx) => {
     if (deletedIds.length > 0) {
@@ -454,6 +460,7 @@ export const replaceWeeklySchedule = async (
           studentId,
           day: row.day,
           weekStartDate: weekStart,
+          isWeekException,
           periodNumber: row.periodNumber,
           eventType: 'SCHOOL_PERIOD' as const,
           subjectId: row.subjectId,
@@ -463,6 +470,15 @@ export const replaceWeeklySchedule = async (
         })),
       })
     }
+
+    // Scope belongs to the WEEK, not to the cells that happened to change. A
+    // parent re-saving an unchanged grid as "this week only" must move every
+    // row, or the week would be half standing and half exception and the
+    // fallback would still find it.
+    await tx.classPeriod.updateMany({
+      where: { studentId, eventType: 'SCHOOL_PERIOD', weekStartDate: weekStart },
+      data: { isWeekException },
+    })
   })
 }
 
@@ -518,6 +534,9 @@ export const copyWeekInto = async (
           studentId,
           day: row.day,
           weekStartDate: week,
+          // Copies pin the weeks they land in. Making them standing would put
+          // the last copied week in charge of everything after it.
+          isWeekException: true,
           periodNumber: row.periodNumber,
           eventType: 'SCHOOL_PERIOD' as const,
           subjectId: row.subjectId,

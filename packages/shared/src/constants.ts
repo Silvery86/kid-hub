@@ -72,6 +72,25 @@ export const CURRENT_ACADEMIC_YEAR = '2026-2027'
 export const FIRST_TERM_END_MMDD = '01-15'
 export const SECOND_TERM_END_MMDD = '05-31'
 
+/**
+ * The school's wall clock.
+ *
+ * Server-side this cannot be inferred: Vercel runs in UTC, so `new Date()` on
+ * the server is seven hours behind the classroom. Any rule that compares the
+ * time of day — like the period edit window — has to resolve "now" in this zone
+ * on BOTH sides or the grid and the Server Action will disagree about whether a
+ * lesson has started.
+ */
+export const SCHOOL_TIME_ZONE = 'Asia/Ho_Chi_Minh'
+
+/**
+ * How long after a lesson starts it stays editable.
+ *
+ * Set by the PM: a tiết is being taught 15 minutes in, so the timetable for it
+ * is a record rather than a plan.
+ */
+export const PERIOD_EDIT_GRACE_MINUTES = 15
+
 /** Ceiling on one copy-forward, so a single click cannot write an unbounded number of rows. */
 export const MAX_COPY_WEEKS = 40
 
