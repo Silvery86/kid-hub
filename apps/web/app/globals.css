@@ -114,7 +114,7 @@ body {
 /* Base animate-in class */
 .animate-in {
   animation-name: enter;
-  animation-duration: 150ms;
+  animation-duration: var(--duration-fast);
   animation-fill-mode: both;
   --tw-enter-opacity: 1;
   --tw-enter-scale: 1;
@@ -143,7 +143,7 @@ body {
 
 /* Shake for PIN error feedback */
 .animate-shake {
-  animation: shake 400ms ease-in-out;
+  animation: shake var(--duration-slower) ease-in-out;
 }
 
 /* Motion Intensity 5 — section entrance and micro-interaction keyframes */
@@ -168,20 +168,111 @@ body {
 }
 
 .animate-fade-slide-up {
-  animation: fadeSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: fadeSlideUp var(--duration-slower) var(--ease-standard) both;
 }
 
 .animate-grow-width {
-  animation: growWidth 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* 600ms has no token — it is one call site, not a scale step. Easing is tokenised. */
+  animation: growWidth 0.6s var(--ease-standard) both;
 }
 
 .animate-ping-ring {
-  animation: pingRing 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+  animation: pingRing 1.5s var(--ease-decelerate) infinite;
 }
 
 .animate-pop-in {
-  animation: popIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* 350ms predates the scale; left as-is so 2 existing call sites don't shift. */
+  animation: popIn 0.35s var(--ease-standard) both;
 }
+
+
+/* ============================================
+   MOTION LIBRARY — N0
+   Keyframes added by the motion foundation. Every one is a plain class so any
+   surface can use it without an import; the JS primitives in components/ui/
+   and hooks/animation/ compose these rather than defining their own.
+
+   Durations and easings come from the `motion` group in tokens.json via
+   tokens.generated.css. Never hard-code a duration here.
+
+   NOTE ON REDUCED MOTION: the guard at the bottom of this file neutralises
+   everything below automatically. It does NOT reach JS-driven motion —
+   useCountUp, <Confetti> — which is why hooks/animation/useReducedMotion.ts
+   exists. See docs/NOTIFICATION.md §7.6.
+   ============================================ */
+
+@keyframes popOut {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.9); }
+}
+
+@keyframes fadeSlideDown {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(10px); }
+}
+
+/* Skeleton sweep. Paired with a 220% background-size on the element. */
+@keyframes shimmer {
+  from { background-position: -180% 0; }
+  to   { background-position: 180% 0; }
+}
+
+/* "This row just saved" — settles back to the element's own colours. */
+@keyframes flash {
+  from { background-color: var(--color-success-bg); border-color: var(--color-success-strong); }
+  to   { background-color: transparent; border-color: transparent; }
+}
+
+@keyframes countPulse {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.13); }
+  100% { transform: scale(1); }
+}
+
+/* Particle travel. --cx/--cy/--cr are set per particle by <Confetti>. */
+@keyframes confettiFall {
+  from { transform: translate3d(0, 0, 0) rotate(0); opacity: 1; }
+  to   { transform: translate3d(var(--cx, 0), var(--cy, 0), 0) rotate(var(--cr, 0)); opacity: 0; }
+}
+
+/* SVG tick. The path must carry stroke-dasharray matching --check-len. */
+@keyframes drawCheck {
+  from { stroke-dashoffset: var(--check-len, 26); }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(26px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-26px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Indeterminate navigation bar — it reports "working", not "how far". */
+@keyframes routeProgress {
+  0%   { width: 0%;   opacity: 1; }
+  70%  { width: 82%;  opacity: 1; }
+  100% { width: 100%; opacity: 0; }
+}
+
+.animate-pop-out       { animation: popOut var(--duration-base) var(--ease-accelerate) both; }
+.animate-fade-slide-down { animation: fadeSlideDown var(--duration-slow) var(--ease-accelerate) both; }
+.animate-shimmer       { animation: shimmer 1.5s linear infinite; }
+.animate-flash         { animation: flash var(--duration-celebrate) var(--ease-decelerate) both; }
+.animate-count-pulse   { animation: countPulse var(--duration-slow) var(--ease-standard); }
+.animate-draw-check    { animation: drawCheck var(--duration-slow) var(--ease-standard) both; }
+.animate-float         { animation: float 2s ease-in-out infinite; }
+.animate-slide-in-right { animation: slideInRight var(--duration-slow) var(--ease-standard) both; }
+.animate-slide-in-left  { animation: slideInLeft var(--duration-slow) var(--ease-standard) both; }
+.animate-route-progress { animation: routeProgress 1.4s var(--ease-decelerate) infinite; }
 
 /* ============================================
    ACCESSIBILITY
