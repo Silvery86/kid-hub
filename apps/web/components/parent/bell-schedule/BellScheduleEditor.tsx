@@ -16,6 +16,7 @@ import { useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { AlertCircle, ArrowRight, Check } from 'lucide-react'
 import {
+  FEEDBACK,
   BELL_PRESETS,
   findRuleIssues,
   generateSlots,
@@ -27,6 +28,7 @@ import {
 } from '@kid-hub/shared'
 
 import { saveBellScheduleAction } from '@/server/actions/schedule.actions'
+import { toast } from '@/hooks/useToast'
 import { KidButton } from '@/components/ui/KidButton'
 import { cn } from '@/lib/utils'
 
@@ -101,11 +103,13 @@ export function BellScheduleEditor({
     startTransition(async () => {
       const result = await saveBellScheduleAction({ presetKey, rules })
       if (!result.success) {
-        setError(result.error ?? 'Không lưu được khung giờ')
+        // Inline: a bell-rule error points at a specific row of the editor.
+        setError(result.error ?? FEEDBACK.bellSchedule.saveFailed)
         return
       }
       // Deliberately not cleared on a timer: this is step 1 of two, and the
       // link to step 2 has to stay put long enough to be read and clicked.
+      toast.success(FEEDBACK.bellSchedule.saved)
       setSaved(true)
     })
   }

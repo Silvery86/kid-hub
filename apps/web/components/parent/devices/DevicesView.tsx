@@ -4,26 +4,30 @@ import { useCallback, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
+import { FEEDBACK } from '@kid-hub/shared'
+
 import { revokeDeviceAction, type DeviceRow } from '@/server/actions/invites.actions'
+import { toast } from '@/hooks/useToast'
 
 const formatWhen = (value: Date | string) =>
   new Date(value).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })
 
 export function DevicesView({ devices }: { devices: DeviceRow[] }) {
   const router = useRouter()
-  const [error, setError] = useState('')
   const [busyId, setBusyId] = useState<string | null>(null)
 
   const revoke = useCallback(
     async (tokenId: string) => {
       setBusyId(tokenId)
-      setError('')
       const result = await revokeDeviceAction(tokenId)
       setBusyId(null)
       if (!result.success) {
-        setError(result.error ?? 'Không đăng xuất được thiết bị')
+        toast.error(result.error ?? FEEDBACK.devices.revokeFailed)
         return
       }
+      // The row vanishes on refresh, so without this the only evidence the tap
+      // did anything is a row that is no longer there.
+      toast.success(FEEDBACK.devices.revoked)
       router.refresh()
     },
     [router]
@@ -48,11 +52,6 @@ export function DevicesView({ devices }: { devices: DeviceRow[] }) {
         </Link>
       </header>
 
-      {error ? (
-        <p role="alert" className="mb-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
-          {error}
-        </p>
-      ) : null}
 
       {devices.length === 0 ? (
         <p className="rounded-2xl bg-white px-5 py-8 text-center text-sm font-bold text-slate-400 shadow-sm">

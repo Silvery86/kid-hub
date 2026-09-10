@@ -3,11 +3,13 @@
 /** GradesManager — parent panel for viewing and editing subject grades via server actions. */
 
 import { useState, useTransition, useEffect } from 'react'
-import { Save, Check, AlertCircle } from 'lucide-react'
+import { Save, Check } from 'lucide-react'
 import type { SubjectGrade } from '@/types'
 import { CURRENT_ACADEMIC_YEAR } from '@/lib/constants'
 import { SUBJECTS } from '@/lib/data/subjects'
+import { FEEDBACK } from '@kid-hub/shared'
 import { upsertGradeAction } from '@/server/actions/grades.actions'
+import { toast } from '@/hooks/useToast'
 import { calculateBadge, cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/Badge'
 import { KidButton } from '@/components/ui/KidButton'
@@ -30,7 +32,6 @@ export const GradesManager = ({
   )
   const [semester, setSemester] = useState<1 | 2>(initialGrades[0]?.semester ?? 1)
   const [isSaved, setIsSaved] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   const handleScoreChange = (subjectId: string, raw: string) => {
@@ -38,7 +39,6 @@ export const GradesManager = ({
   }
 
   const handleSave = () => {
-    setError(null)
     startTransition(async () => {
       const updates = SUBJECTS.map((s) => {
         const raw = editableScores[s.id] ?? ''
@@ -50,10 +50,13 @@ export const GradesManager = ({
       const results = await Promise.all(updates.map((u) => upsertGradeAction(u)))
       const failed = results.find((r) => !r.success)
       if (failed) {
-        setError(failed.error ?? 'Không thể lưu điểm')
+        toast.error(failed.error ?? FEEDBACK.grades.saveFailed)
         return
       }
 
+      // isSaved drives the existing save-button state through onSaveStateChange;
+      // a success toast on top would say the same thing twice, so success stays
+      // where it already was.
       setIsSaved(true)
       setTimeout(() => setIsSaved(false), 2500)
     })
@@ -80,12 +83,6 @@ export const GradesManager = ({
         </div>
       ) : null}
 
-      {error && (
-        <div className="flex items-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
-          <AlertCircle size={16} />
-          {error}
-        </div>
-      )}
 
       {/* Semester selector */}
       <div className="flex w-fit gap-1 rounded-2xl bg-slate-100 p-1">

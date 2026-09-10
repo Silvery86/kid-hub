@@ -24,6 +24,7 @@ import { Fragment, useCallback, useEffect, useMemo, useState, useTransition } fr
 import Link from 'next/link'
 import { AlertCircle, CalendarOff, Check, Clock, CopyPlus, History, Lock, Trash2 } from 'lucide-react'
 import {
+  FEEDBACK,
   SUBJECTS,
   addWeeks,
   getSubjectById,
@@ -44,6 +45,8 @@ import {
   type WeekCell,
   type WeekSource,
 } from '@kid-hub/shared'
+
+import { toast } from '@/hooks/useToast'
 
 import {
   copyWeekAction,
@@ -142,7 +145,6 @@ export function WeekGrid({
   const [copyPreview, setCopyPreview] = useState<
     { total: number; occupied: number; onBreak: number } | null
   >(null)
-  const [copyNote, setCopyNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -208,7 +210,6 @@ export function WeekGrid({
       setSource(result.data.source)
       setInheritedFrom(result.data.inheritedFrom)
       setLoadedWeek(weekStartDate)
-      setCopyNote(null)
     })()
     return () => {
       cancelled = true
@@ -232,7 +233,6 @@ export function WeekGrid({
    */
   const handleSave = (applyTo: 'week' | 'forward') => {
     setError(null)
-    setCopyNote(null)
     startTransition(async () => {
       const result = await saveWeeklyScheduleAction({
         weekStartDate,
@@ -240,9 +240,17 @@ export function WeekGrid({
         cells: toPayload(cells),
       })
       if (!result.success) {
-        setError(result.error ?? 'Không lưu được thời khóa biểu')
+        // Stays inline on purpose: "tiết học đã bắt đầu" is about a cell the
+        // parent is looking at, and means more beside the grid than floating
+        // over it.
+        setError(result.error ?? FEEDBACK.schedule.saveFailed)
         return
       }
+      toast.success(
+        applyTo === 'forward'
+          ? FEEDBACK.schedule.savedForward(`tuần ${shortDate(weekStartDate)}`)
+          : FEEDBACK.schedule.saved(`tuần ${shortDate(weekStartDate)}`)
+      )
       setBaseline(JSON.stringify(cells))
       // The week now owns its rows — it no longer follows an earlier one.
       setSource('own')
@@ -259,7 +267,6 @@ export function WeekGrid({
   const openCopy = (scope: CopyScope) => {
     setCopyScope(scope)
     setCopyPreview(null)
-    setCopyNote(null)
     startTransition(async () => {
       const result = await previewCopyWeekAction({
         fromWeek: weekStartDate,
@@ -294,10 +301,16 @@ export function WeekGrid({
         return
       }
       const { weeksWritten, weeksSkipped, weeksOnBreak } = result.data
-      const parts = [`Đã chép sang ${weeksWritten} tuần`]
-      if (weeksSkipped > 0) parts.push(`giữ nguyên ${weeksSkipped} tuần đã có thời khóa biểu riêng`)
-      if (weeksOnBreak > 0) parts.push(`bỏ qua ${weeksOnBreak} tuần nghỉ`)
-      setCopyNote(`${parts.join(', ')}.`)
+      const detail: string[] = []
+      if (weeksSkipped > 0) detail.push(`giữ nguyên ${weeksSkipped} tuần đã có thời khóa biểu riêng`)
+      if (weeksOnBreak > 0) detail.push(`bỏ qua ${weeksOnBreak} tuần nghỉ`)
+      toast.success({
+        title: FEEDBACK.schedule.copied(weeksWritten),
+        // What was skipped is the part a parent would otherwise discover weeks
+        // later, so it travels with the confirmation rather than being dropped.
+        description: detail.length > 0 ? `${detail.join(', ')}.` : undefined,
+        duration: detail.length > 0 ? 7000 : undefined,
+      })
       onSaved?.()
     })
   }
@@ -333,11 +346,6 @@ export function WeekGrid({
         </div>
       ) : null}
 
-      {copyNote ? (
-        <div className="flex items-center gap-2 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
-          <Check size={16} /> {copyNote}
-        </div>
-      ) : null}
 
       {/* A break does not delete the week's timetable — it says it is not
           taught. The rows stay editable so next year's copy still has them. */}

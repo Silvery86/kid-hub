@@ -1,5 +1,7 @@
 'use client'
 
+import { FEEDBACK } from '@kid-hub/shared'
+
 import { useCallback, useState, useTransition } from 'react'
 import Link from 'next/link'
 
@@ -11,6 +13,7 @@ import {
   type AccountRow,
   type AccountStatus,
 } from '@/server/actions/admin.actions'
+import { toast } from '@/hooks/useToast'
 import { cn } from '@/lib/utils'
 
 const TABS: { status: AccountStatus; label: string }[] = [
@@ -23,17 +26,19 @@ const TABS: { status: AccountStatus; label: string }[] = [
 export function ApprovalsView({ initialRows }: { initialRows: AccountRow[] }) {
   const [status, setStatus] = useState<AccountStatus>('PENDING')
   const [rows, setRows] = useState<AccountRow[]>(initialRows)
-  const [error, setError] = useState('')
+  // Distinct from "no rows": a failed load must not render as an empty list.
+  const [loadFailed, setLoadFailed] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [, startTransition] = useTransition()
 
   const load = useCallback(async (next: AccountStatus) => {
     setStatus(next)
-    setError('')
+    setLoadFailed(false)
     const result = await listAccountsAction(next)
     if (!result.success) {
-      setError(result.error ?? 'Không tải được danh sách')
+      toast.error(result.error ?? FEEDBACK.approvals.loadFailed)
       setRows([])
+      setLoadFailed(true)
       return
     }
     setRows(result.data)
@@ -42,7 +47,8 @@ export function ApprovalsView({ initialRows }: { initialRows: AccountRow[] }) {
   const review = useCallback(
     async (parentId: string, kind: 'approve' | 'reject' | 'suspend') => {
       setBusyId(parentId)
-      setError('')
+      const subject = rows.find((r) => r.id === parentId)
+      const who = subject?.displayName ?? subject?.email ?? ''
 
       const note =
         kind === 'approve'
@@ -62,13 +68,20 @@ export function ApprovalsView({ initialRows }: { initialRows: AccountRow[] }) {
       setBusyId(null)
 
       if (!result.success) {
-        setError(result.error ?? 'Thao tác thất bại')
+        toast.error(result.error ?? FEEDBACK.approvals.failed)
         return
       }
+      // Approving is the one moment an applicant's account changes state and no
+      // email goes out (see CLAUDE.md, Known gaps) — the admin's own record that
+      // it happened is this toast and nothing else.
+      if (kind === 'approve') toast.success(FEEDBACK.approvals.approved(who))
+      else if (kind === 'reject') toast.success(FEEDBACK.approvals.rejected(who))
+      else toast.success(FEEDBACK.approvals.suspended(who))
+
       // The row has left this list — drop it rather than re-fetching everything.
       startTransition(() => setRows((current) => current.filter((r) => r.id !== parentId)))
     },
-    []
+    [rows]
   )
 
   return (
@@ -109,15 +122,14 @@ export function ApprovalsView({ initialRows }: { initialRows: AccountRow[] }) {
         ))}
       </div>
 
-      {error ? (
-        <p role="alert" className="mb-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
-          {error}
-        </p>
-      ) : null}
 
       {rows.length === 0 ? (
         <p className="rounded-2xl bg-white px-5 py-8 text-center text-sm font-bold text-slate-400 shadow-sm">
-          {status === 'PENDING' ? 'Không có đăng ký nào đang chờ.' : 'Danh sách trống.'}
+          {loadFailed
+            ? 'Không tải được danh sách. Thử chọn lại tab.'
+            : status === 'PENDING'
+              ? 'Không có đăng ký nào đang chờ.'
+              : 'Danh sách trống.'}
         </p>
       ) : (
         <ul className="m-0 flex list-none flex-col gap-2 p-0">

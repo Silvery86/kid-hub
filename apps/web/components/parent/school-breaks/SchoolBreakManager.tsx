@@ -19,8 +19,11 @@
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+
+import { FEEDBACK } from '@kid-hub/shared'
+
+import { toast } from '@/hooks/useToast'
 import {
-  AlertCircle,
   ArrowLeft,
   CalendarPlus,
   GraduationCap,
@@ -88,8 +91,6 @@ export function SchoolBreakManager({
 }) {
   const router = useRouter()
   const [draft, setDraft] = useState<Draft | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [note, setNote] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   const today = localIsoDate()
@@ -101,7 +102,6 @@ export function SchoolBreakManager({
 
   const submit = () => {
     if (!draft) return
-    setError(null)
     startTransition(async () => {
       const { promotesToGrade, ...rest } = draft
       const result = await saveSchoolBreakAction({
@@ -111,56 +111,60 @@ export function SchoolBreakManager({
           : {}),
       })
       if (!result.success) {
-        setError(result.error ?? 'Không lưu được')
+        toast.error(result.error ?? FEEDBACK.breaks.saveFailed)
         return
       }
       setDraft(null)
+      toast.success(FEEDBACK.breaks.saved)
       router.refresh()
     })
   }
 
   const remove = (brk: SchoolBreak) => {
     if (!brk.id) return
-    setError(null)
     startTransition(async () => {
       const result = await deleteSchoolBreakAction(brk.id!)
       if (!result.success) {
-        setError(result.error ?? 'Không xóa được')
+        toast.error(result.error ?? FEEDBACK.breaks.deleteFailed)
         return
       }
+      toast.success(FEEDBACK.breaks.deleted)
       router.refresh()
     })
   }
 
   const confirmPromotion = () => {
     if (!promotion?.id) return
-    setError(null)
-    setNote(null)
     startTransition(async () => {
       const result = await applyGradePromotionAction(promotion.id!)
       if (!result.success) {
-        setError(result.error ?? 'Không chuyển lớp được')
+        toast.error(result.error ?? FEEDBACK.breaks.promoteFailed)
         return
       }
-      setNote(`Đã chuyển con lên lớp ${result.data.gradeLevel}.`)
+      toast.success(FEEDBACK.breaks.promoted(result.data.gradeLevel))
       router.refresh()
     })
   }
 
   const addPresets = () => {
-    setError(null)
-    setNote(null)
     startTransition(async () => {
       const result = await addHolidayPresetsAction()
       if (!result.success) {
-        setError(result.error ?? 'Không thêm được')
+        toast.error(result.error ?? FEEDBACK.breaks.presetsFailed)
         return
       }
-      setNote(
-        result.data.added > 0
-          ? `Đã thêm ${result.data.added} ngày lễ. Hãy kiểm tra lại ngày Tết và Giỗ Tổ.`
-          : 'Đã có đủ các ngày lễ trong danh sách.'
-      )
+      if (result.data.added > 0) {
+        // The lunar dates are estimates. The durable signal is the "Kiểm tra
+        // lại ngày" badge on each row; this only points at it, so it is info
+        // rather than success and is given longer to be read.
+        toast.info({
+          title: FEEDBACK.breaks.presetsAdded(result.data.added),
+          description: 'Hãy kiểm tra lại ngày Tết và Giỗ Tổ — đây là ngày dự kiến.',
+          duration: 8000,
+        })
+      } else {
+        toast.info('Đã có đủ các ngày lễ trong danh sách')
+      }
       router.refresh()
     })
   }
@@ -227,16 +231,6 @@ export function SchoolBreakManager({
         </div>
       </div>
 
-      {error ? (
-        <div className="flex items-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
-          <AlertCircle size={16} /> {error}
-        </div>
-      ) : null}
-      {note ? (
-        <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
-          {note}
-        </div>
-      ) : null}
 
       {/* Asked, never assumed. The date decides when the question is worth
           putting; the parent decides the answer — a child repeating a year is

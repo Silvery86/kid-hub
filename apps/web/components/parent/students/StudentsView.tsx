@@ -5,12 +5,15 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 import { createInviteAction } from '@/server/actions/invites.actions'
+import { FEEDBACK } from '@kid-hub/shared'
+
 import {
   createStudentAction,
   updateClassIdentityAction,
   setActiveStudentAction,
   type StudentSummary,
 } from '@/server/actions/students.actions'
+import { toast } from '@/hooks/useToast'
 import { cn } from '@/lib/utils'
 
 export function StudentsView({
@@ -23,7 +26,6 @@ export function StudentsView({
   const router = useRouter()
   const [name, setName] = useState('')
   const [gradeLevel, setGradeLevel] = useState(1)
-  const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   // The code exists in the clear exactly once — here. Nothing can show it again.
   const [invite, setInvite] = useState<{ studentId: string; code: string } | null>(null)
@@ -32,43 +34,46 @@ export function StudentsView({
 
   const add = useCallback(async () => {
     if (isSubmitting) return
-    setError('')
     setIsSubmitting(true)
 
+    const added = name
     const result = await createStudentAction({ name, gradeLevel })
     setIsSubmitting(false)
 
     if (!result.success) {
-      setError(result.error ?? 'Không thêm được bé')
+      toast.error(result.error ?? FEEDBACK.students.addFailed)
       return
     }
     setName('')
     setGradeLevel(1)
+    toast.success(FEEDBACK.students.added(added))
     router.refresh()
   }, [name, gradeLevel, isSubmitting, router])
 
   const inviteFor = useCallback(async (studentId: string) => {
-    setError('')
     setInvite(null)
     const result = await createInviteAction({ studentId })
     if (!result.success) {
-      setError(result.error ?? 'Không tạo được mã mời')
+      toast.error(result.error ?? FEEDBACK.students.inviteFailed)
       return
     }
+    // No success toast — the code itself appears in the row, and it is the only
+    // time it will ever be shown in the clear. A toast would compete with it.
     setInvite({ studentId, code: result.data.code })
   }, [])
 
   const switchTo = useCallback(
     async (studentId: string) => {
-      setError('')
+      const student = students.find((s) => s.id === studentId)
       const result = await setActiveStudentAction(studentId)
       if (!result.success) {
-        setError(result.error ?? 'Không đổi được bé')
+        toast.error(result.error ?? FEEDBACK.students.switchFailed)
         return
       }
+      if (student) toast.success(FEEDBACK.students.switched(student.name))
       router.refresh()
     },
-    [router]
+    [router, students]
   )
 
   return (
@@ -90,11 +95,6 @@ export function StudentsView({
         </Link>
       </header>
 
-      {error ? (
-        <p role="alert" className="mb-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
-          {error}
-        </p>
-      ) : null}
 
       <ul className="m-0 mb-6 flex list-none flex-col gap-2 p-0">
         {students.map((student) => {
@@ -221,12 +221,10 @@ function ClassIdentityForm({
   const [className, setClassName] = useState(student.className ?? '')
   const [teacherName, setTeacherName] = useState(student.teacherName ?? '')
   const [teacherPhone, setTeacherPhone] = useState(student.teacherPhone ?? '')
-  const [error, setError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
   const save = async () => {
     if (isSaving) return
-    setError('')
     setIsSaving(true)
     const result = await updateClassIdentityAction({
       studentId: student.id,
@@ -236,9 +234,11 @@ function ClassIdentityForm({
     })
     setIsSaving(false)
     if (!result.success) {
-      setError(result.error ?? 'Không lưu được thông tin lớp')
+      toast.error(result.error ?? FEEDBACK.students.classSaveFailed)
       return
     }
+    // The form closes on success, taking any inline confirmation with it.
+    toast.success(FEEDBACK.students.classSaved)
     onDone()
   }
 
@@ -276,7 +276,6 @@ function ClassIdentityForm({
           />
         </label>
       </div>
-      {error ? <p className="m-0 text-xs font-bold text-red-600">{error}</p> : null}
       <div className="flex items-center gap-2">
         <button
           type="button"

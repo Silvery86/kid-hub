@@ -18,10 +18,13 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { AlertCircle, Check, ChevronDown, Settings2 } from 'lucide-react'
+import { Check, ChevronDown, Settings2 } from 'lucide-react'
+
+import { FEEDBACK } from '@kid-hub/shared'
 
 import { setActiveStudentAction } from '@/server/actions/students.actions'
 import type { StudentSummary } from '@/server/actions/students.actions'
+import { toast } from '@/hooks/useToast'
 import { cn } from '@/lib/utils'
 
 export interface StudentSwitcherProps {
@@ -45,7 +48,6 @@ export function StudentSwitcher({
 }: StudentSwitcherProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -73,14 +75,15 @@ export function StudentSwitcher({
   /** Hand the phone to this child: set who is active, then let the pattern gate run. */
   const enterKidMode = useCallback(
     (studentId: string) => {
-      setError(null)
       startTransition(async () => {
         const result = await setActiveStudentAction(studentId)
         if (!result.success) {
-          setError(result.error ?? 'Không đổi được bé')
+          toast.error(result.error ?? FEEDBACK.students.switchFailed)
           return
         }
         setOpen(false)
+        // No success toast: the navigation to /kid-unlock is the confirmation,
+        // and a toast would follow the parent into the child's unlock screen.
         router.push('/dashboard')
       })
     },
@@ -90,18 +93,21 @@ export function StudentSwitcher({
   /** Keep managing, but for a different child. */
   const manageInstead = useCallback(
     (studentId: string) => {
-      setError(null)
+      const student = students.find((s) => s.id === studentId)
       startTransition(async () => {
         const result = await setActiveStudentAction(studentId)
         if (!result.success) {
-          setError(result.error ?? 'Không đổi được bé')
+          toast.error(result.error ?? FEEDBACK.students.switchFailed)
           return
         }
         setOpen(false)
+        // Switching who is being managed changes the whole page under the
+        // parent; saying which child now owns it is the point.
+        if (student) toast.success(FEEDBACK.students.switched(student.name))
         router.refresh()
       })
     },
-    [router]
+    [router, students]
   )
 
   return (
@@ -149,11 +155,6 @@ export function StudentSwitcher({
             Chọn bé để vào chế độ học sinh
           </p>
 
-          {error ? (
-            <p className="mx-3 mb-2 flex items-center gap-1.5 rounded-xl bg-red-50 px-3 py-2 text-xs font-bold text-red-600">
-              <AlertCircle size={14} /> {error}
-            </p>
-          ) : null}
 
           <ul className="max-h-72 overflow-auto px-2 pb-2">
             {students.length === 0 ? (
