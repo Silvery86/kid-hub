@@ -1,11 +1,13 @@
-/** Schedule page skeleton — shown while the DB query resolves. */
+/** Schedule skeleton — header, day switcher, then the timeline. */
+
+import { Skeleton } from '@/components/ui/Skeleton'
 
 export default function ScheduleLoading() {
   return (
-    <div className="flex h-dvh animate-pulse flex-col gap-4 bg-shell-kid p-4 portrait:max-md:p-3.5">
-      <div className="h-10 w-48 rounded-xl bg-slate-200" />
-      <div className="h-12 rounded-2xl bg-white" />
-      <div className="min-h-0 flex-1 rounded-2xl bg-white/80" />
+    <div className="flex h-dvh flex-col gap-4 bg-shell-kid p-4 portrait:max-md:p-3.5">
+      <Skeleton height="2.5rem" width="12rem" />
+      <Skeleton height="3rem" className="rounded-card" />
+      <Skeleton className="min-h-0 flex-1 rounded-row" />
     </div>
   )
 }

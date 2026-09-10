@@ -7,6 +7,7 @@
 import { ParentBottomNav } from '@/components/parent/ParentBottomNav'
 import { ParentSidebarNav } from '@/components/parent/ParentSidebarNav'
 import { UserProgressProviderWrapper } from '@/components/layout/UserProgressProviderWrapper'
+import { RouteProgress } from '@/components/ui/RouteProgress'
 import { Toaster } from '@/components/ui/Toaster'
 import { Suspense } from 'react'
 
@@ -20,6 +21,8 @@ export default async function ParentLayout({ children }: { children: React.React
 
   return (
     <UserProgressProviderWrapper>
+      {/* Parent navigation had no feedback at all between tap and paint. */}
+      <RouteProgress />
       <div className="flex min-h-dvh">
         <Suspense fallback={<div className="hidden w-52 shrink-0 md:flex" />}>
           <ParentSidebarNav studentName={studentName} isAdmin={isAdmin} />
