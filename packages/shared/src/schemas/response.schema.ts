@@ -81,11 +81,25 @@ export const SubjectGradeSchema = z.object({
 // ── Endpoint response payloads ───────────────────────────────────────────────
 
 /** GET /api/v1/schedule — TodayView. */
+/** SchoolBreak — a holiday or nghỉ hè, as the API returns it. */
+export const SchoolBreakResponseSchema = z.object({
+  id: z.string().optional(),
+  kind: z.enum(['PUBLIC_HOLIDAY', 'SUMMER_BREAK']),
+  label: z.string(),
+  startDate: z.string(),
+  endDate: z.string(),
+  presetKey: z.string().optional(),
+  needsReview: z.boolean().optional(),
+  promotesToGrade: z.number().int().optional(),
+  promotedAt: z.string().optional(),
+})
+
 export const TodayViewSchema = z.object({
   date: z.string(),
   schoolPeriods: z.array(ClassPeriodSchema),
   eveningBlocks: z.array(ClassPeriodSchema),
   bellSlots: z.array(BellSlotSchema).optional(),
+  activeBreak: SchoolBreakResponseSchema.optional(),
   cancelledIds: z.array(z.string()),
   homework: z.array(DailyHomeworkSchema),
 })

@@ -10,8 +10,9 @@ import type {
   DayOfWeek,
 } from '@/types'
 import { DAYS_OF_WEEK } from '@/lib/constants'
-import { weekStartOfToday } from '@kid-hub/shared'
+import { weekStartOfToday, type HolidayPreset } from '@kid-hub/shared'
 import * as bellRepo from '@/server/repositories/bell-schedule.repository'
+import * as breakRepo from '@/server/repositories/school-break.repository'
 import * as scheduleRepo from '@/server/repositories/schedule.repository'
 export type { CreatePeriodInput, UpdatePeriodInput, CreateDailyHomeworkInput } from '@/server/repositories/schedule.repository'
 
@@ -141,3 +142,24 @@ export const replaceWeeklySchedule = (
   updated: (scheduleRepo.WeekWriteRow & { id: string })[],
   deletedIds: string[]
 ) => scheduleRepo.replaceWeeklySchedule(studentId, weekStart, created, updated, deletedIds)
+
+
+// ── School breaks ────────────────────────────────────────────
+
+export type { SaveSchoolBreakInput } from '@/server/repositories/school-break.repository'
+
+export const listSchoolBreaks = (studentId: string) => breakRepo.listSchoolBreaks(studentId)
+export const createSchoolBreak = (
+  studentId: string,
+  data: breakRepo.SaveSchoolBreakInput
+) => breakRepo.createSchoolBreak(studentId, data)
+export const updateSchoolBreak = (
+  studentId: string,
+  data: breakRepo.SaveSchoolBreakInput & { id: string }
+) => breakRepo.updateSchoolBreak(studentId, data)
+export const deleteSchoolBreak = (id: string, studentId: string) =>
+  breakRepo.deleteSchoolBreak(id, studentId)
+export const seedHolidayPresets = (studentId: string, presets: HolidayPreset[]) =>
+  breakRepo.seedHolidayPresets(studentId, presets)
+export const applyGradePromotion = (studentId: string, breakId: string) =>
+  breakRepo.applyGradePromotion(studentId, breakId)

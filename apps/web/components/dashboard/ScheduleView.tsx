@@ -25,10 +25,13 @@ import {
   schoolPeriodsOnly,
 } from '@/lib/schedule-display'
 import { DAYS_OF_WEEK } from '@/lib/constants'
-import type { BellSlot, ClassPeriod, DailySchedule, DayOfWeek } from '@/types'
+import { cn } from '@/lib/utils'
+import type { BellSlot, ClassPeriod, DailySchedule, DayOfWeek, SchoolBreak } from '@/types'
 
 interface ScheduleViewProps {
   initialSchedule: DailySchedule[]
+  /** Set when today is a holiday or nghỉ hè. The timetable is not taught today. */
+  activeBreak?: SchoolBreak | null
   allEveningBlocks?: DailySchedule[]
   /** Today's non-lesson slots — ra chơi, ăn trưa, giờ tan học. */
   todayBellSlots?: BellSlot[]
@@ -104,8 +107,42 @@ interface SelectedCell {
   period: ClassPeriod
 }
 
+/**
+ * What a child sees on a day off.
+ *
+ * Deliberately loud and celebratory rather than an empty state: for the child
+ * this is good news, not a missing timetable. Học hè and homework still render
+ * below it, because nghỉ hè is not an empty three months.
+ */
+const BreakBanner = ({ brk }: { brk: SchoolBreak }) => {
+  const isSummer = brk.kind === 'SUMMER_BREAK'
+  return (
+    <div
+      className={cn(
+        'shrink-0 rounded-[22px] p-4 text-center shadow-sm',
+        isSummer ? 'bg-amber-100' : 'bg-rose-100'
+      )}
+    >
+      <div className="text-3xl">{isSummer ? '🌞' : '🎉'}</div>
+      <p
+        className={cn(
+          'mt-1 text-[11px] font-extrabold tracking-wide uppercase',
+          isSummer ? 'text-amber-700' : 'text-rose-700'
+        )}
+      >
+        {isSummer ? 'Nghỉ hè' : 'Nghỉ lễ'}
+      </p>
+      <p className="text-lg font-black text-text-primary">{brk.label}</p>
+      <p className="mt-0.5 text-xs font-bold text-text-secondary">
+        Hôm nay con không phải đi học
+      </p>
+    </div>
+  )
+}
+
 export const ScheduleView = ({
   initialSchedule,
+  activeBreak = null,
   allEveningBlocks = [],
   todayBellSlots = [],
   classIdentity = null,
@@ -170,6 +207,7 @@ export const ScheduleView = ({
           onThisWeek={() => setWeekOffset(0)}
         />
         {classIdentity ? <ClassHeader {...classIdentity} /> : null}
+        {activeBreak && isCurrentWeek ? <BreakBanner brk={activeBreak} /> : null}
         <DayTabs activeDay={activeDay} todayDow={displayTodayDow} onChange={setActiveDay} compact dateByDay={weekDates} />
         <DaySummaryCard
           dayLabel={DAY_LABELS[activeDay]}
@@ -200,6 +238,7 @@ export const ScheduleView = ({
           onThisWeek={() => setWeekOffset(0)}
         />
         {classIdentity ? <ClassHeader {...classIdentity} /> : null}
+        {activeBreak && isCurrentWeek ? <BreakBanner brk={activeBreak} /> : null}
         <div className="min-h-0 flex-1 overflow-auto">
           <WeekGrid
             days={schoolDays}
@@ -248,6 +287,8 @@ export const ScheduleView = ({
             onThisWeek={() => setWeekOffset(0)}
           />
           {classIdentity ? <ClassHeader {...classIdentity} /> : null}
+          {activeBreak && isCurrentWeek ? <BreakBanner brk={activeBreak} /> : null}
+        {activeBreak && isCurrentWeek ? <BreakBanner brk={activeBreak} /> : null}
 
           <div className="min-h-0 flex-1 overflow-auto md:landscape:hidden">
             <WeekGrid

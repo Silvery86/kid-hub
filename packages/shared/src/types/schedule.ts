@@ -176,6 +176,12 @@ export interface TodayView {
    * both keep working.
    */
   bellSlots?: BellSlot[]
+  /**
+   * Set when today falls in a holiday or nghỉ hè. `schoolPeriods` is then empty
+   * — the timetable does not run — while evening classes and homework stay,
+   * because summer classes and summer homework are real.
+   */
+  activeBreak?: SchoolBreak
 }
 
 export interface Subject {
@@ -216,6 +222,45 @@ export interface WeekView {
  * but behave differently on save.
  */
 export type WeekSource = 'own' | 'inherited' | 'empty'
+
+/**
+ * Why the regular timetable does not run.
+ *
+ * PUBLIC_HOLIDAY is a day off — Tết, 30/4, or one the school declares.
+ * SUMMER_BREAK is nghỉ hè: the 2–3 months between one grade and the next,
+ * declared by the parent when the school announces it. Summer classes and
+ * summer homework continue through it, so it suppresses the school timetable
+ * and nothing else.
+ */
+export type SchoolBreakKind = 'PUBLIC_HOLIDAY' | 'SUMMER_BREAK'
+
+/** A stretch of days on which the school timetable does not run. */
+export interface SchoolBreak {
+  id?: string
+  kind: SchoolBreakKind
+  label: string
+  /** Inclusive "YYYY-MM-DD". A single-day holiday has startDate === endDate. */
+  startDate: string
+  endDate: string
+  /** Set when the row came from the shipped Vietnamese list. */
+  presetKey?: string
+  /**
+   * True for a lunar-derived default whose real dates the school announces.
+   * Shown to the parent as "kiểm tra lại ngày" rather than passed off as fact.
+   */
+  needsReview?: boolean
+  /**
+   * SUMMER_BREAK only — the grade the child returns to afterwards.
+   *
+   * Usually the current grade plus one, but deliberately storable as the SAME
+   * grade: a child repeating a year still has a summer. Null on a summer break
+   * entered before this field existed, which simply means no promotion is
+   * offered for it.
+   */
+  promotesToGrade?: number
+  /** ISO timestamp of the parent confirming the promotion. Never set by a clock alone. */
+  promotedAt?: string
+}
 
 /** A week of school periods, with the provenance the grid needs to explain itself. */
 export interface WeekSchedule {

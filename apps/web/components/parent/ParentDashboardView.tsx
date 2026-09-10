@@ -3,7 +3,14 @@
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useMemo, useState } from 'react'
-import type { BellSlot, DailySchedule, SubjectGrade, TodayView, WeekSource } from '@/types'
+import type {
+  BellSlot,
+  DailySchedule,
+  SchoolBreak,
+  SubjectGrade,
+  TodayView,
+  WeekSource,
+} from '@/types'
 import { cn } from '@/lib/utils'
 import { formatWeekSubtitleForOffset, getWeekDates } from '@/lib/schedule-display'
 import { addWeeks, weekStartOfToday } from '@kid-hub/shared'
@@ -23,6 +30,7 @@ export function ParentDashboardView({
   initialGrades,
   todayView,
   bellSlots = [],
+  breaks = [],
   studentName,
 }: {
   initialSchedule: DailySchedule[]
@@ -33,6 +41,8 @@ export function ParentDashboardView({
   todayView: TodayView | null
   /** Period times for the week grid. Empty until a bell schedule exists. */
   bellSlots?: BellSlot[]
+  /** Holidays and nghỉ hè, so the grid can mark weeks that are not taught. */
+  breaks?: SchoolBreak[]
   /** The student this view is about. With more than one child, a hard-coded
    *  name would label the wrong data. The admin surface is offered by the
    *  sidebar, not here. */
@@ -188,6 +198,7 @@ export function ParentDashboardView({
           initialSchedule={initialSchedule}
           bellSlots={bellSlots}
           weekStartDate={weekStartDate}
+          breaks={breaks}
           initialWeekSource={initialWeekSource}
           initialInheritedFrom={initialInheritedFrom}
           embedded

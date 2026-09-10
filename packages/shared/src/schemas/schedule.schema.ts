@@ -176,3 +176,38 @@ export const CopyWeekSchema = z
     message: 'Chỉ sao chép được sang các tuần sau',
     path: ['throughWeek'],
   })
+
+// ── School breaks ────────────────────────────────────────────
+
+export const SchoolBreakKindSchema = z.enum(['PUBLIC_HOLIDAY', 'SUMMER_BREAK'])
+
+const IsoDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày không hợp lệ')
+  .refine(isIsoDate, 'Ngày không hợp lệ')
+
+/**
+ * A stretch of days the school timetable does not run.
+ *
+ * The end-after-start rule is enforced here as well as by a CHECK constraint:
+ * a reversed range covers no dates at all, so it would look saved and change
+ * nothing, which is the most confusing possible outcome.
+ */
+export const SaveSchoolBreakSchema = z
+  .object({
+    id: z.string().min(1).optional(),
+    kind: SchoolBreakKindSchema,
+    label: z.string().trim().min(1, 'Cần đặt tên cho kỳ nghỉ').max(60, 'Tên tối đa 60 ký tự'),
+    startDate: IsoDateSchema,
+    endDate: IsoDateSchema,
+    /** Summer only — the grade the child returns to. Same grade means a repeat. */
+    promotesToGrade: z.number().int().min(1).max(12).optional(),
+  })
+  .refine((v) => v.endDate >= v.startDate, {
+    message: 'Ngày kết thúc phải sau ngày bắt đầu',
+    path: ['endDate'],
+  })
+  .refine((v) => v.promotesToGrade == null || v.kind === 'SUMMER_BREAK', {
+    message: 'Chỉ kỳ nghỉ hè mới chuyển lớp',
+    path: ['promotesToGrade'],
+  })

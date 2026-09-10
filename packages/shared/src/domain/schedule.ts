@@ -8,6 +8,7 @@ import type {
   DailyHomework,
   DailySchedule,
   DayOfWeek,
+  SchoolBreak,
   TimeBand,
   TodayView,
 } from '../types'
@@ -47,6 +48,12 @@ export const filterCancelledSlots = (
 /**
  * Merges school periods, evening blocks, overrides, and daily homework into a single
  * TodayView for the kid schedule page.
+ *
+ * On a break the school timetable — periods and the bell slots that frame them —
+ * is dropped and `activeBreak` is set instead. Extra classes and homework are
+ * left exactly as they are: học hè runs right through nghỉ hè, and homework was
+ * typed for this date on purpose. Hiding either would be discarding something a
+ * parent entered rather than describing the day.
  */
 export const buildTodayView = (
   date: string,
@@ -54,16 +61,18 @@ export const buildTodayView = (
   eveningBlocks: ClassPeriod[],
   cancelledIds: string[],
   homework: DailyHomework[],
-  bellSlots?: BellSlot[]
+  bellSlots?: BellSlot[],
+  activeBreak?: SchoolBreak | null
 ): TodayView => ({
   date,
-  schoolPeriods: [...schoolPeriods].sort(
-    (a, b) => (a.periodNumber ?? 99) - (b.periodNumber ?? 99)
-  ),
+  schoolPeriods: activeBreak
+    ? []
+    : [...schoolPeriods].sort((a, b) => (a.periodNumber ?? 99) - (b.periodNumber ?? 99)),
   eveningBlocks: filterCancelledSlots(eveningBlocks, cancelledIds),
   cancelledIds,
   homework,
-  ...(bellSlots && bellSlots.length > 0 ? { bellSlots } : {}),
+  ...(!activeBreak && bellSlots && bellSlots.length > 0 ? { bellSlots } : {}),
+  ...(activeBreak ? { activeBreak } : {}),
 })
 
 // ── Week-at-a-time editing ───────────────────────────────────

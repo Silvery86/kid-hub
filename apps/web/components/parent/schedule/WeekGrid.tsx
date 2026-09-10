@@ -22,7 +22,7 @@
 
 import { Fragment, useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
-import { AlertCircle, Check, Clock, CopyPlus, History, Lock, Trash2 } from 'lucide-react'
+import { AlertCircle, CalendarOff, Check, Clock, CopyPlus, History, Lock, Trash2 } from 'lucide-react'
 import {
   SUBJECTS,
   addWeeks,
@@ -31,9 +31,12 @@ import {
   semesterEndIso,
   weekStartOfToday,
   weekStartsBetween,
+  breaksInWeek,
+  isWholeWeekOff,
   type BellSlot,
   type DailySchedule,
   type DayOfWeek,
+  type SchoolBreak,
   type WeekCell,
   type WeekSource,
 } from '@kid-hub/shared'
@@ -108,6 +111,7 @@ export function WeekGrid({
   initialSource = 'own',
   initialInheritedFrom,
   bellSlots,
+  breaks = [],
   readOnly = false,
   onSaved,
 }: {
@@ -118,6 +122,8 @@ export function WeekGrid({
   initialSource?: WeekSource
   initialInheritedFrom?: string
   bellSlots: BellSlot[]
+  /** Holidays and nghỉ hè, so the grid can say which days are not taught. */
+  breaks?: SchoolBreak[]
   readOnly?: boolean
   onSaved?: () => void
 }) {
@@ -129,7 +135,9 @@ export function WeekGrid({
   const [loadedWeek, setLoadedWeek] = useState(weekStartDate)
   const [selected, setSelected] = useState<{ day: DayOfWeek; periodNumber: number } | null>(null)
   const [copyScope, setCopyScope] = useState<CopyScope | null>(null)
-  const [copyPreview, setCopyPreview] = useState<{ total: number; occupied: number } | null>(null)
+  const [copyPreview, setCopyPreview] = useState<
+    { total: number; occupied: number; onBreak: number } | null
+  >(null)
   const [copyNote, setCopyNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
@@ -141,6 +149,8 @@ export function WeekGrid({
   const isPast = isPastWeek(weekStartDate, currentWeek)
   const locked = readOnly || isPast
   const isDirty = JSON.stringify(cells) !== baseline
+  const weekBreaks = useMemo(() => breaksInWeek(breaks, weekStartDate), [breaks, weekStartDate])
+  const wholeWeekOff = useMemo(() => isWholeWeekOff(breaks, weekStartDate), [breaks, weekStartDate])
 
   // Paging to another week replaces the whole grid, so the fetch belongs here
   // rather than in the page: the parent stays on the same screen throughout.
@@ -215,6 +225,7 @@ export function WeekGrid({
       setCopyPreview({
         total: result.data.targetWeeks.length,
         occupied: result.data.weeksWithOwnRows.length,
+        onBreak: result.data.breakWeeks.length,
       })
     })
   }
@@ -234,12 +245,11 @@ export function WeekGrid({
         setError(result.error ?? 'Không sao chép được')
         return
       }
-      const { weeksWritten, weeksSkipped } = result.data
-      setCopyNote(
-        weeksSkipped > 0
-          ? `Đã chép sang ${weeksWritten} tuần, giữ nguyên ${weeksSkipped} tuần đã có thời khóa biểu riêng.`
-          : `Đã chép sang ${weeksWritten} tuần.`
-      )
+      const { weeksWritten, weeksSkipped, weeksOnBreak } = result.data
+      const parts = [`Đã chép sang ${weeksWritten} tuần`]
+      if (weeksSkipped > 0) parts.push(`giữ nguyên ${weeksSkipped} tuần đã có thời khóa biểu riêng`)
+      if (weeksOnBreak > 0) parts.push(`bỏ qua ${weeksOnBreak} tuần nghỉ`)
+      setCopyNote(`${parts.join(', ')}.`)
       onSaved?.()
     })
   }
@@ -278,6 +288,18 @@ export function WeekGrid({
         </div>
       ) : null}
 
+      {/* A break does not delete the week's timetable — it says it is not
+          taught. The rows stay editable so next year's copy still has them. */}
+      {weekBreaks.length > 0 ? (
+        <div className="flex items-start gap-2 rounded-2xl bg-rose-50 px-4 py-2.5 text-xs font-extrabold text-rose-700">
+          <CalendarOff size={14} className="mt-0.5 shrink-0" />
+          <span>
+            {wholeWeekOff ? 'Cả tuần nghỉ' : 'Trong tuần có ngày nghỉ'}:{' '}
+            {weekBreaks.map((b) => b.label).join(' · ')}
+          </span>
+        </div>
+      ) : null}
+
       {/* Provenance, stated rather than implied: an inherited week and an own
           week look identical on screen but behave differently on save. */}
       {isPast ? (
@@ -291,7 +313,13 @@ export function WeekGrid({
         </div>
       ) : null}
 
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-end gap-1">
+        <Link
+          href="/parent/school-breaks"
+          className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-black text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+        >
+          <CalendarOff size={14} /> Ngày nghỉ
+        </Link>
         <Link
           href="/parent/bell-schedule"
           className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-black text-slate-500 hover:bg-slate-100 hover:text-slate-700"
@@ -516,6 +544,11 @@ export function WeekGrid({
                 <p className="mt-1 text-amber-700">
                   Trong đó <strong>{copyPreview.occupied}</strong> tuần đã có thời khóa biểu riêng —
                   chép đè sẽ mất nội dung đã sửa của các tuần đó.
+                </p>
+              ) : null}
+              {copyPreview.onBreak > 0 ? (
+                <p className="mt-1 text-rose-700">
+                  Bỏ qua <strong>{copyPreview.onBreak}</strong> tuần nghỉ lễ / nghỉ hè.
                 </p>
               ) : null}
             </div>

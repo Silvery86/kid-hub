@@ -24,6 +24,7 @@ import type {
   DailyHomework,
   DailySchedule,
   TodayView,
+  SchoolBreak,
   WeekSchedule,
   ActionResult,
   ActionVoidResult,
@@ -39,6 +40,10 @@ import {
   WeekStartSchema,
   SaveWeekScheduleSchema,
   CopyWeekSchema,
+  SaveSchoolBreakSchema,
+  VN_HOLIDAYS_2026_2027,
+  findBreakForDate,
+  isWholeWeekOff,
   diffWeek,
   isPastWeek,
   weekStartOfToday,
@@ -113,13 +118,18 @@ export const getTodayViewAction = async (): Promise<ActionResult<TodayView>> => 
     const date = todayStr()
     const dow = jsDateToDayOfWeek(today)
 
-    const [schoolResult, eveningBlocks, cancelledIds, homework, bell] = await Promise.all([
-      dow ? scheduleService.getDaySchedule(studentId, dow) : Promise.resolve(null),
-      dow ? scheduleService.getEveningBlocks(studentId, dow) : Promise.resolve([]),
-      scheduleService.getOverridesForDate(studentId, date),
-      scheduleService.getDailyHomework(studentId, date),
-      scheduleService.getBellSchedule(studentId),
-    ])
+    const [schoolResult, eveningBlocks, cancelledIds, homework, bell, breaks] =
+      await Promise.all([
+        dow ? scheduleService.getDaySchedule(studentId, dow) : Promise.resolve(null),
+        dow ? scheduleService.getEveningBlocks(studentId, dow) : Promise.resolve([]),
+        scheduleService.getOverridesForDate(studentId, date),
+        scheduleService.getDailyHomework(studentId, date),
+        scheduleService.getBellSchedule(studentId),
+        scheduleService.listSchoolBreaks(studentId),
+      ])
+
+    // Nghỉ lễ or nghỉ hè replaces the timetable; học hè and homework survive it.
+    const activeBreak = findBreakForDate(breaks, date)
 
     // Only the non-lesson slots: the periods themselves already arrive as
     // ClassPeriods carrying their own times.
@@ -133,7 +143,8 @@ export const getTodayViewAction = async (): Promise<ActionResult<TodayView>> => 
       eveningBlocks,
       cancelledIds,
       homework,
-      todayBellSlots
+      todayBellSlots,
+      activeBreak
     )
     return { success: true, data: todayView }
   } catch {
@@ -535,7 +546,9 @@ export const saveWeeklyScheduleAction = async (input: unknown): Promise<ActionVo
  */
 export const previewCopyWeekAction = async (
   input: unknown
-): Promise<ActionResult<{ targetWeeks: string[]; weeksWithOwnRows: string[] }>> => {
+): Promise<
+  ActionResult<{ targetWeeks: string[]; weeksWithOwnRows: string[]; breakWeeks: string[] }>
+> => {
   try {
     const studentId = await resolveActiveStudent()
     const parsed = CopyWeekSchema.safeParse(input)
@@ -543,9 +556,17 @@ export const previewCopyWeekAction = async (
       return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
     }
     const { fromWeek, throughWeek } = parsed.data
-    const targetWeeks = weekStartsBetween(fromWeek, throughWeek)
+    const spanned = weekStartsBetween(fromWeek, throughWeek)
+
+    // A week the child spends at home does not need a timetable written into
+    // it, and giving it rows of its own would stop it inheriting a later
+    // correction. Reported, never silently dropped.
+    const breaks = await scheduleService.listSchoolBreaks(studentId)
+    const breakWeeks = spanned.filter((week) => isWholeWeekOff(breaks, week))
+    const targetWeeks = spanned.filter((week) => !breakWeeks.includes(week))
+
     const weeksWithOwnRows = await scheduleService.findWeeksWithOwnRows(studentId, targetWeeks)
-    return { success: true, data: { targetWeeks, weeksWithOwnRows } }
+    return { success: true, data: { targetWeeks, weeksWithOwnRows, breakWeeks } }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to preview copy'
     if (msg === 'Unauthorized') return { success: false, error: 'Unauthorized' }
@@ -562,7 +583,9 @@ export const previewCopyWeekAction = async (
  */
 export const copyWeekAction = async (
   input: unknown
-): Promise<ActionResult<{ weeksWritten: number; weeksSkipped: number }>> => {
+): Promise<
+  ActionResult<{ weeksWritten: number; weeksSkipped: number; weeksOnBreak: number }>
+> => {
   try {
     const studentId = await resolveActiveStudent()
     const parsed = CopyWeekSchema.safeParse(input)
@@ -576,11 +599,18 @@ export const copyWeekAction = async (
       return { success: false, error: 'Tuần đã qua — không thể chỉnh sửa' }
     }
 
-    const allTargets = weekStartsBetween(fromWeek, throughWeek)
+    const spanned = weekStartsBetween(fromWeek, throughWeek)
     // Copying backwards is impossible by construction (weekStartsBetween only
     // goes forward), so no past week can be rewritten by this path.
-    if (allTargets.length === 0) {
+    if (spanned.length === 0) {
       return { success: false, error: 'Không có tuần nào để sao chép' }
+    }
+
+    const breaks = await scheduleService.listSchoolBreaks(studentId)
+    const breakWeeks = spanned.filter((week) => isWholeWeekOff(breaks, week))
+    const allTargets = spanned.filter((week) => !breakWeeks.includes(week))
+    if (allTargets.length === 0) {
+      return { success: false, error: 'Các tuần này đều là kỳ nghỉ' }
     }
 
     const skipWeeks = overwrite
@@ -602,10 +632,124 @@ export const copyWeekAction = async (
     revalidatePath('/parent')
     return {
       success: true,
-      data: { weeksWritten: result.weeksWritten, weeksSkipped: skipWeeks.length },
+      data: {
+        weeksWritten: result.weeksWritten,
+        weeksSkipped: skipWeeks.length,
+        weeksOnBreak: breakWeeks.length,
+      },
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to copy week'
+    if (msg === 'Unauthorized') return { success: false, error: 'Unauthorized' }
+    return { success: false, error: msg }
+  }
+}
+
+
+// ── School break mutations ───────────────────────────────────
+
+/** Every holiday and nghỉ hè for the active student, earliest first. */
+export const getSchoolBreaksAction = async (): Promise<ActionResult<SchoolBreak[]>> => {
+  try {
+    const studentId = await resolveStudentContext()
+    return { success: true, data: await scheduleService.listSchoolBreaks(studentId) }
+  } catch {
+    return { success: false, error: 'Không tải được danh sách ngày nghỉ' }
+  }
+}
+
+/** Creates or updates one break. An `id` in the payload means update. */
+export const saveSchoolBreakAction = async (input: unknown): Promise<ActionVoidResult> => {
+  try {
+    const studentId = await resolveActiveStudent()
+    const parsed = SaveSchoolBreakSchema.safeParse(input)
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
+    }
+    const { id, ...data } = parsed.data
+    if (id) await scheduleService.updateSchoolBreak(studentId, { ...data, id })
+    else await scheduleService.createSchoolBreak(studentId, data)
+
+    revalidatePath('/dashboard')
+    revalidatePath('/schedule')
+    revalidatePath('/parent')
+    return { success: true }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Không lưu được ngày nghỉ'
+    if (msg === 'Unauthorized') return { success: false, error: 'Unauthorized' }
+    return { success: false, error: msg }
+  }
+}
+
+/** Deletes one break. */
+export const deleteSchoolBreakAction = async (id: string): Promise<ActionVoidResult> => {
+  try {
+    const studentId = await resolveActiveStudent()
+    const parsed = z.string().min(1).safeParse(id)
+    if (!parsed.success) return { success: false, error: 'Invalid ID' }
+    await scheduleService.deleteSchoolBreak(parsed.data, studentId)
+
+    revalidatePath('/dashboard')
+    revalidatePath('/schedule')
+    revalidatePath('/parent')
+    return { success: true }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Không xóa được ngày nghỉ'
+    if (msg === 'Unauthorized') return { success: false, error: 'Unauthorized' }
+    return { success: false, error: msg }
+  }
+}
+
+/**
+ * Adds the shipped Vietnamese holidays the student does not already have.
+ *
+ * Explicit, never automatic: a parent who deleted Giỗ Tổ because their school
+ * teaches that day should not find it back tomorrow. Re-running is safe — the
+ * (studentId, presetKey) unique means a corrected Tết is never overwritten.
+ */
+export const addHolidayPresetsAction = async (): Promise<ActionResult<{ added: number }>> => {
+  try {
+    const studentId = await resolveActiveStudent()
+    const added = await scheduleService.seedHolidayPresets(studentId, VN_HOLIDAYS_2026_2027)
+
+    revalidatePath('/dashboard')
+    revalidatePath('/schedule')
+    revalidatePath('/parent')
+    return { success: true, data: { added } }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Không thêm được ngày lễ'
+    if (msg === 'Unauthorized') return { success: false, error: 'Unauthorized' }
+    return { success: false, error: msg }
+  }
+}
+
+/**
+ * Moves the child up a grade after a summer break, on the parent's say-so.
+ *
+ * Nothing here runs on a schedule. `pendingPromotion` decides when the question
+ * is worth asking; this is the answer being recorded. A child repeating a year
+ * is handled by the parent having set the same grade on the break, so this path
+ * needs no special case for it.
+ */
+export const applyGradePromotionAction = async (
+  breakId: string
+): Promise<ActionResult<{ gradeLevel: number }>> => {
+  try {
+    const studentId = await resolveActiveStudent()
+    const parsed = z.string().min(1).safeParse(breakId)
+    if (!parsed.success) return { success: false, error: 'Invalid ID' }
+
+    const result = await scheduleService.applyGradePromotion(studentId, parsed.data)
+    if (!result.applied || result.gradeLevel == null) {
+      return { success: false, error: 'Kỳ nghỉ này đã chuyển lớp rồi' }
+    }
+
+    revalidatePath('/dashboard')
+    revalidatePath('/schedule')
+    revalidatePath('/parent')
+    return { success: true, data: { gradeLevel: result.gradeLevel } }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Không chuyển lớp được'
     if (msg === 'Unauthorized') return { success: false, error: 'Unauthorized' }
     return { success: false, error: msg }
   }

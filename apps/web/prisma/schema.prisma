@@ -88,6 +88,7 @@ model Student {
   invites             StudentInvite[]
   periods             ClassPeriod[]
   bellSchedule        BellSchedule?
+  schoolBreaks        SchoolBreak[]
   grades              SubjectGrade[]
   progress            UserProgress?
   mathProgress        MathProgress[]
@@ -283,6 +284,49 @@ model ClassPeriod {
   @@index([studentId, day])
   @@index([studentId, eventType])
   @@map("class_periods")
+}
+
+// ── School breaks ─────────────────────────────────────────────
+
+/// Why the timetable does not run. PUBLIC_HOLIDAY is a day off — Tết, 30/4,
+/// or one the school declares. SUMMER_BREAK is nghỉ hè: the 2–3 months between
+/// one grade and the next, declared by the parent when the school announces it.
+/// Summer classes and summer homework continue through it, which is why both
+/// kinds suppress SCHOOL_PERIOD rows and nothing else.
+enum SchoolBreakKind {
+  PUBLIC_HOLIDAY
+  SUMMER_BREAK
+}
+
+model SchoolBreak {
+  id        String          @id @default(cuid())
+  studentId String
+  student   Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  kind      SchoolBreakKind @default(PUBLIC_HOLIDAY)
+  label     String          @db.VarChar(60)
+  /// Inclusive "YYYY-MM-DD". A one-day holiday has startDate == endDate.
+  startDate String          @db.VarChar(10)
+  endDate   String          @db.VarChar(10)
+  /// Set when the row came from the shipped Vietnamese list, so a re-seed can
+  /// recognise what it created and leave a parent's edits alone.
+  presetKey String?         @db.VarChar(40)
+  /// True for a lunar-derived default (Tết, Giỗ Tổ) whose real dates the school
+  /// announces. Surfaced as "kiểm tra lại ngày" rather than passed off as fact.
+  needsReview Boolean       @default(false)
+  /// SUMMER_BREAK only — the grade the child returns to. Storable as the SAME
+  /// grade on purpose: a child repeating a year still has a summer.
+  promotesToGrade Int?
+  /// When the parent confirmed the promotion. A clock never sets this.
+  promotedAt      DateTime?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  // One row per shipped holiday per student; parent-added rows have a NULL
+  // presetKey and are therefore unconstrained, which is correct — a family may
+  // legitimately add two separate breaks with the same name in different years.
+  @@unique([studentId, presetKey])
+  @@index([studentId, startDate])
+  @@map("school_breaks")
 }
 
 // ── Homework ──────────────────────────────────────────────────

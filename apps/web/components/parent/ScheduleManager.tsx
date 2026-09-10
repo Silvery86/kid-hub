@@ -9,7 +9,7 @@
 import { useState, useCallback, useRef, useTransition } from 'react'
 import { Plus, Trash2, Check, AlertCircle, Moon, BookOpen } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import type { BellSlot, DailyHomework, DailySchedule, DayOfWeek, WeekSource } from '@/types'
+import type { BellSlot, DailyHomework, DailySchedule, DayOfWeek, SchoolBreak, WeekSource } from '@/types'
 import { DAY_LABELS, MAX_EVENING_BLOCKS_PER_DAY } from '@/lib/constants'
 import { canEditDatedEntry, canEditRecurringEntry } from '@/lib/schedule-locks'
 import { WeekGrid } from '@/components/parent/schedule/WeekGrid'
@@ -152,6 +152,8 @@ interface ScheduleManagerProps {
   bellSlots?: BellSlot[]
   /** The Monday the schedule panel is showing (Phase 6). */
   weekStartDate: string
+  /** Holidays and nghỉ hè (Phase 7). */
+  breaks?: SchoolBreak[]
   /** Whether `initialSchedule` is that week's own rows or an earlier week's. */
   initialWeekSource?: WeekSource
   initialInheritedFrom?: string
@@ -164,6 +166,7 @@ export const ScheduleManager = ({
   initialSchedule,
   bellSlots = [],
   weekStartDate,
+  breaks = [],
   initialWeekSource,
   initialInheritedFrom,
   embedded: _embedded = false,
@@ -377,6 +380,7 @@ export const ScheduleManager = ({
           </div>
           <WeekGrid
             weekStartDate={weekStartDate}
+            breaks={breaks}
             initialSchedule={initialSchedule}
             initialSource={initialWeekSource}
             initialInheritedFrom={initialInheritedFrom}

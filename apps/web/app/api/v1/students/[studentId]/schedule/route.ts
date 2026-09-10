@@ -7,7 +7,9 @@ import {
   getOverridesForDate,
   getDailyHomework,
   getBellSchedule,
+  listSchoolBreaks,
 } from '@/server/services/schedule.service'
+import { findBreakForDate } from '@kid-hub/shared'
 
 import { guardStudentApp } from '@/app/api/v1/_lib/guard'
 
@@ -25,13 +27,17 @@ export async function GET(req: Request, { params }: Params) {
     const date = today.toISOString().split('T')[0]!
     const dow = jsDateToDayOfWeek(today)
 
-    const [schoolResult, eveningBlocks, cancelledIds, homework, bell] = await Promise.all([
-      dow ? getDaySchedule(studentId, dow) : Promise.resolve(null),
-      dow ? getEveningBlocks(studentId, dow) : Promise.resolve([]),
-      getOverridesForDate(studentId, date),
-      getDailyHomework(studentId, date),
-      getBellSchedule(studentId),
-    ])
+    const [schoolResult, eveningBlocks, cancelledIds, homework, bell, breaks] =
+      await Promise.all([
+        dow ? getDaySchedule(studentId, dow) : Promise.resolve(null),
+        dow ? getEveningBlocks(studentId, dow) : Promise.resolve([]),
+        getOverridesForDate(studentId, date),
+        getDailyHomework(studentId, date),
+        getBellSchedule(studentId),
+        listSchoolBreaks(studentId),
+      ])
+
+    const activeBreak = findBreakForDate(breaks, date)
 
     const todayBellSlots = (bell?.slots ?? []).filter(
       (slot) => slot.kind !== 'PERIOD' && (!dow || slot.days.includes(dow)),
@@ -44,6 +50,7 @@ export async function GET(req: Request, { params }: Params) {
       cancelledIds,
       homework,
       todayBellSlots,
+      activeBreak,
     )
     return NextResponse.json({ success: true, data })
   } catch {

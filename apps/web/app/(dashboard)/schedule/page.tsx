@@ -22,12 +22,15 @@ export default async function SchedulePage() {
   const schedule = scheduleResult.success ? scheduleResult.data : []
   const allEveningBlocks = eveningResult.success ? eveningResult.data : []
   const todayBellSlots = todayResult.success ? (todayResult.data.bellSlots ?? []) : []
+  // Set only on a holiday or nghỉ hè; the view then leads with the break.
+  const activeBreak = todayResult.success ? (todayResult.data.activeBreak ?? null) : null
   const identity = identityResult.success ? identityResult.data : null
 
   return (
     <Suspense fallback={<ScheduleLoading />}>
       <ScheduleView
         initialSchedule={schedule}
+        activeBreak={activeBreak}
         allEveningBlocks={allEveningBlocks}
         todayBellSlots={todayBellSlots}
         classIdentity={identity}

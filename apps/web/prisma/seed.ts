@@ -10,7 +10,15 @@ import 'dotenv/config'
 import bcrypt from 'bcryptjs'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client'
-import { weekStartOfToday } from '@kid-hub/shared'
+import {
+  VN_HOLIDAYS_2026_2027,
+  addWeeks,
+  generateSlots,
+  isDayOff,
+  presetByKey,
+  weekStartOf,
+  type SchoolBreak,
+} from '@kid-hub/shared'
 
 const DEFAULT_USER_ID = 'khoi-default-user'
 // Derived exactly as the 20260829 split migration derives it.
@@ -18,42 +26,68 @@ const DEFAULT_PARENT_ID = `parent-${DEFAULT_USER_ID}`
 
 type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday'
 
+const SCHOOL_DAY_NAMES: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+
+/**
+ * Khai giảng — 5 September 2026, a Saturday, as Vietnamese schools always
+ * open on 5/9 whatever weekday it falls on. Lessons proper start the Monday
+ * after, which is the week the timetable below is written into.
+ */
+const SCHOOL_YEAR_START = '2026-09-05'
+const FIRST_TEACHING_WEEK = weekStartOf(SCHOOL_YEAR_START) === SCHOOL_YEAR_START
+  ? SCHOOL_YEAR_START
+  : addWeeks(weekStartOf(SCHOOL_YEAR_START), 1)
+
+/**
+ * Lớp 1A1, NH 2026–2027 — the real printed sheet, read off row by row.
+ * docs/SCHEDULE_PARENT_IMP.md §2.1. Columns are Thứ Hai → Thứ Sáu.
+ *
+ * The sheet prints no clock times, which is the whole reason the bell schedule
+ * exists: the times below are DERIVED from the school's published rules rather
+ * than typed here, so seed and app cannot disagree about when tiết 5 starts.
+ */
+const SHEET: [string, string | undefined][][] = [
+  [['experience', 'Chào cờ'], ['vietnamese', 'Học vần'], ['vietnamese', 'Học vần'], ['vietnamese', 'Học vần'], ['english', undefined]],
+  [['music', undefined], ['english', undefined], ['vietnamese', 'Học vần'], ['vietnamese', 'Học vần'], ['vietnamese', 'Ôn tập']],
+  [['vietnamese', 'Học vần'], ['vietnamese', 'Học vần'], ['vietnamese', 'Tập viết'], ['music', undefined], ['vietnamese', 'Ôn tập']],
+  [['vietnamese', 'Học vần'], ['art', undefined], ['math', undefined], ['math', undefined], ['vietnamese', 'Tập viết']],
+  [['math', undefined], ['science', undefined], ['pe', undefined], ['science', undefined], ['pe', undefined]],
+  [['ethics', undefined], ['pe', undefined], ['library', undefined], ['experience', undefined], ['integrated', undefined]],
+  [['life-skills', undefined], ['life-skills', undefined], ['art', undefined], ['study-guide', undefined], ['experience', undefined]],
+]
+
+/** The school's own bell rules — 08:10 start, 35' tiết, 5' between (§2.2). */
+const BELL_PRESET = presetByKey('primary-35')!
+const BELL_SLOTS = generateSlots(BELL_PRESET.rules)
+
 interface SeedPeriod {
   day: DayOfWeek
   periodNumber: number
   subjectId: string
+  note?: string
   startTime: string
   endTime: string
 }
 
-// Grade 1 Vietnamese timetable — 4 × 40-min periods, 07:30–10:50
-const WEEKLY_SCHEDULE: SeedPeriod[] = [
-  // Thứ Hai — Monday
-  { day: 'monday', periodNumber: 1, subjectId: 'vietnamese', startTime: '07:30', endTime: '08:10' },
-  { day: 'monday', periodNumber: 2, subjectId: 'math',       startTime: '08:20', endTime: '09:00' },
-  { day: 'monday', periodNumber: 3, subjectId: 'english',    startTime: '09:20', endTime: '10:00' },
-  { day: 'monday', periodNumber: 4, subjectId: 'art',        startTime: '10:10', endTime: '10:50' },
-  // Thứ Ba — Tuesday
-  { day: 'tuesday', periodNumber: 1, subjectId: 'math',       startTime: '07:30', endTime: '08:10' },
-  { day: 'tuesday', periodNumber: 2, subjectId: 'vietnamese', startTime: '08:20', endTime: '09:00' },
-  { day: 'tuesday', periodNumber: 3, subjectId: 'music',      startTime: '09:20', endTime: '10:00' },
-  { day: 'tuesday', periodNumber: 4, subjectId: 'pe',         startTime: '10:10', endTime: '10:50' },
-  // Thứ Tư — Wednesday
-  { day: 'wednesday', periodNumber: 1, subjectId: 'vietnamese', startTime: '07:30', endTime: '08:10' },
-  { day: 'wednesday', periodNumber: 2, subjectId: 'english',    startTime: '08:20', endTime: '09:00' },
-  { day: 'wednesday', periodNumber: 3, subjectId: 'math',       startTime: '09:20', endTime: '10:00' },
-  { day: 'wednesday', periodNumber: 4, subjectId: 'ethics',     startTime: '10:10', endTime: '10:50' },
-  // Thứ Năm — Thursday
-  { day: 'thursday', periodNumber: 1, subjectId: 'math',       startTime: '07:30', endTime: '08:10' },
-  { day: 'thursday', periodNumber: 2, subjectId: 'vietnamese', startTime: '08:20', endTime: '09:00' },
-  { day: 'thursday', periodNumber: 3, subjectId: 'science',    startTime: '09:20', endTime: '10:00' },
-  { day: 'thursday', periodNumber: 4, subjectId: 'art',        startTime: '10:10', endTime: '10:50' },
-  // Thứ Sáu — Friday
-  { day: 'friday', periodNumber: 1, subjectId: 'vietnamese',  startTime: '07:30', endTime: '08:10' },
-  { day: 'friday', periodNumber: 2, subjectId: 'math',        startTime: '08:20', endTime: '09:00' },
-  { day: 'friday', periodNumber: 3, subjectId: 'music',       startTime: '09:20', endTime: '10:00' },
-  { day: 'friday', periodNumber: 4, subjectId: 'activities',  startTime: '10:10', endTime: '10:50' },
-]
+/** Resolves every printed cell against the generated timeline. */
+const WEEKLY_SCHEDULE: SeedPeriod[] = SHEET.flatMap((row, rowIndex) =>
+  row.flatMap(([subjectId, note], dayIndex) => {
+    const day = SCHOOL_DAY_NAMES[dayIndex]!
+    const periodNumber = rowIndex + 1
+    const slot = BELL_SLOTS.find(
+      (s) => s.kind === 'PERIOD' && s.periodNumber === periodNumber && s.days.includes(day)
+    )
+    if (!slot) return []
+    return [{
+      day,
+      periodNumber,
+      subjectId,
+      ...(note ? { note } : {}),
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+    }]
+  })
+)
 
 /**
  * Daily homework labels keyed by subjectId — used to generate varied but realistic
@@ -235,10 +269,75 @@ async function main() {
   // Validate schedule data before touching the DB
   assertNoOverlaps(WEEKLY_SCHEDULE)
 
-  // Since Phase 6 a school period belongs to a dated week. The seed writes the
-  // current one; every later week inherits it, so the seeded child has a
-  // timetable this week and next without seeding a term's worth of rows.
-  const seedWeek = weekStartOfToday()
+  // The class identity printed at the head of the sheet.
+  await db.student.update({
+    where: { id: DEFAULT_USER_ID },
+    data: {
+      className: '1A1',
+      teacherName: 'Nguyễn Thị Kim Chung',
+      teacherPhone: '0375197591',
+    },
+  })
+  console.warn('✅ Class identity seeded: 1A1')
+
+  // The bell schedule has to exist before the timetable means anything — the
+  // week grid reads its period times, and without it the parent screen shows
+  // "chưa có khung giờ" over a fully populated week.
+  const bellFlat = {
+    presetKey: BELL_PRESET.key,
+    periodMinutes: BELL_PRESET.rules.periodMinutes,
+    transitionMinutes: BELL_PRESET.rules.transitionMinutes,
+    morningStart: BELL_PRESET.rules.morning.start,
+    morningPeriods: BELL_PRESET.rules.morning.periods,
+    morningRecessAfter: BELL_PRESET.rules.morning.recess?.afterPeriod ?? null,
+    morningRecessStart: BELL_PRESET.rules.morning.recess?.start ?? null,
+    morningRecessMinutes: BELL_PRESET.rules.morning.recess?.minutes ?? null,
+    afternoonStart: BELL_PRESET.rules.afternoon?.start ?? null,
+    afternoonPeriods: BELL_PRESET.rules.afternoon?.periods ?? 0,
+    afternoonRecessAfter: BELL_PRESET.rules.afternoon?.recess?.afterPeriod ?? null,
+    afternoonRecessStart: BELL_PRESET.rules.afternoon?.recess?.start ?? null,
+    afternoonRecessMinutes: BELL_PRESET.rules.afternoon?.recess?.minutes ?? null,
+  }
+  const bellSchedule = await db.bellSchedule.upsert({
+    where: { studentId: DEFAULT_USER_ID },
+    create: { studentId: DEFAULT_USER_ID, ...bellFlat },
+    update: bellFlat,
+  })
+  await db.bellSlot.deleteMany({ where: { scheduleId: bellSchedule.id, isGenerated: true } })
+  await db.bellSlot.createMany({
+    data: BELL_SLOTS.map((slot) => ({
+      scheduleId: bellSchedule.id,
+      kind: slot.kind,
+      periodNumber: slot.periodNumber ?? null,
+      label: slot.label ?? null,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      days: slot.days,
+      isGenerated: slot.isGenerated,
+    })),
+  })
+  console.warn(`✅ Bell schedule seeded: ${BELL_SLOTS.length} slots from ${BELL_PRESET.key}`)
+
+  // Shipped Vietnamese holidays. skipDuplicates on (studentId, presetKey) means
+  // a re-seed never overwrites a Tết date the parent has corrected.
+  const holidayResult = await db.schoolBreak.createMany({
+    data: VN_HOLIDAYS_2026_2027.map((preset) => ({
+      studentId: DEFAULT_USER_ID,
+      kind: preset.kind,
+      label: preset.label,
+      startDate: preset.startDate,
+      endDate: preset.endDate,
+      presetKey: preset.presetKey,
+      needsReview: preset.needsReview ?? false,
+    })),
+    skipDuplicates: true,
+  })
+  console.warn(`✅ Holidays seeded: ${holidayResult.count} new (nghỉ hè is set by the parent)`)
+
+  // Since Phase 6 a school period belongs to a dated week. Only the first
+  // teaching week of the year is written: every later week inherits it, so one
+  // week of rows covers the whole year until the parent changes something.
+  const seedWeek = FIRST_TEACHING_WEEK
 
   // Upsert all periods — safe to re-run
   for (const period of WEEKLY_SCHEDULE) {
@@ -257,23 +356,38 @@ async function main() {
         day: period.day,
         periodNumber: period.periodNumber,
         subjectId: period.subjectId,
+        note: period.note ?? null,
         startTime: period.startTime,
         endTime: period.endTime,
       },
       update: {
         subjectId: period.subjectId,
+        note: period.note ?? null,
         startTime: period.startTime,
         endTime: period.endTime,
       },
     })
   }
 
-  console.warn(`✅ Weekly schedule seeded: ${WEEKLY_SCHEDULE.length} periods across 5 days`)
+  console.warn(
+    `✅ Weekly schedule seeded: ${WEEKLY_SCHEDULE.length} periods across 5 days, week of ${seedWeek}`
+  )
 
-  // Seed daily homework entries from today through end of term (20 Jun 2026)
-  const TODAY = new Date().toISOString().split('T')[0]!
-  const SEED_UNTIL = '2026-06-20'
-  const homeworkEntries = buildDailyHomework(TODAY, SEED_UNTIL, WEEKLY_SCHEDULE)
+  // Homework runs from the start of the school year to the end of học kỳ II,
+  // skipping every day the child is not at school — generating bài tập for Tết
+  // would be the seed contradicting the holidays it just wrote.
+  const seededBreaks: SchoolBreak[] = VN_HOLIDAYS_2026_2027.map((preset) => ({
+    kind: preset.kind,
+    label: preset.label,
+    startDate: preset.startDate,
+    endDate: preset.endDate,
+  }))
+  const SEED_UNTIL = '2027-05-31'
+  const homeworkEntries = buildDailyHomework(
+    SCHOOL_YEAR_START,
+    SEED_UNTIL,
+    WEEKLY_SCHEDULE
+  ).filter((entry) => !isDayOff(seededBreaks, entry.date))
 
   let created = 0
   for (const entry of homeworkEntries) {
