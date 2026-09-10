@@ -8,6 +8,7 @@ import { FEEDBACK } from '@kid-hub/shared'
 
 import { revokeDeviceAction, type DeviceRow } from '@/server/actions/invites.actions'
 import { toast } from '@/hooks/useToast'
+import { Spinner } from '@/components/ui/Spinner'
 
 const formatWhen = (value: Date | string) =>
   new Date(value).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })
@@ -76,9 +77,9 @@ export function DevicesView({ devices }: { devices: DeviceRow[] }) {
                 type="button"
                 disabled={busyId === device.id}
                 onClick={() => void revoke(device.id)}
-                className="shrink-0 rounded-xl bg-rose-50 px-4 py-2 text-xs font-black text-rose-700 disabled:opacity-50"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-rose-50 px-4 py-2 text-xs font-black text-rose-700 disabled:opacity-50"
               >
-                Đăng xuất
+                {busyId === device.id ? <Spinner size={12} /> : null} Đăng xuất
               </button>
             </li>
           ))}

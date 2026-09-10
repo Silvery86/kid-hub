@@ -47,6 +47,7 @@ import {
 } from '@kid-hub/shared'
 
 import { toast } from '@/hooks/useToast'
+import { Spinner } from '@/components/ui/Spinner'
 
 import {
   copyWeekAction,
@@ -743,9 +744,9 @@ export function WeekGrid({
               onClick={() => handleSave('forward')}
               disabled={isPending || !isDirty}
               title="Dùng làm thời khóa biểu chuẩn cho tuần này và các tuần sau"
-              className="min-h-11 rounded-2xl border-2 border-slate-200 px-4 text-xs font-black text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl border-2 border-slate-200 px-4 text-xs font-black text-slate-600 hover:bg-slate-50 disabled:opacity-40"
             >
-              Áp dụng từ tuần này trở đi
+              {isPending ? <Spinner size={12} /> : null} Áp dụng từ tuần này trở đi
             </button>
             <KidButton
               variant="primary"

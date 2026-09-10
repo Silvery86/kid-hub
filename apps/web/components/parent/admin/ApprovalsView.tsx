@@ -14,6 +14,7 @@ import {
   type AccountStatus,
 } from '@/server/actions/admin.actions'
 import { toast } from '@/hooks/useToast'
+import { Spinner } from '@/components/ui/Spinner'
 import { cn } from '@/lib/utils'
 
 const TABS: { status: AccountStatus; label: string }[] = [
@@ -151,17 +152,17 @@ export function ApprovalsView({ initialRows }: { initialRows: AccountRow[] }) {
                       type="button"
                       disabled={busyId === row.id}
                       onClick={() => void review(row.id, 'approve')}
-                      className="rounded-xl bg-emerald-500 px-4 py-2 text-xs font-black text-white disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2 text-xs font-black text-white disabled:opacity-50"
                     >
-                      Duyệt
+                      {busyId === row.id ? <Spinner size={12} /> : null} Duyệt
                     </button>
                     <button
                       type="button"
                       disabled={busyId === row.id}
                       onClick={() => void review(row.id, 'reject')}
-                      className="rounded-xl bg-rose-50 px-4 py-2 text-xs font-black text-rose-700 disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-rose-50 px-4 py-2 text-xs font-black text-rose-700 disabled:opacity-50"
                     >
-                      Từ chối
+                      {busyId === row.id ? <Spinner size={12} /> : null} Từ chối
                     </button>
                   </>
                 ) : null}
@@ -170,9 +171,9 @@ export function ApprovalsView({ initialRows }: { initialRows: AccountRow[] }) {
                     type="button"
                     disabled={busyId === row.id}
                     onClick={() => void review(row.id, 'suspend')}
-                    className="rounded-xl bg-amber-50 px-4 py-2 text-xs font-black text-amber-700 disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 px-4 py-2 text-xs font-black text-amber-700 disabled:opacity-50"
                   >
-                    Vô hiệu hóa
+                    {busyId === row.id ? <Spinner size={12} /> : null} Vô hiệu hóa
                   </button>
                 ) : null}
               </div>

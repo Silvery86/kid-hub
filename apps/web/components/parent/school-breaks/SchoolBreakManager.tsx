@@ -23,6 +23,7 @@ import { useRouter } from 'next/navigation'
 import { FEEDBACK } from '@kid-hub/shared'
 
 import { toast } from '@/hooks/useToast'
+import { Spinner } from '@/components/ui/Spinner'
 import {
   ArrowLeft,
   CalendarPlus,
@@ -327,7 +328,7 @@ export function SchoolBreakManager({
               disabled={isPending}
               className="flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-xs font-black text-slate-600 hover:bg-slate-100 disabled:opacity-50"
             >
-              <Sparkles size={14} /> Thêm ngày lễ Việt Nam
+              {isPending ? <Spinner size={14} /> : <Sparkles size={14} />} Thêm ngày lễ Việt Nam
             </button>
             <button
               type="button"
