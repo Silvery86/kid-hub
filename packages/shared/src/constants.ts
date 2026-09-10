@@ -47,12 +47,18 @@ export const KID_PATTERN_LENGTH = 2
 /**
  * School year every grade is recorded against.
  *
- * CLAUDE.md has listed this constant under "Key Constants" and forbidden the
- * '2025-2026' literal for a while, but it had never actually been created —
+ * CLAUDE.md has listed this constant under "Key Constants" and forbidden a
+ * hard-coded year literal for a while, but it had never actually been created —
  * the literal was hard-coded at each call site instead. Added here rather than
  * in apps/web because the mobile grades manager needs the same value.
+ *
+ * Rolled to 2026–2027 on 2026-09-10 to match the printed timetable and the
+ * seed. It is part of SubjectGrade's unique key, so changing it makes the next
+ * save of a subject create a SECOND row rather than updating the existing one —
+ * existing grades were migrated in the same change. Rolling it again needs the
+ * same treatment; see docs/SCHEDULE_PARENT_IMP.md §13.7.
  */
-export const CURRENT_ACADEMIC_YEAR = '2025-2026'
+export const CURRENT_ACADEMIC_YEAR = '2026-2027'
 
 /**
  * Where the two Vietnamese school terms end, as "MM-DD".
