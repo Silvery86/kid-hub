@@ -13,18 +13,26 @@ import {
   getSchoolBreaksAction,
 } from '@/server/actions/schedule.actions'
 import { getReportCardAction } from '@/server/actions/grades.actions'
-import { getParentContextAction } from '@/server/actions/students.actions'
+import { getParentContextAction, listStudentsAction } from '@/server/actions/students.actions'
 
 export default async function ParentDashboardPage() {
-  const [scheduleResult, gradesResult, todayResult, context, bellResult, breaksResult] =
-    await Promise.all([
-      getWeekScheduleAction(),
-      getReportCardAction(),
-      getTodayViewAction(),
-      getParentContextAction(),
-      getBellScheduleAction(),
-      getSchoolBreaksAction(),
-    ])
+  const [
+    scheduleResult,
+    gradesResult,
+    todayResult,
+    context,
+    bellResult,
+    breaksResult,
+    studentList,
+  ] = await Promise.all([
+    getWeekScheduleAction(),
+    getReportCardAction(),
+    getTodayViewAction(),
+    getParentContextAction(),
+    getBellScheduleAction(),
+    getSchoolBreaksAction(),
+    listStudentsAction(),
+  ])
 
   // The current week, resolved: its own rows if it has them, otherwise the most
   // recent earlier week's (docs/SCHEDULE_PARENT_IMP.md §12.2).
@@ -44,6 +52,8 @@ export default async function ParentDashboardPage() {
       bellSlots={bellSlots}
       breaks={breaksResult.success ? breaksResult.data : []}
       studentName={context.studentName}
+      students={studentList.success ? studentList.data.students : []}
+      activeStudentId={studentList.success ? studentList.data.activeStudentId : null}
     />
   )
 }

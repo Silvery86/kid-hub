@@ -17,6 +17,8 @@ import { addWeeks, weekStartOfToday } from '@kid-hub/shared'
 import { getSubjectById } from '@/lib/data/subjects'
 import { signOutParentAction } from '@/server/actions/auth.actions'
 import { ParentSaveButton } from './ParentSaveButton'
+import { StudentSwitcher } from './StudentSwitcher'
+import type { StudentSummary } from '@/server/actions/students.actions'
 import { ScheduleManager, type ParentSaveState } from './ScheduleManager'
 import { GradesManager } from './GradesManager'
 import { useUserProgress } from '@/hooks/useUserProgress'
@@ -32,6 +34,8 @@ export function ParentDashboardView({
   bellSlots = [],
   breaks = [],
   studentName,
+  students = [],
+  activeStudentId = null,
 }: {
   initialSchedule: DailySchedule[]
   /** Where `initialSchedule` came from — this week's own rows, or an earlier week's. */
@@ -47,6 +51,9 @@ export function ParentDashboardView({
    *  name would label the wrong data. The admin surface is offered by the
    *  sidebar, not here. */
   studentName: string
+  /** Every child this parent may act for — the switcher's list. */
+  students?: StudentSummary[]
+  activeStudentId?: string | null
 }) {
   const [gradesSave, setGradesSave] = useState<ParentSaveState | null>(null)
   const [weekOffset, setWeekOffset] = useState(0)
@@ -75,6 +82,15 @@ export function ParentDashboardView({
   const isPastWeek = weekOffset < 0
   const weekLabel = weekOffset === 0 ? 'Tuần này' : formatWeekSubtitleForOffset(weekOffset)
   const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset])
+
+  // Was hard-coded "Lớp 1A · 6 tuổi". Wrong for a second child in another
+  // grade, and wrong for the first one the moment a summer break promotes them.
+  const activeStudent = students.find((s) => s.id === activeStudentId)
+  const heroClassLabel = activeStudent
+    ? activeStudent.className
+      ? `Lớp ${activeStudent.className}`
+      : `Lớp ${activeStudent.gradeLevel}`
+    : 'Chưa đặt lớp'
 
   const averageScore = useMemo(() => {
     if (initialGrades.length === 0) return 0
@@ -155,13 +171,11 @@ export function ParentDashboardView({
 
   const subpageIdentityChips = (
     <div className="hidden items-center gap-2 md:flex">
-      <div className="inline-flex items-center gap-2 rounded-pill bg-white px-3 py-1.5 shadow-sm">
-        <span className="grid size-7 place-items-center rounded-full bg-amber-100">🧒</span>
-        <div className="leading-tight">
-          <p className="text-xs font-black text-text-primary">{studentName}</p>
-          <p className="text-[10px] font-bold text-text-muted">Lớp 1A</p>
-        </div>
-      </div>
+      <StudentSwitcher
+        students={students}
+        activeStudentId={activeStudentId}
+        studentName={studentName}
+      />
       <button
         type="button"
         onClick={() => void handleSignOut()}
@@ -242,13 +256,11 @@ export function ParentDashboardView({
           <p className="mt-1 text-sm font-bold text-text-secondary">Tổng quan về việc học của {studentName}</p>
         </div>
         <div className="hidden items-center gap-2 md:flex">
-          <div className="inline-flex items-center gap-2 rounded-pill bg-white px-3 py-1.5 shadow-sm">
-            <span className="grid size-7 place-items-center rounded-full bg-amber-100">🧒</span>
-            <div className="leading-tight">
-              <p className="text-xs font-black text-text-primary">{studentName}</p>
-              <p className="text-[10px] font-bold text-text-muted">Lớp 1A</p>
-            </div>
-          </div>
+          <StudentSwitcher
+            students={students}
+            activeStudentId={activeStudentId}
+            studentName={studentName}
+          />
           <button
             type="button"
             onClick={() => void handleSignOut()}
@@ -271,7 +283,7 @@ export function ParentDashboardView({
             <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-white/20 text-2xl">🧒</div>
             <div className="min-w-0">
               <h2 className="truncate text-2xl font-black leading-none">{studentName}</h2>
-              <p className="mt-1 text-sm font-bold text-white/90">Lớp 1A · 6 tuổi</p>
+              <p className="mt-1 text-sm font-bold text-white/90">{heroClassLabel}</p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -405,10 +417,12 @@ export function ParentDashboardView({
 
   const mobileActions = (
     <div className="flex gap-2">
-      <div className="inline-flex items-center gap-1.5 rounded-pill bg-white px-2 py-1 shadow-sm">
-        <span className="grid size-6 place-items-center rounded-full bg-amber-100">🧒</span>
-        <span className="text-xs font-black text-text-primary">{studentName}</span>
-      </div>
+      <StudentSwitcher
+        students={students}
+        activeStudentId={activeStudentId}
+        studentName={studentName}
+        variant="compact"
+      />
       <button
         type="button"
         onClick={() => void handleSignOut()}
