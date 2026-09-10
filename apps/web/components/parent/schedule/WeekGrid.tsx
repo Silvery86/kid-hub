@@ -8,22 +8,50 @@
  * never asked for, because the bell schedule already knows them. One save
  * writes the whole week in a single transaction.
  *
+ * Since Phase 6 the grid is about ONE dated week, not a template that governs
+ * every week. Three states follow from that (docs/SCHEDULE_PARENT_IMP.md §12):
+ *
+ *  - `own`       — this week has its own rows; edits touch only this week
+ *  - `inherited` — no rows yet, so an earlier week's are shown; saving
+ *                  materialises this week and the inheritance stops here
+ *  - past        — the week has finished; it is a record, so nothing is editable
+ *
  * Replaces a per-period form that cost ~140 interactions and 35 serial
- * round-trips for a full timetable. See docs/SCHEDULE_PARENT_IMP.md §6.1.
+ * round-trips for a full timetable. See §6.1.
  */
 
-import { useCallback, useMemo, useState, useTransition } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
-import { AlertCircle, Check, Copy, Trash2 } from 'lucide-react'
-import { SUBJECTS, getSubjectById, type BellSlot, type DailySchedule, type DayOfWeek, type WeekCell } from '@kid-hub/shared'
+import { AlertCircle, Check, Clock, CopyPlus, History, Lock, Trash2 } from 'lucide-react'
+import {
+  SUBJECTS,
+  addWeeks,
+  getSubjectById,
+  isPastWeek,
+  semesterEndIso,
+  weekStartOfToday,
+  weekStartsBetween,
+  type BellSlot,
+  type DailySchedule,
+  type DayOfWeek,
+  type WeekCell,
+  type WeekSource,
+} from '@kid-hub/shared'
 
-import { saveWeeklyScheduleAction } from '@/server/actions/schedule.actions'
+import {
+  copyWeekAction,
+  getWeekScheduleAction,
+  previewCopyWeekAction,
+  saveWeeklyScheduleAction,
+} from '@/server/actions/schedule.actions'
 import { SCHOOL_DAYS, DAY_LABELS } from '@/lib/constants'
+import { FullScreenModal } from '@/components/ui/FullScreenModal'
 import { KidButton } from '@/components/ui/KidButton'
 import { cn } from '@/lib/utils'
 
 type CellValue = { subjectId: string; note?: string }
 type CellMap = Record<string, CellValue>
+type CopyScope = 'next' | 'semester'
 
 const key = (day: DayOfWeek, periodNumber: number): string => `${day}-${periodNumber}`
 
@@ -51,6 +79,9 @@ const toPayload = (cells: CellMap): WeekCell[] =>
     return [{ day, periodNumber, subjectId: value.subjectId, ...(value.note ? { note: value.note } : {}) }]
   })
 
+/** "2026-09-14" → "14/09" — the form the rest of the parent screen uses. */
+const shortDate = (iso: string): string => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`
+
 /** Rows of the grid, in printed-sheet order, with the session they belong to. */
 interface PeriodRow {
   periodNumber: number
@@ -72,29 +103,70 @@ const periodRows = (slots: BellSlot[]): PeriodRow[] =>
     .sort((a, b) => a.periodNumber - b.periodNumber)
 
 export function WeekGrid({
+  weekStartDate,
   initialSchedule,
+  initialSource = 'own',
+  initialInheritedFrom,
   bellSlots,
   readOnly = false,
   onSaved,
 }: {
+  /** The Monday this grid is showing. */
+  weekStartDate: string
   initialSchedule: DailySchedule[]
+  /** Whether `initialSchedule` is this week's own data or an earlier week's. */
+  initialSource?: WeekSource
+  initialInheritedFrom?: string
   bellSlots: BellSlot[]
   readOnly?: boolean
   onSaved?: () => void
 }) {
   const rows = useMemo(() => periodRows(bellSlots), [bellSlots])
   const [cells, setCells] = useState<CellMap>(() => buildCells(initialSchedule))
-  // Advanced only by this component's own save. Nothing else writes school
-  // periods any more, so there is no external change to resync from.
   const [baseline, setBaseline] = useState<string>(() => JSON.stringify(buildCells(initialSchedule)))
+  const [source, setSource] = useState<WeekSource>(initialSource)
+  const [inheritedFrom, setInheritedFrom] = useState<string | undefined>(initialInheritedFrom)
+  const [loadedWeek, setLoadedWeek] = useState(weekStartDate)
   const [selected, setSelected] = useState<{ day: DayOfWeek; periodNumber: number } | null>(null)
-  const [copyFrom, setCopyFrom] = useState<DayOfWeek>('monday')
-  const [copyTo, setCopyTo] = useState<DayOfWeek>('thursday')
+  const [copyScope, setCopyScope] = useState<CopyScope | null>(null)
+  const [copyPreview, setCopyPreview] = useState<{ total: number; occupied: number } | null>(null)
+  const [copyNote, setCopyNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   const [isPending, startTransition] = useTransition()
 
+  // The week the parent is actually in, so "past" survives the tab being left
+  // open across midnight on a Sunday.
+  const currentWeek = useMemo(() => weekStartOfToday(), [])
+  const isPast = isPastWeek(weekStartDate, currentWeek)
+  const locked = readOnly || isPast
   const isDirty = JSON.stringify(cells) !== baseline
+
+  // Paging to another week replaces the whole grid, so the fetch belongs here
+  // rather than in the page: the parent stays on the same screen throughout.
+  useEffect(() => {
+    if (weekStartDate === loadedWeek) return
+    let cancelled = false
+    void (async () => {
+      const result = await getWeekScheduleAction(weekStartDate)
+      if (cancelled) return
+      if (!result.success) {
+        setError(result.error ?? 'Không tải được thời khóa biểu tuần này')
+        return
+      }
+      const next = buildCells(result.data.days)
+      setError(null)
+      setCells(next)
+      setBaseline(JSON.stringify(next))
+      setSource(result.data.source)
+      setInheritedFrom(result.data.inheritedFrom)
+      setLoadedWeek(weekStartDate)
+      setCopyNote(null)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [weekStartDate, loadedWeek])
 
   const setCell = useCallback((day: DayOfWeek, periodNumber: number, value: CellValue | null) => {
     setCells((prev) => {
@@ -105,30 +177,69 @@ export function WeekGrid({
     })
   }, [])
 
-  const handleCopyDay = () => {
-    if (copyFrom === copyTo) return
-    setCells((prev) => {
-      const next = { ...prev }
-      for (const row of rows) {
-        const source = prev[key(copyFrom, row.periodNumber)]
-        if (source) next[key(copyTo, row.periodNumber)] = { ...source }
-        else delete next[key(copyTo, row.periodNumber)]
-      }
-      return next
-    })
-  }
-
   const handleSave = () => {
     setError(null)
     startTransition(async () => {
-      const result = await saveWeeklyScheduleAction({ cells: toPayload(cells) })
+      const result = await saveWeeklyScheduleAction({ weekStartDate, cells: toPayload(cells) })
       if (!result.success) {
         setError(result.error ?? 'Không lưu được thời khóa biểu')
         return
       }
       setBaseline(JSON.stringify(cells))
+      // The week now owns its rows — it no longer follows an earlier one.
+      setSource('own')
+      setInheritedFrom(undefined)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
+      onSaved?.()
+    })
+  }
+
+  const throughWeekFor = (scope: CopyScope): string =>
+    scope === 'next' ? addWeeks(weekStartDate, 1) : semesterEndIso(weekStartDate)
+
+  const openCopy = (scope: CopyScope) => {
+    setCopyScope(scope)
+    setCopyPreview(null)
+    setCopyNote(null)
+    startTransition(async () => {
+      const result = await previewCopyWeekAction({
+        fromWeek: weekStartDate,
+        throughWeek: throughWeekFor(scope),
+      })
+      if (!result.success) {
+        setError(result.error ?? 'Không xem trước được')
+        setCopyScope(null)
+        return
+      }
+      setCopyPreview({
+        total: result.data.targetWeeks.length,
+        occupied: result.data.weeksWithOwnRows.length,
+      })
+    })
+  }
+
+  const runCopy = (overwrite: boolean) => {
+    if (!copyScope) return
+    const scope = copyScope
+    startTransition(async () => {
+      const result = await copyWeekAction({
+        fromWeek: weekStartDate,
+        throughWeek: throughWeekFor(scope),
+        overwrite,
+      })
+      setCopyScope(null)
+      setCopyPreview(null)
+      if (!result.success) {
+        setError(result.error ?? 'Không sao chép được')
+        return
+      }
+      const { weeksWritten, weeksSkipped } = result.data
+      setCopyNote(
+        weeksSkipped > 0
+          ? `Đã chép sang ${weeksWritten} tuần, giữ nguyên ${weeksSkipped} tuần đã có thời khóa biểu riêng.`
+          : `Đã chép sang ${weeksWritten} tuần.`
+      )
       onSaved?.()
     })
   }
@@ -150,6 +261,8 @@ export function WeekGrid({
   }
 
   const selectedValue = selected ? cells[key(selected.day, selected.periodNumber)] : undefined
+  const selectedRow = selected ? rows.find((r) => r.periodNumber === selected.periodNumber) : undefined
+  const semesterWeeks = weekStartsBetween(weekStartDate, semesterEndIso(weekStartDate)).length
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
@@ -158,6 +271,34 @@ export function WeekGrid({
           <AlertCircle size={16} /> {error}
         </div>
       ) : null}
+
+      {copyNote ? (
+        <div className="flex items-center gap-2 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+          <Check size={16} /> {copyNote}
+        </div>
+      ) : null}
+
+      {/* Provenance, stated rather than implied: an inherited week and an own
+          week look identical on screen but behave differently on save. */}
+      {isPast ? (
+        <div className="flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-2.5 text-xs font-extrabold text-slate-600">
+          <Lock size={14} /> Tuần {shortDate(weekStartDate)} đã qua — chỉ xem lại, không sửa được
+        </div>
+      ) : source === 'inherited' && inheritedFrom ? (
+        <div className="flex items-center gap-2 rounded-2xl bg-amber-50 px-4 py-2.5 text-xs font-extrabold text-amber-700">
+          <History size={14} /> Đang dùng thời khóa biểu tuần {shortDate(inheritedFrom)}. Sửa và lưu
+          để tuần này có thời khóa biểu riêng.
+        </div>
+      ) : null}
+
+      <div className="flex items-center justify-end">
+        <Link
+          href="/parent/bell-schedule"
+          className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-black text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+        >
+          <Clock size={14} /> Sửa khung giờ
+        </Link>
+      </div>
 
       <div className="min-h-0 flex-1 overflow-auto">
         <table className="w-full border-separate border-spacing-1 text-sm">
@@ -180,9 +321,9 @@ export function WeekGrid({
             {rows.map((row, i) => {
               const startsAfternoon = row.session === 'afternoon' && rows[i - 1]?.session === 'morning'
               return (
-                <>
+                <Fragment key={row.periodNumber}>
                   {i === 0 || startsAfternoon ? (
-                    <tr key={`band-${row.session}`}>
+                    <tr>
                       <td
                         colSpan={SCHOOL_DAYS.length + 1}
                         className={cn(
@@ -196,7 +337,7 @@ export function WeekGrid({
                       </td>
                     </tr>
                   ) : null}
-                  <tr key={row.periodNumber}>
+                  <tr>
                     <td className="align-middle">
                       <div className="text-xs font-black text-slate-600">Tiết {row.periodNumber}</div>
                       <div className="text-[10px] font-bold text-slate-400">{row.startTime}</div>
@@ -210,7 +351,7 @@ export function WeekGrid({
                         <td key={day} className="p-0">
                           <button
                             type="button"
-                            disabled={readOnly}
+                            disabled={locked}
                             onClick={() => setSelected({ day, periodNumber: row.periodNumber })}
                             className={cn(
                               'flex h-full min-h-14 w-full flex-col items-center justify-center gap-0.5 rounded-xl border-2 px-1.5 py-1.5 text-center transition-colors',
@@ -245,96 +386,207 @@ export function WeekGrid({
                       )
                     })}
                   </tr>
-                </>
+                </Fragment>
               )
             })}
           </tbody>
         </table>
       </div>
 
-      {selected && !readOnly ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-slate-50/70 p-3">
-          <span className="text-xs font-black text-slate-500">
-            {DAY_LABELS[selected.day]} · Tiết {selected.periodNumber}
-          </span>
-          <select
-            value={selectedValue?.subjectId ?? ''}
-            onChange={(e) =>
-              setCell(
-                selected.day,
-                selected.periodNumber,
-                e.target.value
-                  ? { subjectId: e.target.value, ...(selectedValue?.note ? { note: selectedValue.note } : {}) }
-                  : null
-              )
-            }
-            className="min-w-[150px] flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none"
-          >
-            <option value="">— Trống —</option>
-            {SUBJECTS.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
-          <input
-            type="text"
-            maxLength={40}
-            value={selectedValue?.note ?? ''}
-            disabled={!selectedValue?.subjectId}
-            onChange={(e) =>
-              selectedValue?.subjectId
-                ? setCell(selected.day, selected.periodNumber, {
-                    subjectId: selectedValue.subjectId,
-                    note: e.target.value,
-                  })
-                : undefined
-            }
-            placeholder="Học vần, Tập viết..."
-            aria-label="Nội dung tiết học"
-            className="w-40 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none disabled:bg-slate-100"
-          />
-          {selectedValue ? (
-            <button
-              type="button"
-              onClick={() => setCell(selected.day, selected.periodNumber, null)}
-              aria-label="Xóa tiết học"
-              className="flex min-h-10 min-w-10 items-center justify-center rounded-xl p-2 text-red-400 hover:bg-red-50 hover:text-red-600"
-            >
-              <Trash2 size={18} />
-            </button>
-          ) : null}
-        </div>
-      ) : null}
+      {/* Editing happens in a dialog: the grid is tall, and an editor below it
+          meant selecting a cell then scrolling away from the cell to fill it. */}
+      <FullScreenModal
+        isOpen={Boolean(selected) && !locked}
+        hasCloseButton={false}
+        className="flex h-full w-full items-center justify-center p-4"
+      >
+        {selected ? (
+          <div className="w-full max-w-sm rounded-[26px] bg-white p-5 shadow-2xl">
+            <p className="text-xs font-extrabold tracking-wide text-slate-400 uppercase">
+              {DAY_LABELS[selected.day]}
+            </p>
+            <div className="mt-0.5 flex items-baseline justify-between gap-2">
+              <h2 className="text-xl font-black text-slate-800">Tiết {selected.periodNumber}</h2>
+              {selectedRow ? (
+                <span className="text-xs font-bold text-slate-400">
+                  {selectedRow.startTime} – {selectedRow.endTime}
+                </span>
+              ) : null}
+            </div>
 
-      {!readOnly ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5 rounded-2xl bg-slate-50/70 px-3 py-2">
-            <Copy size={14} className="text-slate-400" />
-            <select
-              value={copyFrom}
-              onChange={(e) => setCopyFrom(e.target.value as DayOfWeek)}
-              aria-label="Sao chép từ ngày"
-              className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-700"
-            >
-              {SCHOOL_DAYS.map((d) => <option key={d} value={d}>{DAY_LABELS[d]}</option>)}
-            </select>
-            <span className="text-xs font-bold text-slate-400">→</span>
-            <select
-              value={copyTo}
-              onChange={(e) => setCopyTo(e.target.value as DayOfWeek)}
-              aria-label="Sao chép sang ngày"
-              className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-700"
-            >
-              {SCHOOL_DAYS.map((d) => <option key={d} value={d}>{DAY_LABELS[d]}</option>)}
-            </select>
+            <label className="mt-4 flex flex-col gap-1.5">
+              <span className="text-xs font-extrabold tracking-wide text-slate-400 uppercase">
+                Môn học
+              </span>
+              <select
+                autoFocus
+                value={selectedValue?.subjectId ?? ''}
+                onChange={(e) =>
+                  setCell(
+                    selected.day,
+                    selected.periodNumber,
+                    e.target.value
+                      ? {
+                          subjectId: e.target.value,
+                          ...(selectedValue?.note ? { note: selectedValue.note } : {}),
+                        }
+                      : null
+                  )
+                }
+                className="h-12 w-full rounded-xl border-2 border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none"
+              >
+                <option value="">— Trống —</option>
+                {SUBJECTS.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="mt-3 flex flex-col gap-1.5">
+              <span className="text-xs font-extrabold tracking-wide text-slate-400 uppercase">
+                Nội dung (không bắt buộc)
+              </span>
+              <input
+                type="text"
+                maxLength={40}
+                value={selectedValue?.note ?? ''}
+                disabled={!selectedValue?.subjectId}
+                onChange={(e) =>
+                  selectedValue?.subjectId
+                    ? setCell(selected.day, selected.periodNumber, {
+                        subjectId: selectedValue.subjectId,
+                        note: e.target.value,
+                      })
+                    : undefined
+                }
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') setSelected(null)
+                }}
+                placeholder="Học vần, Tập viết..."
+                className="h-12 w-full rounded-xl border-2 border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none disabled:bg-slate-100"
+              />
+            </label>
+
+            <div className="mt-5 flex items-center gap-2">
+              {selectedValue ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCell(selected.day, selected.periodNumber, null)
+                    setSelected(null)
+                  }}
+                  className="flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-xs font-black text-red-500 hover:bg-red-50"
+                >
+                  <Trash2 size={16} /> Xóa tiết
+                </button>
+              ) : null}
+              <KidButton
+                variant="primary"
+                onClick={() => setSelected(null)}
+                className="ml-auto min-h-11 px-6"
+              >
+                Xong
+              </KidButton>
+            </div>
+          </div>
+        ) : null}
+      </FullScreenModal>
+
+      {/* Copying is the one destructive thing here, so the count of weeks it
+          would overwrite is shown before it runs, never after. */}
+      <FullScreenModal
+        isOpen={copyScope !== null}
+        hasCloseButton={false}
+        className="flex h-full w-full items-center justify-center p-4"
+      >
+        <div className="w-full max-w-sm rounded-[26px] bg-white p-5 shadow-2xl">
+          <h2 className="text-lg font-black text-slate-800">Sao chép cả tuần</h2>
+          <p className="mt-1 text-sm font-bold text-slate-500">
+            {copyScope === 'next'
+              ? `Chép thời khóa biểu tuần ${shortDate(weekStartDate)} sang tuần kế tiếp.`
+              : `Chép thời khóa biểu tuần ${shortDate(weekStartDate)} sang tất cả các tuần còn lại của học kỳ, đến ${shortDate(semesterEndIso(weekStartDate))}.`}
+          </p>
+
+          {copyPreview ? (
+            <div className="mt-4 rounded-2xl bg-slate-50 p-3 text-sm font-bold text-slate-600">
+              <p>
+                Sẽ ghi vào <strong className="text-slate-800">{copyPreview.total}</strong> tuần.
+              </p>
+              {copyPreview.occupied > 0 ? (
+                <p className="mt-1 text-amber-700">
+                  Trong đó <strong>{copyPreview.occupied}</strong> tuần đã có thời khóa biểu riêng —
+                  chép đè sẽ mất nội dung đã sửa của các tuần đó.
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm font-bold text-slate-400">Đang kiểm tra...</p>
+          )}
+
+          <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
             <button
               type="button"
-              onClick={handleCopyDay}
-              disabled={copyFrom === copyTo}
-              className="rounded-lg bg-slate-200 px-2.5 py-1.5 text-xs font-black text-slate-600 disabled:opacity-50"
+              onClick={() => {
+                setCopyScope(null)
+                setCopyPreview(null)
+              }}
+              className="min-h-11 rounded-xl px-4 text-xs font-black text-slate-500 hover:bg-slate-100"
             >
-              Sao chép
+              Hủy
             </button>
+            {copyPreview && copyPreview.occupied > 0 ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => runCopy(false)}
+                  disabled={isPending}
+                  className="min-h-11 rounded-xl bg-slate-200 px-4 text-xs font-black text-slate-700 disabled:opacity-50"
+                >
+                  Giữ nguyên các tuần đó
+                </button>
+                <button
+                  type="button"
+                  onClick={() => runCopy(true)}
+                  disabled={isPending}
+                  className="min-h-11 rounded-xl bg-red-500 px-4 text-xs font-black text-white disabled:opacity-50"
+                >
+                  Chép đè tất cả
+                </button>
+              </>
+            ) : (
+              <KidButton
+                variant="primary"
+                onClick={() => runCopy(false)}
+                isDisabled={isPending || !copyPreview || copyPreview.total === 0}
+                className="min-h-11 px-5"
+              >
+                Sao chép
+              </KidButton>
+            )}
           </div>
+        </div>
+      </FullScreenModal>
+
+      {!locked ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => openCopy('next')}
+            disabled={isDirty || source === 'empty'}
+            title={isDirty ? 'Hãy lưu tuần này trước khi sao chép' : undefined}
+            className="flex min-h-11 items-center gap-1.5 rounded-2xl bg-slate-100 px-3 text-xs font-black text-slate-600 hover:bg-slate-200 disabled:opacity-40"
+          >
+            <CopyPlus size={14} /> Sang tuần sau
+          </button>
+          <button
+            type="button"
+            onClick={() => openCopy('semester')}
+            disabled={isDirty || source === 'empty' || semesterWeeks === 0}
+            title={isDirty ? 'Hãy lưu tuần này trước khi sao chép' : undefined}
+            className="flex min-h-11 items-center gap-1.5 rounded-2xl bg-slate-100 px-3 text-xs font-black text-slate-600 hover:bg-slate-200 disabled:opacity-40"
+          >
+            <CopyPlus size={14} /> Đến hết học kỳ
+          </button>
 
           <KidButton
             variant="primary"

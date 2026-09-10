@@ -255,6 +255,12 @@ model ClassPeriod {
   student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   day          DayOfWeek
   periodNumber Int?      // 1–10 for SCHOOL_PERIOD; null for EXTRA_CLASS
+  /// Monday of the week this row belongs to, "YYYY-MM-DD". Set on every
+  /// SCHOOL_PERIOD row and NULL on every EXTRA_CLASS one — an evening class is
+  /// a standing arrangement, a school week is a dated record. A CHECK
+  /// constraint added in 20260913000000 enforces that correspondence, which the
+  /// PSL cannot express. See docs/SCHEDULE_PARENT_IMP.md §12.5.
+  weekStartDate String?  @db.VarChar(10)
   eventType    EventType @default(SCHOOL_PERIOD)
   subjectId    String    // References SUBJECTS constant in lib/data/subjects.ts
   note         String?   @db.VarChar(40) // lesson variant, e.g. "Học vần", "Tập viết"
@@ -268,8 +274,12 @@ model ClassPeriod {
 
   overrides ExtraClassOverride[]
 
-  // Unique slot per school period; NULL periodNumber rows are excluded by Postgres
-  @@unique([studentId, day, periodNumber])
+  // Unique slot per school period *per week*. Postgres counts NULLs as
+  // distinct, which would weaken this — except that the only rows with a NULL
+  // weekStartDate are extra classes, whose periodNumber is NULL too, so they
+  // were never covered by this index in the first place.
+  @@unique([studentId, weekStartDate, day, periodNumber])
+  @@index([studentId, weekStartDate])
   @@index([studentId, day])
   @@index([studentId, eventType])
   @@map("class_periods")

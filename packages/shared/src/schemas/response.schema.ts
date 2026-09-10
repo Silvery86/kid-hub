@@ -46,6 +46,7 @@ export const BellSlotSchema = z.object({
 export const ClassPeriodSchema = z.object({
   id: z.string().optional(),
   periodNumber: z.number().int().optional(),
+  weekStartDate: z.string().optional(),
   eventType: EventTypeSchema.optional(),
   subjectId: z.string(),
   note: z.string().optional(),
@@ -103,6 +104,10 @@ export const DailyScheduleSchema = z.object({
 export const WeekViewSchema = z.object({
   days: z.array(DailyScheduleSchema),
   eveningBlocks: z.array(DailyScheduleSchema),
+  // Optional so a mobile build predating Phase 6 still parses the response.
+  weekStartDate: z.string().optional(),
+  source: z.enum(['own', 'inherited', 'empty']).optional(),
+  inheritedFrom: z.string().optional(),
 })
 
 /** POST /api/v1/auth/pin — the outcome of one PIN attempt. */

@@ -3,9 +3,10 @@
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useMemo, useState } from 'react'
-import type { BellSlot, DailySchedule, SubjectGrade, TodayView } from '@/types'
+import type { BellSlot, DailySchedule, SubjectGrade, TodayView, WeekSource } from '@/types'
 import { cn } from '@/lib/utils'
 import { formatWeekSubtitleForOffset, getWeekDates } from '@/lib/schedule-display'
+import { addWeeks, weekStartOfToday } from '@kid-hub/shared'
 import { getSubjectById } from '@/lib/data/subjects'
 import { signOutParentAction } from '@/server/actions/auth.actions'
 import { ParentSaveButton } from './ParentSaveButton'
@@ -17,12 +18,17 @@ type ManagerTab = 'overview' | 'schedule' | 'grades'
 
 export function ParentDashboardView({
   initialSchedule,
+  initialWeekSource,
+  initialInheritedFrom,
   initialGrades,
   todayView,
   bellSlots = [],
   studentName,
 }: {
   initialSchedule: DailySchedule[]
+  /** Where `initialSchedule` came from — this week's own rows, or an earlier week's. */
+  initialWeekSource?: WeekSource
+  initialInheritedFrom?: string
   initialGrades: SubjectGrade[]
   todayView: TodayView | null
   /** Period times for the week grid. Empty until a bell schedule exists. */
@@ -53,6 +59,9 @@ export function ParentDashboardView({
     router.push('/parent/login')
   }
 
+  // Which Monday the schedule panel is showing. Since Phase 6 this is not a
+  // label: it selects the rows the grid reads and the week a save lands in.
+  const weekStartDate = useMemo(() => addWeeks(weekStartOfToday(), weekOffset), [weekOffset])
   const isPastWeek = weekOffset < 0
   const weekLabel = weekOffset === 0 ? 'Tuần này' : formatWeekSubtitleForOffset(weekOffset)
   const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset])
@@ -178,6 +187,9 @@ export function ParentDashboardView({
         <ScheduleManager
           initialSchedule={initialSchedule}
           bellSlots={bellSlots}
+          weekStartDate={weekStartDate}
+          initialWeekSource={initialWeekSource}
+          initialInheritedFrom={initialInheritedFrom}
           embedded
           readOnly={isPastWeek}
           weekDates={weekDates}

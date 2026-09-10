@@ -1,11 +1,26 @@
 // Zod schemas for schedule mutations — isomorphic (Web actions + Mobile REST).
 import { z } from 'zod'
 
+import { isIsoDate, weekStartOf } from '../domain/school-weeks'
+
 export const DaySchema = z.enum([
   'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
 ])
 
 export const TimeSchema = z.string().regex(/^\d{2}:\d{2}$/)
+
+/**
+ * The Monday a week of school periods is stored under, "YYYY-MM-DD".
+ *
+ * Refined rather than merely pattern-matched: a client that sends a Wednesday
+ * would create a second, parallel "week" that no reader would ever resolve to,
+ * and the row would simply disappear from the grid.
+ */
+export const WeekStartSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày không hợp lệ')
+  .refine(isIsoDate, 'Ngày không hợp lệ')
+  .refine((value) => weekStartOf(value) === value, 'Tuần phải bắt đầu từ Thứ Hai')
 
 /** "HH:MM" strings are zero-padded, so lexical order matches chronological order. */
 const endsAfterStart = (v: { startTime?: string; endTime?: string }): boolean =>
@@ -20,6 +35,8 @@ const TIME_ORDER_ISSUE = {
 export const CreatePeriodSchema = z
   .object({
     day: DaySchema,
+    /** Which week the period belongs to. Defaults to the current week server-side. */
+    weekStartDate: WeekStartSchema.optional(),
     periodNumber: z.number().int().min(1).max(10),
     subjectId: z.string().min(1),
     note: z.string().trim().max(40, 'Ghi chú tối đa 40 ký tự').optional(),
@@ -118,6 +135,9 @@ export const WeekCellSchema = z.object({
 })
 
 export const SaveWeekScheduleSchema = z.object({
+  /** Which week these cells belong to. Every save names its week explicitly —
+   *  a default here would let a stale tab write into the current week. */
+  weekStartDate: WeekStartSchema,
   cells: z.array(WeekCellSchema).max(140),
 }).superRefine((value, ctx) => {
   // Two cells claiming one slot would violate the unique constraint mid-write
@@ -136,3 +156,23 @@ export const SaveWeekScheduleSchema = z.object({
     seen.add(key)
   }
 })
+
+/**
+ * Copy one week's timetable into later weeks.
+ *
+ * `throughWeek` is the last week to write, inclusive; the caller derives it
+ * from the parent's choice ("tuần sau" or "đến hết học kỳ") so the server never
+ * has to guess how long a semester is. Both ends are Mondays, so an off-by-one
+ * cannot land rows in a week nothing reads.
+ */
+export const CopyWeekSchema = z
+  .object({
+    fromWeek: WeekStartSchema,
+    throughWeek: WeekStartSchema,
+    /** Weeks that already have their own rows are skipped unless this is set. */
+    overwrite: z.boolean().default(false),
+  })
+  .refine((v) => v.throughWeek > v.fromWeek, {
+    message: 'Chỉ sao chép được sang các tuần sau',
+    path: ['throughWeek'],
+  })

@@ -107,6 +107,14 @@ export type TimeBand = 'morning' | 'afternoon' | 'evening'
 export interface ClassPeriod {
   id?: string
   periodNumber?: number   // 1–10 for SCHOOL_PERIOD; absent for EXTRA_CLASS
+  /**
+   * Monday of the week this row belongs to, "YYYY-MM-DD".
+   *
+   * Present on SCHOOL_PERIOD rows only. An EXTRA_CLASS is a standing weekly
+   * arrangement with no week of its own, so it carries no date and cannot be
+   * locked by one — see docs/SCHEDULE_PARENT_IMP.md §12.2.
+   */
+  weekStartDate?: string
   eventType?: EventType
   subjectId: string
   /** Lesson variant as the timetable prints it: "Học vần", "Tập viết", "Ôn tập". */
@@ -187,6 +195,34 @@ export interface Subject {
 export interface WeekView {
   days: DailySchedule[]
   eveningBlocks: DailySchedule[]
+  /** Which week `days` describes. Absent on responses predating Phase 6. */
+  weekStartDate?: string
+  /** Where `days` came from — see WeekSource. */
+  source?: WeekSource
+  /** The week the rows were actually read from, when `source` is 'inherited'. */
+  inheritedFrom?: string
+}
+
+/**
+ * How a week's timetable was resolved.
+ *
+ *  - `own`       — the week has rows of its own; editing changes only this week
+ *  - `inherited` — no rows yet, so the most recent earlier week is shown; the
+ *                  first edit materialises this week and stops the inheritance
+ *  - `empty`     — no timetable has ever been entered for this student
+ *
+ * The distinction is shown to the parent rather than hidden: "these are last
+ * week's lessons" and "these are this week's lessons" look identical on screen
+ * but behave differently on save.
+ */
+export type WeekSource = 'own' | 'inherited' | 'empty'
+
+/** A week of school periods, with the provenance the grid needs to explain itself. */
+export interface WeekSchedule {
+  weekStartDate: string
+  source: WeekSource
+  inheritedFrom?: string
+  days: DailySchedule[]
 }
 
 /** GET /api/v1/kid-profile — the kid's display name and grade. */

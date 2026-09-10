@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { canEditDatedEntry, canEditRecurringEntry, isPastIsoDate } from './schedule-locks'
+import { canEditDatedEntry, canEditRecurringEntry, canEditWeek, isPastIsoDate } from './schedule-locks'
 
 describe('canEditRecurringEntry', () => {
   /**
@@ -9,9 +9,35 @@ describe('canEditRecurringEntry', () => {
    * that date had passed — so on a Wednesday, Monday's and Tuesday's tabs read
    * "Đã qua ngày" and rejected both add and delete, for rows governing every
    * future Monday and Tuesday.
+   *
+   * Phase 6 dated the school periods, but extra classes stayed recurring, so
+   * this still holds for them.
    */
   it('never blocks a weekday template, whatever today is', () => {
     expect(canEditRecurringEntry()).toBe(true)
+  })
+})
+
+describe('canEditWeek', () => {
+  const thisWeek = '2026-09-14'
+
+  it('allows the week in progress', () => {
+    expect(canEditWeek(thisWeek, thisWeek)).toBe(true)
+  })
+
+  it('allows a future week', () => {
+    expect(canEditWeek('2026-09-21', thisWeek)).toBe(true)
+  })
+
+  it('blocks a week that has finished', () => {
+    expect(canEditWeek('2026-09-07', thisWeek)).toBe(false)
+  })
+
+  it('does not close the current week partway through it', () => {
+    // The whole point of comparing Mondays: on Thursday the 17th, the week
+    // starting Monday the 14th is still open. Comparing the Monday to today
+    // would have shut it on Tuesday.
+    expect(canEditWeek(thisWeek, '2026-09-14')).toBe(true)
   })
 })
 

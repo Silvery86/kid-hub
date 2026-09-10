@@ -19,7 +19,15 @@ import { addUserPoints, updateStreak } from '@/server/services/progress.service'
 import { recordActivity } from '@/server/services/activity.service'
 import { checkAndAwardStreakBadges } from '@/server/services/rewards.service'
 import { getSubjectById } from '@/lib/data/subjects'
-import type { DayOfWeek, DailyHomework, DailySchedule, TodayView, ActionResult, ActionVoidResult } from '@/types'
+import type {
+  DayOfWeek,
+  DailyHomework,
+  DailySchedule,
+  TodayView,
+  WeekSchedule,
+  ActionResult,
+  ActionVoidResult,
+} from '@/types'
 import type { StoredBellSchedule } from '@/server/services/schedule.service'
 import { MAX_EVENING_BLOCKS_PER_DAY } from '@/lib/constants'
 import {
@@ -28,8 +36,13 @@ import {
   UpdatePeriodSchema,
   AddDailyHomeworkSchema,
   SaveBellScheduleSchema,
+  WeekStartSchema,
   SaveWeekScheduleSchema,
+  CopyWeekSchema,
   diffWeek,
+  isPastWeek,
+  weekStartOfToday,
+  weekStartsBetween,
   findRuleIssues,
   generateSlots,
 } from '@kid-hub/shared'
@@ -64,6 +77,28 @@ export const getScheduleAction = async (
       return { success: true, data: result ? [result] : [] }
     }
     const data = await scheduleService.getWeeklySchedule(studentId)
+    return { success: true, data }
+  } catch {
+    return { success: false, error: 'Failed to fetch schedule' }
+  }
+}
+
+/**
+ * Reads one week of school periods, with the provenance the grid needs.
+ *
+ * An out-of-range or non-Monday week is rejected by the schema rather than
+ * silently snapped to a Monday: snapping would show the parent a week they did
+ * not ask for and then save into it.
+ */
+export const getWeekScheduleAction = async (
+  weekStartDate?: string
+): Promise<ActionResult<WeekSchedule>> => {
+  try {
+    const studentId = await resolveStudentContext()
+    const week = weekStartDate ?? weekStartOfToday()
+    const parsed = WeekStartSchema.safeParse(week)
+    if (!parsed.success) return { success: false, error: 'Tuần không hợp lệ' }
+    const data = await scheduleService.getWeekSchedule(studentId, parsed.data)
     return { success: true, data }
   } catch {
     return { success: false, error: 'Failed to fetch schedule' }
@@ -134,7 +169,14 @@ export const createPeriodAction = async (input: unknown): Promise<ActionVoidResu
       return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
     }
     const data = parsed.data
-    const existing = await scheduleService.getDaySchedule(studentId, data.day as DayOfWeek)
+    // A single period still has to land in a week; without one the CHECK
+    // constraint rejects the row rather than storing a period no reader sees.
+    const weekStartDate = data.weekStartDate ?? weekStartOfToday()
+    const existing = await scheduleService.getDaySchedule(
+      studentId,
+      data.day as DayOfWeek,
+      weekStartDate
+    )
     const newPeriod = {
       periodNumber: data.periodNumber,
       subjectId: data.subjectId,
@@ -147,6 +189,7 @@ export const createPeriodAction = async (input: unknown): Promise<ActionVoidResu
     await scheduleService.createPeriod({
       ...data,
       studentId,
+      weekStartDate,
       day: data.day as DayOfWeek,
       eventType: 'SCHOOL_PERIOD',
     })
@@ -415,11 +458,16 @@ export const saveBellScheduleAction = async (input: unknown): Promise<ActionVoid
 }
 
 /**
- * Saves the whole week in one transaction.
+ * Saves one week in one transaction.
  *
  * Times are never sent by the client — they come from the stored bell schedule,
  * which is the point of entering rules once. A household with no bell schedule
  * is told to set one rather than being asked for 70 clock times.
+ *
+ * The diff is taken against the week's OWN rows, not the rows on screen. When
+ * the parent is looking at an inherited week those two differ: every cell is
+ * new, so the save materialises the week and the inheritance stops there —
+ * which is exactly what "edit that week only" has to mean.
  */
 export const saveWeeklyScheduleAction = async (input: unknown): Promise<ActionVoidResult> => {
   try {
@@ -428,14 +476,22 @@ export const saveWeeklyScheduleAction = async (input: unknown): Promise<ActionVo
     if (!parsed.success) {
       return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
     }
+    const { weekStartDate, cells } = parsed.data
+
+    // A week that has already happened is a record of what the child did, not a
+    // draft. Checked on the server too: the grid hides the button, but the
+    // action is the thing that writes.
+    if (isPastWeek(weekStartDate, weekStartOfToday())) {
+      return { success: false, error: 'Tuần đã qua — không thể chỉnh sửa' }
+    }
 
     const bell = await scheduleService.getBellSchedule(studentId)
     if (!bell) {
       return { success: false, error: 'Hãy thiết lập khung giờ tiết học trước' }
     }
 
-    const current = await scheduleService.getWeeklySchedule(studentId)
-    const diff = diffWeek(current, parsed.data.cells)
+    const current = await scheduleService.getOwnWeekSchedule(studentId, weekStartDate)
+    const diff = diffWeek(current, cells)
 
     // Resolving here rather than in the repository keeps the write layer free of
     // business rules, and surfaces a cell the bell schedule cannot place.
@@ -452,6 +508,7 @@ export const saveWeeklyScheduleAction = async (input: unknown): Promise<ActionVo
 
     await scheduleService.replaceWeeklySchedule(
       studentId,
+      weekStartDate,
       created as NonNullable<(typeof created)[number]>[],
       updated as NonNullable<(typeof updated)[number]>[],
       diff.deleted
@@ -463,6 +520,92 @@ export const saveWeeklyScheduleAction = async (input: unknown): Promise<ActionVo
     return { success: true }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to save weekly schedule'
+    if (msg === 'Unauthorized') return { success: false, error: 'Unauthorized' }
+    return { success: false, error: msg }
+  }
+}
+
+/**
+ * Counts what a copy would do, without doing it.
+ *
+ * The parent sees "12 tuần, trong đó 3 tuần đã có thời khóa biểu riêng" before
+ * anything is written. Overwriting weeks they have deliberately customised is
+ * the one destructive thing this feature can do, so it is never the result of a
+ * single unqualified click.
+ */
+export const previewCopyWeekAction = async (
+  input: unknown
+): Promise<ActionResult<{ targetWeeks: string[]; weeksWithOwnRows: string[] }>> => {
+  try {
+    const studentId = await resolveActiveStudent()
+    const parsed = CopyWeekSchema.safeParse(input)
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
+    }
+    const { fromWeek, throughWeek } = parsed.data
+    const targetWeeks = weekStartsBetween(fromWeek, throughWeek)
+    const weeksWithOwnRows = await scheduleService.findWeeksWithOwnRows(studentId, targetWeeks)
+    return { success: true, data: { targetWeeks, weeksWithOwnRows } }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Failed to preview copy'
+    if (msg === 'Unauthorized') return { success: false, error: 'Unauthorized' }
+    return { success: false, error: msg }
+  }
+}
+
+/**
+ * Copies this week's timetable into the weeks that follow it.
+ *
+ * Only needed to *pin* later weeks: without it they already inherit this one
+ * (§12.2). It earns its place when the parent wants weeks frozen as they are
+ * today before changing something later in the term.
+ */
+export const copyWeekAction = async (
+  input: unknown
+): Promise<ActionResult<{ weeksWritten: number; weeksSkipped: number }>> => {
+  try {
+    const studentId = await resolveActiveStudent()
+    const parsed = CopyWeekSchema.safeParse(input)
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message ?? 'Validation error' }
+    }
+    const { fromWeek, throughWeek, overwrite } = parsed.data
+
+    const currentWeek = weekStartOfToday()
+    if (isPastWeek(fromWeek, currentWeek)) {
+      return { success: false, error: 'Tuần đã qua — không thể chỉnh sửa' }
+    }
+
+    const allTargets = weekStartsBetween(fromWeek, throughWeek)
+    // Copying backwards is impossible by construction (weekStartsBetween only
+    // goes forward), so no past week can be rewritten by this path.
+    if (allTargets.length === 0) {
+      return { success: false, error: 'Không có tuần nào để sao chép' }
+    }
+
+    const skipWeeks = overwrite
+      ? []
+      : await scheduleService.findWeeksWithOwnRows(studentId, allTargets)
+
+    const result = await scheduleService.copyWeekInto(
+      studentId,
+      fromWeek,
+      allTargets,
+      skipWeeks
+    )
+    if (result.weeksWritten === 0 && skipWeeks.length === 0) {
+      return { success: false, error: 'Tuần này chưa có thời khóa biểu để sao chép' }
+    }
+
+    revalidatePath('/dashboard')
+    revalidatePath('/schedule')
+    revalidatePath('/parent')
+    return {
+      success: true,
+      data: { weeksWritten: result.weeksWritten, weeksSkipped: skipWeeks.length },
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Failed to copy week'
     if (msg === 'Unauthorized') return { success: false, error: 'Unauthorized' }
     return { success: false, error: msg }
   }

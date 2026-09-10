@@ -10,6 +10,7 @@ import 'dotenv/config'
 import bcrypt from 'bcryptjs'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client'
+import { weekStartOfToday } from '@kid-hub/shared'
 
 const DEFAULT_USER_ID = 'khoi-default-user'
 // Derived exactly as the 20260829 split migration derives it.
@@ -234,18 +235,25 @@ async function main() {
   // Validate schedule data before touching the DB
   assertNoOverlaps(WEEKLY_SCHEDULE)
 
+  // Since Phase 6 a school period belongs to a dated week. The seed writes the
+  // current one; every later week inherits it, so the seeded child has a
+  // timetable this week and next without seeding a term's worth of rows.
+  const seedWeek = weekStartOfToday()
+
   // Upsert all periods — safe to re-run
   for (const period of WEEKLY_SCHEDULE) {
     await db.classPeriod.upsert({
       where: {
-        studentId_day_periodNumber: {
+        studentId_weekStartDate_day_periodNumber: {
           studentId: DEFAULT_USER_ID,
+          weekStartDate: seedWeek,
           day: period.day,
           periodNumber: period.periodNumber,
         },
       },
       create: {
         studentId: DEFAULT_USER_ID,
+        weekStartDate: seedWeek,
         day: period.day,
         periodNumber: period.periodNumber,
         subjectId: period.subjectId,

@@ -13,7 +13,8 @@
  */
 
 import { useMemo, useState, useTransition } from 'react'
-import { AlertCircle, Check } from 'lucide-react'
+import Link from 'next/link'
+import { AlertCircle, ArrowRight, Check } from 'lucide-react'
 import {
   BELL_PRESETS,
   findRuleIssues,
@@ -79,17 +80,20 @@ export function BellScheduleEditor({
   const applyPreset = (key: string) => {
     const preset = BELL_PRESETS.find((p) => p.key === key)
     if (!preset) return
+    setSaved(false)
     setPresetKey(key)
     setRules(preset.rules)
   }
 
-  const patchMorning = (patch: Partial<BellRules['morning']>) =>
+  const patchMorning = (patch: Partial<BellRules['morning']>) => {
+    setSaved(false)
     setRules((r) => ({ ...r, morning: { ...r.morning, ...patch } }))
+  }
 
-  const patchAfternoon = (patch: Partial<NonNullable<BellRules['afternoon']>>) =>
-    setRules((r) =>
-      r.afternoon ? { ...r, afternoon: { ...r.afternoon, ...patch } } : r
-    )
+  const patchAfternoon = (patch: Partial<NonNullable<BellRules['afternoon']>>) => {
+    setSaved(false)
+    setRules((r) => (r.afternoon ? { ...r, afternoon: { ...r.afternoon, ...patch } } : r))
+  }
 
   const handleSave = () => {
     if (issues.length > 0) return
@@ -100,8 +104,9 @@ export function BellScheduleEditor({
         setError(result.error ?? 'Không lưu được khung giờ')
         return
       }
+      // Deliberately not cleared on a timer: this is step 1 of two, and the
+      // link to step 2 has to stay put long enough to be read and clicked.
       setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
     })
   }
 
@@ -140,14 +145,20 @@ export function BellScheduleEditor({
               <input
                 type="number" min={5} max={120} className={numberInput}
                 value={rules.periodMinutes}
-                onChange={(e) => setRules((r) => ({ ...r, periodMinutes: Number(e.target.value) }))}
+                onChange={(e) => {
+                  setSaved(false)
+                  setRules((r) => ({ ...r, periodMinutes: Number(e.target.value) }))
+                }}
               />
             </Field>
             <Field label="Nghỉ chuyển tiết (phút)">
               <input
                 type="number" min={0} max={60} className={numberInput}
                 value={rules.transitionMinutes}
-                onChange={(e) => setRules((r) => ({ ...r, transitionMinutes: Number(e.target.value) }))}
+                onChange={(e) => {
+                  setSaved(false)
+                  setRules((r) => ({ ...r, transitionMinutes: Number(e.target.value) }))
+                }}
               />
             </Field>
           </section>
@@ -342,18 +353,38 @@ export function BellScheduleEditor({
             </div>
           ) : null}
 
-          <KidButton
-            variant="primary"
-            onClick={handleSave}
-            isDisabled={isPending || issues.length > 0}
-            className="min-h-12 gap-2"
-          >
-            {saved ? (
-              <><Check size={18} /> Đã lưu!</>
-            ) : (
-              isPending ? 'Đang lưu...' : 'Lưu khung giờ'
-            )}
-          </KidButton>
+          {saved ? (
+            <div className="flex flex-col gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+              <p className="flex items-center gap-2 text-sm font-black text-emerald-700">
+                <Check size={18} /> Đã lưu khung giờ
+              </p>
+              <p className="text-xs font-bold text-emerald-600">
+                Bước tiếp theo: chọn môn học cho từng tiết trong tuần.
+              </p>
+              <Link
+                href="/parent?view=schedule"
+                className="mt-1 flex min-h-12 items-center justify-center gap-2 rounded-full border-4 border-blue-800 bg-blue-500 text-base font-black text-white shadow-lg shadow-blue-500/40"
+              >
+                Chọn môn cho cả tuần <ArrowRight size={18} />
+              </Link>
+              <button
+                type="button"
+                onClick={() => setSaved(false)}
+                className="text-xs font-bold text-emerald-700 underline"
+              >
+                Sửa lại khung giờ
+              </button>
+            </div>
+          ) : (
+            <KidButton
+              variant="primary"
+              onClick={handleSave}
+              isDisabled={isPending || issues.length > 0}
+              className="min-h-12 gap-2"
+            >
+              {isPending ? 'Đang lưu...' : 'Lưu khung giờ'}
+            </KidButton>
+          )}
         </div>
       </div>
     </div>

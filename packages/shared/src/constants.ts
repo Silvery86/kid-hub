@@ -54,6 +54,21 @@ export const KID_PATTERN_LENGTH = 2
  */
 export const CURRENT_ACADEMIC_YEAR = '2025-2026'
 
+/**
+ * Where the two Vietnamese school terms end, as "MM-DD".
+ *
+ * Assumption A3 (docs/SCHEDULE_PARENT_IMP.md §12.4), not a fact: the exact dates
+ * are set per province each year. They exist so "copy this week to the end of
+ * the semester" has an end, and the copy dialog prints the resulting date before
+ * writing anything, so a parent at a school that finishes elsewhere can see the
+ * assumption rather than discover it.
+ */
+export const FIRST_TERM_END_MMDD = '01-15'
+export const SECOND_TERM_END_MMDD = '05-31'
+
+/** Ceiling on one copy-forward, so a single click cannot write an unbounded number of rows. */
+export const MAX_COPY_WEEKS = 40
+
 /** Number of questions in one game session. */
 export const GAME_QUESTIONS_PER_SESSION = 10
 

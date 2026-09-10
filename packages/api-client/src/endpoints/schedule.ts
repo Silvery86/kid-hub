@@ -7,8 +7,17 @@ export const getSchedule = async (
   studentId: string
 ): Promise<TodayView> => TodayViewSchema.parse(await http.get(studentPath(studentId, '/schedule')))
 
+/** `weekStartDate` must be a Monday; omit it for the current week. */
 export const getWeekSchedule = async (
   http: HttpTransport,
-  studentId: string
+  studentId: string,
+  weekStartDate?: string
 ): Promise<WeekView> =>
-  WeekViewSchema.parse(await http.get(studentPath(studentId, '/schedule/week')))
+  WeekViewSchema.parse(
+    await http.get(
+      studentPath(
+        studentId,
+        weekStartDate ? `/schedule/week?week=${weekStartDate}` : '/schedule/week'
+      )
+    )
+  )

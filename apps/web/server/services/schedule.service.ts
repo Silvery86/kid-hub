@@ -10,6 +10,7 @@ import type {
   DayOfWeek,
 } from '@/types'
 import { DAYS_OF_WEEK } from '@/lib/constants'
+import { weekStartOfToday } from '@kid-hub/shared'
 import * as bellRepo from '@/server/repositories/bell-schedule.repository'
 import * as scheduleRepo from '@/server/repositories/schedule.repository'
 export type { CreatePeriodInput, UpdatePeriodInput, CreateDailyHomeworkInput } from '@/server/repositories/schedule.repository'
@@ -58,8 +59,27 @@ export const sortDays = (days: DailySchedule[]): DailySchedule[] =>
 
 // ── DB-backed schedule operations ────────────────────────────────────────────
 
-export const getWeeklySchedule = (studentId: string) => scheduleRepo.getWeeklySchedule(studentId)
-export const getDaySchedule = (studentId: string, day: DayOfWeek) => scheduleRepo.getDaySchedule(studentId, day)
+/**
+ * Reads default to the week the server is in, so every caller that predates
+ * Phase 6 — the kid dashboard, the mobile REST routes, today's view — keeps
+ * asking the same question and keeps getting the right answer.
+ */
+export const getWeeklySchedule = (studentId: string, weekStart = weekStartOfToday()) =>
+  scheduleRepo.getWeeklySchedule(studentId, weekStart)
+export const getWeekSchedule = (studentId: string, weekStart = weekStartOfToday()) =>
+  scheduleRepo.getWeekSchedule(studentId, weekStart)
+export const getOwnWeekSchedule = (studentId: string, weekStart: string) =>
+  scheduleRepo.getOwnWeekSchedule(studentId, weekStart)
+export const getDaySchedule = (studentId: string, day: DayOfWeek, weekStart = weekStartOfToday()) =>
+  scheduleRepo.getDaySchedule(studentId, day, weekStart)
+export const findWeeksWithOwnRows = (studentId: string, weeks: string[]) =>
+  scheduleRepo.findWeeksWithOwnRows(studentId, weeks)
+export const copyWeekInto = (
+  studentId: string,
+  fromWeek: string,
+  targetWeeks: string[],
+  skipWeeks?: string[]
+) => scheduleRepo.copyWeekInto(studentId, fromWeek, targetWeeks, skipWeeks)
 export const getAllEveningBlocks = (studentId: string) => scheduleRepo.getAllEveningBlocks(studentId)
 export const getEveningBlocks = (studentId: string, day: DayOfWeek) => scheduleRepo.getEveningBlocks(studentId, day)
 export const getOverridesForDate = (studentId: string, date: string) => scheduleRepo.getOverridesForDate(studentId, date)
@@ -116,7 +136,8 @@ export type { WeekWriteRow } from '@/server/repositories/schedule.repository'
 
 export const replaceWeeklySchedule = (
   studentId: string,
+  weekStart: string,
   created: scheduleRepo.WeekWriteRow[],
   updated: (scheduleRepo.WeekWriteRow & { id: string })[],
   deletedIds: string[]
-) => scheduleRepo.replaceWeeklySchedule(studentId, created, updated, deletedIds)
+) => scheduleRepo.replaceWeeklySchedule(studentId, weekStart, created, updated, deletedIds)

@@ -1,4 +1,4 @@
-import { CreatePeriodSchema, type DayOfWeek } from '@kid-hub/shared'
+import { CreatePeriodSchema, weekStartOfToday, type DayOfWeek } from '@kid-hub/shared'
 import * as scheduleService from '@/server/services/schedule.service'
 import { validatePeriodOverlap } from '@/server/services/schedule.service'
 import { badRequest, ok, serverError } from '@/app/api/v1/_lib/respond'
@@ -19,8 +19,14 @@ export async function POST(req: Request, { params }: Params) {
   if (!parsed.success) return badRequest(parsed.error.issues[0]?.message ?? 'Invalid input')
 
   const data = parsed.data
+  // Phase 6: every school period belongs to a week. Unspecified means this one.
+  const weekStartDate = data.weekStartDate ?? weekStartOfToday()
   try {
-    const existing = await scheduleService.getDaySchedule(studentId, data.day as DayOfWeek)
+    const existing = await scheduleService.getDaySchedule(
+      studentId,
+      data.day as DayOfWeek,
+      weekStartDate
+    )
     const overlaps =
       existing != null &&
       validatePeriodOverlap(
@@ -37,6 +43,7 @@ export async function POST(req: Request, { params }: Params) {
     const id = await scheduleService.createPeriod({
       ...data,
       studentId: studentId,
+      weekStartDate,
       day: data.day as DayOfWeek,
       eventType: 'SCHOOL_PERIOD',
     })
