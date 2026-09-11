@@ -9,6 +9,7 @@ import { AppSidebar } from '@/components/layout/AppSidebar'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { STORAGE_KEYS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
+import { STAGGER_BASE } from '@/lib/motion'
 import type { GameBestScore, EnglishGameType, UserProgress } from '@/types'
 
 type ActiveGame = EnglishGameType | null
@@ -95,11 +96,19 @@ function EnglishGameCardBig({
       data-testid={`game-card-${id}`}
       aria-label={`Chơi ${title}`}
       className={cn(
+        'animate-pop-in',
         'relative flex w-full touch-manipulation select-none flex-col overflow-hidden text-left text-white',
         'transition-transform duration-100 active:scale-[0.97]',
         compact ? 'aspect-3/2 gap-1 rounded-2xl p-3' : 'aspect-4/3 min-h-tap-lg gap-2 rounded-3xl p-5'
       )}
-      style={{ background: GRADIENT_BIG, boxShadow: SHADOW_BIG }}
+      // The delay rides the idx already threaded through for the watermark, so
+      // the tiles arrive in sequence without <Stagger>, and without every card
+      // having to accept a className it otherwise has no use for.
+      style={{
+        background: GRADIENT_BIG,
+        boxShadow: SHADOW_BIG,
+        animationDelay: `${idx * STAGGER_BASE}ms`,
+      }}
     >
       <div
         className={cn(

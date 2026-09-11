@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { checkKidSessionAction, verifyKidPatternAction } from '@/server/actions/auth.actions'
 import { cn } from '@/lib/utils'
+import { STAGGER_TIGHT } from '@/lib/motion'
 
 const TILES = [
   { id: '1', emoji: '☀️', label: 'Sun' },
@@ -147,13 +148,18 @@ export function KidUnlockScreen({
         ) : null}
 
         <div className="grid grid-cols-3 gap-3">
-          {TILES.map((tile) => (
+          {TILES.map((tile, i) => (
             <button
               key={tile.id}
               type="button"
               onClick={() => handleTap(tile.id)}
               disabled={isLocked || isSubmitting || needsSetup}
+              // The press and the error shake were already here; the pad simply
+              // appeared. Arriving in sequence makes it read as something to
+              // play with rather than a form to fill in.
+              style={{ animationDelay: `${i * STAGGER_TIGHT}ms` }}
               className={cn(
+                'animate-pop-in',
                 'flex min-h-24 items-center justify-center rounded-2xl border-2 text-4xl transition active:scale-[0.97]',
                 'border-white/20 bg-white/10 text-white backdrop-blur-sm',
                 'hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-50'

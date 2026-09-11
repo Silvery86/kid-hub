@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from 'react'
 import { BadgeCard, type BadgeDisplayItem } from './BadgeCard'
+import { Stagger } from '@/components/ui/Stagger'
+import { STAGGER_TIGHT } from '@/lib/motion'
 import { BADGE_PROGRESS_HINT } from '@/lib/data/kid-access'
 import { BADGE_DEFINITIONS } from '@/lib/data/badges'
 import { useUserProgress } from '@/hooks/useUserProgress'
@@ -118,9 +120,13 @@ export function BadgesView() {
         compact ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
       )}
     >
-      {list.map((b) => (
-        <BadgeCard key={b.id} badge={b} compact={compact} />
-      ))}
+      {/* Stagger merges the entrance onto each card rather than wrapping it, so
+          the grid keeps BadgeCard as a direct child and the columns still work. */}
+      <Stagger preset="popIn" step={STAGGER_TIGHT}>
+        {list.map((b) => (
+          <BadgeCard key={b.id} badge={b} compact={compact} />
+        ))}
+      </Stagger>
     </div>
   )
 
