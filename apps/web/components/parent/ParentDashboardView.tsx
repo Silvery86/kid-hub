@@ -18,6 +18,7 @@ import { getSubjectById } from '@/lib/data/subjects'
 import { signOutParentAction } from '@/server/actions/auth.actions'
 import { ParentSaveButton } from './ParentSaveButton'
 import { StudentSwitcher } from './StudentSwitcher'
+import { NotificationBell } from './notifications/NotificationBell'
 import type { StudentSummary } from '@/server/actions/students.actions'
 import { ScheduleManager, type ParentSaveState } from './ScheduleManager'
 import { GradesManager } from './GradesManager'
@@ -36,6 +37,7 @@ export function ParentDashboardView({
   studentName,
   students = [],
   activeStudentId = null,
+  initialUnread = 0,
 }: {
   initialSchedule: DailySchedule[]
   /** Where `initialSchedule` came from — this week's own rows, or an earlier week's. */
@@ -51,6 +53,8 @@ export function ParentDashboardView({
    *  name would label the wrong data. The admin surface is offered by the
    *  sidebar, not here. */
   studentName: string
+  /** Unread notifications at render time, so the badge is right on first paint. */
+  initialUnread?: number
   /** Every child this parent may act for — the switcher's list. */
   students?: StudentSummary[]
   activeStudentId?: string | null
@@ -171,6 +175,7 @@ export function ParentDashboardView({
 
   const subpageIdentityChips = (
     <div className="hidden items-center gap-2 md:flex">
+      <NotificationBell initialUnread={initialUnread} />
       <StudentSwitcher
         students={students}
         activeStudentId={activeStudentId}
@@ -256,6 +261,7 @@ export function ParentDashboardView({
           <p className="mt-1 text-sm font-bold text-text-secondary">Tổng quan về việc học của {studentName}</p>
         </div>
         <div className="hidden items-center gap-2 md:flex">
+          <NotificationBell initialUnread={initialUnread} />
           <StudentSwitcher
             students={students}
             activeStudentId={activeStudentId}
@@ -417,6 +423,7 @@ export function ParentDashboardView({
 
   const mobileActions = (
     <div className="flex gap-2">
+      <NotificationBell initialUnread={initialUnread} />
       <StudentSwitcher
         students={students}
         activeStudentId={activeStudentId}

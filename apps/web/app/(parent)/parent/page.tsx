@@ -14,6 +14,7 @@ import {
 } from '@/server/actions/schedule.actions'
 import { getReportCardAction } from '@/server/actions/grades.actions'
 import { getParentContextAction, listStudentsAction } from '@/server/actions/students.actions'
+import { getUnreadCountAction } from '@/server/actions/notification.actions'
 
 export default async function ParentDashboardPage() {
   const [
@@ -24,6 +25,7 @@ export default async function ParentDashboardPage() {
     bellResult,
     breaksResult,
     studentList,
+    unreadResult,
   ] = await Promise.all([
     getWeekScheduleAction(),
     getReportCardAction(),
@@ -32,6 +34,7 @@ export default async function ParentDashboardPage() {
     getBellScheduleAction(),
     getSchoolBreaksAction(),
     listStudentsAction(),
+    getUnreadCountAction(),
   ])
 
   // The current week, resolved: its own rows if it has them, otherwise the most
@@ -54,6 +57,7 @@ export default async function ParentDashboardPage() {
       studentName={context.studentName}
       students={studentList.success ? studentList.data.students : []}
       activeStudentId={studentList.success ? studentList.data.activeStudentId : null}
+      initialUnread={unreadResult.success ? unreadResult.data : 0}
     />
   )
 }

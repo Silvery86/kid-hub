@@ -6,6 +6,8 @@ import {
   getTotalGameCount,
 } from '@/server/repositories/progress.repository'
 import { streakBadgesFor } from '@/lib/badge-rules'
+import { getById } from '@/server/repositories/student.repository'
+import { notifyBadgeEarned } from '@/server/services/notification.service'
 
 /**
  * Badge rules.
@@ -20,7 +22,25 @@ import { streakBadgesFor } from '@/lib/badge-rules'
  * "By this call" is the important part. Re-earning is not a thing; only the
  * transition from not-earned to earned is worth a celebration, and awardBadge
  * reports exactly that.
+ *
+ * The same transition also notifies the child's parents, so the overlay a child
+ * sees and the row an adult reads can never disagree about what happened.
  */
+
+/**
+ * Tell every adult with access. Never throws into the caller: a notification
+ * that fails to write must not undo a badge that was legitimately earned.
+ */
+const announce = async (studentId: string, badgeIds: string[]): Promise<void> => {
+  if (badgeIds.length === 0) return
+  try {
+    const student = await getById(studentId)
+    if (!student) return
+    await Promise.all(badgeIds.map((id) => notifyBadgeEarned(studentId, student.name, id)))
+  } catch {
+    // Swallowed on purpose — see above.
+  }
+}
 
 /** Awards the 'game-win' badge on the first ever completed game session. */
 export const checkAndAwardGameWinBadge = async (studentId: string): Promise<string[]> => {
@@ -28,14 +48,18 @@ export const checkAndAwardGameWinBadge = async (studentId: string): Promise<stri
   if (earned.includes('game-win')) return []
   const count = await getTotalGameCount(studentId)
   if (count < 1) return []
-  return (await awardBadge(studentId, 'game-win')) ? ['game-win'] : []
+  if (!(await awardBadge(studentId, 'game-win'))) return []
+  await announce(studentId, ['game-win'])
+  return ['game-win']
 }
 
 /** Awards the 'first-login' badge after the first kid session unlock. */
 export const checkAndAwardFirstLoginBadge = async (studentId: string): Promise<string[]> => {
   const earned = await getEarnedBadgeIds(studentId)
   if (earned.includes('first-login')) return []
-  return (await awardBadge(studentId, 'first-login')) ? ['first-login'] : []
+  if (!(await awardBadge(studentId, 'first-login'))) return []
+  await announce(studentId, ['first-login'])
+  return ['first-login']
 }
 
 /**
@@ -56,5 +80,6 @@ export const checkAndAwardStreakBadges = async (
   for (const badgeId of due) {
     if (await awardBadge(studentId, badgeId)) awarded.push(badgeId)
   }
+  await announce(studentId, awarded)
   return awarded
 }
