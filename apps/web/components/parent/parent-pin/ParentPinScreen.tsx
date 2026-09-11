@@ -3,12 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import {
-  checkParentPinAction,
-  checkParentSessionAction,
-  verifyPinAction,
-} from '@/server/actions/auth.actions'
-import { pinScreenDestination } from '@/lib/parent-routing'
+import { verifyPinAction } from '@/server/actions/auth.actions'
 
 import { ParentPinHero } from './ParentPinHero'
 import { ParentPinKeypad, type ParentPinKeypadSize } from './ParentPinKeypad'
@@ -39,22 +34,9 @@ export function ParentPinScreen() {
   const [lockoutSeconds, setLockoutSeconds] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [subtitle, setSubtitle] = useState('Nhập mã PIN để tiếp tục')
-  const [isReady, setIsReady] = useState(false)
 
-  useEffect(() => {
-    void (async () => {
-      const [{ hasSession }, { hasPin }] = await Promise.all([
-        checkParentSessionAction(),
-        checkParentPinAction(),
-      ])
-      const destination = pinScreenDestination({ hasSession, hasPin })
-      if (destination) {
-        router.replace(destination)
-        return
-      }
-      setIsReady(true)
-    })()
-  }, [router])
+  // The gate state is resolved by the page before this renders — see the note
+  // there. Reaching this component at all means the pad should be shown.
 
   useEffect(() => {
     if (!isLocked || lockoutSeconds <= 0) return
@@ -98,16 +80,6 @@ export function ParentPinScreen() {
     },
     [isLocked, isSubmitting, router]
   )
-
-  if (!isReady) {
-    return (
-      <div className="fixed inset-0 flex min-h-dvh items-center justify-center bg-shell-dark">
-        <div className="text-5xl" aria-hidden="true">
-          🔒
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="fixed inset-0 z-50 flex min-h-dvh flex-col items-center justify-center gap-6 bg-shell-dark px-4 py-5 md:gap-7 lg:gap-9">

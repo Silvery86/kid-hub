@@ -156,8 +156,27 @@ async function _handle(request: NextRequest): Promise<NextResponse> {
     return NextResponse.next()
   }
 
-  // ── Rate limiting: parent login / PIN Server Action POSTs ────────────────
-  if (isParentPublicPath(pathname) && request.method === 'POST') {
+  // ── Rate limiting: raw POSTs to the parent auth pages ────────────────────
+  //
+  // Server Actions are excluded, and both halves of that matter.
+  //
+  // Counting: every Server Action on these pages POSTs to the page's own URL, so
+  // this block could not tell a PIN attempt from any other action. It was
+  // charging the PIN screen's own readiness probes — two per page load — against
+  // a 10-per-minute budget, which locked the gate after about five visits and no
+  // failed attempts at all. Those probes are now resolved server-side, and the
+  // limit for attempts lives inside verifyPinAction where the intent is known.
+  //
+  // Responding: a Server Action expects the RSC wire format back. Returning
+  // text/plain made the client throw, so a legitimate 429 surfaced as an
+  // uncaught runtime error rather than "thử lại sau 30s" on the pad.
+  //
+  // What remains here is the layer an attacker cannot route around: a raw form
+  // post or a script hitting these URLs directly, which has no Next-Action
+  // header and gets a plain 429 it can read perfectly well.
+  const isServerAction = request.headers.has('next-action')
+
+  if (isParentPublicPath(pathname) && request.method === 'POST' && !isServerAction) {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? '127.0.0.1'
     const rl = await checkRateLimit(getPinRateLimiter(), ip)
     if (rl && !rl.success) {
@@ -172,6 +191,12 @@ async function _handle(request: NextRequest): Promise<NextResponse> {
         },
       })
     }
+    return NextResponse.next()
+  }
+
+  if (isParentPublicPath(pathname) && request.method === 'POST') {
+    // A Server Action on a public auth page: let it reach the action, which
+    // applies its own IP limit and can answer in a shape the client understands.
     return NextResponse.next()
   }
 

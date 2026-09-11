@@ -47,6 +47,14 @@ const visit = (path: string, cookies: Record<string, string> = {}) => {
   return middleware(req)
 }
 
+/** A POST, optionally carrying the header that marks it as a Server Action. */
+const post = (path: string, opts: { serverAction?: boolean } = {}) => {
+  const headers = new Headers()
+  if (opts.serverAction) headers.set('next-action', 'abc123')
+  const req = new NextRequest(new URL(`http://localhost${path}`), { method: 'POST', headers })
+  return middleware(req)
+}
+
 /** Where a response sends the browser, or null when it lets the request through. */
 const redirectOf = (res: Response) =>
   res.status >= 300 && res.status < 400 ? new URL(res.headers.get('location')!).pathname : null
@@ -166,5 +174,39 @@ describe('a kid session cannot outlive the parent session that authorised it', (
 
   it('sends a parent with no kid session to unlock, not to login', async () => {
     expect(redirectOf(await visit('/dashboard', { parent_access: access }))).toBe('/kid-unlock')
+  })
+})
+
+
+describe('the login rate limiter counts attempts, not page loads', () => {
+  // The PIN screen used to probe its gate state from a mount effect. A Server
+  // Action is a POST to the page's own URL, so each load spent two tokens of a
+  // ten-per-minute budget and the gate locked itself after about five visits —
+  // with no failed PIN attempt anywhere. Middleware cannot tell one action from
+  // another, so it no longer tries: it guards raw posts, and verifyPinAction
+  // applies the per-IP limit where the intent is known.
+
+  it('lets a Server Action POST through to the action', async () => {
+    const res = await post('/parent/pin', { serverAction: true })
+    expect(res.status).toBe(200)
+  })
+
+  it('does not answer a Server Action with an unparseable 429', async () => {
+    const res = await post('/parent/pin', { serverAction: true })
+    // text/plain is what made the client throw, turning a legitimate throttle
+    // into an uncaught runtime error instead of "thử lại sau Ns" on the pad.
+    expect(res.headers.get('content-type')).not.toBe('text/plain')
+  })
+
+  it('still inspects a raw POST, which no client-side code can route around', async () => {
+    const res = await post('/parent/pin')
+    // Without Upstash credentials the limiter is null and the request passes;
+    // what matters is that this path is still the one being consulted.
+    expect(res.status).toBeLessThan(500)
+  })
+
+  it('leaves GETs to the auth pages alone', async () => {
+    const res = await visit('/parent/pin')
+    expect(redirectOf(res)).toBeNull()
   })
 })

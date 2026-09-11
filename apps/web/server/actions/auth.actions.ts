@@ -39,7 +39,7 @@ import {
   PARENT_PIN_COOKIE,
   PARENT_REFRESH_COOKIE,
 } from '@/server/services/auth.service'
-import { checkRateLimit, getLoginEmailRateLimiter } from '@/lib/rate-limit'
+import { checkRateLimit, getLoginEmailRateLimiter, getPinRateLimiter } from '@/lib/rate-limit'
 import { requireStudentAccess, resolveActiveStudent } from '@/server/lib/auth-guard'
 import type { ActionVoidResult, AuthActionResult } from '@/types'
 import {
@@ -460,6 +460,28 @@ export const verifyPinAction = async (pin: string): Promise<AuthActionResult> =>
 
   const session = await ensureParentSession()
   if (!session.ok || !session.parentId) return { success: false, error: 'Unauthorized' }
+
+  // The per-IP limit lives here rather than in middleware, which could only see
+  // that *some* Server Action had POSTed to /parent/pin and was charging the
+  // screen's own readiness probes against the same budget. Here it counts
+  // attempts, because nothing else calls this.
+  //
+  // It also lets a throttled parent be told. Middleware answered a Server Action
+  // with text/plain, which the client could not parse and threw on — a 429
+  // arrived as a runtime error page. This returns the shape the pad already
+  // renders as "Vui lòng thử lại sau Ns", the same treatment the per-account
+  // lockout below gets.
+  const forwardedFor = (await headers()).get('x-forwarded-for')
+  const ip = forwardedFor?.split(',')[0]?.trim() ?? '127.0.0.1'
+  const rl = await checkRateLimit(getPinRateLimiter(), ip)
+  if (rl && !rl.success) {
+    return {
+      success: false,
+      error: 'Quá nhiều lần thử mã PIN',
+      isLocked: true,
+      lockoutSeconds: Math.ceil((rl.reset - Date.now()) / 1000),
+    }
+  }
 
   try {
     const result = await verifyPin(session.parentId, parsed.data)
