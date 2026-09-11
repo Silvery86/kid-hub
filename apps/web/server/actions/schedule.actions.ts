@@ -376,7 +376,7 @@ export const addDailyHomeworkAction = async (
 export const toggleHomeworkDoneAction = async (
   id: string,
   isDone: boolean
-): Promise<ActionResult<{ points: number }>> => {
+): Promise<ActionResult<{ points: number; newBadgeIds: string[] }>> => {
   try {
     const parsed = z.object({ id: z.string().min(1), isDone: z.boolean() }).safeParse({ id, isDone })
     if (!parsed.success) return { success: false, error: 'Invalid input' }
@@ -388,16 +388,22 @@ export const toggleHomeworkDoneAction = async (
     )
     revalidatePath('/schedule')
 
+    let newBadgeIds: string[] = []
     if (parsed.data.isDone) {
       const subj = getSubjectById(updated.subjectId)
       const icon = subj?.icon ?? '📝'
       void recordActivity(studentId, 'HOMEWORK_DONE', updated.label, icon)
       const newStreak = await updateStreak(studentId)
       await addUserPoints(studentId, updated.points)
-      void checkAndAwardStreakBadges(studentId, newStreak)
+      // Awaited now: fired with `void`, the streak badge could be cut short by a
+      // frozen serverless function, and its ids could never reach the child.
+      newBadgeIds = await checkAndAwardStreakBadges(studentId, newStreak)
     }
 
-    return { success: true, data: { points: isDone ? updated.points : 0 } }
+    return {
+      success: true,
+      data: { points: isDone ? updated.points : 0, newBadgeIds },
+    }
   } catch {
     return { success: false, error: 'Failed to update homework' }
   }

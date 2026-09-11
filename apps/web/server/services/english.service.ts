@@ -8,6 +8,7 @@ import 'server-only'
 import * as englishRepo from '@/server/repositories/english.repository'
 import * as homeworkRepo from '@/server/repositories/homework.repository'
 import { calculateStars, calculatePointsEarned } from '@kid-hub/shared'
+import { checkAndAwardGameWinBadge } from '@/server/services/rewards.service'
 import { GAME_QUESTIONS_PER_SESSION } from '@/lib/constants'
 import type { SaveEnglishProgressInput } from '@/types'
 
@@ -16,6 +17,8 @@ export interface EnglishSessionResult {
   score: number
   pointsEarned: number
   isNewBest: boolean
+  /** Badges earned by *this* session, for the result screen to celebrate. */
+  newBadgeIds: string[]
 }
 
 /**
@@ -59,7 +62,9 @@ export const saveEnglishSession = async (
     await homeworkRepo.markDone(input.homeworkPeriodId, studentId, input.homeworkDate)
   }
 
-  return { starsEarned: stars, score, pointsEarned, isNewBest }
+  const newBadgeIds = await checkAndAwardGameWinBadge(studentId)
+
+  return { starsEarned: stars, score, pointsEarned, isNewBest, newBadgeIds }
 }
 
 /**

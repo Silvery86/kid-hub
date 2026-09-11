@@ -5,42 +5,56 @@ import {
   awardBadge,
   getTotalGameCount,
 } from '@/server/repositories/progress.repository'
+import { streakBadgesFor } from '@/lib/badge-rules'
 
 /**
- * Awards the 'game-win' badge on the first ever completed game session.
- * Safe to call after every game save — no-op if already earned.
+ * Badge rules.
+ *
+ * These used to return void, which is why a child could earn a badge and never
+ * be told: the reward existed in the database and nothing downstream could know
+ * it had just happened. They now return the ids awarded *by this call* — an
+ * empty array when nothing changed — so an action can carry them back and the
+ * app can celebrate the moment rather than leaving it to be discovered later on
+ * the badges page.
+ *
+ * "By this call" is the important part. Re-earning is not a thing; only the
+ * transition from not-earned to earned is worth a celebration, and awardBadge
+ * reports exactly that.
  */
-export const checkAndAwardGameWinBadge = async (studentId: string): Promise<void> => {
+
+/** Awards the 'game-win' badge on the first ever completed game session. */
+export const checkAndAwardGameWinBadge = async (studentId: string): Promise<string[]> => {
   const earned = await getEarnedBadgeIds(studentId)
-  if (earned.includes('game-win')) return
+  if (earned.includes('game-win')) return []
   const count = await getTotalGameCount(studentId)
-  if (count >= 1) await awardBadge(studentId, 'game-win')
+  if (count < 1) return []
+  return (await awardBadge(studentId, 'game-win')) ? ['game-win'] : []
 }
 
-/**
- * Awards the 'first-login' badge. Should be called after the first kid session unlock.
- * No-op if already earned.
- */
-export const checkAndAwardFirstLoginBadge = async (studentId: string): Promise<void> => {
+/** Awards the 'first-login' badge after the first kid session unlock. */
+export const checkAndAwardFirstLoginBadge = async (studentId: string): Promise<string[]> => {
   const earned = await getEarnedBadgeIds(studentId)
-  if (!earned.includes('first-login')) {
-    await awardBadge(studentId, 'first-login')
-  }
+  if (earned.includes('first-login')) return []
+  return (await awardBadge(studentId, 'first-login')) ? ['first-login'] : []
 }
 
 /**
- * Checks streak milestones and awards streak-3 / streak-7 badges.
- * Safe to call after every streak update — no-op if already earned.
+ * Checks streak milestones and awards what the streak has reached.
+ *
+ * Which ids those are is decided by lib/badge-rules.ts, where it can be tested;
+ * this only does the writes and reports what actually landed.
  */
 export const checkAndAwardStreakBadges = async (
   studentId: string,
   currentStreak: number
-): Promise<void> => {
+): Promise<string[]> => {
   const earned = await getEarnedBadgeIds(studentId)
-  if (currentStreak >= 3 && !earned.includes('streak-3')) {
-    await awardBadge(studentId, 'streak-3')
+  const due = streakBadgesFor(currentStreak, earned)
+  if (due.length === 0) return []
+
+  const awarded: string[] = []
+  for (const badgeId of due) {
+    if (await awardBadge(studentId, badgeId)) awarded.push(badgeId)
   }
-  if (currentStreak >= 7 && !earned.includes('streak-7')) {
-    await awardBadge(studentId, 'streak-7')
-  }
+  return awarded
 }

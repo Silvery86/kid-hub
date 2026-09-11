@@ -11,7 +11,6 @@ import { revalidatePath } from 'next/cache'
 import { saveMathSession, getTodayMathHomework } from '@/server/services/math.service'
 import { todayDateKey, todayDayOfWeek } from '@/server/services/homework.service'
 import { recordActivity } from '@/server/services/activity.service'
-import { checkAndAwardGameWinBadge } from '@/server/services/rewards.service'
 import type { MathSessionResult } from '@/server/services/math.service'
 import type { MathGameType, ActionResult } from '@/types'
 
@@ -49,7 +48,6 @@ export const saveMathProgressAction = async (
 
     const label = `Toán · ${MATH_MINIGAME_LABELS[data.minigame] ?? data.minigame} · Cấp ${data.level}`
     void recordActivity(studentId, 'GAME_COMPLETE', label, '🧮')
-    void checkAndAwardGameWinBadge(studentId)
 
     return { success: true, data: result }
   } catch {

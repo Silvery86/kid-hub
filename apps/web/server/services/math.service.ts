@@ -8,6 +8,7 @@ import 'server-only'
 import * as mathRepo from '@/server/repositories/math.repository'
 import * as homeworkRepo from '@/server/repositories/homework.repository'
 import { calculateStars, calculatePointsEarned } from '@kid-hub/shared'
+import { checkAndAwardGameWinBadge } from '@/server/services/rewards.service'
 import { GAME_QUESTIONS_PER_SESSION } from '@/lib/constants'
 import type { SaveMathProgressInput } from '@/types'
 
@@ -16,6 +17,11 @@ export interface MathSessionResult {
   score: number
   pointsEarned: number
   isNewBest: boolean
+  /**
+   * Badges earned by *this* session, for the result screen to celebrate.
+   * Empty on every session that earns nothing, which is most of them.
+   */
+  newBadgeIds: string[]
 }
 
 /**
@@ -59,7 +65,13 @@ export const saveMathSession = async (
     await homeworkRepo.markDone(input.homeworkPeriodId, studentId, input.homeworkDate)
   }
 
-  return { starsEarned: stars, score, pointsEarned, isNewBest }
+  // Awaited, and here rather than in the action. Awarding a badge is a business
+  // rule, so it belongs in the service — and the action used to fire it with
+  // `void`, which on a serverless runtime can be frozen before the promise
+  // settles. That made the award both invisible and, occasionally, absent.
+  const newBadgeIds = await checkAndAwardGameWinBadge(studentId)
+
+  return { starsEarned: stars, score, pointsEarned, isNewBest, newBadgeIds }
 }
 
 /**

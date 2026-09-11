@@ -11,7 +11,6 @@ import { revalidatePath } from 'next/cache'
 import { saveEnglishSession, getTodayEnglishHomework } from '@/server/services/english.service'
 import { todayDateKey, todayDayOfWeek } from '@/server/services/homework.service'
 import { recordActivity } from '@/server/services/activity.service'
-import { checkAndAwardGameWinBadge } from '@/server/services/rewards.service'
 import type { EnglishSessionResult } from '@/server/services/english.service'
 import type { EnglishGameType, ActionResult } from '@/types'
 
@@ -55,7 +54,6 @@ export const saveEnglishProgressAction = async (
 
     const label = `Tiếng Anh · ${ENGLISH_MINIGAME_LABELS[data.minigame] ?? data.minigame} · Cấp ${data.level}`
     void recordActivity(studentId, 'GAME_COMPLETE', label, '🔤')
-    void checkAndAwardGameWinBadge(studentId)
 
     return { success: true, data: result }
   } catch {

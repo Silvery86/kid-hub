@@ -53,20 +53,28 @@ export const getEarnedBadgeIds = async (studentId: string): Promise<string[]> =>
 
 /**
  * Awards a badge to a user. Creates UserProgress if it doesn't exist.
- * Silently no-ops if the badge is already earned (upsert).
+ *
+ * Returns whether the badge was awarded *by this call* — false means it was
+ * already earned. The caller needs that distinction to decide whether there is
+ * anything to celebrate; an upsert cannot answer it, because it reports success
+ * either way, which is why this uses createMany with skipDuplicates instead.
+ *
+ * The count is also the race guard: two sessions finishing at once both try to
+ * insert, and exactly one gets count 1, so a badge can never be celebrated
+ * twice.
  */
-export const awardBadge = async (studentId: string, badgeId: string): Promise<void> => {
+export const awardBadge = async (studentId: string, badgeId: string): Promise<boolean> => {
   const progress = await db.userProgress.upsert({
     where: { studentId },
     create: { studentId, totalPoints: 0, currentStreak: 0, lastActiveDate: todayStr() },
     update: {},
     select: { id: true },
   })
-  await db.earnedBadge.upsert({
-    where: { userProgressId_badgeId: { userProgressId: progress.id, badgeId } },
-    create: { userProgressId: progress.id, badgeId },
-    update: {},
+  const { count } = await db.earnedBadge.createMany({
+    data: [{ userProgressId: progress.id, badgeId }],
+    skipDuplicates: true,
   })
+  return count > 0
 }
 
 /** Returns total completed game sessions across math and english. */
