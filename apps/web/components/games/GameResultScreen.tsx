@@ -1,7 +1,12 @@
+'use client'
+
 /** GameResultScreen — post-game summary card with stars, score, and navigation actions. */
 
 import { StarRating } from '@/components/ui/StarRating'
 import { KidButton } from '@/components/ui/KidButton'
+import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
+import { Confetti } from '@/components/ui/Confetti'
+import { GAME_QUESTIONS_PER_SESSION as QUESTIONS } from '@/lib/constants'
 import { GAME_QUESTIONS_PER_SESSION } from '@/lib/constants'
 import type { GameType } from '@/types'
 
@@ -42,11 +47,15 @@ export const GameResultScreen = ({
   saveError,
 }: GameResultScreenProps) => {
   const isNewBest = bestStars === null || starsEarned > bestStars
+  const isPerfect = correctCount === QUESTIONS
 
   return (
-    <div className="animate-in fade-in zoom-in-95 anim-duration-300 flex min-h-dvh flex-col items-center justify-center gap-8 px-8">
+    <div className="animate-in fade-in zoom-in-95 anim-duration-300 relative flex min-h-dvh flex-col items-center justify-center gap-8 px-8">
+      {/* A clean sweep is the one result worth throwing something at. */}
+      {isPerfect ? <Confetti count={28} /> : null}
+
       {/* Trophy / emoji */}
-      <div className="text-9xl select-none" aria-hidden="true">
+      <div className="animate-pop-in text-9xl select-none" aria-hidden="true">
         {EMOJI_BY_STARS[starsEarned]}
       </div>
 
@@ -63,16 +72,18 @@ export const GameResultScreen = ({
         <div className="rounded-2xl bg-slate-700 px-6 py-4 text-center">
           <p className="text-sm font-bold tracking-wider text-slate-400 uppercase">Đúng</p>
           <p className="text-4xl font-extrabold text-white">
-            {correctCount}
+            <AnimatedNumber value={correctCount} />
             <span className="text-2xl text-slate-400"> / {GAME_QUESTIONS_PER_SESSION}</span>
           </p>
         </div>
         <div className="rounded-2xl bg-slate-700 px-6 py-4 text-center">
           <p className="text-sm font-bold tracking-wider text-slate-400 uppercase">Điểm</p>
-          <p className="text-4xl font-extrabold text-yellow-400">+{pointsEarned}</p>
+          <p className="text-4xl font-extrabold text-yellow-400">
+            <AnimatedNumber value={pointsEarned} format={(n) => `+${n}`} />
+          </p>
         </div>
         {isNewBest && (
-          <div className="rounded-2xl bg-yellow-500 px-6 py-4 text-center">
+          <div className="animate-pop-in rounded-2xl bg-yellow-500 px-6 py-4 text-center">
             <p className="text-sm font-bold tracking-wider text-yellow-900 uppercase">Kỷ lục</p>
             <p className="text-4xl font-extrabold text-yellow-900">Mới! 🌟</p>
           </div>

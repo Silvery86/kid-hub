@@ -139,7 +139,11 @@ export const AlphabetGame = ({ onExit, homeworkPeriodId, onHomeworkSubmit }: Alp
         className={cn(
           'flex flex-1 flex-col items-center justify-center gap-10 px-8 transition-colors duration-300',
           feedbackState === 'correct' && 'bg-emerald-900/40',
-          feedbackState === 'wrong' && 'bg-red-900/40'
+          // The wash already said right or wrong; the motion is what a
+          // six-year-old reads first. Both keyframes predate this phase.
+          feedbackState === 'correct' && 'animate-count-pulse',
+          feedbackState === 'wrong' && 'bg-red-900/40',
+          feedbackState === 'wrong' && 'animate-shake'
         )}
       >
         {/* Instruction */}

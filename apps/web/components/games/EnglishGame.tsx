@@ -177,7 +177,11 @@ export const EnglishGame = ({ initialLevel = 1 }: EnglishGameProps) => {
         className={cn(
           'flex flex-1 flex-col items-center justify-center gap-2 px-3 py-2 portrait:gap-4 portrait:py-4 portrait:px-6 transition-colors duration-300',
           feedbackState === 'correct' && 'bg-emerald-900/40',
-          feedbackState === 'wrong' && 'bg-red-900/40'
+          // The wash already said right or wrong; the motion is what a
+          // six-year-old reads first. Both keyframes predate this phase.
+          feedbackState === 'correct' && 'animate-count-pulse',
+          feedbackState === 'wrong' && 'bg-red-900/40',
+          feedbackState === 'wrong' && 'animate-shake'
         )}
       >
         {/* Flashcard image — letter-match shows it above the prompt card */}
