@@ -6,6 +6,11 @@
  * is enforced against a preset, deliberately (decision D2): a hard limit that
  * happened to be wrong would block a legitimate school.
  *
+ * `boarding` (bán trú) is the one field a parent must actually decide rather
+ * than correct: it is a fact about their enrolment, not about the school, and
+ * the preset cannot know it. It defaults on for tiểu học, where học 2 buổi
+ * usually means staying, and off for THCS/THPT, which are morning-only here.
+ *
  * 35' periods for tiểu học and 45' for THCS/THPT are the widely-used norms.
  * They are defaults, not regulations; nothing here has been checked against a
  * circular, and nothing should be until one is sourced.
@@ -14,6 +19,7 @@
 import type { BellRules, DayOfWeek } from '../types'
 
 const WEEKDAYS: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+const MON_TO_THU: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday']
 
 export interface BellPreset {
   key: string
@@ -41,9 +47,22 @@ export const BELL_PRESETS: readonly BellPreset[] = [
         periods: 3,
         recess: { afterPeriod: 6, start: '15:00', minutes: 15 },
       },
+      boarding: true,
+      // No lunch routine here: with `boarding` on, the generator derives the
+      // midday block from the two session times, so it stays correct when the
+      // parent changes either one.
       routines: [
         { label: 'Có mặt, thể dục đầu giờ', startTime: '07:50', endTime: '08:10', days: WEEKDAYS },
-        { label: 'Ăn trưa & ngủ', startTime: '11:00', endTime: '13:30', days: WEEKDAYS },
+        // The guided hour is what makes the week uneven — Mon–Thu dismiss at
+        // 17:00, Friday at 16:00 because it has none. Offered as a starting
+        // point because it is near-universal in tiểu học học 2 buổi; a school
+        // without it is one delete away.
+        {
+          label: 'Hướng dẫn hoàn thành kiến thức',
+          startTime: '16:00',
+          endTime: '17:00',
+          days: MON_TO_THU,
+        },
       ],
     },
   },
@@ -59,6 +78,7 @@ export const BELL_PRESETS: readonly BellPreset[] = [
         periods: 5,
         recess: { afterPeriod: 2, start: '08:40', minutes: 15 },
       },
+      boarding: false,
       routines: [],
     },
   },
@@ -74,6 +94,7 @@ export const BELL_PRESETS: readonly BellPreset[] = [
         periods: 5,
         recess: { afterPeriod: 2, start: '08:40', minutes: 15 },
       },
+      boarding: false,
       routines: [],
     },
   },

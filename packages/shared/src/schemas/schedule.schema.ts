@@ -110,19 +110,14 @@ export const BellRulesSchema = z.object({
   transitionMinutes: z.number().int().min(0).max(60),
   morning: BellSessionSchema,
   afternoon: BellSessionSchema.optional(),
+  /** Bán trú. Decides whether the midday gap is derived as a block at school. */
+  boarding: z.boolean(),
   routines: z.array(BellRoutineSchema).max(10),
-})
-
-export const BellAnchorsSchema = z.object({
-  morningEnd: TimeSchema.optional(),
-  afternoonEnd: TimeSchema.optional(),
-  dismissal: z.record(DaySchema, TimeSchema).optional(),
 })
 
 export const SaveBellScheduleSchema = z.object({
   presetKey: z.string().max(40).optional(),
   rules: BellRulesSchema,
-  anchors: BellAnchorsSchema.optional(),
 })
 
 // ── Week-at-a-time save ──────────────────────────────────────

@@ -1,23 +1,27 @@
 /**
  * Bell schedule — turning the rules a school publishes into a day timeline.
  *
- * Schools do not publish tables of times. They publish rules and anchors:
- * "8h10 vào tiết 1, mỗi tiết 35', có 5' chuẩn bị, 9h30 ra chơi (15'),
- * 11h tan học buổi sáng". This module takes that, in that shape, and derives
- * every slot — so a parent enters eight numbers instead of transcribing
- * fourteen clock times and making arithmetic errors nothing would catch.
+ * Schools do not publish tables of times. They publish rules: "8h10 vào tiết 1,
+ * mỗi tiết 35', có 5' chuẩn bị, 9h30 ra chơi (15')". This module takes that, in
+ * that shape, and derives every slot — so a parent enters eight numbers instead
+ * of transcribing fourteen clock times and making arithmetic errors nothing
+ * would catch.
+ *
+ * The times the school states as results — 11h tan học buổi sáng, 17h giờ tan
+ * học — are derived here too (`morningEnd`, `groupDismissals`) and shown back to
+ * the parent to compare against their notice. They are never asked for as input:
+ * a number the app can compute is a number the parent should not have to type.
  *
  * See docs/SCHEDULE_PARENT_IMP.md §6.2. Pure and isomorphic: no persistence,
  * no Prisma, no React.
  */
 
 import type {
-  AnchorMismatch,
-  BellAnchors,
   BellRules,
   BellSession,
   BellSlot,
   DayOfWeek,
+  DismissalGroup,
   RuleIssue,
 } from '../types'
 import { formatMinutesToTime, parseTimeToMinutes } from './time'
@@ -83,8 +87,67 @@ const generateSession = (
   return out
 }
 
+const lastEndTime = (slots: BellSlot[], day?: DayOfWeek): string | undefined => {
+  const scoped = day ? slots.filter((s) => s.days.includes(day)) : slots
+  return scoped.reduce<string | undefined>(
+    (latest, s) => (latest == null || s.endTime > latest ? s.endTime : latest),
+    undefined
+  )
+}
+
+const lastPeriodEnd = (slots: BellSlot[], from: number, to: number): string | undefined =>
+  slots
+    .filter((s) => s.kind === 'PERIOD' && s.periodNumber != null)
+    .filter((s) => s.periodNumber! >= from && s.periodNumber! <= to)
+    .reduce<string | undefined>(
+      (latest, s) => (latest == null || s.endTime > latest ? s.endTime : latest),
+      undefined
+    )
+
 /** Chronological, so a caller can render the day straight down the list. */
 const byStartTime = (a: BellSlot, b: BellSlot): number => a.startTime.localeCompare(b.startTime)
+
+/**
+ * The label the derived midday block carries.
+ *
+ * Exported because the round-trip depends on it. The block is written to the
+ * timeline like any other slot, and the repository rebuilds `rules.routines`
+ * from the stored ROUTINE rows — so without a marker the derived block would
+ * come back as an explicit routine and then be emitted a second time on the
+ * next save. One constant, read by both sides, is the whole mechanism.
+ */
+export const MIDDAY_BREAK_LABEL = 'Ăn trưa & ngủ'
+
+/**
+ * The midday break, derived from `boarding` rather than entered.
+ *
+ * A bán trú child does not go home between the sessions — they eat and sleep at
+ * school, and the timeline has to account for those hours. Deriving the block
+ * from the two session times keeps it true when a rule changes: a routine that
+ * hard-coded "11:00 – 13:30" went on claiming 11:00 after a parent shortened
+ * the morning to three periods, overlapping the tiết it then ran into.
+ *
+ * A non-boarding child gets no block at all. The gap is real, but it is time at
+ * home, and drawing it as a slot at school would state something untrue.
+ */
+const middayBreak = (rules: BellRules, morning: BellSlot[], afternoon: BellSlot[]): BellSlot[] => {
+  if (!rules.boarding || !rules.afternoon) return []
+
+  const start = lastEndTime(morning)
+  const end = afternoon[0]?.startTime
+  if (!start || !end || parseTimeToMinutes(end) <= parseTimeToMinutes(start)) return []
+
+  return [
+    {
+      kind: 'ROUTINE',
+      label: MIDDAY_BREAK_LABEL,
+      startTime: start,
+      endTime: end,
+      days: DEFAULT_DAYS,
+      isGenerated: true,
+    },
+  ]
+}
 
 /**
  * Derives the whole day from the rules: periods, recesses and routines,
@@ -111,7 +174,9 @@ export const generateSlots = (rules: BellRules): BellSlot[] => {
     isGenerated: true,
   }))
 
-  return [...morning, ...afternoon, ...routines].sort(byStartTime)
+  return [...morning, ...afternoon, ...middayBreak(rules, morning, afternoon), ...routines].sort(
+    byStartTime
+  )
 }
 
 /**
@@ -177,75 +242,37 @@ export const findRuleIssues = (rules: BellRules): RuleIssue[] => {
   return issues
 }
 
-const lastEndTime = (slots: BellSlot[], day?: DayOfWeek): string | undefined => {
-  const scoped = day ? slots.filter((s) => s.days.includes(day)) : slots
-  return scoped.reduce<string | undefined>(
-    (latest, s) => (latest == null || s.endTime > latest ? s.endTime : latest),
-    undefined
-  )
-}
-
-const lastPeriodEnd = (slots: BellSlot[], from: number, to: number): string | undefined =>
-  slots
-    .filter((s) => s.kind === 'PERIOD' && s.periodNumber != null)
-    .filter((s) => s.periodNumber! >= from && s.periodNumber! <= to)
-    .reduce<string | undefined>(
-      (latest, s) => (latest == null || s.endTime > latest ? s.endTime : latest),
-      undefined
-    )
 
 /**
- * Checks the derived timeline against the clock times the school also published.
+ * When the morning session ends.
  *
- * This is the correctness mechanism. We cannot know any given school's rules,
- * but the parent can enter the anchors their school stated — 11h tan học sáng,
- * 17h giờ tan học — and a timeline that misses one proves a rule is wrong. We
- * return the deltas rather than adjusting, because only the parent knows which
- * rule they mistyped.
+ * For a bán trú household this is an internal transition the child never
+ * crosses. For every other household it is the pickup time — the single most
+ * important number on the screen, and the one the school states as "11h tan
+ * học buổi sáng".
  */
-export const validateAgainstAnchors = (
-  slots: BellSlot[],
-  rules: BellRules,
-  anchors: BellAnchors
-): AnchorMismatch[] => {
-  const out: AnchorMismatch[] = []
+export const morningEnd = (slots: BellSlot[], rules: BellRules): string | undefined =>
+  lastPeriodEnd(slots, 1, rules.morning.periods)
 
-  const compare = (label: string, expected: string | undefined, actual: string | undefined) => {
-    if (!expected || !actual || expected === actual) return
-    out.push({
-      label,
-      expected,
-      actual,
-      deltaMinutes: parseTimeToMinutes(actual) - parseTimeToMinutes(expected),
-    })
-  }
+/**
+ * Giờ tan học, collapsed into runs of weekdays that end at the same time.
+ *
+ * This is the number a school publishes and a parent plans around, and it is
+ * the one that varies across the week: Mon–Thu run to 17:00 because of the
+ * guided hour, Friday stops at 16:00 because it has none. That variation lives
+ * in each slot's `days`, so reading it back is a filter rather than a special
+ * case — and grouping only CONSECUTIVE runs keeps the reading honest. A week
+ * where Wednesday alone differs renders as three groups, not as a tidy two.
+ */
+export const groupDismissals = (slots: BellSlot[]): DismissalGroup[] => {
+  const out: DismissalGroup[] = []
 
-  compare('Tan học buổi sáng', anchors.morningEnd, lastPeriodEnd(slots, 1, rules.morning.periods))
-
-  if (rules.afternoon) {
-    compare(
-      'Kết thúc buổi chiều',
-      anchors.afternoonEnd,
-      lastPeriodEnd(slots, rules.morning.periods + 1, rules.morning.periods + rules.afternoon.periods)
-    )
-  }
-
-  // Dismissal is checked as an OVERRUN, not an equality. At Lớp 1A1, Friday's
-  // last slot (tiết 7) ends 15:50 while the school states giờ tan học 16:00 —
-  // the ten minutes are packing up, and inventing a routine slot to absorb them
-  // would be fabricating a fact about the school. A day that ends before the
-  // stated dismissal is normal; a day that runs PAST it means a rule is wrong.
-  for (const [day, expected] of Object.entries(anchors.dismissal ?? {})) {
-    const actual = lastEndTime(slots, day as DayOfWeek)
-    if (!expected || !actual) continue
-    if (parseTimeToMinutes(actual) > parseTimeToMinutes(expected)) {
-      out.push({
-        label: `Giờ tan học ${day}`,
-        expected,
-        actual,
-        deltaMinutes: parseTimeToMinutes(actual) - parseTimeToMinutes(expected),
-      })
-    }
+  for (const day of DEFAULT_DAYS) {
+    const time = lastEndTime(slots, day)
+    if (!time) continue
+    const run = out[out.length - 1]
+    if (run && run.time === time) run.days.push(day)
+    else out.push({ days: [day], time })
   }
 
   return out

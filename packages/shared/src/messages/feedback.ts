@@ -27,6 +27,7 @@ export const FEEDBACK = {
   bellSchedule: {
     saved: 'Đã lưu khung giờ học',
     saveFailed: 'Không lưu được khung giờ học',
+    reverted: 'Đã khôi phục khung giờ đã lưu',
   },
 
   students: {

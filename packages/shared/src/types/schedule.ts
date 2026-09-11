@@ -72,29 +72,26 @@ export interface BellRules {
   morning: BellSession
   /** Absent for a morning-only school. */
   afternoon?: BellSession
+  /**
+   * Bán trú — the child stays at school over midday to eat and nap.
+   *
+   * This is a fact about the enrolment, not the timetable, and it decides which
+   * times the parent actually needs. A boarding child never crosses the morning
+   * dismissal, so the number that matters is giờ tan học at the end of the day.
+   * A non-boarding child is collected when the morning ends and brought back
+   * for the afternoon, making that same morning end a real pickup time.
+   *
+   * It also decides whether the midday gap is time at school, which is why the
+   * lunch break is derived from this flag rather than typed in as a routine.
+   */
+  boarding: boolean
   routines: BellRoutine[]
 }
 
-/**
- * The clock times the school also published, used to check the derived timeline.
- * Every field optional: a parent supplies whichever their school stated.
- */
-export interface BellAnchors {
-  /** "Tan học buổi sáng" — when the last morning period should end. */
-  morningEnd?: string
-  /** When the last afternoon period should end. */
-  afternoonEnd?: string
-  /** "Giờ tan học", per day — the end of the last slot on that day. */
-  dismissal?: Partial<Record<DayOfWeek, string>>
-}
-
-/** A derived time that missed one of the school's stated anchors. */
-export interface AnchorMismatch {
-  label: string
-  expected: string
-  actual: string
-  /** actual − expected, in minutes. Negative means the day ends early. */
-  deltaMinutes: number
+/** Giờ tan học for a run of weekdays that all end at the same time. */
+export interface DismissalGroup {
+  days: DayOfWeek[]
+  time: string
 }
 
 /** A rule set that cannot produce a sane timeline. */

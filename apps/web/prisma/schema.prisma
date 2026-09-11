@@ -218,6 +218,9 @@ model BellSchedule {
   afternoonRecessAfter   Int?
   afternoonRecessStart   String?  @db.VarChar(5)
   afternoonRecessMinutes Int?
+  /// Bán trú — the child stays over midday. Decides whether the lunch/nap block
+  /// is derived at all, and which dismissal time the parent is shown.
+  boarding               Boolean  @default(true)
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 

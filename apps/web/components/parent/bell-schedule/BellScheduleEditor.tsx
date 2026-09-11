@@ -4,31 +4,46 @@
  * Bell schedule editor — step 1 of entering a timetable.
  *
  * Schools publish rules, not tables of times ("8h10 vào tiết 1, mỗi tiết 35',
- * 9h30 ra chơi, 11h tan học buổi sáng"). So this screen asks for the rules in
- * that shape, derives the timeline, and checks the result against the clock
- * times the school also stated. A parent enters eight numbers instead of
- * transcribing fourteen and hoping the arithmetic held.
+ * 9h30 ra chơi"). So this screen asks for the rules in that shape and derives
+ * the timeline. A parent enters eight numbers instead of transcribing fourteen
+ * and hoping the arithmetic held.
+ *
+ * Two of those numbers are not periods at all. Bán trú decides whether the
+ * midday hours are spent at school, and the routines carry the per-day
+ * variation — Mon–Thu have a guided hour, Friday does not, which is the only
+ * reason the week is uneven. Without both, no household whose Friday ends
+ * early can describe its own school.
+ *
+ * The times the school states as results — tan học buổi sáng, giờ tan học —
+ * are computed and shown back, never asked for. An earlier version asked the
+ * parent to type them in so it could flag a mismatch; it checked the one time
+ * that only matters for non-boarding families, ignored the per-day dismissal
+ * that matters for everyone, and could not be acted on when it did fire.
  *
  * See docs/SCHEDULE_PARENT_IMP.md §6.
  */
 
 import { useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
-import { AlertCircle, ArrowRight, Check } from 'lucide-react'
+import { AlertCircle, ArrowRight, Check, Plus, Trash2 } from 'lucide-react'
 import {
   FEEDBACK,
   BELL_PRESETS,
+  dayShortLabel,
   findRuleIssues,
   generateSlots,
+  groupDismissals,
+  morningEnd,
   presetForGrade,
-  validateAgainstAnchors,
-  type BellAnchors,
+  type BellRoutine,
   type BellRules,
   type BellSlot,
+  type DayOfWeek,
 } from '@kid-hub/shared'
 
 import { saveBellScheduleAction } from '@/server/actions/schedule.actions'
 import { toast } from '@/hooks/useToast'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { KidButton } from '@/components/ui/KidButton'
 import { cn } from '@/lib/utils'
 
@@ -36,6 +51,14 @@ const SLOT_STYLE: Record<BellSlot['kind'], { row: string; chip: string }> = {
   PERIOD: { row: 'bg-white', chip: 'bg-blue-100 text-blue-700' },
   BREAK: { row: 'bg-amber-50/60', chip: 'bg-amber-100 text-amber-700' },
   ROUTINE: { row: 'bg-slate-50', chip: 'bg-slate-200 text-slate-600' },
+}
+
+const WEEK_DAYS: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+
+/** What the database holds right now — what a revert restores to. */
+interface StoredSchedule {
+  rules: BellRules
+  presetKey: string | undefined
 }
 
 const numberInput =
@@ -56,28 +79,27 @@ export function BellScheduleEditor({
   gradeLevel,
   initialRules,
   initialPresetKey,
-  initialAnchors,
 }: {
   gradeLevel: number
   initialRules?: BellRules | null
   initialPresetKey?: string
-  initialAnchors?: BellAnchors
 }) {
   // D seeds B: the grade picks a starting point, the parent corrects it.
   const seed = useMemo(() => presetForGrade(gradeLevel), [gradeLevel])
   const [presetKey, setPresetKey] = useState(initialPresetKey ?? seed.key)
   const [rules, setRules] = useState<BellRules>(initialRules ?? seed.rules)
-  const [anchors, setAnchors] = useState<BellAnchors>(initialAnchors ?? {})
   const [isPending, startTransition] = useTransition()
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isConfirming, setIsConfirming] = useState(false)
+  const [stored, setStored] = useState<StoredSchedule | null>(
+    initialRules ? { rules: initialRules, presetKey: initialPresetKey } : null
+  )
 
   const issues = useMemo(() => findRuleIssues(rules), [rules])
   const slots = useMemo(() => (issues.length === 0 ? generateSlots(rules) : []), [rules, issues])
-  const mismatches = useMemo(
-    () => (slots.length > 0 ? validateAgainstAnchors(slots, rules, anchors) : []),
-    [slots, rules, anchors]
-  )
+  const dismissals = useMemo(() => groupDismissals(slots), [slots])
+  const pickup = useMemo(() => morningEnd(slots, rules), [slots, rules])
 
   const applyPreset = (key: string) => {
     const preset = BELL_PRESETS.find((p) => p.key === key)
@@ -97,21 +119,72 @@ export function BellScheduleEditor({
     setRules((r) => (r.afternoon ? { ...r, afternoon: { ...r.afternoon, ...patch } } : r))
   }
 
-  const handleSave = () => {
-    if (issues.length > 0) return
+  const patchRoutines = (next: BellRoutine[]) => {
+    setSaved(false)
+    setRules((r) => ({ ...r, routines: next }))
+  }
+
+  const patchRoutine = (index: number, patch: Partial<BellRoutine>) =>
+    patchRoutines(rules.routines.map((r, i) => (i === index ? { ...r, ...patch } : r)))
+
+  // Days are rebuilt in weekday order rather than pushed, so a routine reads
+  // "T2 T3 T5" however the parent clicked them.
+  const toggleRoutineDay = (index: number, day: DayOfWeek) => {
+    const current = rules.routines[index]!.days
+    const next = current.includes(day)
+      ? current.filter((d) => d !== day)
+      : WEEK_DAYS.filter((d) => d === day || current.includes(d))
+    patchRoutine(index, { days: next })
+  }
+
+  const addRoutine = () =>
+    patchRoutines([
+      ...rules.routines,
+      { label: '', startTime: '16:00', endTime: '17:00', days: WEEK_DAYS },
+    ])
+
+  const runSave = () => {
     setError(null)
     startTransition(async () => {
       const result = await saveBellScheduleAction({ presetKey, rules })
+      // Closed either way: the failure below renders inline, behind where this
+      // dialog would otherwise still be sitting.
+      setIsConfirming(false)
       if (!result.success) {
         // Inline: a bell-rule error points at a specific row of the editor.
         setError(result.error ?? FEEDBACK.bellSchedule.saveFailed)
         return
       }
+      // The new baseline. A later revert has to restore what is now in the
+      // database, not what the page happened to load with.
+      setStored({ rules, presetKey })
       // Deliberately not cleared on a timer: this is step 1 of two, and the
       // link to step 2 has to stay put long enough to be read and clicked.
       toast.success(FEEDBACK.bellSchedule.saved)
       setSaved(true)
     })
+  }
+
+  /**
+   * The first save writes a timetable where there was none — nothing to lose,
+   * nothing to ask. Every save after that REPLACES one the household is already
+   * using, and the consequence is not visible from this screen: weeks that have
+   * already been filled in keep the times they were written with until each is
+   * saved again. That is worth a question.
+   */
+  const handleSave = () => {
+    if (issues.length > 0) return
+    if (stored) setIsConfirming(true)
+    else runSave()
+  }
+
+  const revertToStored = () => {
+    if (!stored) return
+    setIsConfirming(false)
+    setError(null)
+    setRules(stored.rules)
+    setPresetKey(stored.presetKey ?? seed.key)
+    toast.info(FEEDBACK.bellSchedule.reverted)
   }
 
   return (
@@ -269,25 +342,163 @@ export function BellScheduleEditor({
             </section>
           ) : null}
 
+          {/* Bán trú is a fact about the enrolment, not the school, so no preset
+              can guess it — and it is the only question here the parent answers
+              rather than copies. A morning-only school never asks it. */}
+          {rules.afternoon ? (
+            <section className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+              <h2 className="text-sm font-black tracking-wide text-slate-500 uppercase">
+                Buổi trưa
+              </h2>
+              <div className="grid grid-cols-2 gap-2">
+                {([true, false] as const).map((value) => (
+                  <button
+                    key={String(value)}
+                    type="button"
+                    aria-pressed={rules.boarding === value}
+                    onClick={() => {
+                      setSaved(false)
+                      setRules((r) => ({ ...r, boarding: value }))
+                    }}
+                    className={cn(
+                      'min-h-12 rounded-xl border-2 px-3 py-2 text-sm font-black transition-colors',
+                      rules.boarding === value
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-slate-200 bg-white text-slate-500'
+                    )}
+                  >
+                    {value ? 'Ở lại trường' : 'Về nhà buổi trưa'}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs font-bold text-slate-400">
+                {rules.boarding
+                  ? 'Bé ăn trưa và ngủ tại trường. Khung giờ sẽ tính luôn buổi trưa.'
+                  : 'Bé về nhà sau buổi sáng và quay lại học buổi chiều.'}
+              </p>
+            </section>
+          ) : null}
+
           <section className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4">
             <h2 className="text-sm font-black tracking-wide text-slate-500 uppercase">
-              Đối chiếu với thông báo
+              Hoạt động khác
             </h2>
             <p className="text-xs font-bold text-slate-400">
-              Nhập giờ trường đã công bố. Nếu khung giờ tính ra lệch, chúng tôi sẽ báo cho bạn.
+              Những giờ không phải tiết học: thể dục đầu giờ, hướng dẫn hoàn thành kiến thức… Chọn
+              đúng các ngày có hoạt động — đó là lý do thứ Sáu tan học sớm hơn.
             </p>
-            <Field label="Tan học buổi sáng">
-              <input
-                type="time" className={timeInput}
-                value={anchors.morningEnd ?? ''}
-                onChange={(e) => setAnchors((a) => ({ ...a, morningEnd: e.target.value || undefined }))}
-              />
-            </Field>
+
+            {rules.routines.map((routine, i) => (
+              // Index key: a routine has no id, and the inputs are controlled, so
+              // the right values still render after a delete.
+              <div
+                key={i}
+                className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3"
+              >
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text" maxLength={40} placeholder="Tên hoạt động"
+                    className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none"
+                    value={routine.label}
+                    onChange={(e) => patchRoutine(i, { label: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    aria-label={`Xoá ${routine.label || 'hoạt động'}`}
+                    onClick={() => patchRoutines(rules.routines.filter((_, j) => j !== i))}
+                    className="grid size-10 shrink-0 place-items-center rounded-xl text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="time" className={timeInput}
+                    value={routine.startTime}
+                    onChange={(e) => patchRoutine(i, { startTime: e.target.value })}
+                  />
+                  <span className="text-sm font-black text-slate-400">–</span>
+                  <input
+                    type="time" className={timeInput}
+                    value={routine.endTime}
+                    onChange={(e) => patchRoutine(i, { endTime: e.target.value })}
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {WEEK_DAYS.map((day) => (
+                    <button
+                      key={day}
+                      type="button"
+                      aria-pressed={routine.days.includes(day)}
+                      onClick={() => toggleRoutineDay(i, day)}
+                      className={cn(
+                        'min-h-9 min-w-11 rounded-lg border-2 text-xs font-black transition-colors',
+                        routine.days.includes(day)
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-slate-200 bg-white text-slate-400'
+                      )}
+                    >
+                      {dayShortLabel(day)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            <button
+              type="button"
+              onClick={addRoutine}
+              className="flex min-h-11 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 text-sm font-black text-slate-500 transition-colors hover:border-blue-400 hover:text-blue-600"
+            >
+              <Plus size={16} /> Thêm hoạt động
+            </button>
           </section>
         </div>
 
         {/* ── Preview ── */}
         <div className="flex flex-col gap-3">
+          {/* The two numbers a parent actually plans around, derived from the
+              rules. This is the cross-check against the school's notice: the
+              app states what it computed, and a parent who sees the wrong time
+              knows a rule above is wrong. */}
+          {dismissals.length > 0 ? (
+            <section className="flex flex-col gap-2 rounded-2xl border-2 border-blue-200 bg-blue-50 p-4">
+              <h2 className="text-sm font-black tracking-wide text-blue-500 uppercase">
+                Giờ cần nhớ
+              </h2>
+
+              {!rules.boarding && pickup ? (
+                <p className="text-sm font-bold text-blue-900">
+                  Đón buổi trưa <span className="text-base font-black">{pickup}</span>
+                  {rules.afternoon ? (
+                    <>
+                      {' · quay lại '}
+                      <span className="text-base font-black">{rules.afternoon.start}</span>
+                    </>
+                  ) : null}
+                </p>
+              ) : null}
+
+              <div className="flex flex-wrap gap-x-5 gap-y-1">
+                {dismissals.map((group) => (
+                  <p key={`${group.days[0]}-${group.time}`} className="text-sm font-bold text-blue-900">
+                    {'Tan học '}
+                    {group.days.length > 1
+                      ? `${dayShortLabel(group.days[0]!)}–${dayShortLabel(group.days[group.days.length - 1]!)}`
+                      : dayShortLabel(group.days[0]!)}{' '}
+                    <span className="text-base font-black">{group.time}</span>
+                  </p>
+                ))}
+              </div>
+
+              <p className="text-xs font-bold text-blue-400">
+                So với thông báo của trường. Nếu lệch, sửa lại quy tắc ở bên trái.
+              </p>
+            </section>
+          ) : null}
+
           <section className="rounded-2xl border border-slate-200 bg-white p-4">
             <h2 className="mb-3 text-sm font-black tracking-wide text-slate-500 uppercase">
               Khung giờ tính ra
@@ -339,18 +550,6 @@ export function BellScheduleEditor({
             )}
           </section>
 
-          {mismatches.length > 0 ? (
-            <div className="flex flex-col gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-              {mismatches.map((m) => (
-                <p key={m.label} className="text-sm font-bold text-amber-700">
-                  {m.label}: trường ghi {m.expected}, khung giờ tính ra {m.actual} (lệch{' '}
-                  {m.deltaMinutes > 0 ? '+' : ''}
-                  {m.deltaMinutes} phút)
-                </p>
-              ))}
-            </div>
-          ) : null}
-
           {error ? (
             <div className="flex items-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
               <AlertCircle size={16} /> {error}
@@ -391,6 +590,25 @@ export function BellScheduleEditor({
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={isConfirming}
+        title="Thay đổi khung giờ đã lưu?"
+        description={
+          <>
+            <p>Khung giờ đang dùng sẽ được thay bằng khung giờ vừa sửa.</p>
+            <p className="mt-2">
+              Những tuần đã xếp môn vẫn giữ giờ cũ cho đến khi bạn lưu lại từng tuần.
+            </p>
+          </>
+        }
+        confirmLabel="Lưu thay đổi"
+        cancelLabel="Giữ khung giờ cũ"
+        onConfirm={runSave}
+        onCancel={revertToStored}
+        onDismiss={() => setIsConfirming(false)}
+        isPending={isPending}
+      />
     </div>
   )
 }

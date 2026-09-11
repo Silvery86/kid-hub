@@ -1,4 +1,4 @@
-import type { BellRules, BellSlot, DayOfWeek } from '@kid-hub/shared'
+import { MIDDAY_BREAK_LABEL, type BellRules, type BellSlot, type DayOfWeek } from '@kid-hub/shared'
 
 import { db } from '@/lib/db'
 
@@ -36,6 +36,10 @@ const toSlot = (row: SlotRow): BellSlot => ({
  * Rebuilds the rule object from the flat columns. Routines are deliberately not
  * stored as rules — nothing derives them, so they live only as ROUTINE slots and
  * are read back from there.
+ *
+ * The one ROUTINE slot that IS derived — the midday break, which follows from
+ * `boarding` — is excluded by the caller, or it would return as an explicit
+ * routine and be generated twice.
  */
 const toRules = (row: {
   periodMinutes: number
@@ -50,6 +54,7 @@ const toRules = (row: {
   afternoonRecessAfter: number | null
   afternoonRecessStart: string | null
   afternoonRecessMinutes: number | null
+  boarding: boolean
 }, routines: BellSlot[]): BellRules => ({
   periodMinutes: row.periodMinutes,
   transitionMinutes: row.transitionMinutes,
@@ -85,6 +90,7 @@ const toRules = (row: {
         },
       }
     : {}),
+  boarding: row.boarding,
   routines: routines.map((r) => ({
     label: r.label ?? '',
     startTime: r.startTime,
@@ -104,7 +110,10 @@ export const getBellSchedule = async (studentId: string): Promise<StoredBellSche
   return {
     id: row.id,
     ...(row.presetKey ? { presetKey: row.presetKey } : {}),
-    rules: toRules(row, slots.filter((s) => s.kind === 'ROUTINE')),
+    rules: toRules(
+      row,
+      slots.filter((s) => s.kind === 'ROUTINE' && s.label !== MIDDAY_BREAK_LABEL)
+    ),
     slots,
   }
 }
@@ -136,6 +145,7 @@ export const saveBellSchedule = async (
     afternoonRecessAfter: rules.afternoon?.recess?.afterPeriod ?? null,
     afternoonRecessStart: rules.afternoon?.recess?.start ?? null,
     afternoonRecessMinutes: rules.afternoon?.recess?.minutes ?? null,
+    boarding: rules.boarding,
   }
 
   await db.$transaction(async (tx) => {

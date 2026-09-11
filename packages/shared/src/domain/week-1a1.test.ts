@@ -21,6 +21,7 @@ const RULES: BellRules = {
   transitionMinutes: 5,
   morning: { start: '08:10', periods: 4, recess: { afterPeriod: 2, start: '09:30', minutes: 15 } },
   afternoon: { start: '13:45', periods: 3, recess: { afterPeriod: 6, start: '15:00', minutes: 15 } },
+  boarding: true,
   routines: [],
 }
 

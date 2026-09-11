@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { findRuleIssues, generateSlots, validateAgainstAnchors } from './bell-schedule'
+import {
+  MIDDAY_BREAK_LABEL,
+  findRuleIssues,
+  generateSlots,
+  groupDismissals,
+  morningEnd,
+} from './bell-schedule'
 import { presetForGrade, presetByKey } from '../data/bell-presets'
 import type { BellRules, BellSlot, DayOfWeek } from '../types'
 
@@ -28,9 +34,10 @@ const LOP_1A1: BellRules = {
     periods: 3,
     recess: { afterPeriod: 6, start: '15:00', minutes: 15 },
   },
+  // Bán trú: the midday block is derived from this, not listed below.
+  boarding: true,
   routines: [
     { label: 'Có mặt, thể dục đầu giờ', startTime: '07:50', endTime: '08:10', days: WEEKDAYS },
-    { label: 'Ăn trưa & ngủ', startTime: '11:00', endTime: '13:30', days: WEEKDAYS },
     // Friday dismisses at 16:00 because it has no guided hour — the only
     // per-day difference in the whole week, and it is data, not a special case.
     { label: 'Hướng dẫn hoàn thành kiến thức', startTime: '16:00', endTime: '17:00', days: MON_TO_THU },
@@ -113,48 +120,66 @@ describe('the anchor jump', () => {
   })
 })
 
-describe('validateAgainstAnchors', () => {
+describe('the midday break', () => {
+  it('fills the gap between the sessions for a bán trú child', () => {
+    const block = generateSlots(LOP_1A1).find((s) => s.label === MIDDAY_BREAK_LABEL)
+    expect(block).toMatchObject({ kind: 'ROUTINE', startTime: '11:00', endTime: '13:45' })
+  })
+
+  it('follows the rules instead of a fixed clock time', () => {
+    // Three morning periods instead of four: the morning now ends at 10:25, and
+    // the block has to start there. A hard-coded 11:00 routine would overlap
+    // nothing and leave 35 minutes of the day unaccounted for.
+    const shorter: BellRules = { ...LOP_1A1, morning: { ...LOP_1A1.morning, periods: 3 } }
+    const block = generateSlots(shorter).find((s) => s.label === MIDDAY_BREAK_LABEL)
+    expect(block).toMatchObject({ startTime: '10:20', endTime: '13:45' })
+  })
+
+  it('draws nothing when the child goes home at midday', () => {
+    const dayPupil: BellRules = { ...LOP_1A1, boarding: false }
+    expect(generateSlots(dayPupil).some((s) => s.label === MIDDAY_BREAK_LABEL)).toBe(false)
+  })
+
+  it('draws nothing for a morning-only school, boarding or not', () => {
+    const { afternoon: _afternoon, ...rest } = LOP_1A1
+    const morningOnly: BellRules = { ...rest, boarding: true }
+    expect(generateSlots(morningOnly).some((s) => s.label === MIDDAY_BREAK_LABEL)).toBe(false)
+  })
+})
+
+describe('the times the school states as results', () => {
   const slots = generateSlots(LOP_1A1)
 
-  it('passes every anchor the school published', () => {
-    expect(
-      validateAgainstAnchors(slots, LOP_1A1, {
-        morningEnd: '11:00',
-        afternoonEnd: '15:50',
-        dismissal: { monday: '17:00', friday: '16:00' },
-      })
-    ).toEqual([])
+  it('derives tan học buổi sáng — the pickup time — as 11:00', () => {
+    expect(morningEnd(slots, LOP_1A1)).toBe('11:00')
   })
 
-  it('derives each day’s end from days alone', () => {
-    // Friday's last slot is tiết 7 (15:50) because the guided hour excludes it;
-    // Monday runs to 17:00 because it does not. No special-casing in the
-    // generator — the difference is entirely BellSlot.days.
-    const friday = slots.filter((s) => s.days.includes('friday'))
-    const monday = slots.filter((s) => s.days.includes('monday'))
-    expect(friday.map((s) => s.endTime).sort().at(-1)).toBe('15:50')
-    expect(monday.map((s) => s.endTime).sort().at(-1)).toBe('17:00')
+  /**
+   * The school published 17:00 Mon–Thu and 16:00 Friday. Neither is entered
+   * anywhere: the guided hour excludes Friday, so Friday's last slot is tiết 7
+   * at 15:50 and the rest run to 17:00. The per-day difference is BellSlot.days
+   * and nothing else.
+   */
+  it('groups giờ tan học into the runs the parent recognises', () => {
+    expect(groupDismissals(slots)).toEqual([
+      { days: ['monday', 'tuesday', 'wednesday', 'thursday'], time: '17:00' },
+      { days: ['friday'], time: '15:50' },
+    ])
   })
 
-  it('treats dismissal as an overrun check, not an equality', () => {
-    // Friday ends 15:50 against a stated 16:00 — the ten minutes are packing up.
-    expect(validateAgainstAnchors(slots, LOP_1A1, { dismissal: { friday: '16:00' } })).toEqual([])
-    // Monday ending 17:00 against a stated 16:30 would mean a rule is wrong.
-    const overrun = validateAgainstAnchors(slots, LOP_1A1, { dismissal: { monday: '16:30' } })
-    expect(overrun).toHaveLength(1)
-    expect(overrun[0]).toMatchObject({ actual: '17:00', expected: '16:30', deltaMinutes: 30 })
-  })
-
-  it('reports the delta instead of adjusting', () => {
-    // 30' periods instead of 35' pull the morning in by 10 minutes.
-    const wrong: BellRules = { ...LOP_1A1, periodMinutes: 30 }
-    const mismatches = validateAgainstAnchors(generateSlots(wrong), wrong, { morningEnd: '11:00' })
-    expect(mismatches).toHaveLength(1)
-    expect(mismatches[0]).toMatchObject({ expected: '11:00', actual: '10:50', deltaMinutes: -10 })
-  })
-
-  it('ignores anchors the parent did not supply', () => {
-    expect(validateAgainstAnchors(slots, LOP_1A1, {})).toEqual([])
+  it('splits a non-consecutive run rather than tidying it away', () => {
+    const oddWeek: BellRules = {
+      ...LOP_1A1,
+      routines: [
+        {
+          label: 'Hướng dẫn hoàn thành kiến thức',
+          startTime: '16:00',
+          endTime: '17:00',
+          days: ['monday', 'tuesday', 'thursday'],
+        },
+      ],
+    }
+    expect(groupDismissals(generateSlots(oddWeek)).map((g) => g.days.length)).toEqual([2, 1, 1, 1])
   })
 })
 
