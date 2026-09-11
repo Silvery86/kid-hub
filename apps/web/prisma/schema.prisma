@@ -36,11 +36,11 @@ enum AccountStatus {
 }
 
 model Parent {
-  id               String        @id @default(cuid())
-  email            String        @unique
+  id               String    @id @default(cuid())
+  email            String    @unique
   passwordHash     String
   displayName      String?
-  loginAttempts    Int           @default(0)
+  loginAttempts    Int       @default(0)
   loginLockedUntil DateTime?
 
   status        AccountStatus @default(PENDING)
@@ -50,7 +50,7 @@ model Parent {
   approvedBy    Parent?       @relation("ParentApproval", fields: [approvedById], references: [id], onDelete: SetNull)
   approved      Parent[]      @relation("ParentApproval")
   reviewNote    String?       @db.VarChar(200) // shown to the applicant on rejection
-  signupPayload Json?         // first student's name/grade, held until approval
+  signupPayload Json? // first student's name/grade, held until approval
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -58,6 +58,7 @@ model Parent {
   pin           ParentPin?
   refreshTokens RefreshToken[]
   students      ParentStudent[]
+  notifications ActivityEvent[]
   invitesSent   StudentInvite[]
 
   @@index([status])
@@ -78,7 +79,7 @@ model Student {
   kidPatternHash        String?
   kidPatternAttempts    Int       @default(0)
   kidPatternLockedUntil DateTime?
-  kidAccessSettings     Json?     // Record<string, boolean> — feature toggle state; null = all defaults
+  kidAccessSettings     Json? // Record<string, boolean> — feature toggle state; null = all defaults
   screenTimeLimitMins   Int       @default(120) // daily screen time limit set by parent
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
@@ -149,8 +150,8 @@ model StudentInvite {
   student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   invitedById String
   invitedBy   Parent    @relation(fields: [invitedById], references: [id], onDelete: Cascade)
-  codeHash    String    // hash of the code — the raw code is never stored
-  email       String?   // optional: restrict redemption to one address
+  codeHash    String // hash of the code — the raw code is never stored
+  email       String? // optional: restrict redemption to one address
   expiresAt   DateTime
   acceptedAt  DateTime?
   acceptedBy  String?
@@ -164,7 +165,7 @@ model StudentInvite {
 
 model ParentPin {
   id          String    @id @default(cuid())
-  hash        String    // argon2id hash — raw PIN never stored
+  hash        String // argon2id hash — raw PIN never stored
   parentId    String    @unique
   parent      Parent    @relation(fields: [parentId], references: [id], onDelete: Cascade)
   attempts    Int       @default(0)
@@ -251,17 +252,17 @@ enum EventType {
 }
 
 model ClassPeriod {
-  id           String    @id @default(cuid())
-  studentId    String
-  student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  day          DayOfWeek
-  periodNumber Int?      // 1–10 for SCHOOL_PERIOD; null for EXTRA_CLASS
+  id              String    @id @default(cuid())
+  studentId       String
+  student         Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  day             DayOfWeek
+  periodNumber    Int? // 1–10 for SCHOOL_PERIOD; null for EXTRA_CLASS
   /// Monday of the week this row belongs to, "YYYY-MM-DD". Set on every
   /// SCHOOL_PERIOD row and NULL on every EXTRA_CLASS one — an evening class is
   /// a standing arrangement, a school week is a dated record. A CHECK
   /// constraint added in 20260913000000 enforces that correspondence, which the
   /// PSL cannot express. See docs/SCHEDULE_PARENT_IMP.md §12.5.
-  weekStartDate String?  @db.VarChar(10)
+  weekStartDate   String?   @db.VarChar(10)
   /// How far this week's timetable reaches.
   ///
   /// false — STANDING: this is the timetable from this week onwards, and any
@@ -272,17 +273,17 @@ model ClassPeriod {
   ///
   /// Was absent before 20260916: every saved week became the new source of
   /// inheritance, so editing one week silently rewrote every later week.
-  isWeekException Boolean @default(false)
-  eventType    EventType @default(SCHOOL_PERIOD)
-  subjectId    String    // References SUBJECTS constant in lib/data/subjects.ts
-  note         String?   @db.VarChar(40) // lesson variant, e.g. "Học vần", "Tập viết"
-  startTime    String    // "HH:MM" 24-hour format
-  endTime      String    // "HH:MM" 24-hour format
-  roomNumber   String?
-  iconKey      String?   @db.VarChar(30) // e.g. "english", "music", "backpack"
-  sortOrder    Int       @default(0)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  isWeekException Boolean   @default(false)
+  eventType       EventType @default(SCHOOL_PERIOD)
+  subjectId       String // References SUBJECTS constant in lib/data/subjects.ts
+  note            String?   @db.VarChar(40) // lesson variant, e.g. "Học vần", "Tập viết"
+  startTime       String // "HH:MM" 24-hour format
+  endTime         String // "HH:MM" 24-hour format
+  roomNumber      String?
+  iconKey         String?   @db.VarChar(30) // e.g. "english", "music", "backpack"
+  sortOrder       Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   overrides ExtraClassOverride[]
 
@@ -310,27 +311,27 @@ enum SchoolBreakKind {
 }
 
 model SchoolBreak {
-  id        String          @id @default(cuid())
-  studentId String
-  student   Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  kind      SchoolBreakKind @default(PUBLIC_HOLIDAY)
-  label     String          @db.VarChar(60)
+  id              String          @id @default(cuid())
+  studentId       String
+  student         Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  kind            SchoolBreakKind @default(PUBLIC_HOLIDAY)
+  label           String          @db.VarChar(60)
   /// Inclusive "YYYY-MM-DD". A one-day holiday has startDate == endDate.
-  startDate String          @db.VarChar(10)
-  endDate   String          @db.VarChar(10)
+  startDate       String          @db.VarChar(10)
+  endDate         String          @db.VarChar(10)
   /// Set when the row came from the shipped Vietnamese list, so a re-seed can
   /// recognise what it created and leave a parent's edits alone.
-  presetKey String?         @db.VarChar(40)
+  presetKey       String?         @db.VarChar(40)
   /// True for a lunar-derived default (Tết, Giỗ Tổ) whose real dates the school
   /// announces. Surfaced as "kiểm tra lại ngày" rather than passed off as fact.
-  needsReview Boolean       @default(false)
+  needsReview     Boolean         @default(false)
   /// SUMMER_BREAK only — the grade the child returns to. Storable as the SAME
   /// grade on purpose: a child repeating a year still has a summer.
   promotesToGrade Int?
   /// When the parent confirmed the promotion. A clock never sets this.
   promotedAt      DateTime?
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   // One row per shipped holiday per student; parent-added rows have a NULL
   // presetKey and are therefore unconstrained, which is correct — a family may
@@ -389,11 +390,11 @@ model SubjectGrade {
   id           String    @id @default(cuid())
   studentId    String
   student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  subjectId    String    // References SUBJECTS constant
-  score        Float     // 0–10 scale
+  subjectId    String // References SUBJECTS constant
+  score        Float // 0–10 scale
   badge        BadgeTier
-  semester     Int       // 1 or 2
-  academicYear String    // e.g. "2025-2026"
+  semester     Int // 1 or 2
+  academicYear String // e.g. "2025-2026"
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -411,7 +412,7 @@ model UserProgress {
   student        Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   totalPoints    Int      @default(0)
   currentStreak  Int      @default(0)
-  lastActiveDate String   // ISO date "YYYY-MM-DD"
+  lastActiveDate String // ISO date "YYYY-MM-DD"
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -425,7 +426,7 @@ model EarnedBadge {
   id             String       @id @default(cuid())
   userProgressId String
   userProgress   UserProgress @relation(fields: [userProgressId], references: [id], onDelete: Cascade)
-  badgeId        String       // Static badge ID from lib/data
+  badgeId        String // Static badge ID from lib/data
   earnedAt       DateTime     @default(now())
 
   @@unique([userProgressId, badgeId])
@@ -457,10 +458,10 @@ model GameBestScore {
   userProgressId String
   userProgress   UserProgress @relation(fields: [userProgressId], references: [id], onDelete: Cascade)
   gameType       GameType
-  level          Int          // 1, 2, or 3 — maps to DifficultyLevel
+  level          Int // 1, 2, or 3 — maps to DifficultyLevel
   score          Int
-  starsEarned    Int          // 1, 2, or 3
-  subType        String?      // "counting" | "addition" | "shapes" for math; "alphabet" | "vocabulary" | "phonics" for english
+  starsEarned    Int // 1, 2, or 3
+  subType        String? // "counting" | "addition" | "shapes" for math; "alphabet" | "vocabulary" | "phonics" for english
   achievedAt     DateTime     @default(now())
 
   // One best score per game + level + subType (subType differentiates math mini-games)
@@ -476,14 +477,14 @@ model MathProgress {
   studentId        String
   student          Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
   minigame         MathGameType
-  level            Int          // 1, 2, or 3
+  level            Int // 1, 2, or 3
   correctCount     Int
   incorrectCount   Int
-  timeSpentSecs    Int          // Total wall-clock seconds for the session
-  starsEarned      Int          // 1–3
-  score            Int          // correctCount × 10 × starsEarned
-  homeworkPeriodId String?      // FK to ClassPeriod — set when submitted as homework
-  homeworkDate     String?      // "YYYY-MM-DD" — the homework date it was submitted for
+  timeSpentSecs    Int // Total wall-clock seconds for the session
+  starsEarned      Int // 1–3
+  score            Int // correctCount × 10 × starsEarned
+  homeworkPeriodId String? // FK to ClassPeriod — set when submitted as homework
+  homeworkDate     String? // "YYYY-MM-DD" — the homework date it was submitted for
   completedAt      DateTime     @default(now())
 
   @@index([studentId, completedAt])
@@ -499,14 +500,14 @@ model EnglishProgress {
   studentId        String
   student          Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
   minigame         EnglishGameType // alphabet | vocabulary | phonics
-  level            Int             // 1, 2, or 3
+  level            Int // 1, 2, or 3
   correctCount     Int
   incorrectCount   Int
-  timeSpentSecs    Int             // Total wall-clock seconds for the session
-  starsEarned      Int             // 1–3, derived from correctCount / totalQuestions
-  score            Int             // correctCount × 10 × starsEarned
-  homeworkPeriodId String?         // FK to ClassPeriod — set when submitted as homework
-  homeworkDate     String?         // "YYYY-MM-DD" — required if homeworkPeriodId set
+  timeSpentSecs    Int // Total wall-clock seconds for the session
+  starsEarned      Int // 1–3, derived from correctCount / totalQuestions
+  score            Int // correctCount × 10 × starsEarned
+  homeworkPeriodId String? // FK to ClassPeriod — set when submitted as homework
+  homeworkDate     String? // "YYYY-MM-DD" — required if homeworkPeriodId set
   completedAt      DateTime        @default(now())
 
   @@index([studentId, completedAt])
@@ -533,15 +534,35 @@ model ScreenTimeLog {
 // ── Activity Feed ─────────────────────────────────────────────
 
 /// Records a significant kid-side event for the parent activity feed.
+/// Records a significant event. Two roles in one table, distinguished by
+/// `parentId`: a NULL recipient is a log-only row for the activity feed, a set
+/// one is also a notification in that parent's inbox.
+///
+/// `parentId` is a ROUTING field, never an authorisation one. The read path
+/// joins parent_students so a revoked co-parent immediately stops seeing rows
+/// about a child they no longer have access to — a denormalised column cannot
+/// answer "may they touch this student" any more than a token can.
 model ActivityEvent {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   studentId String
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  type      String   @db.VarChar(30)  // GAME_COMPLETE | HOMEWORK_DONE
-  label     String   @db.VarChar(150) // human-readable description shown to parent
-  iconKey   String?  @db.VarChar(10)  // emoji displayed in the feed
+  student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  /// Recipient. NULL = log-only, no inbox entry.
+  parentId  String?
+  parent    Parent?   @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  type      String    @db.VarChar(30) // GAME_COMPLETE | HOMEWORK_DONE | BADGE_EARNED | ...
+  label     String    @db.VarChar(150) // human-readable description shown to parent
+  iconKey   String?   @db.VarChar(10) // emoji displayed in the feed
+  /// Where tapping it goes. Keeps routing out of the component.
+  href      String?   @db.VarChar(120)
+  readAt    DateTime?
+  /// Stops the same moment arriving twice, e.g. "badge:streak-3:<studentId>".
+  /// NULLs are distinct in Postgres, so log-only rows are unaffected.
+  dedupeKey String?   @db.VarChar(80)
+
   createdAt DateTime @default(now())
 
+  @@unique([parentId, dedupeKey])
+  @@index([parentId, readAt, createdAt])
   @@index([studentId, createdAt])
   @@map("activity_events")
 }
