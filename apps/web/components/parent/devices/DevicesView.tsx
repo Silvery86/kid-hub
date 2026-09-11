@@ -9,6 +9,8 @@ import { FEEDBACK } from '@kid-hub/shared'
 import { revokeDeviceAction, type DeviceRow } from '@/server/actions/invites.actions'
 import { toast } from '@/hooks/useToast'
 import { Spinner } from '@/components/ui/Spinner'
+import { Stagger } from '@/components/ui/Stagger'
+import { STAGGER_TIGHT } from '@/lib/motion'
 
 const formatWhen = (value: Date | string) =>
   new Date(value).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })
@@ -60,6 +62,9 @@ export function DevicesView({ devices }: { devices: DeviceRow[] }) {
         </p>
       ) : (
         <ul className="m-0 flex list-none flex-col gap-2 p-0">
+          {/* Entrance only — the list refreshes from the server after a revoke,
+              so no row leaves on the client. */}
+          <Stagger preset="fadeSlideUp" step={STAGGER_TIGHT}>
           {devices.map((device) => (
             <li
               key={device.id}
@@ -83,6 +88,7 @@ export function DevicesView({ devices }: { devices: DeviceRow[] }) {
               </button>
             </li>
           ))}
+        </Stagger>
         </ul>
       )}
 

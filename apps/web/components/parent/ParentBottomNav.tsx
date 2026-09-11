@@ -19,6 +19,7 @@
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { NavIndicator } from '@/components/ui/NavIndicator'
 
 const NAV = [
   { href: '/parent', label: 'Tổng quan', icon: '🏠', view: null },
@@ -38,12 +39,27 @@ export function ParentBottomNav() {
     return currentView === item.view
   }
 
+  // -1 when no tab matches, which happens on sub-routes the bar does not list.
+  // The indicator is hidden rather than parked on the first tab, because parking
+  // it there would claim the parent is somewhere they are not.
+  const activeIndex = NAV.findIndex((item) => isActive(item))
+
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-slate-200 bg-white md:hidden"
       // Clears the iOS home indicator; collapses to nothing everywhere else.
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
+      {activeIndex >= 0 ? (
+        <span className="pointer-events-none absolute inset-x-0 top-0 h-0.5">
+          <NavIndicator
+            activeIndex={activeIndex}
+            count={NAV.length}
+            className="bg-btn-primary"
+          />
+        </span>
+      ) : null}
+
       {NAV.map((item) => (
         <Link
           key={item.href}

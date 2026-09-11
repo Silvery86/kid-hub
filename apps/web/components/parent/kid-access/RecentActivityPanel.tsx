@@ -1,4 +1,6 @@
 import type { ActivityItem } from '@/server/actions/kid-access.actions'
+import { Stagger } from '@/components/ui/Stagger'
+import { STAGGER_TIGHT } from '@/lib/motion'
 
 function formatTime(iso: string): string {
   const d = new Date(iso)
@@ -22,17 +24,19 @@ export function RecentActivityPanel({ activities }: { activities: ActivityItem[]
 
   return (
     <div className="flex flex-col gap-2">
-      {activities.map((a) => (
-        <div key={a.id} className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm">
-          <span className="shrink-0 text-xl leading-none" aria-hidden="true">
-            {a.iconKey ?? '📋'}
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-extrabold text-slate-800">{a.label}</div>
-            <div className="mt-0.5 text-xs font-bold text-slate-400">{formatTime(a.createdAt)}</div>
+      <Stagger preset="fadeSlideUp" step={STAGGER_TIGHT}>
+        {activities.map((a) => (
+          <div key={a.id} className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm">
+            <span className="shrink-0 text-xl leading-none" aria-hidden="true">
+              {a.iconKey ?? '📋'}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-extrabold text-slate-800">{a.label}</div>
+              <div className="mt-0.5 text-xs font-bold text-slate-400">{formatTime(a.createdAt)}</div>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </Stagger>
     </div>
   )
 }

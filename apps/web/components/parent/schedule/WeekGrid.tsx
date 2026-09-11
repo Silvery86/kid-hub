@@ -47,6 +47,7 @@ import {
 } from '@kid-hub/shared'
 
 import { toast } from '@/hooks/useToast'
+import { useFlash } from '@/hooks/animation'
 import { Spinner } from '@/components/ui/Spinner'
 
 import {
@@ -138,6 +139,10 @@ export function WeekGrid({
   const rows = useMemo(() => periodRows(bellSlots), [bellSlots])
   const [cells, setCells] = useState<CellMap>(() => buildCells(initialSchedule))
   const [baseline, setBaseline] = useState<string>(() => JSON.stringify(buildCells(initialSchedule)))
+  // Keyed on the baseline: it only moves when a save has actually landed, so the
+  // grid confirms in place rather than leaving the toast to do it alone. Never
+  // fires on first render — arriving on a week is not a change.
+  const justSaved = useFlash(baseline)
   const [source, setSource] = useState<WeekSource>(initialSource)
   const [inheritedFrom, setInheritedFrom] = useState<string | undefined>(initialInheritedFrom)
   const [loadedWeek, setLoadedWeek] = useState(weekStartDate)
@@ -388,7 +393,12 @@ export function WeekGrid({
         </Link>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto">
+      <div
+        className={cn(
+          'min-h-0 flex-1 overflow-auto rounded-row',
+          justSaved && 'animate-flash'
+        )}
+      >
         <table className="w-full border-separate border-spacing-1 text-sm">
           <thead>
             <tr>

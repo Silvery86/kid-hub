@@ -274,6 +274,14 @@ body {
 .animate-slide-in-left  { animation: slideInLeft var(--duration-slow) var(--ease-standard) both; }
 .animate-route-progress { animation: routeProgress 1.4s var(--ease-decelerate) infinite; }
 
+/* A focus ring that appears instantly reads as a glitch; one that eases in reads
+   as the interface responding. Keyboard users get the same care as pointer ones,
+   who already had `transition-colors` on nearly every control. */
+:focus-visible {
+  transition: outline-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
 /* ============================================
    ACCESSIBILITY
    ============================================ */

@@ -15,6 +15,8 @@ import {
 } from '@/server/actions/students.actions'
 import { toast } from '@/hooks/useToast'
 import { cn } from '@/lib/utils'
+import { Stagger } from '@/components/ui/Stagger'
+import { STAGGER_TIGHT } from '@/lib/motion'
 
 export function StudentsView({
   students,
@@ -97,6 +99,11 @@ export function StudentsView({
 
 
       <ul className="m-0 mb-6 flex list-none flex-col gap-2 p-0">
+        {/* Entrance only. These lists refresh from the server after a mutation,
+            so a row never leaves on the client and there is no exit to animate —
+            which is why <AnimatedList> is not used here, and why keeping the
+            ul/li semantics costs nothing. */}
+        <Stagger preset="fadeSlideUp" step={STAGGER_TIGHT}>
         {students.map((student) => {
           const isActive = student.id === activeStudentId
           return (
@@ -167,6 +174,7 @@ export function StudentsView({
             </li>
           )
         })}
+      </Stagger>
       </ul>
 
       <section className="rounded-2xl bg-white p-4 shadow-sm">

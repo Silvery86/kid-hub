@@ -149,7 +149,7 @@ export function StudentSwitcher({
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 z-50 mt-2 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
+          className="animate-in fade-in zoom-in-95 anim-duration-200 absolute right-0 z-50 mt-2 w-72 origin-top-right overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
         >
           <p className="px-4 pt-3 pb-1 text-[11px] font-extrabold tracking-wide text-text-muted uppercase">
             Chọn bé để vào chế độ học sinh
