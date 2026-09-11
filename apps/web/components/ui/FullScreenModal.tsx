@@ -6,6 +6,8 @@ import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAnimatedMount, useReducedMotion } from '@/hooks/animation'
+import { DURATION_BASE } from '@/lib/motion'
 
 export interface FullScreenModalProps {
   isOpen: boolean
@@ -23,6 +25,11 @@ export const FullScreenModal = ({
   className,
 }: FullScreenModalProps) => {
   const canUsePortal = typeof document !== 'undefined'
+  const reduced = useReducedMotion()
+  // The modal entered with zoom-in-95 and then vanished on the frame `isOpen`
+  // went false — React unmounts immediately, so the exit half never had anything
+  // to play. This holds the node until the animation has run.
+  const { shouldRender, state } = useAnimatedMount(isOpen, DURATION_BASE)
 
   // Lock body scroll while modal is open
   useEffect(() => {
@@ -34,7 +41,9 @@ export const FullScreenModal = ({
     }
   }, [isOpen])
 
-  if (!isOpen || !canUsePortal) return null
+  if (!shouldRender || !canUsePortal) return null
+
+  const leaving = state === 'exiting'
 
   return createPortal(
     <div
@@ -44,9 +53,12 @@ export const FullScreenModal = ({
         'fixed inset-0 z-50 min-h-dvh w-screen safe-top',
         'bg-black/60 backdrop-blur-sm',
         'flex items-center justify-center',
-        // Entry animation — uses utilities defined in globals.css
-        'animate-in fade-in zoom-in-95 anim-duration-200'
+        // Entry and exit both, from globals.css. Symmetric now: it used to
+        // enter over 200ms and leave in a single frame.
+        !reduced && (leaving ? 'animate-pop-out' : 'animate-in fade-in zoom-in-95 anim-duration-200')
       )}
+      // A dialog mid-exit must not swallow a click meant for the page behind it.
+      style={leaving ? { pointerEvents: 'none' } : undefined}
     >
       <div className={cn('relative h-full w-full', className)}>
         {hasCloseButton && onClose && (
