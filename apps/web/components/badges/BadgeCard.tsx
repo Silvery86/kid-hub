@@ -15,20 +15,31 @@ export interface BadgeDisplayItem {
 export function BadgeCard({
   badge,
   compact = false,
+  className,
+  style,
 }: {
   badge: BadgeDisplayItem
   compact?: boolean
+  /**
+   * Forwarded so a layout can position or animate this card. Without it a
+   * parent like <Stagger>, which merges its animation onto each child, has
+   * nowhere to put the class and silently does nothing.
+   */
+  className?: string
+  style?: React.CSSProperties
 }) {
   const pct = badge.isEarned ? 100 : (badge.progress ?? 0)
 
   return (
     <div
+      style={style}
       className={cn(
         'flex flex-col gap-2 text-left',
         compact ? 'rounded-[18px] p-3.5' : 'rounded-[22px] p-4 md:p-[18px]',
         badge.isEarned
           ? 'border-2 border-badge-earned-border bg-white shadow-[0_4px_12px_-6px_rgba(251,191,36,0.4)]'
-          : 'border-2 border-border-soft bg-shell-light opacity-75'
+          : 'border-2 border-border-soft bg-shell-light opacity-75',
+        className
       )}
     >
       <div

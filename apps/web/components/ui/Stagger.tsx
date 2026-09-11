@@ -32,9 +32,13 @@ interface Styleable {
 
 /**
  * The animation is merged onto each child rather than wrapped around it, so a
- * parent grid or flex row keeps its own children as direct descendants. Each
- * child must therefore accept `className` and `style`; a raw string or number
- * child is passed through untouched.
+ * parent grid or flex row keeps its own children as direct descendants.
+ *
+ * THE CONTRACT: each child must accept AND APPLY `className` and `style`. A
+ * component that takes neither is cloned with props it ignores, and the stagger
+ * silently does nothing — no error, no warning, just a grid that appears all at
+ * once. There is no way to detect that at runtime, so it is checked by reading
+ * the child. A raw string or number child is passed through untouched.
  */
 export const Stagger = ({ children, preset = 'fadeSlideUp', step = STAGGER_BASE, className }: StaggerProps) => {
   const items = Children.toArray(children)
