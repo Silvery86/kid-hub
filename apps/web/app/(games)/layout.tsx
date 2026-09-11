@@ -3,6 +3,7 @@
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { UserProgressProviderWrapper } from '@/components/layout/UserProgressProviderWrapper'
 import { ScreenTimeTracker } from '@/components/kid/ScreenTimeTracker'
+import { CelebrationHost } from '@/components/ui/CelebrationHost'
 
 export default function GamesLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,6 +12,7 @@ export default function GamesLayout({ children }: { children: React.ReactNode })
       <div className="game-container h-dvh min-h-0 bg-shell-dark">
         <ErrorBoundary section="games">{children}</ErrorBoundary>
       </div>
+      <CelebrationHost />
     </UserProgressProviderWrapper>
   )
 }

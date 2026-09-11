@@ -12,6 +12,7 @@ import { useAudio } from '@/hooks/useAudio'
 import { useUserProgress } from '@/hooks/useUserProgress'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { saveEnglishProgressAction } from '@/server/actions/english.actions'
+import { celebrateBadges } from '@/lib/celebrate-badges'
 import { STORAGE_KEYS } from '@/lib/constants'
 import { todayDateKey } from '@/lib/clientDateUtils'
 import type { DifficultyLevel, GameBestScore, EnglishGameType, UseGameSessionHookResult } from '@/types'
@@ -87,7 +88,14 @@ export const useEnglishSession = ({
       homeworkPeriodId,
       homeworkDate: homeworkPeriodId ? todayDateKey() : undefined,
     }).then((res) => {
-      if (!res.success) saveErrorRef.current = res.error ?? 'Save failed'
+      if (!res.success) {
+        saveErrorRef.current = res.error ?? 'Save failed'
+        return
+      }
+      // The badge was already in the database before this; nothing could tell
+      // the child it had happened, so they found out by noticing a grey card
+      // had turned gold. Now the save says which ones are new.
+      celebrateBadges(res.data.newBadgeIds)
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status])

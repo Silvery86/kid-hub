@@ -1,73 +1,69 @@
 'use client'
 
 /**
- * The one place a "something wonderful happened" moment is assembled.
+ * The one place a "something wonderful happened" moment is raised.
  *
- * A toast is for "your action completed". This is for a reward: it owns the
- * sound and the dismissal clock, and hands the visuals to <CelebrationOverlay>.
- * Keeping the two apart means a caller can celebrate without importing any
- * markup, and the overlay stays a presentational component with no timers.
+ * A module-level queue rather than component state, for the same reason
+ * hooks/useToast.ts is: the moment is *raised* deep inside a game hook or a
+ * homework handler, and *rendered* by a host mounted in a layout. Local state
+ * cannot span that, and threading a callback from a layout down into every game
+ * would put the celebration's plumbing in the way of the games themselves.
  *
- * Sound reuses hooks/useAudio.ts rather than adding an audio layer. That hook
- * silences every failure and no-ops while /public/sounds/*.mp3 are absent, so
- * celebration works silently today and gains sound the moment assets land —
- * with no change here.
+ * A queue, not a slot. Finishing a session that earns two badges at once is
+ * rare, but a child who earns two and is shown one has been short-changed by an
+ * implementation detail.
+ *
+ * Sound is deliberately NOT here. Playing it needs useAudio, which is a hook, so
+ * it belongs to <CelebrationHost> — the component that knows a celebration has
+ * appeared on screen.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-
-import { useAudio } from '@/hooks/useAudio'
-import { useReducedMotion } from './useReducedMotion'
+import { useSyncExternalStore } from 'react'
 
 export interface Celebration {
   title: string
   description?: string
-  /** An emoji or short glyph. The overlay does not interpret it. */
+  /** An emoji or short glyph. Nothing interprets it. */
   icon?: string
   /** `big` earns confetti; `small` is a quieter acknowledgement. */
   intensity?: 'small' | 'big'
+  /** Distinct moments with the same key are only ever shown once. */
+  key?: string
 }
 
-export interface UseCelebration {
-  celebration: Celebration | null
-  celebrate: (input: Celebration) => void
-  dismiss: () => void
-  /** Exposed so a caller can render a static variant without asking twice. */
-  reducedMotion: boolean
+let queue: Celebration[] = []
+const listeners = new Set<() => void>()
+
+const emit = (): void => {
+  listeners.forEach((fn) => fn())
 }
 
-/** Long enough to read a short line and register the badge, short enough not to trap. */
-const AUTO_DISMISS_MS = 4200
-
-export const useCelebration = (): UseCelebration => {
-  const [celebration, setCelebration] = useState<Celebration | null>(null)
-  const reducedMotion = useReducedMotion()
-  const { play } = useAudio()
-  const timer = useRef<number | null>(null)
-
-  const clear = useCallback(() => {
-    if (timer.current !== null) {
-      window.clearTimeout(timer.current)
-      timer.current = null
-    }
-  }, [])
-
-  const dismiss = useCallback(() => {
-    clear()
-    setCelebration(null)
-  }, [clear])
-
-  const celebrate = useCallback(
-    (input: Celebration) => {
-      clear()
-      setCelebration(input)
-      play('complete')
-      timer.current = window.setTimeout(() => setCelebration(null), AUTO_DISMISS_MS)
-    },
-    [clear, play]
-  )
-
-  useEffect(() => clear, [clear])
-
-  return { celebration, celebrate, dismiss, reducedMotion }
+export const celebration = {
+  show: (input: Celebration): void => {
+    // A re-render that re-reports the same award must not queue it twice.
+    if (input.key && queue.some((c) => c.key === input.key)) return
+    queue = [...queue, input]
+    emit()
+  },
+  /** Dismiss the one on screen and let the next through. */
+  next: (): void => {
+    queue = queue.slice(1)
+    emit()
+  },
+  clear: (): void => {
+    queue = []
+    emit()
+  },
 }
+
+const subscribe = (onChange: () => void): (() => void) => {
+  listeners.add(onChange)
+  return () => listeners.delete(onChange)
+}
+
+const getSnapshot = (): Celebration | null => queue[0] ?? null
+const getServerSnapshot = (): Celebration | null => null
+
+/** The celebration currently on screen, if any. Only <CelebrationHost> needs it. */
+export const useCelebration = (): Celebration | null =>
+  useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)

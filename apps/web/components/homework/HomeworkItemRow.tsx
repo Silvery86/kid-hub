@@ -4,6 +4,7 @@ import { useTransition } from 'react'
 import { cn } from '@/lib/utils'
 import { getSubjectById } from '@/lib/data/subjects'
 import { markHomeworkDoneAction } from '@/server/actions/homework.actions'
+import { celebrateBadges } from '@/lib/celebrate-badges'
 import type { HomeworkItem } from '@/types'
 
 export function HomeworkItemRow({
@@ -25,7 +26,11 @@ export function HomeworkItemRow({
     if (item.isDone || isPending) return
     startTransition(async () => {
       const result = await markHomeworkDoneAction(item.periodId)
-      if (result.success) onDone?.()
+      if (!result.success) return
+      onDone?.()
+      // A streak milestone reached by finishing homework was silently recorded
+      // before — the child never heard about it.
+      celebrateBadges(result.data.newBadgeIds)
     })
   }
 

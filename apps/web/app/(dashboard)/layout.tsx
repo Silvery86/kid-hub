@@ -6,6 +6,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { ScreenTimeTracker } from '@/components/kid/ScreenTimeTracker'
 import { RouteProgress } from '@/components/ui/RouteProgress'
 import { Toaster } from '@/components/ui/Toaster'
+import { CelebrationHost } from '@/components/ui/CelebrationHost'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -22,6 +23,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </div>
       <Toaster shell="kid" />
+      <CelebrationHost />
     </UserProgressProviderWrapper>
   )
 }
