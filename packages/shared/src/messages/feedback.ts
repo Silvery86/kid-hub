@@ -30,6 +30,29 @@ export const FEEDBACK = {
     reverted: 'Đã khôi phục khung giờ đã lưu',
   },
 
+  subjects: {
+    added: 'Đã thêm môn học',
+    addFailed: 'Không thêm được môn học',
+    saved: 'Đã lưu môn học',
+    saveFailed: 'Không lưu được môn học',
+    deleted: 'Đã xoá môn học',
+    deleteFailed: 'Không xoá được môn học',
+    loadFailed: 'Không tải được danh sách môn',
+    duplicateName: 'Lớp của bé đã có môn trùng tên này',
+    notFound: 'Không tìm thấy môn học này',
+    /**
+     * Countable on purpose. "Không xoá được" alone leaves the parent with
+     * nowhere to go; the numbers say which screen to open and change first.
+     */
+    inUse: (usage: { periods: number; homework: number; grades: number }): string => {
+      const parts: string[] = []
+      if (usage.periods > 0) parts.push(`${usage.periods} tiết học`)
+      if (usage.homework > 0) parts.push(`${usage.homework} bài tập`)
+      if (usage.grades > 0) parts.push(`${usage.grades} cột điểm`)
+      return `Môn này đang được dùng ở ${parts.join(' và ')}. Hãy đổi sang môn khác trước khi xoá.`
+    },
+  },
+
   students: {
     added: (name: string): string => `Đã thêm bé ${name}`,
     addFailed: 'Không thêm được bé',

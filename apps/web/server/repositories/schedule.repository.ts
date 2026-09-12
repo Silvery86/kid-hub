@@ -555,6 +555,29 @@ export const copyWeekInto = async (
 }
 
 /** Which of `weeks` already hold rows of their own — what a copy would overwrite. */
+/**
+ * Every lesson variant this household has actually typed, newest first.
+ *
+ * The variant field was free text from the start (D1), so the household has
+ * been building its own vocabulary in it week after week — and the app kept
+ * offering the same three static suggestions and forgetting everything they
+ * wrote. This reads that vocabulary back.
+ *
+ * `distinct` is on [subjectId, note] rather than note alone: "Ôn tập" under
+ * Toán and under Tiếng Việt are two different suggestions, offered in two
+ * different places.
+ */
+export const listUsedVariants = async (
+  studentId: string
+): Promise<{ subjectId: string; note: string | null }[]> =>
+  db.classPeriod.findMany({
+    where: { studentId, note: { not: null } },
+    distinct: ['subjectId', 'note'],
+    select: { subjectId: true, note: true },
+    orderBy: { updatedAt: 'desc' },
+    take: 200,
+  })
+
 export const findWeeksWithOwnRows = async (
   studentId: string,
   weeks: string[]

@@ -428,6 +428,20 @@ export const deleteDailyHomeworkAction = async (id: string): Promise<ActionVoidR
 // ── Bell schedule mutations ───────────────────────────────────
 
 /** Reads the stored bell schedule for the active student, or null if unset. */
+/** Lesson variants this household has already typed, for the week grid's chips. */
+export const getRememberedVariantsAction = async (): Promise<
+  ActionResult<Record<string, string[]>>
+> => {
+  try {
+    const studentId = await resolveActiveStudent()
+    return { success: true, data: await scheduleService.rememberedVariants(studentId) }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Failed to load variants'
+    if (msg === 'Unauthorized') return { success: false, error: 'Unauthorized' }
+    return { success: false, error: msg }
+  }
+}
+
 export const getBellScheduleAction = async (): Promise<ActionResult<StoredBellSchedule | null>> => {
   try {
     const studentId = await resolveActiveStudent()

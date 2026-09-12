@@ -11,10 +11,12 @@ import {
   getTodayViewAction,
   getBellScheduleAction,
   getSchoolBreaksAction,
+  getRememberedVariantsAction,
 } from '@/server/actions/schedule.actions'
 import { getReportCardAction } from '@/server/actions/grades.actions'
 import { getParentContextAction, listStudentsAction } from '@/server/actions/students.actions'
 import { getUnreadCountAction } from '@/server/actions/notification.actions'
+import { listCustomSubjectsAction } from '@/server/actions/subjects.actions'
 
 export default async function ParentDashboardPage() {
   const [
@@ -26,6 +28,8 @@ export default async function ParentDashboardPage() {
     breaksResult,
     studentList,
     unreadResult,
+    variantsResult,
+    customResult,
   ] = await Promise.all([
     getWeekScheduleAction(),
     getReportCardAction(),
@@ -35,6 +39,8 @@ export default async function ParentDashboardPage() {
     getSchoolBreaksAction(),
     listStudentsAction(),
     getUnreadCountAction(),
+    getRememberedVariantsAction(),
+    listCustomSubjectsAction(),
   ])
 
   // The current week, resolved: its own rows if it has them, otherwise the most
@@ -58,6 +64,8 @@ export default async function ParentDashboardPage() {
       students={studentList.success ? studentList.data.students : []}
       activeStudentId={studentList.success ? studentList.data.activeStudentId : null}
       initialUnread={unreadResult.success ? unreadResult.data : 0}
+      rememberedVariants={variantsResult.success ? variantsResult.data : {}}
+      customSubjects={customResult.success ? customResult.data : []}
     />
   )
 }

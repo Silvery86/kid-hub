@@ -13,7 +13,7 @@ import type {
 } from '@/types'
 import { cn } from '@/lib/utils'
 import { formatWeekSubtitleForOffset, getWeekDates } from '@/lib/schedule-display'
-import { addWeeks, weekStartOfToday } from '@kid-hub/shared'
+import { addWeeks, weekStartOfToday, type CustomSubjectRow } from '@kid-hub/shared'
 import { getSubjectById } from '@/lib/data/subjects'
 import { signOutParentAction } from '@/server/actions/auth.actions'
 import { ParentSaveButton } from './ParentSaveButton'
@@ -37,6 +37,8 @@ export function ParentDashboardView({
   studentName,
   students = [],
   activeStudentId = null,
+  rememberedVariants = {},
+  customSubjects = [],
   initialUnread = 0,
 }: {
   initialSchedule: DailySchedule[]
@@ -58,6 +60,10 @@ export function ParentDashboardView({
   /** Every child this parent may act for — the switcher's list. */
   students?: StudentSummary[]
   activeStudentId?: string | null
+  /** Lesson variants this household has already typed, keyed by subject. */
+  rememberedVariants?: Record<string, string[]>
+  /** Subjects this school teaches that the programme does not name. */
+  customSubjects?: CustomSubjectRow[]
 }) {
   const [gradesSave, setGradesSave] = useState<ParentSaveState | null>(null)
   const [weekOffset, setWeekOffset] = useState(0)
@@ -222,6 +228,8 @@ export function ParentDashboardView({
           initialInheritedFrom={initialInheritedFrom}
           embedded
           gradeLevel={activeStudent?.gradeLevel ?? 0}
+          rememberedVariants={rememberedVariants}
+          customSubjects={customSubjects}
           readOnly={isPastWeek}
           weekDates={weekDates}
         />

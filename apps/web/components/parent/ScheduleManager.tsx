@@ -13,7 +13,7 @@ import type { BellSlot, DailyHomework, DailySchedule, DayOfWeek, SchoolBreak, We
 import { DAY_LABELS, MAX_EVENING_BLOCKS_PER_DAY } from '@/lib/constants'
 import { canEditDatedEntry, canEditRecurringEntry } from '@/lib/schedule-locks'
 import { WeekGrid } from '@/components/parent/schedule/WeekGrid'
-import { getSubjectById, subjectGroupsForPicker } from '@kid-hub/shared'
+import { resolveSubject, subjectGroupsForPicker, type CustomSubjectRow } from '@kid-hub/shared'
 import { ICON_MAP } from '@/lib/icons'
 import {
   deletePeriodAction,
@@ -162,6 +162,10 @@ interface ScheduleManagerProps {
   weekDates?: Record<DayOfWeek, string>
   /** Decides which subjects every picker here offers. 0 falls back to the catalogue. */
   gradeLevel: number
+  /** Lesson variants this household has already typed, keyed by subject. */
+  rememberedVariants?: Record<string, string[]>
+  /** Subjects this school teaches that the programme does not name. */
+  customSubjects?: CustomSubjectRow[]
 }
 
 export const ScheduleManager = ({
@@ -175,6 +179,8 @@ export const ScheduleManager = ({
   readOnly = false,
   weekDates,
   gradeLevel,
+  rememberedVariants = {},
+  customSubjects = [],
 }: ScheduleManagerProps) => {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<ActiveTab>('school')
@@ -325,19 +331,21 @@ export const ScheduleManager = ({
   // a subject this grade no longer teaches would show as a blank <select>.
   const eveningSubjectGroups = useMemo(
     () =>
-      subjectGroupsForPicker(gradeLevel, [
-        eveningForm.subjectId,
-        ...eveningPeriods.map((p) => p.subjectId),
-      ]),
-    [gradeLevel, eveningForm.subjectId, eveningPeriods]
+      subjectGroupsForPicker(
+        gradeLevel,
+        [eveningForm.subjectId, ...eveningPeriods.map((p) => p.subjectId)],
+        customSubjects
+      ),
+    [gradeLevel, eveningForm.subjectId, eveningPeriods, customSubjects]
   )
   const homeworkSubjectGroups = useMemo(
     () =>
-      subjectGroupsForPicker(gradeLevel, [
-        hwDraft.subjectId,
-        ...homeworkItems.map((h) => h.subjectId),
-      ]),
-    [gradeLevel, hwDraft.subjectId, homeworkItems]
+      subjectGroupsForPicker(
+        gradeLevel,
+        [hwDraft.subjectId, ...homeworkItems.map((h) => h.subjectId)],
+        customSubjects
+      ),
+    [gradeLevel, hwDraft.subjectId, homeworkItems, customSubjects]
   )
 
   const handleDeleteEveningClass = (period: EditablePeriod) => {
@@ -419,6 +427,8 @@ export const ScheduleManager = ({
             initialInheritedFrom={initialInheritedFrom}
             bellSlots={bellSlots}
             gradeLevel={gradeLevel}
+            rememberedVariants={rememberedVariants}
+            customSubjects={customSubjects}
             readOnly={readOnly}
             onSaved={() => router.refresh()}
           />
@@ -513,7 +523,7 @@ export const ScheduleManager = ({
 
           <div className="flex flex-col gap-2">
             {eveningPeriods.map((period) => {
-              const subject = getSubjectById(period.subjectId)
+              const subject = resolveSubject(period.subjectId, customSubjects)
               const icon = ICON_MAP[period.iconKey ?? 'book']
               return (
                 <div
@@ -650,7 +660,7 @@ export const ScheduleManager = ({
 
           <div className="flex flex-col gap-2">
             {homeworkItems.map((item) => {
-              const subject = getSubjectById(item.subjectId)
+              const subject = resolveSubject(item.subjectId, customSubjects)
               const icon = ICON_MAP[item.iconKey] ?? ICON_MAP.book
               return (
                 <div

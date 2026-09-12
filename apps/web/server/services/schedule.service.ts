@@ -81,6 +81,29 @@ export const copyWeekInto = (
   targetWeeks: string[],
   skipWeeks?: string[]
 ) => scheduleRepo.copyWeekInto(studentId, fromWeek, targetWeeks, skipWeeks)
+/**
+ * The lesson variants this household has typed, grouped by subject.
+ *
+ * No new table: the vocabulary is already in ClassPeriod.note, written week by
+ * week since the field was made free text (D1). This only reads it back so the
+ * app stops forgetting it.
+ */
+export const rememberedVariants = async (
+  studentId: string
+): Promise<Record<string, string[]>> => {
+  const rows = await scheduleRepo.listUsedVariants(studentId)
+  const out: Record<string, string[]> = {}
+
+  for (const row of rows) {
+    const note = row.note?.trim()
+    if (!note) continue
+    const list = (out[row.subjectId] ??= [])
+    if (!list.includes(note)) list.push(note)
+  }
+
+  return out
+}
+
 export const getAllEveningBlocks = (studentId: string) => scheduleRepo.getAllEveningBlocks(studentId)
 export const getEveningBlocks = (studentId: string, day: DayOfWeek) => scheduleRepo.getEveningBlocks(studentId, day)
 export const getOverridesForDate = (studentId: string, date: string) => scheduleRepo.getOverridesForDate(studentId, date)

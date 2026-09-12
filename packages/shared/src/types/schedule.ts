@@ -96,6 +96,18 @@ export interface BellRules {
  */
 export type SubjectBand = 'required' | 'elective' | 'extra'
 
+/**
+ * A subject a parent added because their school teaches it and the national
+ * programme does not name it — "Toán tiếng Anh", a robotics club.
+ */
+export interface CustomSubjectRow {
+  /** "custom_<cuid>" — permanent, survives a rename. */
+  subjectId: string
+  name: string
+  color: string
+  icon: string
+}
+
 /** One `<optgroup>`: a heading and the subjects under it. */
 export interface SubjectGroup {
   label: string

@@ -22,11 +22,11 @@
 
 import { Fragment, useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
-import { AlertCircle, CalendarOff, Check, Clock, CopyPlus, History, Lock, Trash2 } from 'lucide-react'
+import { AlertCircle, BookMarked, CalendarOff, Check, Clock, CopyPlus, History, Lock, Trash2 } from 'lucide-react'
 import {
   FEEDBACK,
   addWeeks,
-  getSubjectById,
+  resolveSubject,
   isPastWeek,
   semesterEndIso,
   weekStartOfToday,
@@ -37,7 +37,8 @@ import {
   isWholeWeekOff,
   nowInSchoolZone,
   subjectGroupsForPicker,
-  variantsForSubject,
+  variantsFor,
+  type CustomSubjectRow,
   type BellSlot,
   type DailySchedule,
   type DayOfWeek,
@@ -124,6 +125,8 @@ export function WeekGrid({
   readOnly = false,
   onSaved,
   gradeLevel,
+  rememberedVariants = {},
+  customSubjects = [],
 }: {
   /** The Monday this grid is showing. */
   weekStartDate: string
@@ -138,6 +141,10 @@ export function WeekGrid({
   onSaved?: () => void
   /** Decides which subjects the picker offers. 0 falls back to the catalogue. */
   gradeLevel: number
+  /** Lesson variants this household has already typed, keyed by subject. */
+  rememberedVariants?: Record<string, string[]>
+  /** Subjects this school teaches that the programme does not name. */
+  customSubjects?: CustomSubjectRow[]
 }) {
   const rows = useMemo(() => periodRows(bellSlots), [bellSlots])
 
@@ -147,8 +154,13 @@ export function WeekGrid({
   // showing TNXH after the child moves up to lớp 4, because the option is still
   // there to match the value.
   const subjectGroups = useMemo(
-    () => subjectGroupsForPicker(gradeLevel, [...new Set(Object.values(cells).map((c) => c.subjectId))]),
-    [gradeLevel, cells]
+    () =>
+      subjectGroupsForPicker(
+        gradeLevel,
+        [...new Set(Object.values(cells).map((c) => c.subjectId))],
+        customSubjects
+      ),
+    [gradeLevel, cells, customSubjects]
   )
   const [baseline, setBaseline] = useState<string>(() => JSON.stringify(buildCells(initialSchedule)))
   // Keyed on the baseline: it only moves when a save has actually landed, so the
@@ -351,8 +363,11 @@ export function WeekGrid({
 
   const selectedValue = selected ? cells[key(selected.day, selected.periodNumber)] : undefined
   const selectedRow = selected ? rows.find((r) => r.periodNumber === selected.periodNumber) : undefined
+  // Static suggestions plus whatever this household has typed before. A school
+  // that words its lessons differently taught the app its words weeks ago; this
+  // is where the app stops forgetting them.
   const suggestedVariants = selectedValue?.subjectId
-    ? variantsForSubject(selectedValue.subjectId)
+    ? variantsFor(selectedValue.subjectId, rememberedVariants)
     : []
   const semesterWeeks = weekStartsBetween(weekStartDate, semesterEndIso(weekStartDate)).length
 
@@ -391,6 +406,12 @@ export function WeekGrid({
       ) : null}
 
       <div className="flex items-center justify-end gap-1">
+        <Link
+          href="/parent/subjects"
+          className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-black text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+        >
+          <BookMarked size={14} /> Môn học
+        </Link>
         <Link
           href="/parent/school-breaks"
           className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-black text-slate-500 hover:bg-slate-100 hover:text-slate-700"
@@ -465,7 +486,7 @@ export function WeekGrid({
                     </td>
                     {SCHOOL_DAYS.map((day) => {
                       const value = cells[key(day, row.periodNumber)]
-                      const subject = value ? getSubjectById(value.subjectId) : undefined
+                      const subject = value ? resolveSubject(value.subjectId, customSubjects) : undefined
                       const isSelected =
                         selected?.day === day && selected.periodNumber === row.periodNumber
                       const closed = cellIsClosed(day, row.startTime)

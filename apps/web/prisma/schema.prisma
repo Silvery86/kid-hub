@@ -91,6 +91,7 @@ model Student {
   bellSchedule        BellSchedule?
   schoolBreaks        SchoolBreak[]
   grades              SubjectGrade[]
+  customSubjects      CustomSubject[]
   progress            UserProgress?
   mathProgress        MathProgress[]
   englishProgress     EnglishProgress[]
@@ -387,6 +388,41 @@ enum BadgeTier {
   excellent
   good
   needs_practice @map("needs-practice")
+}
+
+/// A subject the school teaches that the national programme does not name —
+/// "Toán tiếng Anh", a robotics club, a second foreign language.
+///
+/// Holds ONLY subjects a parent added. The programme's own subjects are fixed in
+/// code (docs/SCHEDULE_SUBJECT.md S1–S3) and never get a row here, so this table
+/// stays empty for a household that has nothing extra to say.
+///
+/// Scoped to a student rather than a grade: every school in Vietnam teaches the
+/// same programme, but "Toán tiếng Anh" belongs to one school. Keyed by grade it
+/// would appear for every lớp 8 household in the country.
+model CustomSubject {
+  id        String  @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  /// "custom_<cuid>", generated once. Timetable rows, homework and grades point
+  /// at this string, so it survives a rename — the name is a label, this is the key.
+  subjectId String  @db.VarChar(30)
+  name      String  @db.VarChar(40)
+  color     String  @db.VarChar(9)
+  /// The emoji, not a lucide name. Both SubjectIcon implementations render
+  /// `Subject.icon`; `iconName` is carried by the type and drawn by nothing.
+  icon      String  @db.VarChar(8)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, subjectId])
+  /// Two subjects with the same name in one class is a parent typing instead of
+  /// scrolling, not a real second subject.
+  @@unique([studentId, name])
+  @@index([studentId])
+  @@map("custom_subjects")
 }
 
 model SubjectGrade {
