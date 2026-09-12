@@ -221,6 +221,7 @@ export function ParentDashboardView({
           initialWeekSource={initialWeekSource}
           initialInheritedFrom={initialInheritedFrom}
           embedded
+          gradeLevel={activeStudent?.gradeLevel ?? 0}
           readOnly={isPastWeek}
           weekDates={weekDates}
         />

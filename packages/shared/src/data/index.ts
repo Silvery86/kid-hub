@@ -4,6 +4,7 @@
 // back to rendering raw ids like "math". Pure data only — no React, no transport.
 
 export * from './subjects'
+export * from './subjects-by-grade'
 export * from './badges'
 export * from './games-hub'
 export * from './kid-access'

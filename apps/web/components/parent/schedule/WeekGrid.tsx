@@ -25,7 +25,6 @@ import Link from 'next/link'
 import { AlertCircle, CalendarOff, Check, Clock, CopyPlus, History, Lock, Trash2 } from 'lucide-react'
 import {
   FEEDBACK,
-  SUBJECTS,
   addWeeks,
   getSubjectById,
   isPastWeek,
@@ -37,6 +36,7 @@ import {
   isPeriodClosed,
   isWholeWeekOff,
   nowInSchoolZone,
+  subjectGroupsForPicker,
   variantsForSubject,
   type BellSlot,
   type DailySchedule,
@@ -123,6 +123,7 @@ export function WeekGrid({
   breaks = [],
   readOnly = false,
   onSaved,
+  gradeLevel,
 }: {
   /** The Monday this grid is showing. */
   weekStartDate: string
@@ -135,9 +136,20 @@ export function WeekGrid({
   breaks?: SchoolBreak[]
   readOnly?: boolean
   onSaved?: () => void
+  /** Decides which subjects the picker offers. 0 falls back to the catalogue. */
+  gradeLevel: number
 }) {
   const rows = useMemo(() => periodRows(bellSlots), [bellSlots])
+
   const [cells, setCells] = useState<CellMap>(() => buildCells(initialSchedule))
+  // Subjects the grade teaches, plus any this week already uses. The second half
+  // is what stops a <select> rendering blank: a lớp 3 week full of TNXH keeps
+  // showing TNXH after the child moves up to lớp 4, because the option is still
+  // there to match the value.
+  const subjectGroups = useMemo(
+    () => subjectGroupsForPicker(gradeLevel, [...new Set(Object.values(cells).map((c) => c.subjectId))]),
+    [gradeLevel, cells]
+  )
   const [baseline, setBaseline] = useState<string>(() => JSON.stringify(buildCells(initialSchedule)))
   // Keyed on the baseline: it only moves when a save has actually landed, so the
   // grid confirms in place rather than leaving the toast to do it alone. Never
@@ -561,8 +573,12 @@ export function WeekGrid({
                 className="h-12 w-full rounded-xl border-2 border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 focus:border-blue-400 focus:outline-none"
               >
                 <option value="">— Trống —</option>
-                {SUBJECTS.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
+                {subjectGroups.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.subjects.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </label>

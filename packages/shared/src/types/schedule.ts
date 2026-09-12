@@ -88,6 +88,20 @@ export interface BellRules {
   routines: BellRoutine[]
 }
 
+/**
+ * Where a subject sits in the picker for one grade.
+ *
+ * `required` and `elective` come from the programme; `extra` is the blocks a
+ * school prints that no thông tư names — thư viện, hướng dẫn học.
+ */
+export type SubjectBand = 'required' | 'elective' | 'extra'
+
+/** One `<optgroup>`: a heading and the subjects under it. */
+export interface SubjectGroup {
+  label: string
+  subjects: Subject[]
+}
+
 /** Giờ tan học for a run of weekdays that all end at the same time. */
 export interface DismissalGroup {
   days: DayOfWeek[]

@@ -6,14 +6,14 @@
  * Quick-Add Homework.
  */
 
-import { useState, useCallback, useRef, useTransition } from 'react'
+import { useState, useCallback, useMemo, useRef, useTransition } from 'react'
 import { Plus, Trash2, Check, AlertCircle, Moon, BookOpen } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import type { BellSlot, DailyHomework, DailySchedule, DayOfWeek, SchoolBreak, WeekSource } from '@/types'
 import { DAY_LABELS, MAX_EVENING_BLOCKS_PER_DAY } from '@/lib/constants'
 import { canEditDatedEntry, canEditRecurringEntry } from '@/lib/schedule-locks'
 import { WeekGrid } from '@/components/parent/schedule/WeekGrid'
-import { SUBJECTS } from '@/lib/data/subjects'
+import { getSubjectById, subjectGroupsForPicker } from '@kid-hub/shared'
 import { ICON_MAP } from '@/lib/icons'
 import {
   deletePeriodAction,
@@ -160,6 +160,8 @@ interface ScheduleManagerProps {
   embedded?: boolean
   readOnly?: boolean
   weekDates?: Record<DayOfWeek, string>
+  /** Decides which subjects every picker here offers. 0 falls back to the catalogue. */
+  gradeLevel: number
 }
 
 export const ScheduleManager = ({
@@ -172,6 +174,7 @@ export const ScheduleManager = ({
   embedded: _embedded = false,
   readOnly = false,
   weekDates,
+  gradeLevel,
 }: ScheduleManagerProps) => {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<ActiveTab>('school')
@@ -302,10 +305,40 @@ export const ScheduleManager = ({
     void loadHomeworkByDay(dow, nextDate)
   }
 
-  const eveningPeriods = [...(editable[eveningDay] ?? [])]
-    .filter((period) => period.periodNumber == null)
-    .sort((a, b) => a.startTime.localeCompare(b.startTime))
-  const homeworkItems = homeworkByDay[homeworkDay] ?? []
+  // Memoised because the subject pickers below depend on them: rebuilt every
+  // render, these two arrays would give the memos a new identity each time and
+  // regroup the whole catalogue on every keystroke.
+  const eveningPeriods = useMemo(
+    () =>
+      [...(editable[eveningDay] ?? [])]
+        .filter((period) => period.periodNumber == null)
+        .sort((a, b) => a.startTime.localeCompare(b.startTime)),
+    [editable, eveningDay]
+  )
+  const homeworkItems = useMemo(
+    () => homeworkByDay[homeworkDay] ?? [],
+    [homeworkByDay, homeworkDay]
+  )
+
+  // Both pickers below offer the grade's programme, plus whatever the day's
+  // existing rows already reference — otherwise an evening block recorded under
+  // a subject this grade no longer teaches would show as a blank <select>.
+  const eveningSubjectGroups = useMemo(
+    () =>
+      subjectGroupsForPicker(gradeLevel, [
+        eveningForm.subjectId,
+        ...eveningPeriods.map((p) => p.subjectId),
+      ]),
+    [gradeLevel, eveningForm.subjectId, eveningPeriods]
+  )
+  const homeworkSubjectGroups = useMemo(
+    () =>
+      subjectGroupsForPicker(gradeLevel, [
+        hwDraft.subjectId,
+        ...homeworkItems.map((h) => h.subjectId),
+      ]),
+    [gradeLevel, hwDraft.subjectId, homeworkItems]
+  )
 
   const handleDeleteEveningClass = (period: EditablePeriod) => {
     if (readOnly || !period.dbId) return
@@ -385,6 +418,7 @@ export const ScheduleManager = ({
             initialSource={initialWeekSource}
             initialInheritedFrom={initialInheritedFrom}
             bellSlots={bellSlots}
+            gradeLevel={gradeLevel}
             readOnly={readOnly}
             onSaved={() => router.refresh()}
           />
@@ -436,7 +470,11 @@ export const ScheduleManager = ({
                   onChange={(e) => setEveningForm((f) => ({ ...f, subjectId: e.target.value }))}
                   className="flex-1 rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:border-violet-400 focus:outline-none"
                 >
-                  {SUBJECTS.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  {eveningSubjectGroups.map((group) => (
+                    <optgroup key={group.label} label={group.label}>
+                      {group.subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </optgroup>
+                  ))}
                 </select>
                 <select
                   value={eveningForm.iconKey}
@@ -475,7 +513,7 @@ export const ScheduleManager = ({
 
           <div className="flex flex-col gap-2">
             {eveningPeriods.map((period) => {
-              const subject = SUBJECTS.find((s) => s.id === period.subjectId)
+              const subject = getSubjectById(period.subjectId)
               const icon = ICON_MAP[period.iconKey ?? 'book']
               return (
                 <div
@@ -563,7 +601,11 @@ export const ScheduleManager = ({
                   onChange={(e) => setHwDraft((d) => ({ ...d, subjectId: e.target.value }))}
                   className="flex-1 rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:border-amber-400 focus:outline-none"
                 >
-                  {SUBJECTS.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  {homeworkSubjectGroups.map((group) => (
+                    <optgroup key={group.label} label={group.label}>
+                      {group.subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </optgroup>
+                  ))}
                 </select>
                 <select value={hwDraft.iconKey}
                   onChange={(e) => setHwDraft((d) => ({ ...d, iconKey: e.target.value }))}
@@ -608,7 +650,7 @@ export const ScheduleManager = ({
 
           <div className="flex flex-col gap-2">
             {homeworkItems.map((item) => {
-              const subject = SUBJECTS.find((s) => s.id === item.subjectId)
+              const subject = getSubjectById(item.subjectId)
               const icon = ICON_MAP[item.iconKey] ?? ICON_MAP.book
               return (
                 <div
