@@ -1,6 +1,15 @@
 @import 'tailwindcss';
 @import './tokens.generated.css';
 
+/* Tailwind scans apps/web and skips node_modules — which is where pnpm puts the
+   symlink to @kid-hub/shared. So every class name that lives in DATA rather than
+   in JSX was invisible to it: `subject.colorClass` is built in
+   packages/shared/src/data/subjects.ts, and only `bg-math` and `bg-english`
+   survived, because DashboardView happens to spell those two out literally. The
+   subject dot in GradesManager, CurrentClassHighlight and SubjectCard rendered
+   with no background at all. */
+@source '../../../packages/shared/src';
+
 /* ============================================
    KID HUB — DESIGN TOKENS
    The @theme block lives in tokens.generated.css, generated from
